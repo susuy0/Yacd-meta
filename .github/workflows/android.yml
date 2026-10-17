@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       require_push:
-        description: Require this app's Telegram API and Firebase push configuration
+        description: Require this app's Firebase push configuration
         type: boolean
         default: true
       abis:

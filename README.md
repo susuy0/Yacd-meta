@@ -11,8 +11,8 @@ Telegram 安卓客户端内的富通悬浮业务面板，包名 `com.futoonpay.v
 
 | Secret | 内容 |
 | --- | --- |
-| `VINE_API_ID` | 本应用自己的 Telegram API ID |
-| `VINE_API_HASH` | 对应 API Hash |
+| `VINE_API_ID` | 可选，与 Hash 成对填写；均留空时使用源码自带的开发参数 |
+| `VINE_API_HASH` | 可选，对应 API Hash；与 ID 成对填写 |
 | `GOOGLE_SERVICES_JSON_BASE64` | Firebase 下载的 google-services.json 的 Base64，Android 客户端包名必须为 `com.futoonpay.vinechat.beta` |
 
 macOS 可执行 `base64 -i google-services.json | tr -d '\n'` 后将结果填到 Secret，不要放进仓库文件或聊天日志。
@@ -20,7 +20,9 @@ macOS 可执行 `base64 -i google-services.json | tr -d '\n'` 后将结果填到
 3. 推送 main/master，或 Actions → VineChat Android → Run workflow。
 4. 默认先跑 107 项核心与接口模拟测试，再构建 ARM64 APK。手动运行可选择四架构；构建完成后在该次运行的 Artifacts 下载 APK 和 SHA256SUMS。
 
-默认要求正确推送配置，缺失时会明确失败，不会悄悄关闭推送。`require_push=false` 仅供主动选择无 FCM 配置的开发构建，产物名会标明 `development-no-fcm`。配置正确也不等于设备锁屏投递已验证。
+Telegram API ID/Hash 均留空时，构建使用源码自带开发参数，不会因此阻止编译。登录可用性仍需实测，发布时应换成本应用的参数。
+
+默认要求本应用的 Firebase 推送配置，缺失时会明确失败，不会悄悄关闭推送。上游 Firebase 占位文件不包含 `com.futoonpay.vinechat.beta`，不能直接用于此包。`require_push=false` 仅供主动选择无 FCM 配置的开发构建，产物名会标明 `development-no-fcm`。配置正确也不等于设备锁屏投递已验证。
 
 Telegram 正常消息推送保留；暂不做的是富通业务提醒、盯单、独立工作台和先前暂缓的体验扩展。
 

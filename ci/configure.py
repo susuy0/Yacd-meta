@@ -17,10 +17,14 @@ api_hash = os.environ.get("VINE_API_HASH", "")
 encoded = os.environ.get("GOOGLE_SERVICES_JSON_BASE64", "")
 package = "com.futoonpay.vinechat.beta"
 missing = []
-if not re.fullmatch(r"[1-9][0-9]{0,8}", api_id) or api_id == "4":
-    missing.append("VINE_API_ID")
-if not re.fullmatch(r"[a-fA-F0-9]{32}", api_hash):
-    missing.append("VINE_API_HASH")
+if bool(api_id) != bool(api_hash):
+    raise SystemExit("Set VINE_API_ID and VINE_API_HASH together, or leave both empty to use the bundled development values.")
+if api_id and not re.fullmatch(r"[1-9][0-9]{0,8}", api_id):
+    raise SystemExit("Invalid VINE_API_ID.")
+if api_hash and not re.fullmatch(r"[a-fA-F0-9]{32}", api_hash):
+    raise SystemExit("Invalid VINE_API_HASH.")
+if not api_id:
+    print("Using Telegram API development values bundled with the source; login and delivery still need device verification.")
 data = None
 if encoded:
     try:
