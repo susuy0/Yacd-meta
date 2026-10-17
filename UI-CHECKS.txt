@@ -1,2 +1,12 @@
-Run Tools/futoon/PanelUiTest.cjs in GitHub panel-ui job.
-Includes route edit/save, monitor windows, focus retention, short screen and keyboard viewport checks.
+PASS: GitHub panel-ui job in run 39049394474
+Merchant TGID lookup and manual merchant switch
+Exact CNY balance direction and amounts
+Order search, filters, detail and OCR review
+Native recipient preview does not imply send success
+Message send failure and server acknowledgement
+Route edit, new rows and saving
+Channel monitor metric windows and editor entry
+Payment plugin loading blocks save until ready
+Text focus/caret and scroll retention
+Natural control heights at 390x650, 320x480 and 390x300
+Dark theme, no horizontal overflow and no JavaScript page errors
