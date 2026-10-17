@@ -1,1 +1,2 @@
-PASS: floating panel interaction regression checks
+Run Tools/futoon/PanelUiTest.cjs in GitHub panel-ui job.
+Includes route edit/save, monitor windows, focus retention, short screen and keyboard viewport checks.

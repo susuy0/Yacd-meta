@@ -18,8 +18,10 @@ elif [[ "$mode" != full ]]; then
     exit 1
 fi
 git -C "$destination" checkout --detach "$revision"
-git -C "$destination" apply --check "$package_dir/integration.patch"
-git -C "$destination" apply "$package_dir/integration.patch"
+patch_args=()
+if [[ "$mode" == minimal ]]; then patch_args+=(--exclude="TMessagesProj/jni/*"); fi
+git -C "$destination" apply "${patch_args[@]}" --check "$package_dir/integration.patch"
+git -C "$destination" apply "${patch_args[@]}" "$package_dir/integration.patch"
 if [[ "$mode" == full ]]; then
     git -C "$destination" submodule update --init --recursive --depth 1 --jobs 2
 fi

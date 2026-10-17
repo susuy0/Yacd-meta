@@ -1,0 +1,21 @@
+import os, pathlib, subprocess, sys, tempfile, zipfile
+apk=pathlib.Path(sys.argv[1]);sdk=pathlib.Path(os.environ['ANDROID_HOME'])
+aapt=sdk/'build-tools/36.0.0/aapt'
+manifest=subprocess.check_output([str(aapt),'dump','xmltree',str(apk),'AndroidManifest.xml'],text=True)
+for component in ['org.telegram.messenger.voip.VoIPService','org.telegram.messenger.voip.TelegramConnectionService','org.telegram.messenger.ContactsSyncAdapterService','org.telegram.messenger.AuthenticatorService','org.telegram.ui.VoIPPermissionActivity','org.telegram.ui.VoIPFeedbackActivity']:
+    assert component not in manifest,component
+permissions=subprocess.check_output([str(aapt),'dump','permissions',str(apk)],text=True)
+for name in ['RECORD_AUDIO','READ_CONTACTS','WRITE_CONTACTS']:
+    assert 'android.permission.'+name not in permissions,name
+nm=sdk/'ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm'
+with zipfile.ZipFile(apk) as z,tempfile.TemporaryDirectory() as work:
+    for entry in z.namelist():
+        if entry.startswith('lib/') and entry.endswith('/libtmessages.49.so'):
+            lib=pathlib.Path(work)/'core.so';lib.write_bytes(z.read(entry))
+            symbols=subprocess.check_output([str(nm),'-D','--defined-only',str(lib)],text=True)
+            for removed in ['Java_org_telegram_messenger_voip_','Java_org_webrtc_','MediaController_startRecord','MediaController_writeFrame','MediaController_stopRecord']:
+                assert removed not in symbols,removed
+            for required in ['MediaController_isOpusFile','MediaController_getWaveform','JNI_OnLoad']:
+                assert required in symbols,required
+            print(entry,lib.stat().st_size,'bytes; call/record engine exports absent; voice decoder exports present')
+print('PASS: removed Android components, permissions and native engines audited')

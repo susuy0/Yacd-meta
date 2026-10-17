@@ -35,8 +35,25 @@ jobs:
         run: bash ci/checkout.sh "$RUNNER_TEMP/vinechat-tests" minimal
       - name: Test identity, recognition and backend contracts
         run: bash "$RUNNER_TEMP/vinechat-tests/Tools/futoon/run-tests.sh"
+  panel-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare panel source
+        run: bash ci/checkout.sh "$RUNNER_TEMP/vinechat-ui" minimal
+      - name: Install browser regression dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/futoon-ui" --no-audit --no-fund playwright@1.62.1
+          "$RUNNER_TEMP/futoon-ui/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Test panel, monitor and route editing
+        run: |
+          export PLAYWRIGHT_MODULE="$RUNNER_TEMP/futoon-ui/node_modules/playwright"
+          node "$RUNNER_TEMP/vinechat-ui/Tools/futoon/PanelUiTest.cjs"
   android:
-    needs: core-checks
+    needs: [core-checks, panel-ui]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
@@ -95,15 +112,18 @@ jobs:
             "${args[@]}" --no-daemon --max-workers=2 \
             -Pkotlin.compiler.execution.strategy=in-process \
             "-Dorg.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1g" --stacktrace
+      - name: Audit removed components
+        run: python3 ci/audit_apk.py upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk
       - name: Collect APK and checksum
         run: |
           mkdir -p output
-          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.2-test.apk
+          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.3-lite-test.apk
+          cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/usage.txt output/REMOVED-JAVA.txt
           cd output
-          sha256sum VineChat-Futoon-v0.2-test.apk > SHA256SUMS
+          sha256sum VineChat-Futoon-v0.3-lite-test.apk > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: VineChat-Futoon-v0.2-${{ steps.config.outputs.push_mode }}
+          name: VineChat-Futoon-v0.3-lite-${{ steps.config.outputs.push_mode }}
           path: output/*
           if-no-files-found: error
           retention-days: 30

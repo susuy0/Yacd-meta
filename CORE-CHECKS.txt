@@ -1,2 +1,4 @@
-PASS: 45 Futoon query and HTTP integration checks
-PASS: 62 extended identity, recognition and business contract checks
+PASS: 45 query and HTTP checks
+PASS: 62 identity/recognition/business checks
+PASS: 23 monitor/editor regressions
+Total: 130
