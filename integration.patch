@@ -77,7 +77,7 @@ index 6f23df2..41793ab 100644
          android:hardwareAccelerated="true"
          android:largeHeap="true"
 diff --git a/TMessagesProj/jni/CMakeLists.txt b/TMessagesProj/jni/CMakeLists.txt
-index f1fd720..0ce401f 100644
+index f1fd720..974caad 100644
 --- a/TMessagesProj/jni/CMakeLists.txt
 +++ b/TMessagesProj/jni/CMakeLists.txt
 @@ -89,6 +89,9 @@ set_target_properties(libvpx PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY
@@ -100,6 +100,24 @@ index f1fd720..0ce401f 100644
  
  set(NATIVE_LIB "tmessages.49")
  
+@@ -261,6 +263,8 @@ target_sources(${NATIVE_LIB} PRIVATE
+         third_party/xiph/ogg/src/framing.c)
+ 
+ target_include_directories(${NATIVE_LIB} PUBLIC
++        ${CMAKE_CURRENT_SOURCE_DIR}
++        third_party
+         third_party/xiph/opus/include
+         third_party/xiph/opus/silk
+         third_party/xiph/opus/silk/fixed
+@@ -280,8 +284,6 @@ target_include_directories(${NATIVE_LIB} PUBLIC
+         exoplayer/include
+         intro
+         tlottie/include
+-        tgcalls/
+-        webrtc/
+         td/tde2e
+         td/tde2e/td/e2e
+ )
 @@ -290,11 +292,6 @@ target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,max-page-size=16384")
  target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,common-page-size=16384")
  target_link_options(${NATIVE_LIB} PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.map")
