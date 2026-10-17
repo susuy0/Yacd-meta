@@ -2,8 +2,8 @@
   "version": "0.3 lite",
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "files": 56,
-  "patch_sha256": "5a8c34dd9bf2b8cb9bf3c76ba0a9eb45fd38e3cfa06582b20bff281bce059230",
+  "files": 58,
+  "patch_sha256": "a339e70bd8a5e8a87f9c2566160c44d42f8b8843e1229c85950f10b2d4c36b69",
   "validation": {
     "core_checks": 132,
     "panel_ui": "pending final plugin selection checks",

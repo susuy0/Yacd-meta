@@ -6472,6 +6472,223 @@ index 6df08c4..812d3b5 100644
 +    public void setConferenceCallId(long call_id) {  }
 +    public static String[] getAllVersions() { return new String[0]; }
  }
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPGroupNotification.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPGroupNotification.java
+index dbb8437..d922013 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPGroupNotification.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPGroupNotification.java
+@@ -136,36 +136,7 @@ public class VoIPGroupNotification {
+     private static HashSet<Integer> ignoreCalls;
+     private static Runnable missRunnable;
+     public static void request(Context context, int account, long dialogId, String names, long call_id, int msg_id, boolean video) {
+-        if (Build.VERSION.SDK_INT < 26 || currentCallId == call_id || currentState != null && currentState.call_id == call_id) return;
+-
+-        if (VoIPService.getSharedInstance() != null) {
+-            if (currentState != null) {
+-                hide(context);
+-            }
+-            return;
+-        }
+-        if (MessagesController.getInstance(account).callRequestsDisabled) return;
+-        if (ignoreCalls != null && ignoreCalls.contains(msg_id))
+-            return;
+-
+-        currentCallId = call_id;
+-        final TL_phone.getGroupCall req = new TL_phone.getGroupCall();
+-        req.call = new TLRPC.TL_inputGroupCallInviteMessage();
+-        req.call.msg_id = msg_id;
+-        req.limit = 3;
+-        ConnectionsManager.getInstance(account).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
+-            if (res instanceof TL_phone.groupCall) {
+-                final TL_phone.groupCall r = (TL_phone.groupCall) res;
+-                MessagesController.getInstance(account).putUsers(r.users, false);
+-                MessagesController.getInstance(account).putChats(r.chats, false);
+-
+-                currentState = new State(account, dialogId, call_id, msg_id, video, r.call, r.participants);
+-                showNotification(context, account, call_id, msg_id, dialogId, names);
+-            } else {
+-                if (ignoreCalls == null) ignoreCalls = new HashSet<>();
+-                ignoreCalls.add(msg_id);
+-            }
+-        }));
++        // Call notifications are removed from this client.
+     }
+ 
+     private static void showNotification(Context context, int account, long call_id, int msg_id, long dialogId, String names) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPPreNotificationService.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPPreNotificationService.java
+index cd195fa..b49f9de 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPPreNotificationService.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPPreNotificationService.java
+@@ -279,90 +279,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
+     private static Vibrator vibrator;
+ 
+     public static void startRinging(Context context, int account, long user_id) {
+-        SharedPreferences prefs = MessagesController.getNotificationsSettings(account);
+-        AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+-        boolean needRing = am.getRingerMode() != AudioManager.RINGER_MODE_SILENT;
+-        final boolean isHeadsetPlugged = am.isWiredHeadsetOn();
+-        if (needRing) {
+-            if (ringtonePlayer != null) {
+-                return;
+-            }
+-            synchronized (sync) {
+-                if (ringtonePlayer != null) {
+-                    return;
+-                }
+-                ringtonePlayer = new MediaPlayer();
+-                ringtonePlayer.setOnPreparedListener(mediaPlayer -> {
+-                    try {
+-                        ringtonePlayer.start();
+-                    } catch (Throwable e) {
+-                        FileLog.e(e);
+-                    }
+-                });
+-                ringtonePlayer.setLooping(true);
+-                if (isHeadsetPlugged) {
+-                    ringtonePlayer.setAudioStreamType(AudioManager.STREAM_VOICE_CALL);
+-                } else {
+-                    ringtonePlayer.setAudioStreamType(AudioManager.STREAM_RING);
+-                }
+-                try {
+-                    String notificationUri;
+-                    if (prefs.getBoolean("custom_" + user_id, false)) {
+-                        notificationUri = prefs.getString("ringtone_path_" + user_id, null);
+-                    } else {
+-                        notificationUri = prefs.getString("CallsRingtonePath", null);
+-                    }
+-                    Uri ringtoneUri;
+-                    boolean isDafaultUri = false;
+-                    if (notificationUri == null) {
+-                        ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+-                        isDafaultUri = true;
+-                    } else {
+-                        Uri defaultUri = Settings.System.DEFAULT_RINGTONE_URI;
+-                        if (defaultUri != null && notificationUri.equalsIgnoreCase(defaultUri.getPath())) {
+-                            ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+-                            isDafaultUri = true;
+-                        } else {
+-                            ringtoneUri = Uri.parse(notificationUri);
+-                        }
+-                    }
+-                    FileLog.d("start ringtone with " + isDafaultUri + " " + ringtoneUri);
+-                    ringtonePlayer.setDataSource(context, ringtoneUri);
+-                    ringtonePlayer.prepareAsync();
+-                } catch (Exception e) {
+-                    FileLog.e(e);
+-                    if (ringtonePlayer != null) {
+-                        ringtonePlayer.release();
+-                        ringtonePlayer = null;
+-                    }
+-                }
+-                int vibrate;
+-                if (prefs.getBoolean("custom_" + user_id, false)) {
+-                    vibrate = prefs.getInt("calls_vibrate_" + user_id, 0);
+-                } else {
+-                    vibrate = prefs.getInt("vibrate_calls", 0);
+-                }
+-                if ((vibrate != 2 && vibrate != 4 && (am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE || am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL)) || (vibrate == 4 && am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE)) {
+-                    vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+-                    long duration = 700;
+-                    if (vibrate == 1) {
+-                        duration /= 2;
+-                    } else if (vibrate == 3) {
+-                        duration *= 2;
+-                    }
+-                    long[] pattern = new long[]{0, duration, 500};
+-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+-                        vibrator.vibrate(
+-                                VibrationEffect.createWaveform(pattern, 0),
+-                                new VibrationAttributes.Builder()
+-                                    .setUsage(VibrationAttributes.USAGE_RINGTONE) // required for background apps
+-                                    .build());
+-                    } else {
+-                        vibrator.vibrate(pattern, 0);
+-                    }
+-                }
+-            }
+-        }
++        // Call pre-notification component removed.
+     }
+ 
+     public static void stopRinging() {
+@@ -393,37 +310,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
+ //    public static Intent pendingNotificationService;
+ 
+     public static void show(Context context, Intent intent, TL_phone.PhoneCall call) {
+-        FileLog.d("VoIPPreNotification.show()");
+-
+-        if (call == null || intent == null) {
+-            dismiss(context, false);
+-            FileLog.d("VoIPPreNotification.show(): call or intent is null");
+-            return;
+-        }
+-
+-        if (pendingCall != null && pendingCall.id == call.id) {
+-            return;
+-        }
+-
+-        dismiss(context, false);
+-
+-        pendingVoIP = intent;
+-        pendingCall = call;
+-
+-        final int account = intent.getIntExtra("account", UserConfig.selectedAccount);
+-        final long user_id = intent.getLongExtra("user_id", 0);
+-        final boolean video = call != null && call.video;
+-
+-        currentState = new State(account, user_id, call);
+-
+-        acknowledge(context, account, call, () -> {
+-            pendingVoIP = intent;
+-            pendingCall = call;
+-
+-            final NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+-            nm.notify(VoIPService.ID_INCOMING_CALL_PRENOTIFICATION, makeNotification(context, account, user_id, call.id, video));
+-            startRinging(context, account, user_id);
+-        });
++        // Call pre-notification component removed.
+     }
+ 
+     private static void acknowledge(Context context, int currentAccount, TL_phone.PhoneCall call, Runnable whenAcknowledged) {
+@@ -498,38 +385,7 @@ public class VoIPPreNotificationService { // } extends Service implements AudioM
+     }
+ 
+     public static void answer(Context context) {
+-        FileLog.d("VoIPPreNotification.answer()");
+-        if (pendingVoIP == null) {
+-            FileLog.d("VoIPPreNotification.answer(): pending intent is not found");
+-            return;
+-        }
+-        currentState = null;
+-        final int account = pendingVoIP.getIntExtra("account", UserConfig.selectedAccount);
+-        if (VoIPService.getSharedInstance() != null) {
+-            VoIPService.getSharedInstance().acceptIncomingCall();
+-        } else {
+-            pendingVoIP.putExtra("openFragment", true);
+-            if (
+-                !PermissionRequest.hasPermission(Manifest.permission.RECORD_AUDIO) ||
+-                isVideo() && !PermissionRequest.hasPermission(Manifest.permission.CAMERA)
+-            ) {
+-                try {
+-                    PendingIntent.getActivity(context, 0, new Intent(context, VoIPPermissionActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT).send();
+-                } catch (Exception x) {
+-                    if (BuildVars.LOGS_ENABLED) {
+-                        FileLog.e("Error starting permission activity", x);
+-                    }
+-                }
+-                return;
+-            }
+-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+-                context.startForegroundService(pendingVoIP);
+-            } else {
+-                context.startService(pendingVoIP);
+-            }
+-            pendingVoIP = null;
+-        }
+-        dismiss(context, true);
++        // Call pre-notification component removed.
+     }
+ 
+     public static void decline(Context context, int reason) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPService.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPService.java
 index a01edcf..ee4dfd7 100755
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPService.java
