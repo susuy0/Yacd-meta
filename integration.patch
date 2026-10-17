@@ -77,10 +77,10 @@ index 6f23df2..41793ab 100644
          android:hardwareAccelerated="true"
          android:largeHeap="true"
 diff --git a/TMessagesProj/jni/CMakeLists.txt b/TMessagesProj/jni/CMakeLists.txt
-index f1fd720..974caad 100644
+index f1fd720..83114e3 100644
 --- a/TMessagesProj/jni/CMakeLists.txt
 +++ b/TMessagesProj/jni/CMakeLists.txt
-@@ -89,6 +89,9 @@ set_target_properties(libvpx PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY
+@@ -89,12 +89,12 @@ set_target_properties(libvpx PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY
  add_library(libdav1d STATIC IMPORTED)
  set_target_properties(libdav1d PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/prebuild/lib/${ANDROID_ABI}/libdav1d.a)
  
@@ -90,7 +90,13 @@ index f1fd720..974caad 100644
  add_library(libopus STATIC IMPORTED)
  set_target_properties(libopus PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/prebuild/lib/${ANDROID_ABI}/libopus.a)
  
-@@ -206,8 +209,7 @@ target_include_directories(breakpad PUBLIC
+-add_library(tde2e STATIC IMPORTED)
+-set_target_properties(tde2e PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/prebuild/lib/${ANDROID_ABI}/libtde2e.a)
+-
+ add_library(tdutils STATIC IMPORTED)
+ set_target_properties(tdutils PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/prebuild/lib/${ANDROID_ABI}/libtdutils.a)
+ 
+@@ -206,8 +206,7 @@ target_include_directories(breakpad PUBLIC
          third_party/breakpad/src)
  
  
@@ -100,7 +106,15 @@ index f1fd720..974caad 100644
  
  set(NATIVE_LIB "tmessages.49")
  
-@@ -261,6 +263,8 @@ target_sources(${NATIVE_LIB} PRIVATE
+@@ -227,7 +226,6 @@ add_library(${NATIVE_LIB} SHARED
+         fast-edge.cpp
+         genann.c
+         secureid_ocr.cpp
+-        tde2e/bridge.cpp
+         tests.cpp
+ )
+ 
+@@ -261,6 +259,8 @@ target_sources(${NATIVE_LIB} PRIVATE
          third_party/xiph/ogg/src/framing.c)
  
  target_include_directories(${NATIVE_LIB} PUBLIC
@@ -109,16 +123,17 @@ index f1fd720..974caad 100644
          third_party/xiph/opus/include
          third_party/xiph/opus/silk
          third_party/xiph/opus/silk/fixed
-@@ -280,8 +284,6 @@ target_include_directories(${NATIVE_LIB} PUBLIC
+@@ -280,21 +280,12 @@ target_include_directories(${NATIVE_LIB} PUBLIC
          exoplayer/include
          intro
          tlottie/include
 -        tgcalls/
 -        webrtc/
-         td/tde2e
-         td/tde2e/td/e2e
+-        td/tde2e
+-        td/tde2e/td/e2e
  )
-@@ -290,11 +292,6 @@ target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,max-page-size=16384")
+ 
+ target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,max-page-size=16384")
  target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,common-page-size=16384")
  target_link_options(${NATIVE_LIB} PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.map")
  target_link_libraries(${NATIVE_LIB}
@@ -130,7 +145,7 @@ index f1fd720..974caad 100644
          tgnet
          prisma
          tlottie
-@@ -304,6 +301,7 @@ target_link_libraries(${NATIVE_LIB}
+@@ -304,11 +295,11 @@ target_link_libraries(${NATIVE_LIB}
          swscale
          avformat
          avcodec
@@ -138,6 +153,11 @@ index f1fd720..974caad 100644
          swresample
          libvpx
          libdav1d
+         libopus
+-        tde2e
+         tdutils
+         yuv
+         avutil
 diff --git a/TMessagesProj/jni/audio.c b/TMessagesProj/jni/audio.c
 index c681e61..fe3c356 100644
 --- a/TMessagesProj/jni/audio.c
@@ -1487,10 +1507,10 @@ index 0000000..5f3d940
 +.body>*{flex-shrink:0}
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/main/assets/futoon/panel.js
 new file mode 100644
-index 0000000..1be6250
+index 0000000..18ca61a
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,438 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1686,7 +1706,7 @@ index 0000000..1be6250
 +}
 +function formView(){
 + const f=S.form;if(!f)return {body:note('表单不可用')};
-+ let body='<div class="title">'+esc(f.title)+'</div>'+ (f.summary?note(f.summary):'')+
++ let body='<div class="title">'+esc(f.title)+'</div>'+ (f.summary?note(f.summary):'')+(f.pluginLoading?note('正在加载可用支付插件…'):'')+(f.pluginError?note(f.pluginError,'err'):'')+
 + f.fields.map((x,i)=>{
 +  const value=f.values[x.name]??x.value??'',id='form-'+i;
 +  if(x.type==='select'||x.type==='multiselect')return '<label>'+esc(x.label||names[x.name]||x.name)+'<select id="'+id+'" '+(x.type==='multiselect'?'multiple size="5"':'')+' data-field="'+esc(x.name)+'" '+(x.readOnly?'disabled':'')+'>'+x.options.map(o=>'<option value="'+esc(o.value)+'" '+((x.type==='multiselect'?String(value).split(',').includes(String(o.value)):String(o.value)===String(value))?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label>';
@@ -1697,7 +1717,7 @@ index 0000000..1be6250
 + if(f.params?.route)body+=note('每条路由选择通道并填写权重；选择“不使用”可移除此行。')+btn('添加路由通道','route.add','btn-outline block');
 + if(f.kind==='balance')body+=btn('计算变更前后余额','balance.preview','btn-outline block')+(f.preview?'<div class="card highlight">'+kv('变更前',f.preview.before)+kv(f.values.direction==='add'?'本次增加':'本次扣除',f.preview.amount)+kv('变更后',f.preview.after)+'</div>':'')+
 + note('当前仅支持 CNY 余额调整；其他币种仍可查看。');
-+ return {body,actions:btn('取消','back')+btn(f.kind==='reply'?'复制回复':f.kind==='summary'?'复制汇总':f.kind==='filters'?'应用筛选':'核对并提交','form.submit','btn-primary block')};
++ return {body,actions:btn('取消','back')+btn(f.kind==='reply'?'复制回复':f.kind==='summary'?'复制汇总':f.kind==='filters'?'应用筛选':'核对并提交','form.submit','btn-primary block',f.pluginLoading||f.pluginError?'disabled':'')};
 +}
 +function smallListView(){
 + let body='<div class="title">'+({history:'最近查询',favorites:'收藏订单',drafts:'凭证草稿'})[S.page]+'</div>';
@@ -1773,7 +1793,7 @@ index 0000000..1be6250
 + }}finally{S.batchRunning=false;render();}
 +}
 +async function submitForm(){
-+ const form=S.form;if(!form)return;const v={...form.values},p={...form.params};let r;
++ const form=S.form;if(!form)return;if(form.pluginLoading)throw new Error('请等待支付插件加载完成');if(form.pluginError)throw new Error(form.pluginError);const v={...form.values},p={...form.params};let r;
 + if(form.kind==='manual'){await lookup(v.column,v.value,true);form.dirty=false;S.page='';return;}
 + if(form.kind==='filters'){if(v.column&&!v.value.trim())throw new Error('请填写搜索字段值');S.filters={uid:v.uid,channel:v.channel,starttime:v.starttime,endtime:v.endtime,status:v.status||'-1',...(v.column?{column:v.column,value:v.value.trim()}:{})};for(const k of Object.keys(S.filters))if(!S.filters[k])delete S.filters[k];if(v.column)S.q='';form.dirty=false;S.page='';S.tab='orders';await search(1,true);return;}
 + if(form.kind==='reply'||form.kind==='summary'){await call('ui.copy',{text:v.text});toast('已复制，可回到聊天编辑后发送');form.dirty=false;return;}
@@ -1895,7 +1915,13 @@ index 0000000..1be6250
 +});
 +$('app').addEventListener('change',e=>{
 + const el=e.target;if(el.id==='kind')S.kind=el.value;
-+ if(el.dataset.field==='type'&&S.form?.fields.some(x=>x.name==='plugin')){const form=S.form;call('module.plugins',{type:el.value}).then(result=>{if(S.form!==form)return;const options=result.options||[];const plugin=form.fields.find(x=>x.name==='plugin');plugin.options=options;form.values.plugin=options[0]?.value||'';render();}).catch(error=>toast(error.message));}
++ if(el.dataset.field==='type'&&S.form?.fields.some(x=>x.name==='plugin')){
++  const form=S.form,type=el.value;form.pluginLoading=true;form.pluginError='';render();
++  call('module.plugins',{type}).then(result=>{if(S.form!==form||form.values.type!==type)return;const options=result.options||[],plugin=form.fields.find(x=>x.name==='plugin');plugin.options=options;if(!options.some(x=>x.value===form.values.plugin))form.values.plugin=options[0]?.value||'';})
++   .catch(error=>{if(S.form===form&&form.values.type===type)form.pluginError='支付插件加载失败，请重新选择支付方式：'+error.message;})
++   .finally(()=>{if(S.form===form&&form.values.type===type){form.pluginLoading=false;render();}});
++ }
++
 + if(el.dataset.candidate!=null)S.candidates[Number(el.dataset.candidate)].selected=el.checked;
 + if(el.dataset.batch!=null)S.batch[Number(el.dataset.batch)].selected=el.checked;
 + if(el.id==='batchGroup'){S.batchGroup=el.value;render();}
@@ -5406,10 +5432,10 @@ index 0000000..59a1ecc
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java
 new file mode 100644
-index 0000000..ba460cc
+index 0000000..36203de
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java
-@@ -0,0 +1,450 @@
+@@ -0,0 +1,455 @@
 +package org.telegram.messenger.futoon;
 +
 +import org.json.JSONArray;
@@ -5708,6 +5734,11 @@ index 0000000..ba460cc
 +            if(!positive)throw new IOException("至少一个通道的权重必须大于 0");
 +        }else for(String key:f.editable)if(values.has(key)) {
 +            String value=values.optString(key);if(!isSecret(key)||!value.isEmpty())fields.put(key,value);
++        }
++        if(f.endpoint.startsWith("ajax_pay.php?act=saveChannel&")&&f.defaults.containsKey("type")&&(!Objects.equals(fields.get("type"),f.defaults.get("type"))||!Objects.equals(fields.get("plugin"),f.defaults.get("plugin")))) {
++            JSONArray allowed=plugins(fields.getOrDefault("type",""));boolean matched=false;
++            for(int i=0;i<allowed.length();i++)if(allowed.getJSONObject(i).getString("value").equals(fields.get("plugin")))matched=true;
++            if(!matched)throw new IOException("支付插件与所选支付方式不匹配，请重新加载后选择");
 +        }
 +        for(String key:f.multiselect) {
 +            String value=fields.remove(key),base=key.endsWith("[]")?key.substring(0,key.length()-2):key;
@@ -6227,6 +6258,71 @@ index 0000000..05fc14e
 +    public static Draft draft(int account) { return drafts.get(UserConfig.getInstance(account).getClientUserId()); }
 +    public static void clearDraft(int account) { drafts.remove(UserConfig.getInstance(account).getClientUserId()); }
 +}
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/ConferenceCall.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/ConferenceCall.java
+index c0f2ca2..ed5f2e3 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/voip/ConferenceCall.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/voip/ConferenceCall.java
+@@ -110,37 +110,37 @@ public class ConferenceCall {
+         }
+     }
+ 
+-    public static native long key_generate_temporary_private_key();
+-    public static native byte[] key_to_public_key(long private_key);
+-    public static native long key_from_public_key(byte[] public_key);
++    public static long key_generate_temporary_private_key() { return 0; }
++    public static byte[] key_to_public_key(long private_key) { return null; }
++    public static long key_from_public_key(byte[] public_key) { return 0; }
+ 
+-    public static native long key_from_ecdh(long private_key_id, long other_public_key_id);
+-    public static native byte[] encrypt_message_for_one(long symmetric_key_id, byte[] message);
+-    public static native byte[] decrypt_message_for_one(long symmetric_key_id, byte[] encrypted);
+-    public static native void key_destroy(long key_id);
++    public static long key_from_ecdh(long private_key_id, long other_public_key_id) { return 0; }
++    public static byte[] encrypt_message_for_one(long symmetric_key_id, byte[] message) { return null; }
++    public static byte[] decrypt_message_for_one(long symmetric_key_id, byte[] encrypted) { return null; }
++    public static void key_destroy(long key_id) {  }
+ 
+-    public static native byte[] call_create_zero_block(long private_key_id, CallState initial_state);
+-    public static native byte[] call_create_self_add_block(long private_key_id, byte[] previous_block, CallParticipant self);
+-    public static native long call_create(long user_id, long private_key_id, byte[] last_block);
++    public static byte[] call_create_zero_block(long private_key_id, CallState initial_state) { return null; }
++    public static byte[] call_create_self_add_block(long private_key_id, byte[] previous_block, CallParticipant self) { return null; }
++    public static long call_create(long user_id, long private_key_id, byte[] last_block) { return 0; }
+ 
+-    public static native byte[] call_create_change_state_block(long call_id, CallState new_state);
++    public static byte[] call_create_change_state_block(long call_id, CallState new_state) { return null; }
+ 
+-    public static native int call_get_height(long call_id);
+-    public static native CallState call_apply_block(long call_id, byte[] block);
+-    public static native CallState call_get_state(long call_id);
+-    public static native String call_describe(long call_id);
+-    public static native String call_describe_block(byte[] block);
+-    public static native String call_describe_message(byte[] message);
++    public static int call_get_height(long call_id) { return 0; }
++    public static CallState call_apply_block(long call_id, byte[] block) { return null; }
++    public static CallState call_get_state(long call_id) { return null; }
++    public static String call_describe(long call_id) { return null; }
++    public static String call_describe_block(byte[] block) { return null; }
++    public static String call_describe_message(byte[] message) { return null; }
+ 
+-    public static native CallVerificationState call_get_verification_state(long call_id);
+-    public static native CallVerificationState call_receive_inbound_message(long call_id, byte[] message);
++    public static CallVerificationState call_get_verification_state(long call_id) { return null; }
++    public static CallVerificationState call_receive_inbound_message(long call_id, byte[] message) { return null; }
+ 
+-    public static native byte[][] call_pull_outbound_messages(long call_id);
++    public static byte[][] call_pull_outbound_messages(long call_id) { return null; }
+ 
+-    public static native CallVerificationWords call_get_verification_words(long call_id);
++    public static CallVerificationWords call_get_verification_words(long call_id) { return null; }
+ 
+-    public static native void call_destroy(long call_id);
+-    public static native void call_destroy_all();
++    public static void call_destroy(long call_id) {  }
++    public static void call_destroy_all() {  }
+ 
+     public static final int PERMISSION_ADD = 1;
+     public static final int PERMISSION_REMOVE = 2;
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/Instance.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/Instance.java
 index dd1e234..c67d119 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/voip/Instance.java
@@ -9141,10 +9237,10 @@ index 0000000..fc36632
 +}
 diff --git a/Tools/futoon/FutoonModuleTest.java b/Tools/futoon/FutoonModuleTest.java
 new file mode 100644
-index 0000000..7fb17cf
+index 0000000..d401dc2
 --- /dev/null
 +++ b/Tools/futoon/FutoonModuleTest.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,74 @@
 +package org.telegram.messenger.futoon;
 +import com.sun.net.httpserver.HttpServer;
 +import java.net.*;
@@ -9162,7 +9258,7 @@ index 0000000..7fb17cf
 + public static void main(String[] args)throws Exception{
 +  List<Map<String,String>> requests=new ArrayList<>();int[] variant={0};boolean[] postRejected={false},failure={false};
 +  String roll="<form id='search'><input name='q'></form><form id='editor'><input type='hidden' name='id'><input type='hidden' name='action' value='add'><input name='name'><select name='kind'><option value='0'>固定</option><option value='1'>随机</option></select><select name='type'><option value='2'>微信</option></select></form>";
-+  String channel="<table><thead><tr><th>ID</th><th>名称</th></tr></thead><tbody><tr><td>主通道</td><td><a onclick=\"editChannel('88')\">编辑</a></td></tr></tbody></table><form id='search'><input name='name' value='not-editor'></form><form id='edit'><input type='hidden' name='id'><input type='hidden' name='action' value='add'><input name='name'><select name='plugin'><option value='wx'>微信</option></select><input name='rate'><input type='password' name='key' value='old-secret'></form>";
++  String channel="<table><thead><tr><th>ID</th><th>名称</th></tr></thead><tbody><tr><td>主通道</td><td><a onclick=\"editChannel('88')\">编辑</a></td></tr></tbody></table><form id='search'><input name='name' value='not-editor'></form><form id='edit'><input type='hidden' name='id'><input type='hidden' name='action' value='add'><input name='name'><select name='plugin'><option value='wx'>微信</option></select><input name='rate'><select name='type'><option value='2'>微信</option></select><input type='password' name='key' value='old-secret'></form>";
 +  HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
 +  server.createContext("/admin/",e->{try{
 +   Map<String,String> fields=FutoonExtendedTest.parse(new String(e.getRequestBody().readAllBytes(),StandardCharsets.UTF_8));fields.putAll(FutoonExtendedTest.parse(e.getRequestURI().getRawQuery()));fields.put("_method",e.getRequestMethod());requests.add(fields);
@@ -9182,7 +9278,8 @@ index 0000000..7fb17cf
 +    else body="{\"rows\":[],\"total\":0}";
 +   }else if(act.equals("rollInfo"))body="{\"code\":0,\"data\":{\"channels\":[{\"id\":\"11\",\"name\":\"微信A\"},{\"id\":\"22\",\"name\":\"微信B\"}],\"info\":[{\"channel\":\"11\",\"weight\":\"7\"}]}}";
 +   else if(act.equals("getRoll"))body="{\"code\":0,\"data\":{\"id\":\"88\",\"name\":\"默认路由\",\"kind\":\"1\",\"type\":\"2\"}}";
-+   else if(act.equals("getChannel"))body="{\"code\":0,\"data\":{\"id\":\"88\",\"name\":\"主通道\",\"plugin\":\"wx\",\"rate\":\"97.5\",\"key\":\"server-secret\"}}";
++   else if(act.equals("getChannel"))body="{\"code\":0,\"data\":{\"id\":\"88\",\"name\":\"主通道\",\"plugin\":\"wx\",\"type\":\"2\",\"rate\":\"97.5\",\"key\":\"server-secret\"}}";
++   else if(act.equals("getPlugins"))body="{\"code\":0,\"data\":[{\"name\":\"wx\",\"showname\":\"微信\"}]}";
 +   else if(act.equals("channelInfo"))body=new JSONObject().put("code",0).put("data","<div class='form-group'><label>商户号</label><input name='appid' value='123'></div><input type='password' name='appkey' value='keep-existing'>").toString();
 +   else body="{\"code\":0,\"msg\":\"saved\"}";
 +   byte[] data=body.getBytes(StandardCharsets.UTF_8);e.sendResponseHeaders(200,data.length);try(java.io.OutputStream out=e.getResponseBody()){out.write(data);}
@@ -9199,6 +9296,8 @@ index 0000000..7fb17cf
 +   failure[0]=true;rejects(()->b.call("module.read",params("channel_monitor","detail")),"backend monitor error is not empty success");failure[0]=false;
 +   r=b.call("module.read",params("channels","detail"));check(r.getJSONArray("tables").getJSONObject(0).getJSONArray("rows").getJSONObject(0).getString("id").equals("88"),"HTML onclick row ID is retained");
 +   JSONObject form=b.call("module.editor",params("channels","detail"));check(field(form,"name").getString("value").equals("主通道"),"correct edit form selected instead of search form");check(!form.toString().contains("server-secret"),"secret not exposed");
++   JSONObject plugins=b.call("module.plugins",new JSONObject().put("type","2"));check(plugins.getJSONArray("options").getJSONObject(0).getString("value").equals("wx"),"payment plugins use typeid and official names");
++   final String channelTicket=form.getString("ticket");rejects(()->b.call("form.save",new JSONObject().put("ticket",channelTicket).put("values",new JSONObject().put("plugin","missing"))),"invalid payment plugin rejected before saving");
 +   b.call("form.save",new JSONObject().put("ticket",form.getString("ticket")).put("values",new JSONObject().put("id","999").put("action","add").put("name","修改后的通道").put("key","")));
 +   req=requests.get(requests.size()-1);check(req.get("id").equals("88")&&req.get("action").equals("edit")&&req.get("rate").equals("97.5"),"edit preserves record identity and untouched fields");check(req.get("key").equals("server-secret"),"blank secret retains existing configuration");
 +   form=b.call("module.editor",params("channels","account"));check(field(form,"appid").getString("value").equals("123"),"HTML fragment account editor");
@@ -9218,10 +9317,10 @@ index 0000000..7fb17cf
 +}
 diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
-index 0000000..2cfe53a
+index 0000000..d400329
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,132 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9250,10 +9349,12 @@ index 0000000..2cfe53a
 +   if(r.op==='module.read')data={tables:[{headers:['ID','名称','状态'],rows:[{id:'88',cells:['88','示例通道','开启']}]}]};
 +   if(r.op==='module.read'&&r.params.module==='channel_monitor')data={rows:[{id:'88',name:'示例通道',status:'1',success_rate_5min:'92.5%',success_rate_24hour:'97.1%',total_count_5min:40,success_count_5min:37}],total:1};
 +   if(r.op==='module.editor')data={ticket:'edit88',kind:r.params.editor==='route'?'route':'form',routeOptions:[{value:'',label:'不使用'},{value:'11',label:'微信A'},{value:'22',label:'微信B'}],fields:r.params.editor==='route'?[{name:'list[0][channel]',label:'路由 1 · 通道',type:'select',value:'11',options:[{value:'',label:'不使用'},{value:'11',label:'微信A'},{value:'22',label:'微信B'}]},{name:'list[0][weight]',label:'权重',value:'7',type:'number'}]:[{name:'name',label:'名称',value:'示例通道',type:'text'}]};
++   if(r.op==='module.plugins')data={options:[{value:'wx2',label:'微信插件2'}]};
++   if(r.op==='module.editor'&&r.params.module==='channels')data.fields.push({name:'type',label:'支付方式',type:'select',value:'1',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx1',options:[{value:'wx1',label:'微信插件1'}]});
 +   if(r.op==='form.save')data={code:0,msg:'保存成功'};
 +   if(r.op==='stats')data={count:100,paid:90,rows:[order]};
 +   if(r.op==='settlements.list'||r.op==='domains.list'||r.op==='blacklist.list')data={rows:[],total:0};
-+   setTimeout(()=>window.Futoon.result({id:r.id,ok:true,data}),10);
++   setTimeout(()=>window.Futoon.result({id:r.id,ok:true,data}),r.op==='module.plugins'?200:10);
 +  }};
 + });
 + await page.goto('file://'+assets+'/index.html');
@@ -9324,6 +9425,11 @@ index 0000000..2cfe53a
 + await page.getByText('97.1%',{exact:true}).waitFor();
 + await page.locator('[data-act="record.open"]').click();
 + await page.getByRole('button',{name:'编辑该通道',exact:true}).click();
++ await page.locator('[data-field="type"]').selectOption('2');
++ await page.waitForFunction(()=>Futoon.debugState().form.pluginLoading);
++ assert(await page.getByRole('button',{name:'核对并提交',exact:true}).isDisabled());
++ await page.waitForFunction(()=>!Futoon.debugState().form.pluginLoading);
++ assert.equal(await page.locator('[data-field="plugin"]').inputValue(),'wx2');
 + await page.locator('[data-field="name"]').fill('正在编辑的内容');
 + await page.evaluate(()=>{const input=document.querySelector('[data-field=name]');input.focus();input.setSelectionRange(2,4);Futoon.sent({draft:'SYS20261017001',sent:1,pending:0,failed:0});});
 + assert.equal(await page.locator('[data-field="name"]').inputValue(),'正在编辑的内容');

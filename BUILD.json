@@ -2,16 +2,16 @@
   "version": "0.3 lite",
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "files": 55,
-  "patch_sha256": "48e5a0942921b78c01f439465edd493bfde56444fc8fc341af0e04df30c69daf",
+  "files": 56,
+  "patch_sha256": "5a8c34dd9bf2b8cb9bf3c76ba0a9eb45fd38e3cfa06582b20bff281bce059230",
   "validation": {
-    "core_checks": 130,
-    "panel_ui": "pending GitHub CI",
-    "full_android_build": "pending shared native include fix",
+    "core_checks": 132,
+    "panel_ui": "pending final plugin selection checks",
+    "full_android_build": "pending",
     "removed_component_audit": "required by CI",
     "live_push_delivery": "not tested",
     "real_financial_mutations": "not performed",
-    "java_compilation": "passed before final UI-only refinement"
+    "java_compilation": "pending final JNI compatibility update"
   },
   "github_repository": "susuy0/Yacd-meta"
 }

@@ -1,4 +1,4 @@
 PASS: 45 query and HTTP checks
 PASS: 62 identity/recognition/business checks
-PASS: 23 monitor/editor regressions
-Total: 130
+PASS: 25 monitor/editor/plugin regressions
+Total: 132
