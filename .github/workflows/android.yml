@@ -71,6 +71,18 @@ jobs:
         run: |
           python3 ci/configure.py --root upstream
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" > upstream/local.properties
+      - name: Compile client Java
+        env:
+          SKIP_GOOGLE: ${{ steps.config.outputs.skip_google }}
+        run: |
+          args=(-PvineFutoonDev=true "-PvineAbis=$NATIVE_ABIS")
+          if [[ "$SKIP_GOOGLE" == true ]]; then args+=(-PvineSkipGoogleServices=true); fi
+          if [[ -z "$VINE_API_ID" ]]; then unset VINE_API_ID; fi
+          if [[ -z "$VINE_API_HASH" ]]; then unset VINE_API_HASH; fi
+          gradle -p upstream :TMessagesProj:compileDebugJavaWithJavac \
+            "${args[@]}" --no-daemon --max-workers=2 \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            "-Dorg.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1g" --stacktrace
       - name: Compile native libraries and APK
         env:
           SKIP_GOOGLE: ${{ steps.config.outputs.skip_google }}

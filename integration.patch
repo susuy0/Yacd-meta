@@ -2854,10 +2854,10 @@ index 0000000..fae8d2e
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000..b9a5dcf
+index 0000000..4ad2544
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,446 @@
+@@ -0,0 +1,449 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -3133,7 +3133,10 @@ index 0000000..b9a5dcf
 +            if(op.equals("evidence.remove")){int index=p.getInt("index");if(index>=0&&index<photos.size())photos.remove(index);reply(id,photoList(),null);return;}
 +            if(op.equals("evidence.edit")){
 +                int index=p.getInt("index");if(index<0||index>=photos.size())throw new IOException("凭证不存在");
-+                new FutoonImageEditor(host.getParentActivity(),photos.get(index),file->{photos.set(index,file);reply(rid,photoList(),null);},()->reply(rid,null,new IOException("已取消编辑"))).show();return;
++                new FutoonImageEditor(host.getParentActivity(),photos.get(index),file->{
++                    photos.set(index,file);
++                    try{reply(rid,photoList(),null);}catch(Exception error){reply(rid,null,error);}
++                },()->reply(rid,null,new IOException("已取消编辑"))).show();return;
 +            }
 +            if(op.equals("evidence.send")){
 +                if(photos.isEmpty())throw new IOException("请先选择凭证图片");
