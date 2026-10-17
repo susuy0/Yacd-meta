@@ -8,7 +8,7 @@ on:
       require_push:
         description: Require this app's Firebase push configuration
         type: boolean
-        default: true
+        default: false
       abis:
         description: Native architectures
         type: choice
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      REQUIRE_PUSH: ${{ github.event_name != 'workflow_dispatch' || inputs.require_push }}
+      REQUIRE_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.require_push }}
       VINE_API_ID: ${{ secrets.VINE_API_ID }}
       VINE_API_HASH: ${{ secrets.VINE_API_HASH }}
       GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}

@@ -22,7 +22,9 @@ macOS 可执行 `base64 -i google-services.json | tr -d '\n'` 后将结果填到
 
 Telegram API ID/Hash 均留空时，构建使用源码自带开发参数，不会因此阻止编译。登录可用性仍需实测，发布时应换成本应用的参数。
 
-默认要求本应用的 Firebase 推送配置，缺失时会明确失败，不会悄悄关闭推送。上游 Firebase 占位文件不包含 `com.futoonpay.vinechat.beta`，不能直接用于此包。`require_push=false` 仅供主动选择无 FCM 配置的开发构建，产物名会标明 `development-no-fcm`。配置正确也不等于设备锁屏投递已验证。
+目前按开发测试阶段构建：没有自己的 Firebase 配置时，继续编译，产物名标明 `development-no-fcm`，聊天收发和通知处理代码保留。上游 Firebase 占位文件不包含 `com.futoonpay.vinechat.beta`，不能直接用于此包。
+
+添加本应用 Firebase 配置后，构建会自动使用它。手动运行时勾选 `require_push` 可以强制校验配置，缺失则停止打包。配置正确也不等于设备锁屏投递已验证。
 
 Telegram 正常消息推送保留；暂不做的是富通业务提醒、盯单、独立工作台和先前暂缓的体验扩展。
 
