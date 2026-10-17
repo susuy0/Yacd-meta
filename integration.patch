@@ -1507,7 +1507,7 @@ index 0000000..5f3d940
 +.body>*{flex-shrink:0}
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/main/assets/futoon/panel.js
 new file mode 100644
-index 0000000..18ca61a
+index 0000000..8f96f6f
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
 @@ -0,0 +1,438 @@
@@ -1593,7 +1593,7 @@ index 0000000..18ca61a
 + if(S.ctx.ticket)body+='<div class="grid2"><div class="cell">'+kv('工单号',S.ctx.ticket)+'</div><div class="cell">'+kv('身份标签',S.ctx.role)+'</div></div>';
 + body+='<div class="sec-h"><span>商户操作</span></div><div class="grid3">'+
 + [['资料备注','profile','user'],['业务开关','switches','sliders'],['资金流水','flow','list'],['余额调整','balance','wallet'],['密钥重置','key','lock'],['用户组','group','store']].map(([t,a,i])=>'<button class="tile" data-act="merchant.'+a+'">'+icon(i)+t+'</button>').join('')+'</div>'+
-+ '<div class="toolbar">'+btn('商户订单','merchant.orders')+btn('商户结算','merchant.settlements')+btn('商户统计','merchant.stats')+'</div>'+(!S.ctx.tgid&&Number(S.ctx.dialog)<0?btn(S.local.groups?.[S.ctx.key]?'解除本群商户绑定':'在本群记住此商户','merchant.bindGroup','btn-text'):'')+btn('恢复自动识别','merchant.restore','btn-text');
++ '<div class="toolbar">'+btn('商户订单','merchant.orders')+btn('商户结算','merchant.settlements')+btn('商户统计','merchant.stats')+'</div>'+(!S.ctx.tgid&&Number(S.ctx.dialog)<0?btn(S.local.groups?.[S.ctx.key]?'解除本群商户绑定':'在本群记住此商户','merchant.bindGroup','btn-text'):'')+'<div class="toolbar">'+btn('切换商户','merchant.manual','btn-text')+btn('恢复自动识别','merchant.restore','btn-text')+'</div>';
 + return {body,actions:btn('刷新','merchant.refresh')+btn('查询该商户订单','merchant.orders','btn-primary block')};
 +}
 +function queryBar(){
@@ -9534,10 +9534,10 @@ index 0000000..d401dc2
 +}
 diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
-index 0000000..d400329
+index 0000000..44cf4e6
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,133 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9577,6 +9577,7 @@ index 0000000..d400329
 + await page.goto('file://'+assets+'/index.html');
 + await page.evaluate(()=>Futoon.init({nonce:'test',dark:false,address:'https://example.test/admin/',context:{key:'topic1',label:'客服工单群 › 工单12627',tgid:'5824870757',source:'来自话题末尾 TGID',ticket:'12627',role:'游客'}}));
 + await page.waitForFunction(()=>Futoon.debugState().m?.uid==='20418');
++ assert.equal(await page.getByRole('button',{name:'切换商户',exact:true}).count(),1,'recognized merchants keep the manual switch action');
 + fs.mkdirSync(qa,{recursive:true});
 + await page.screenshot({path:qa+'/merchant-light.png'});
 + await page.getByRole('button',{name:'余额调整',exact:true}).click();
