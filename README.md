@@ -34,7 +34,7 @@ Telegram 正常消息推送保留；暂不做的是富通业务提醒、盯单�
 bash ci/checkout.sh VineChat full
 ```
 
-完整功能与构建说明位于恢复后的 `VineChat/Tools/futoon/README.md`。全部 31 个修改文件由 integration.patch 重现，包含新增源码、界面资源和测试。
+完整功能与构建说明位于恢复后的 `VineChat/Tools/futoon/README.md`。全部 32 个修改文件由 integration.patch 重现，包含新增源码、界面资源和测试。
 
 ## 当前验证结果
 

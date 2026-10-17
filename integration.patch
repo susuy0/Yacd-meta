@@ -3946,3 +3946,30 @@ index 55d530f..c3dd8e5 100644
  IS_PRIVATE=false
  RELEASE_KEY_PASSWORD=android
  RELEASE_KEY_ALIAS=androidkey
+diff --git a/settings.gradle b/settings.gradle
+index 7d4f1ab..54247fd 100644
+--- a/settings.gradle
++++ b/settings.gradle
+@@ -1,9 +1,11 @@
+ include ':TMessagesProj'
+ include ':TMessagesProj_App'
+-include ':TMessagesProj_AppHuawei'
+-include ':TMessagesProj_AppHockeyApp'
+-include ':TMessagesProj_AppStandalone'
+-include ':TMessagesProj_AppTests'
++if (providers.gradleProperty('vineFutoonDev').orNull != 'true') {
++    include ':TMessagesProj_AppHuawei'
++    include ':TMessagesProj_AppHockeyApp'
++    include ':TMessagesProj_AppStandalone'
++    include ':TMessagesProj_AppTests'
++}
+ include ':jlatexmath'
+ project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')
+ 
+@@ -15,4 +17,4 @@ dependencyResolutionManagement {
+ }
+ 
+ gradle.ext.androidxMediaModulePrefix = 'TMessagesProj_Modules:media3:media-'
+-apply from: file("TMessagesProj_Modules/media/core_settings.gradle")
+\ No newline at end of file
++apply from: file("TMessagesProj_Modules/media/core_settings.gradle")
