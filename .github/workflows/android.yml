@@ -1,0 +1,95 @@
+name: VineChat Android
+on:
+  push:
+    branches: [main, master]
+    paths: [integration.patch, "ci/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+    inputs:
+      require_push:
+        description: Require this app's Telegram API and Firebase push configuration
+        type: boolean
+        default: true
+      abis:
+        description: Native architectures
+        type: choice
+        options: [arm64-v8a, "armeabi-v7a,arm64-v8a,x86,x86_64"]
+        default: arm64-v8a
+permissions:
+  contents: read
+concurrency:
+  group: vinechat-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Prepare pinned source for core tests
+        run: bash ci/checkout.sh "$RUNNER_TEMP/vinechat-tests" minimal
+      - name: Test identity, recognition and backend contracts
+        run: bash "$RUNNER_TEMP/vinechat-tests/Tools/futoon/run-tests.sh"
+  android:
+    needs: core-checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      REQUIRE_PUSH: ${{ github.event_name != 'workflow_dispatch' || inputs.require_push }}
+      VINE_API_ID: ${{ secrets.VINE_API_ID }}
+      VINE_API_HASH: ${{ secrets.VINE_API_HASH }}
+      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+      NATIVE_ABIS: ${{ inputs.abis || 'arm64-v8a' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate push configuration
+        run: python3 ci/configure.py --validate-only
+      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+        with:
+          gradle-version: "8.13"
+          cache-provider: basic
+      - name: Prepare pinned Telegram source and submodules
+        run: bash ci/checkout.sh "$GITHUB_WORKSPACE/upstream" full
+      - name: Install Android toolchain
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+      - name: Configure application
+        id: config
+        run: |
+          python3 ci/configure.py --root upstream
+          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > upstream/local.properties
+      - name: Compile native libraries and APK
+        env:
+          SKIP_GOOGLE: ${{ steps.config.outputs.skip_google }}
+        run: |
+          args=(-PvineFutoonDev=true "-PvineAbis=$NATIVE_ABIS")
+          if [[ "$SKIP_GOOGLE" == true ]]; then args+=(-PvineSkipGoogleServices=true); fi
+          if [[ -z "$VINE_API_ID" ]]; then unset VINE_API_ID; fi
+          if [[ -z "$VINE_API_HASH" ]]; then unset VINE_API_HASH; fi
+          gradle -p upstream :TMessagesProj_App:assembleAfatDebug \
+            "${args[@]}" --no-daemon --max-workers=2 \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            "-Dorg.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1g" --stacktrace
+      - name: Collect APK and checksum
+        run: |
+          mkdir -p output
+          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.2-test.apk
+          cd output
+          sha256sum VineChat-Futoon-v0.2-test.apk > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: VineChat-Futoon-v0.2-${{ steps.config.outputs.push_mode }}
+          path: output/*
+          if-no-files-found: error
+          retention-days: 30
+

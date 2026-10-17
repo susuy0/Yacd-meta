@@ -1,0 +1,2 @@
+PASS: 45 Futoon query and HTTP integration checks
+PASS: 62 extended identity, recognition and business contract checks

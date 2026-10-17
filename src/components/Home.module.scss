@@ -1,8 +1,0 @@
-@import '~/styles/utils/custom-media';
-
-.root {
-  padding: 6px 15px;
-  @media (--breakpoint-not-small) {
-    padding: 10px 40px;
-  }
-}
