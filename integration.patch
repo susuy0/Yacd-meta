@@ -1402,10 +1402,10 @@ index 0000000..4428ed6
 +<body data-theme="light"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 21v-9M12 12c0-4 2.6-6.6 7.5-7 .3 4.7-2.5 7.3-7.5 7zM12 16c0-3-2.2-5-6.5-5.3-.2 3.4 2 5.4 6.5 5.3z"/></symbol><symbol id="i-hash" viewBox="0 0 24 24"><path d="M9 4 7 20M17 4l-2 16M4.5 9h15.5M4 15h15.5"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4 3.5 7.5 7 11M3.5 7.5h14M17 13l3.5 3.5L17 20M20.5 16.5h-14"/></symbol><symbol id="i-shrink" viewBox="0 0 24 24"><path d="M20 10h-6V4M4 14h6v6M14 10l7-7M3 21l7-7"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol><symbol id="i-min" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol><symbol id="i-order" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="M4.5 10v10h15V10M3 10l2-6h14l2 6zM9.5 20v-5.5h5V20"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/></symbol><symbol id="i-xc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.5 2"/></symbol><symbol id="i-spin" viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 8 8"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5v-3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol><symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.2c-.4-.8-1.4-1.3-2.5-1.3-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.1 0-2.1-.5-2.5-1.3M12 6v2M12 16v2"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></symbol><symbol id="i-text" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></symbol><symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h12M16 14h2"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></symbol><symbol id="i-route" viewBox="0 0 24 24"><path d="M5 6h6a5 5 0 0 1 5 5v7M13 15l3 3 3-3"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a14 14 0 0 1 4-2.6M21 9a14 14 0 0 0-8.5-3.9M6.5 12.5a9 9 0 0 1 3-1.7M17.5 12.5a9 9 0 0 0-2.6-1.6M9.5 16a4.5 4.5 0 0 1 5 0M12 19.5v.1M4 4l16 16"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-out" viewBox="0 0 24 24"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/></symbol><symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4M4.5 3.5v4h4M4 13a8 8 0 0 0 14.3 4M19.5 20.5v-4h-4"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4M4.5 3.5v4h4M4 13a8 8 0 0 0 14.3 4M19.5 20.5v-4h-4"/></symbol><symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol><symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="18.5" r="1.5" fill="currentColor" stroke="none"/></symbol><symbol id="i-clip" viewBox="0 0 24 24"><path d="m20 11.5-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 3 10.5l6.5 2.5L12 20zM9.5 13 21 3"/></symbol><symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 16.8v.2"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.6-3.6 3.3-5.5 7-5.5s6.4 1.9 7 5.5"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM19 14v.01M14 19.5v.01M19 19h1M17.5 17.5V20"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z"/></symbol><symbol id="i-cursor" viewBox="0 0 24 24"><path d="M9 4h6M12 4v16M9 20h6"/></symbol><symbol id="i-msg" viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></symbol><symbol id="i-lines" viewBox="0 0 24 24"><path d="M4 6h12M4 11.5h16M4 17h9"/></symbol><symbol id="i-jump" viewBox="0 0 24 24"><path d="m9 14-5-5 5-5M4 9h10a6 6 0 0 1 6 6v3"/></symbol><symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></symbol><symbol id="i-crop" viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></symbol><symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 3 6.2M4 6v6h6"/></symbol><symbol id="i-mosaic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16M12 4v16M8 8v.01M16 16v.01"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol></defs></svg><main id="app"></main><div id="toast" role="status"></div><script src="panel.js"></script></body></html>
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.css b/TMessagesProj/src/main/assets/futoon/panel.css
 new file mode 100644
-index 0000000..31b6028
+index 0000000..5f3d940
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.css
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,61 @@
 +html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
 +body{font-family:Roboto,"Noto Sans SC",system-ui,sans-serif!important}
 +.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
@@ -1464,6 +1464,9 @@ index 0000000..31b6028
 +.panel .btn{max-width:100%;overflow-wrap:anywhere}.panel .card,.panel .grid2,.panel .grid3{min-width:0}
 +.body .rf>input,.body .rf>label{flex:1;min-width:0}
 +@media(max-height:480px){.hd-ctx{display:none}.hd{padding-block:4px}.tabbar .tab{min-height:38px;gap:2px}.tabbar .ic{width:18px;height:18px}.actionbar{padding-block:5px}.body{padding:8px;gap:8px}}
++
++/* Never squeeze controls to fit: long pages scroll at their natural height. */
++.body>*{flex-shrink:0}
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/main/assets/futoon/panel.js
 new file mode 100644
 index 0000000..1be6250
@@ -6226,7 +6229,7 @@ index dd1e234..c67d119 100644
  
      public static void setBufferSize(int size) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/NativeInstance.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/NativeInstance.java
-index 6df08c4..bef481f 100644
+index 6df08c4..812d3b5 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/voip/NativeInstance.java
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/voip/NativeInstance.java
 @@ -56,29 +56,11 @@ public class NativeInstance {
@@ -6353,7 +6356,7 @@ index 6df08c4..bef481f 100644
 +    public boolean hasVideoCapturer() { return false; }
 +    public void onRequestTimeComplete(long taskPtr, long time) {  }
 +    public void setConferenceCallId(long call_id) {  }
-+    public static String[] getAllVersions() { return null; }
++    public static String[] getAllVersions() { return new String[0]; }
  }
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPService.java b/TMessagesProj/src/main/java/org/telegram/messenger/voip/VoIPService.java
 index a01edcf..ee4dfd7 100755
@@ -9197,7 +9200,7 @@ index 0000000..7fb17cf
 +}
 diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
-index 0000000..6dc3ed1
+index 0000000..2cfe53a
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
 @@ -0,0 +1,125 @@
@@ -9293,7 +9296,7 @@ index 0000000..6dc3ed1
 + await page.locator('[data-field="list[1][channel]"]').selectOption('22');
 + await page.locator('[data-field="list[1][weight]"]').fill('1');
 + await page.getByRole('button',{name:'核对并提交',exact:true}).click();
-+ await page.waitForFunction(()=>testRequests.some(r=>r.op==='form.save'));
++ await page.waitForFunction(()=>testRequests.some(r=>r.op==='form.save')&&!Futoon.debugState().busy&&!Futoon.debugState().form);
 + const route=await page.evaluate(()=>testRequests.find(r=>r.op==='form.save'));
 + assert.equal(route.params.ticket,'edit88');assert.equal(route.params.values['list[0][weight]'],'3');assert.equal(route.params.values['list[1][channel]'],'22');
 + await page.locator('[data-act="tab.more"]').click();
@@ -9310,8 +9313,8 @@ index 0000000..6dc3ed1
 + // Short screens and keyboard-sized viewports keep navigation and actions on screen.
 + for(const size of [{width:390,height:650},{width:320,height:480},{width:390,height:300}]){
 +  await page.setViewportSize(size);
-+  const layout=await page.evaluate(()=>{const body=document.querySelector('.body'),action=document.querySelector('.actionbar').getBoundingClientRect(),tabs=document.querySelector('.tabbar').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,body:body.clientHeight,scrollable:body.scrollHeight>=body.clientHeight,action:action.top>=0&&action.bottom<=innerHeight+1,tabs:tabs.bottom<=innerHeight+1};});
-+  assert(!layout.overflow&&layout.body>0&&layout.scrollable&&layout.action&&layout.tabs,JSON.stringify({size,layout}));
++  const layout=await page.evaluate(()=>{const body=document.querySelector('.body'),action=document.querySelector('.actionbar').getBoundingClientRect(),tabs=document.querySelector('.tabbar').getBoundingClientRect();return {overflow:document.documentElement.scrollWidth>innerWidth,body:body.clientHeight,natural:[...body.children].every(x=>getComputedStyle(x).flexShrink==='0'),scrollable:body.scrollHeight>=body.clientHeight,action:action.top>=0&&action.bottom<=innerHeight+1,tabs:tabs.bottom<=innerHeight+1};});
++  assert(!layout.overflow&&layout.body>0&&layout.natural&&layout.scrollable&&layout.action&&layout.tabs,JSON.stringify({size,layout}));
 + }
 + await page.setViewportSize({width:390,height:650});
 + await page.locator('[data-act="resize"]').click();
