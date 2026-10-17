@@ -55,12 +55,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - name: Prepare pinned Telegram source and submodules
+        run: bash ci/checkout.sh "$GITHUB_WORKSPACE/upstream" full
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
         with:
           gradle-version: "8.13"
           cache-provider: basic
-      - name: Prepare pinned Telegram source and submodules
-        run: bash ci/checkout.sh "$GITHUB_WORKSPACE/upstream" full
       - name: Install Android toolchain
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
       - name: Configure application
