@@ -8423,7 +8423,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,502 @@
+@@ -0,0 +1,500 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -8729,7 +8729,7 @@ new file mode 100644
 +                chooseGeneration=generation;
 +                Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_ALLOW_MULTIPLE,op.equals("evidence.gallery"));
 +                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-+                host.startActivityForResult(intent,PICK_IMAGES);return;
++                try{host.startActivityForResult(intent,PICK_IMAGES);}catch(Exception error){chooseRequest=null;throw error;}return;
 +            }
 +            if(op.equals("evidence.remove")){int index=p.getInt("index");if(index>=0&&index<photos.size())photos.remove(index);reply(id,photoList(),null);return;}
 +            if(op.equals("evidence.edit")){
@@ -8899,10 +8899,8 @@ new file mode 100644
 +        }catch(Exception e){reply(rid,null,e);}
 +    }
 +    private WebResourceResponse thumbnail(File file)throws IOException{
-+        BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;
-+        BitmapFactory.decodeFile(file.getPath(),options);options.inSampleSize=1;
-+        while(Math.max(options.outWidth,options.outHeight)/options.inSampleSize>640)options.inSampleSize*=2;
-+        options.inJustDecodeBounds=false;Bitmap bitmap=BitmapFactory.decodeFile(file.getPath(),options);
++        // Reuse Telegram's bounded decoder, including EXIF rotation and mirror handling.
++        Bitmap bitmap=ImageLoader.loadBitmap(file.getPath(),null,640,640,true);
 +        if(bitmap==null)throw new IOException("图片预览不可用");
 +        byte[] bytes;
 +        try(ByteArrayOutputStream out=new ByteArrayOutputStream()){bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bytes=out.toByteArray();}
