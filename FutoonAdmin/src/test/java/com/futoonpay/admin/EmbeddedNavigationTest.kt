@@ -83,7 +83,7 @@ class EmbeddedNavigationTest {
         val activity = controller.get()
         assertFalse(activity.isFinishing)
         assertTrue(activity.findViewById<android.view.ViewGroup>(android.R.id.content).childCount > 0)
-        assertTrue(activity.window.attributes.width > 0)
+        assertTrue("Floating width after Compose startup: ${activity.window.attributes.width}", activity.window.attributes.width > 0)
         controller.pause().stop().destroy()
     }
 }

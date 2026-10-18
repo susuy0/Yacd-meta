@@ -129,6 +129,10 @@ open class EmbeddedAdminActivity : ComponentActivity() {
         super.onResume()
         val owner = intent.getStringExtra(FutoonIntegration.EXTRA_SCOPE)
         if (owner != null && FutoonIntegration.store(owner)?.isActive() != true) finish()
+        if (owner != null && !isFinishing) {
+            // setContentView / decor installation can replace the initial floating dimensions.
+            window.decorView.post { if (!isFinishing) configureFloatingWindow() }
+        }
     }
     override fun onDestroy() {
         FutoonIntegration.untrack(this)
