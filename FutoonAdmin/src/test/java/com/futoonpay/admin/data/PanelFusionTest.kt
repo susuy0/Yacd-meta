@@ -47,6 +47,12 @@ class PanelFusionTest {
         val out=engine.execute("form.save",JSONObject().put("ticket",f.getString("ticket")).put("values",values))
         assertEquals(-1,out.getInt("code"));assertEquals(0,writes)
     }
+    @Test fun balanceDirectionsUseOriginalBusinessActionNamesAndPhpCodes() {
+        val codes=mutableListOf<String>()
+        val engine=PanelBusinessEngine(fixtureClient({r->val b=r.body as FormBody;val fields=(0 until b.size).associate {b.name(it) to b.value(it)};codes+=fields.getValue("actdo");200 to """{"code":0}"""}))
+        for(direction in listOf("add","deduct"))assertEquals(0,engine.execute("merchant.balance",JSONObject().put("uid","18").put("direction",direction).put("amount","2.00")).getInt("code"))
+        assertEquals(listOf("0","1"),codes)
+    }
     @Test fun channelPluginChangeSavesPrimaryThenOriginalAccountForm() {
         val writes=mutableListOf<Pair<String,Map<String,String>>>()
         val html="""<html><form action="ajax_pay.php?act=saveChannel" method="post"><input name="id" type="hidden" value="88"><input name="name" value="A"><input name="rate" value="1"><select name="type"><option value="1">微信</option><option value="2">支付宝</option></select><select name="plugin"><option value="old">旧插件</option></select></form></html>"""

@@ -305,6 +305,8 @@ object NativeDocumentParser {
         if (type == "radio") type = "select"
         if (type == "checkbox" && name.endsWith("[]")) type = "multiselect"
         val value = when {
+            // Hidden anti-CSRF fields stay native; the panel never receives hidden fields.
+            type == "hidden" -> element.attr("value")
             sensitive -> ""
             element.tagName() == "textarea" -> element.text()
             element.tagName() == "select" && element.hasAttr("multiple") -> element.select("option[selected]").joinToString(",") { it.attr("value") }

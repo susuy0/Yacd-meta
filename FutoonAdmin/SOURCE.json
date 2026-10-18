@@ -118,7 +118,6 @@
     "src/main/java/com/futoonpay/admin/data/ChannelMonitorPresentation.kt": "1451cd3a93c0bfcea760072143907a587730f9d27ad710c35e3e246407e6769b",
     "src/main/java/com/futoonpay/admin/data/MerchantBalanceAdjustment.kt": "9c1577b9321ccdee2487e203b6f23f07aa2bd85f439e9364816cf670a8e69208",
     "src/main/java/com/futoonpay/admin/data/OrderMerchantPresentation.kt": "dd23b3f953ba4aabe4dcc7e360b4a1aa89dc964b2079f73e6ef861f7b8727489",
-    "src/main/java/com/futoonpay/admin/data/NativeDocumentParser.kt": "2f0c3beba601e325816417244d3a8c2aa38346309877a5499a529ee267125cc4",
     "src/main/java/com/futoonpay/admin/data/FormDraftStore.kt": "41f7bacdc2a3a51f186b953b52a91cd20f477dc12fdd69287225bf411ba11e0c",
     "src/main/java/com/futoonpay/admin/data/BatchOperations.kt": "720d553219437a16d7d6d2e3d639b40f087e711dee46ccd7fc15f30f48833e01",
     "src/main/java/com/futoonpay/admin/data/BackendAddress.kt": "8109d60bfb6919715d84723ace50efb1435aeddd0c7c3d7032bf237b896bb6b6",

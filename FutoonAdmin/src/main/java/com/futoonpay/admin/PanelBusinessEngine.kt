@@ -91,7 +91,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "merchant.profile" -> {val uid=id(p.getString("uid"));registerForm("merchant","uset.php?my=edit&uid=$uid",repository.merchantProfile(uid),uid)}
             "merchant.status" -> {val type=p.getString("type");require(type in setOf("status","pay","settle"));result(repository.setMerchantStatus(id(p.getString("uid")),type,p.getBoolean("enabled")))}
             "merchant.group" -> result(repository.setMerchantGroup(id(p.getString("uid")),p.getString("gid").also {require(it.matches(Regex("[0-9]{1,10}")))},p.optString("endtime")))
-            "merchant.balance" -> {require(p.optString("currency","CNY")=="CNY");val direction=p.getString("direction");require(direction in setOf("add","deduct"));result(repository.rechargeMerchant(id(p.getString("uid")),if(direction=="add")"0" else "1",amount(p.getString("amount"))))}
+            "merchant.balance" -> {require(p.optString("currency","CNY")=="CNY");val direction=p.getString("direction");require(direction in setOf("add","deduct"));result(repository.rechargeMerchant(id(p.getString("uid")),if(direction=="add")"add" else "reduce",amount(p.getString("amount"))))}
             "settlements.list" -> {
                 val r=repository.settlements(page(p),mapOf("uid" to p.optString("uid"),"type" to "0","dstatus" to p.optString("status","-1")))
                 JSONObject().put("total",r.total).put("rows",JSONArray(r.rows.map {s -> JSONObject().put("id",s.id).put("uid",s.merchantId).put("username",s.username).put("type",s.payType).put("account",s.account).put("money",s.amount).put("realmoney",s.actualAmount).put("usdt_count",s.usdtAmount).put("usdt_rate",s.usdtRate).put("addtime",s.createdAt).put("endtime",s.completedAt).put("status",s.status).put("result",s.result).put("currency",s.currency)}))
@@ -155,12 +155,12 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             val rowActions=t.rowActions.getOrNull(i).orEmpty()
             val idIndex=t.headers.indexOfFirst {it.trim().lowercase() in setOf("id","通道id","编号","轮询组id","代理id")}
             val id=cells.getOrNull(idIndex)?.trim().orEmpty().ifBlank {rowActions.firstNotNullOfOrNull {query(it.endpoint,"id").takeIf(String::isNotBlank)}.orEmpty()}
-            JSONObject().put("cells",JSONArray(cells)).put("id",id).put("actions",JSONArray(rowActions.map { actionJson(state,it) }))
+            JSONObject().put("cells",JSONArray(cells.mapIndexed {i,v->nativeVisibleValue(t.headers.getOrNull(i).orEmpty(),v)})).put("id",id).put("actions",JSONArray(rowActions.map { actionJson(state,it) }))
         }))})
         val out=JSONObject().put("tables",tables).put("notices",JSONArray(doc.notices)).put("forms",JSONArray(doc.forms.map {f->registerForm(state.module,state.path,f)})).put("actions",JSONArray(doc.actions.map {actionJson(state,it)}))
         if(state.module=="channel_monitor") {
             val rows=doc.tables.flatMap {it.toChannelMonitorItems()}
-            out.put("rows",JSONArray(rows.map {r -> JSONObject().put("id",r.id).put("name",r.name).put("status",r.status).put("result",r.result).put("lasttime",r.lastChecked).put("success_rate_5min",percent(r.fiveMinuteRate)).put("success_rate_30min",percent(r.thirtyMinuteRate)).put("success_rate_1hour",percent(r.oneHourRate)).put("success_rate_24hour",percent(r.oneDayRate)).put("fields",JSONArray(r.fields.map {JSONObject().put("label",it.first).put("value",it.second)})).put("actions",JSONArray(r.actions.map {actionJson(state,it)}))})).put("total",rows.size)
+            out.put("rows",JSONArray(rows.map {r -> JSONObject().put("id",r.id).put("name",r.name).put("status",r.status).put("result",r.result).put("lasttime",r.lastChecked).put("success_rate_5min",percent(r.fiveMinuteRate)).put("success_rate_30min",percent(r.thirtyMinuteRate)).put("success_rate_1hour",percent(r.oneHourRate)).put("success_rate_24hour",percent(r.oneDayRate)).put("fields",JSONArray(r.fields.map {JSONObject().put("label",it.first).put("value",nativeVisibleValue(it.first,it.second))})).put("actions",JSONArray(r.actions.map {actionJson(state,it)}))})).put("total",rows.size)
         }
         return out
     }

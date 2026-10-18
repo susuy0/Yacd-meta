@@ -8749,7 +8749,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/m
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,496 @@
+@@ -0,0 +1,498 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8922,7 +8922,7 @@ new file mode 100644
 +function backendForm(r){setForm(r.title||'编辑业务配置',r.fields,'backendForm',{ticket:r.ticket,route:r.kind==='route',routeOptions:r.routeOptions,returnModule:S.module},(modules.find(x=>x[0]===S.module)?.[1]||S.module)+' · '+(r.title||'配置'));}
 +async function documentAction(x){
 + if(!x)throw new Error('操作已过期，请刷新');
-+ if(x.editor){const r=await call('module.inspect',{ticket:x.ticket});if(r.navigate){await records('channels',1,'',{type:r.type||'',query:r.id||''});return;}backendForm(r);}
++ if(x.editor){const r=await call('module.inspect',{ticket:x.ticket});if(r.navigate){await records('channels',1,'',{type:r.type||''});if(r.navigate==='channel'){for(const table of S.tables||[]){const row=table.rows.find(x=>String(x.id)===String(r.id));if(row){S.recordHeaders=table.headers;show('record',row);return;}}throw new Error('当前列表未找到通道 '+r.id);}return;}backendForm(r);}
 + else{const r=await call('module.action',{ticket:x.ticket},'确认'+x.label,(modules.find(x=>x[0]===S.module)?.[1]||S.module)+'\n'+x.label+'\n'+(S.record?.cells?.join(' · ')||S.record?.id||''));toast(r.msg||'后台已确认');await records(S.module,S.recordPage||1,S.recordQuery||'');}
 +}
 +function recordsView(){
@@ -8957,6 +8957,7 @@ new file mode 100644
 +  if(module==='channels')body+='<div class="toolbar">'+btn('账户配置','module.account')+btn('通道统计','channel.stats')+btn('近期订单','channel.orders')+btn('测试支付','channel.test')+'</div>';
 +  if(module==='rolls')body+=btn('编辑轮询路由','module.route','btn-primary block');
 + }
++ if(module==='channels'&&r.id&&r.actions?.length)body+='<div class="toolbar">'+btn('通道统计','channel.stats')+btn('近期订单','channel.orders')+btn('测试支付','channel.test')+'</div>';
 + if(r.fields)body+=r.fields.map(x=>kv(x.label,x.value)).join('');
 + if(r.actions?.length)body+='<div class="grid2">'+r.actions.map((x,i)=>btn(esc(x.label),'module.rowAction',x.destructive?'btn-danger':'btn-outline','data-index="'+i+'"')).join('')+'</div>';
 + if(module==='settlements')body+='<div class="grid2">'+btn('修改结算状态','settlement.status')+btn('编辑收款资料','settlement.info')+'</div>';
@@ -9041,6 +9042,7 @@ new file mode 100644
 +}
 +async function records(module,page=1,query='',extra={}){
 + if(S.module!==module){S.section=0;S.moduleTab='all';S.channelType='';}
++ if(extra.type!==undefined)S.channelType=extra.type;
 + S.module=module;S.recordPage=page;S.tables=null;S.records=[];S.recordQuery=query;
 + let r;
 + if(!['settlements','domains','flow'].includes(module))r=await call('module.read',{module,page,query,section:S.section||0,tab:S.moduleTab||'all',type:S.channelType||'',...extra});
@@ -9250,7 +9252,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,219 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9280,6 +9282,8 @@ new file mode 100644
 +   if(r.op==='module.read')data={tables:[{headers:['ID','名称','状态'],rows:[{id:'88',cells:['88','示例通道','开启']}]}]};
 +   if(r.op==='module.read'&&r.params.module==='channel_monitor')data={rows:[{id:'88',name:'示例通道',status:'1',success_rate_5min:'92.5%',success_rate_24hour:'97.1%',total_count_5min:40,success_count_5min:37}],total:1};
 +   if(r.op==='module.editor')data={ticket:'edit88',kind:r.params.editor==='route'?'route':'form',routeOptions:[{value:'',label:'不使用'},{value:'11',label:'微信A'},{value:'22',label:'微信B'}],fields:r.params.editor==='route'?[{name:'list[0][channel]',label:'路由 1 · 通道',type:'select',value:'11',options:[{value:'',label:'不使用'},{value:'11',label:'微信A'},{value:'22',label:'微信B'}]},{name:'list[0][weight]',label:'权重',value:'7',type:'number'}]:[{name:'name',label:'名称',value:'示例通道',type:'text'}]};
++   if(r.op==='module.read'&&r.params.module==='site_settings')data={tables:[],notices:['测试站点设置'],sections:['站点','模板','邮件','定时任务','管理员'].map((title,index)=>({title,index})),section:r.params.section||0,forms:[{ticket:'settings-site',title:'站点配置'}],actions:[]};
++   if(r.op==='module.form')data={ticket:r.params.ticket,title:'站点配置',kind:'form',fields:[{name:'sitename',label:'站点名称',value:'原站点',type:'text'}]};
 +   if(r.op==='module.plugins')data={options:[{value:'wx2',label:'微信插件2'}]};
 +   if(r.op==='module.accountFields')data={fields:[{name:'name',label:'名称',value:'示例通道',type:'text'},{name:'type',label:'支付方式',type:'select',value:'2',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx2',options:[{value:'wx2',label:'微信插件2'}]}]};
 +   if(r.op==='module.editor'&&r.params.module==='channels')data.fields.push({name:'type',label:'支付方式',type:'select',value:'1',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx1',options:[{value:'wx1',label:'微信插件1'}]});
@@ -9453,6 +9457,14 @@ new file mode 100644
 + assert.equal(await page.locator('[data-act="module.open"]').count(),22,'all 20 original entries plus settlement and business data');
 + await page.locator('[data-act="module.open"][data-module="site_settings"]').click();
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='module.read'&&x.params.module==='site_settings'));
++ await page.locator('[data-act="module.section"][data-section="4"]').click();
++ await page.waitForFunction(()=>testRequests.some(x=>x.op==='module.read'&&x.params.section===4));
++ await page.getByRole('button',{name:'站点配置',exact:true}).click();
++ await page.locator('[data-field="sitename"]').fill('融合面板测试');
++ await page.getByRole('button',{name:'核对并提交',exact:true}).click();
++ await page.waitForFunction(()=>testRequests.some(x=>x.op==='form.save'&&x.params.ticket==='settings-site'&&x.params.values.sitename==='融合面板测试')&&!Futoon.debugState().busy);
++ assert.equal(await page.evaluate(()=>Futoon.debugState().page),'records','saved document stays in floating panel');
++ await page.screenshot({path:qa+'/settings-fused.png'});
 + assert.equal(await page.evaluate(()=>testRequests.filter(x=>x.op==='native.open').length),0,'no standalone Activity launch');
 + const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
 + assert(!overflow,'panel should fit viewport');assert.deepEqual(errors,[]);
