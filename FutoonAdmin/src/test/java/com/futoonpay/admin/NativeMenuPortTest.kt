@@ -29,7 +29,8 @@ class NativeMenuPortTest {
             "企业付款" to "transfer","公告管理" to "announcements","支付与结算设置" to "payment_settings",
             "站点与账号设置" to "site_settings","公众号与证书" to "integrations","登录日志" to "login_logs")
         entries.forEach { (label,id) ->
-            compose.onNodeWithText(label).performScrollTo().performClick()
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label))
+            compose.onNodeWithText(label).performClick()
             compose.runOnIdle { assertEquals(label,id,target) }
         }
     }
