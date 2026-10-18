@@ -8,9 +8,57 @@
   "standalone_admin_activities": 0,
   "original_data_files": 24,
   "validation": {
-    "business_adapter": "pending CI",
-    "panel_ui": "pending CI",
-    "full_build": "pending CI",
-    "device_backend": "not tested"
+    "business_adapter": "241 tests passed; 0 failures/errors/skips; Lint 0 errors / 28 warnings",
+    "panel_ui": "32 rendered fixture screenshots; native UI and 12 composer behavior checks plus negative control passed",
+    "full_build": "success: host Java, native libraries, R8, APK and removed-component audit; APK v2 signature, CRC, manifest and native entry points verified",
+    "device_backend": "No device or live account-creation/binding/send test; admin form and binding JS inspected read-only"
+  },
+  "source_commit": "1b26cb0288f13911ad617a6d805fdcae33768ad2",
+  "features": {
+    "native_merchant_opening": true,
+    "settlement_mode": {
+      "D0": {
+        "settle": "1"
+      },
+      "D1": {
+        "settle": "0"
+      },
+      "default": "D1"
+    },
+    "opening_template_in_chat_settings": true,
+    "draft_insertion_only": true,
+    "binding_from_backend": "GET ajax_user.php?act=bind&uid=... -> bind",
+    "creation_auto_retry": false
+  },
+  "ci": {
+    "run_id": 39127323008,
+    "source_commit": "1b26cb0288f13911ad617a6d805fdcae33768ad2",
+    "native_job": 117675080382,
+    "core_job": 117675080353,
+    "android_job": 117675838069,
+    "reports_artifact": 12136717072,
+    "reports_zip_sha256": "1806ffd3f6a7e0efa672bc26a349303f02bc3c48e8e1fe229ff00cdf0f0475a1",
+    "apk_artifact": 12137241594,
+    "apk_zip_sha256": "47904ebc915abff0b7fa3eef7a21576120a48abd0228b83e781a306b73f6f337",
+    "result": "all jobs succeeded"
+  },
+  "apk": {
+    "file": "SMS-Futoon-v0.7.4-arm64.apk",
+    "bytes": 41038194,
+    "sha256": "019bcddcf4f4f4be6a2473d8319d01746750b08227a9a19a5854e16f9da40cb6",
+    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
+    "signature": "v2 verified; unchanged certificate",
+    "versionCode": 71889,
+    "versionName": "13.0.2",
+    "application_label": "短信",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "minSdk": 23,
+    "targetSdk": 36,
+    "native_core_bytes": 9893208,
+    "business_html_assets": 0,
+    "standalone_admin_activities": 0,
+    "push_mode": "development-no-fcm"
   }
 }
