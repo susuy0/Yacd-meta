@@ -1,30 +1,31 @@
-# VineChat FUTOON v0.6.1 Native
+# VineChat FUTOON v0.7.0 Native
 
-FUTOON PAY 管理功能以 Android Jetpack Compose 原生组件嵌入 Telegram 当前聊天上方的悬浮面板。
+Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / 商户 / 结算 / 更多」五个独立 Tab。
 
-## 原生融合
+## 识别、查单与付款凭证
 
-- 业务主界面不再包含 WebView、HTML、JavaScript 或 CSS。
-- 订单、结算和“更多”在同一个原生悬浮容器内切换，不启动独立管理 Activity。
-- “更多”包含当前会话商户、支付通道、支付方式、轮询组、通道监测、中转代理、域名审核、风控、黑名单、资金、商户统计、无流水商户、分账、企业付款、公告、支付/结算设置、站点/账号设置、公众号/证书和登录日志。
-- 直接移植 FUTOON PAY 1.3.4 的 CoreScreens、PaymentAdminScreen、ConfigurationScreens、ModernManage、商户编辑、批量组件及 AppViewModel。原 NativeModuleActivity 和 DomainAuditActivity 拆除 Activity 外壳后，以组件嵌入同一容器。
-- 动态表单、插件账户参数、支付方式绑定、轮询成员及设置子栏目使用原版控件、字段校验和提交流程。后台客户端、Repository、解析、监测和批量执行代码继续复用原版实现。
-- 群话题末尾 TGID 与私聊对方 TGID 可精确查询商户；订单识别使用原 Telegram 聊天上下文。
-- 图片凭证仍由用户选择 Telegram 收件人并进入发送预览，不自动发送。
-- 资金、状态和配置写操作沿用原版表单校验及确认流程。
+复用 v0.5 的 FutoonQuery 和精确查单逻辑；选中文字、整条/多条消息、粘贴文本及截图 OCR/二维码内容均进入完整候选列表。候选支持校对、类型选择、勾选、逐项查询、取消未执行项、失败重试、分组、导出、异常汇总、历史与收藏。
 
-提醒、盯单通知和独立工作台不在本次范围内；Telegram 原有消息通知及推送能力保留。
+用户所说的“补单”是凭证协助流程：聊天「富通查询」→ 选择命中订单 → 选择付款凭证 → 编辑图片/说明 → 用户手选联系人、群或话题 → Telegram 原生预览发送。该流程不会自动调用后台 fillorder 或修改支付状态。
 
-## 构建
+长按聊天图片「作为富通凭证」可继续添加图片。说明模板包含查单、补单、回调异常、退款核实；订单信息、图片、处理状态和草稿均可恢复，发送状态读取 Telegram 的真实确认事件。多条消息分别记录来源；延迟图片、账号/后台变化以及订单切换均有隔离检查。
 
-上游 Telegram 固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`。测试包名为 `com.futoonpay.vinechat.beta`，版本代码 `71839`。
+## 当前商户与完整商户管理
 
-CI 会执行原业务单测、原生面板契约审计、Lint、Java 编译、ARM64 原生库及 APK 构建，并审计已移除的通话、录音和联系人组件。
+话题格式 `工单12627|游客|诺诺永久在𝕏|5824870757` 取末尾 TGID，私聊取对方 TGID；仅接受唯一精确匹配。可手动按 TGID/PID 切换、恢复自动识别，在普通群记住或解绑商户。
 
-2026-10-18 构建通过：[GitHub Actions #39106641972](https://github.com/susuy0/Yacd-meta/actions/runs/39106641972)。APK 对应源码 `ddcc6c7a002534b2b47bafa1a6dfac3a13eb306e`。
+识别页的商户卡片与商户 Tab 均可直接编辑商户，使用原 FUTOON PAY Android 1.3.4 的 MerchantProfileDialog/Screen、AppViewModel 和表单校验/提交流程。也可调整余额、账号/支付/结算状态、用户组、重置密钥，查看订单、结算、流水、统计和域名审核。
 
-176 项业务及原生交互测试全部通过，另通过 45 项查询/HTTP、62 项身份/识别/契约和 45 项窗口布局检查。Lint 为 0 错误；Java、ARM64 原生库、APK 构建及已移除组件审计均通过。APK v2 签名、ZIP 完整性和 SHA-256 已复核，详细结果见 `BUILD.json`。
+商户 Tab 包含当前会话与全部商户两种视图；完整列表保留原版搜索、筛选、分页、详情、多币种余额、流水曲线、多选及批量功能。
 
-此构建为 `development-no-fcm` 测试包，尚未配置 FCM。测试使用固定响应，不连接真实付款后台，不执行真实资金操作或 Telegram 消息发送；真机与实际后台联调尚未完成。
+订单、结算和“更多”的各模块继续直接使用原安卓组件及业务代码。业务界面不使用 WebView/HTML，不启动独立管理 Activity。提醒和独立工作台不在范围内。
+
+## 构建与验证
+
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71849`，ARM64，minSdk 23 / targetSdk 36。
+
+逐项范围见 `NATIVE-PORT-CHECKLIST.md`，最终构建证据见 `BUILD.json`。CI 包含原业务测试、完整原生交互回归、Lint、宿主 Java、原生库、APK 和已移除组件审计。
+
+测试使用固定响应，不连接真实付款后台，不执行真实资金操作或 Telegram 消息发送。真机和实际后台尚未联调；未配置 FCM 时构建为 development-no-fcm 测试包。
 
 GPL-2.0-or-later，随 Telegram 上游许可证。

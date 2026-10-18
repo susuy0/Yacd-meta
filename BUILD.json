@@ -1,66 +1,16 @@
 {
-  "version": "0.6.1 original Android UI embedded panel",
-  "versionCode": 71839,
+  "version": "0.7.0 native recognition and merchant workflows",
+  "versionCode": 71849,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "44c47ec3d5332da32bafc53865cf2021cd451d14c21b05347b7826c43e27272c",
+  "patch_sha256": "00c399d0e2d4c20d0a3d919f57ebeedf27aada7c522f5593654cf2235d0ffe98",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
   "standalone_admin_activities": 0,
   "original_data_files": 23,
   "validation": {
-    "business_adapter": {
-      "tests": 176,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0
-    },
-    "core_query_http_checks": 45,
-    "extended_identity_recognition_contract_checks": 62,
-    "panel_geometry_checks": 45,
-    "startup_and_androidx_callbacks": "passed",
-    "native_panel_contract": "passed",
-    "lint": {
-      "errors": 0,
-      "warnings": 27
-    },
-    "full_build": "passed",
-    "removed_components_permissions_native_exports": "passed",
-    "optimized_original_ui_entrypoints": [
-      "OrdersScreen",
-      "SettlementsScreen",
-      "ModernManage",
-      "BatchDialog",
-      "MerchantProfileScreen",
-      "PaymentAdminRoot",
-      "NativeModuleRoot",
-      "DomainAuditRoot"
-    ],
-    "ui_screenshots": 22,
+    "business_adapter": "pending CI",
+    "panel_ui": "pending CI",
+    "full_build": "pending CI",
     "device_backend": "not tested"
-  },
-  "source_commit": "ddcc6c7a002534b2b47bafa1a6dfac3a13eb306e",
-  "workflow_run": 39106641972,
-  "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39106641972",
-  "built_at": "2026-10-18T07:30:11Z",
-  "push_mode": "development-no-fcm",
-  "apk": {
-    "bytes": 40824216,
-    "sha256": "70ef3a08ddeadb4ced0a3acbf331346227b518962ffa411580b7103281051938",
-    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
-    "v2_signature": "verified",
-    "zip_crc": "verified",
-    "abis": [
-      "arm64-v8a"
-    ],
-    "futoon_assets": 0,
-    "native_core_bytes": 9893208,
-    "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71839,
-    "versionName": "13.0.2",
-    "minSdkVersion": 23,
-    "targetSdkVersion": 36,
-    "filename": "VineChat-Futoon-v0.6.1-native-arm64.apk",
-    "artifact_id": 12129525812,
-    "artifact_zip_sha256": "633849491ba0a5cdc15f89dd9be4a43c63d2c6f6e265b770f1d9063b799689be"
   }
 }

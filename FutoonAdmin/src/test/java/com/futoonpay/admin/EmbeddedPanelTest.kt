@@ -113,7 +113,7 @@ class EmbeddedPanelTest {
     }
 }
 
-internal class FixtureBridge : NativePanelBridge {
+internal open class FixtureBridge : NativePanelBridge {
     val sent = AtomicInteger()
     val closed = AtomicInteger()
     override fun address() = ""
@@ -128,7 +128,12 @@ internal class FixtureBridge : NativePanelBridge {
         override fun clearCookies() {}
     }
     override fun configure(address: String, username: String) { error("No live backend permitted in UI fixtures") }
-    override fun call(operation: String, params: String): String = error("Unexpected bridge operation: $operation")
+    override fun call(operation: String, params: String): String = when(operation) {
+        "local.read", "local.write", "delivery.read" -> "{}"
+        "merchant.lookup" -> "{\"rows\":[]}"
+        "recognize" -> "[]"
+        else -> error("Unexpected bridge operation: $operation")
+    }
     override fun collapse() { closed.incrementAndGet() }
     override fun copy(text: String) {}
     override fun selectEvidence(order: String, caption: String) {}

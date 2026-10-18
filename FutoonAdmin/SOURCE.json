@@ -112,7 +112,6 @@
     "src/main/java/com/futoonpay/admin/data/BackendAddress.kt": "8109d60bfb6919715d84723ace50efb1435aeddd0c7c3d7032bf237b896bb6b6",
     "src/main/java/com/futoonpay/admin/data/RollGroupPresentation.kt": "f646c869c44bd79995ad51798ef1c6fd90f2c599fc6805eeb97d8c869cb0a155",
     "src/main/java/com/futoonpay/admin/data/OrderPageMetrics.kt": "bbafea376500ed23285ce3f5760e8e04d5adea24fa135654cec6ac9978305c4a",
-    "src/main/java/com/futoonpay/admin/data/FutoonRepository.kt": "50d9b5f1a7f9ebf6f73b9aa1f73186dca24f4c953f251f47d3209712493617c9",
     "src/main/java/com/futoonpay/admin/data/FutoonApiClient.kt": "16bc4394ddafda9ba182627c3958f73db5f620fed8bdf4d292cb206f97db6aaa",
     "src/main/java/com/futoonpay/admin/data/AdminEndpointStore.kt": "96330038062c0256c0a3000fc4d1e9d810da70bb7bdbbb7fd71da7a26664e167",
     "src/main/java/com/futoonpay/admin/data/ChannelMonitorPresentation.kt": "1451cd3a93c0bfcea760072143907a587730f9d27ad710c35e3e246407e6769b",
@@ -120,7 +119,6 @@
     "src/main/java/com/futoonpay/admin/data/MonitorWindow.kt": "a28c54603269434a82a9da2902262fb522c54551738e58a7b1540c7c7d4806a6",
     "src/main/java/com/futoonpay/admin/data/ConfigurationFeatures.kt": "c86ab4c60ae25198545dd99b70d5aee4fe862dafd9215b227c22db27e158788f",
     "src/main/java/com/futoonpay/admin/data/RollRoutePresentation.kt": "2779f1479bc5ade5261e80efb6c9086bbc7194c82400d5c2777aff8fd08be464",
-    "src/main/java/com/futoonpay/admin/data/OrderMerchantPresentation.kt": "dd23b3f953ba4aabe4dcc7e360b4a1aa89dc964b2079f73e6ef861f7b8727489",
     "src/main/java/com/futoonpay/admin/data/NativeRowPresentation.kt": "681aa55b1cf3be3d62623f1aaf1eb99663da9847a7a8b3076734c7a1f4fa35ca",
     "src/main/java/com/futoonpay/admin/data/SecureCookieJar.kt": "b75d9b40b20708a1f7eedab49a8a499195350843e8e60735ed554fe6194bffc3",
     "src/main/java/com/futoonpay/admin/data/PrototypeFeatures.kt": "b12884ae0ffbb697a36965681b35672f4653e16a67abd31e02c53b84fbb43ebf",
@@ -140,5 +138,16 @@
     "ui/MerchantProfileScreen.kt": "原版商户资料编辑，详情容器改为面板内",
     "ui/BatchUi.kt": "原版多选、批量确认、执行结果、密钥遮挡组件",
     "ui/theme/FutoonTheme.kt": "原版主题"
+  },
+  "native_workflow_origin": {
+    "version": "VineChat FUTOON v0.5",
+    "source_commit": "c7dedb80a9450cc446b5c75eb81885e5949bbbd5",
+    "ported": [
+      "FutoonQuery candidate extraction and exact-query ordering",
+      "panel.js recognition/batch/history/favorites/drafts/contextLookup/merchant operations",
+      "FutoonPanel OCR, QR, message origins, native media and recipient preview",
+      "FutoonStore encrypted local JSON schema and native proof ownership"
+    ],
+    "implementation": "PanelWorkflows.kt and WorkflowScreens.kt adapt those workflows to Compose; original Android merchant editors, order detail, repository and batch confirmation components are embedded directly."
   }
 }

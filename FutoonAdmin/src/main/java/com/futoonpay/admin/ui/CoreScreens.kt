@@ -443,6 +443,8 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
     summary: OrderSummary?, onDismiss: () -> Unit, onAction: (PendingOrderAction) -> Unit) {
     val context = LocalContext.current
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
+    val workflows = com.futoonpay.admin.LocalPanelWorkflows.current
+    if (detail != null) workflows?.rememberDetail(detail)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             PayTopBar("订单详情", onDismiss)
@@ -477,7 +479,8 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         } }
                         item { DetailBlock("时间 · 通知", listOf("创建时间" to detail.createdAt, "支付时间" to detail.completedAt, "回调通知" to notifyLabel(detail))) }
                         item { DetailBlock("请求信息", listOf("商品信息" to detail.name, "支付账号" to detail.buyer, "网站域名" to detail.domain, "请求 IP" to detail.ip, "附加参数" to detail.parameter)) }
-                        item { OutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("图片凭证") } }
+                        item { OutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("选择付款凭证") } }
+                        item { com.futoonpay.admin.OrderWorkflowTools(detail) }
                         item { Text("其他操作", color = Muted, fontSize = 12.sp) }
                         items(actions.filterNot { it.action == "notify" || it.action == "refund" }) { action ->
                             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(action.label) }
@@ -840,7 +843,8 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
                 return@MerchantActionDialog
             }
             when (action.action) {
-                "togglePay" -> viewModel.setMerchantStatus(action.merchant.uid, "pay", !action.merchant.paymentEnabled)
+                                "toggleAccount" -> viewModel.setMerchantStatus(action.merchant.uid, "status", action.merchant.status != 1)
+                                "togglePay" -> viewModel.setMerchantStatus(action.merchant.uid, "pay", !action.merchant.paymentEnabled)
                 "toggleSettle" -> viewModel.setMerchantStatus(action.merchant.uid, "settle", !action.merchant.settlementEnabled)
                 "group" -> viewModel.setMerchantGroup(action.merchant.uid, gid, endTime)
             }
@@ -896,6 +900,7 @@ private fun MerchantCard(
                     IconButton(onClick = { expanded = true }, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.MoreVert, "商户操作") }
                     DropdownMenu(expanded, { expanded = false }) {
                         listOf(
+                            MerchantAction(if (merchant.status == 1) "封禁账号" else "解封账号", "toggleAccount", merchant),
                             MerchantAction(
                                 when (merchant.paymentStatus) { 2 -> "审核通过"; 1 -> "关闭支付"; else -> "开启支付" },
                                 "togglePay",

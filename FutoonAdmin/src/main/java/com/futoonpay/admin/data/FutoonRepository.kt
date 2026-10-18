@@ -182,19 +182,7 @@ class FutoonRepository(
 
     suspend fun orders(page: Int = 1, filters: Map<String, String> = emptyMap()): PagedResult<OrderSummary> {
         val json = api.page("ajax_order.php?act=orderList", "order.php", page, PAGE_SIZE, filters)
-        return json.mapRows { row ->
-            OrderSummary(
-                tradeNo = row.text("trade_no"), merchantTradeNo = row.text("out_trade_no"),
-                merchantId = row.text("uid"), domain = row.text("domain"), name = row.text("name"),
-                amount = row.text("money"), paidAmount = row.text("realmoney"),
-                merchantIncome = row.text("getmoney"), paymentType = row.text("typeshowname"),
-                channelId = row.text("channel"), plugin = row.text("plugin"),
-                createdAt = row.text("addtime"), completedAt = row.text("endtime"),
-                status = row.intValue("status"), settlementStatus = row.intValue("settle"),
-                currency = row.text("currency").ifBlank { row.text("currency_code") }.ifBlank { "CNY" },
-                merchantName = row.text("username"),
-            )
-        }
+        return json.mapRows { row -> row.toOrderSummary() }
     }
 
     suspend fun orderDetail(tradeNo: String): OrderDetail = api.jsonGet(
@@ -265,21 +253,7 @@ class FutoonRepository(
 
     suspend fun merchants(page: Int = 1, filters: Map<String, String> = emptyMap()): PagedResult<MerchantSummary> {
         val json = api.page("ajax_user.php?act=userList", "ulist.php", page, PAGE_SIZE, filters)
-        return json.mapRows { row ->
-            MerchantSummary(
-                uid = row.text("uid"), username = row.text("username"), groupName = row.text("groupname"),
-                balance = row.text("money"), frozenBalance = row.text("freeze_money"),
-                telegramId = row.text("telegram_id"), website = row.text("url"),
-                createdAt = row.text("addtime"), status = row.intValue("status"),
-                paymentStatus = row.intValue("pay"), settlementStatus = row.intValue("settle"),
-                account = row.text("account"), remark = row.text("username"),
-                inviteCode = row.text("invite_code"), recommenderId = row.text("recommender_id"),
-                recommenderPercent = row.text("recommender_percent"),
-                balances = row.currencyAmounts("balances").ifEmpty {
-                    buildMap { put("CNY", row.text("money")); row.text("usdt_money").takeIf(String::isNotBlank)?.let { put("USDT", it) } }
-                },
-            )
-        }
+        return json.mapRows { row -> row.toMerchantSummary() }
     }
 
     suspend fun merchantFlows(

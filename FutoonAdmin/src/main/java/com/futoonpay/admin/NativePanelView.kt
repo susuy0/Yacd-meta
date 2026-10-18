@@ -16,10 +16,12 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +34,7 @@ import com.futoonpay.admin.data.*
 import com.futoonpay.admin.ui.*
 import com.futoonpay.admin.ui.theme.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.util.UUID
@@ -56,8 +59,8 @@ interface NativePanelBridge {
     fun sendEvidence(order: String, caption: String)
 }
 
-internal data class RecognizedQuery(val value: String, val kind: String, val id: String = UUID.randomUUID().toString())
-internal data class ChatScope(val label: String = "当前会话", val telegramId: String = "", val source: String = "")
+internal data class RecognizedQuery(val value: String, val kind: String, val id: String = UUID.randomUUID().toString(), val source: MessageSource = MessageSource(), val ocr: Boolean = false, val error: String = "", val pointers: Map<String, MessageSource> = emptyMap())
+internal data class ChatScope(val label: String = "当前会话", val telegramId: String = "", val source: String = "", val key: String = "", val dialog: Long = 0, val topic: Long = 0, val ticket: String = "", val role: String = "")
 
 /** Limit cached modules while retaining navigation and editable state across tab switches. */
 internal class PanelRouteModels {
@@ -103,8 +106,16 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
-    fun recognize(text: String?) { navigation.showOrdersForQuery(); query = RecognizedQuery(text.orEmpty(), "AUTO") }
-    fun recognizeCandidate(value: String?, kind: String?) { navigation.showOrdersForQuery(); query = RecognizedQuery(value.orEmpty(), kind.orEmpty()) }
+    fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }
+    fun recognize(text: String?) { recognizeText(text.orEmpty(), chat.dialog, chat.topic, 0, false) }
+    fun recognizeText(text: String, dialog: Long, topic: Long, message: Long, ocr: Boolean) { navigation.showRecognition(); query = RecognizedQuery(text, "AUTO", source = MessageSource(dialog, topic, message), ocr = ocr) }
+    fun recognizeMessageBatch(text: String, sources: String) {
+        val values = JSONObject(sources)
+        navigation.showRecognition()
+        query = RecognizedQuery(text, "AUTO", pointers = values.keys().asSequence().associateWith { MessageSource.from(values.optJSONObject(it)) })
+    }
+    fun recognitionError(message: String) { navigation.showRecognition(); query = RecognizedQuery("", "AUTO", error = message) }
+    fun recognizeCandidate(value: String?, kind: String?) { navigation.showRecognition(); query = RecognizedQuery(value.orEmpty(), kind.orEmpty()) }
     fun updateEvidenceCount(count: Int) { evidenceRevision++ }
     fun adoptEvidence(order: String, caption: String) { navigatorEvidence(order, caption) }
     private fun navigatorEvidence(order: String, caption: String) { navigation.push(PanelRoute("evidence", module = JSONObject(order).put("_caption", caption).toString())) }
@@ -118,18 +129,42 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 @Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int) {
     val auth: AppViewModel = viewModel(key = "session", factory = AppViewModel.Factory(environment))
     val state by auth.state.collectAsState()
+    val sessionKey = state.adminUrl + ":" + state.accountName + ":" + bridge.accountScope()
+    val sessionOwner = remember(sessionKey) { object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() } }
+    DisposableEffect(sessionOwner) { onDispose { sessionOwner.viewModelStore.clear() } }
+    val workflows: PanelWorkflows = viewModel(viewModelStoreOwner = sessionOwner, key = "workflows:$sessionKey", factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = PanelWorkflows(bridge) as T
+    })
+    val contextModel: AppViewModel = viewModel(viewModelStoreOwner = sessionOwner, key = "context-merchant:$sessionKey", factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(environment, loadOnStart = false) as T
+    })
+    val merchantActions = remember(contextModel) { CurrentMerchantActions(contextModel) }
+    val workflowState by workflows.state.collectAsState()
+    val panelLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(workflows, panelLifecycle, state.authStage) {
+        if (state.authStage == AuthStage.AUTHENTICATED) panelLifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) { workflows.refreshDeliveries().join(); kotlinx.coroutines.delay(5000) }
+        }
+    }
+    LaunchedEffect(chat, workflows, state.authStage) { if (state.authStage == AuthStage.AUTHENTICATED) workflows.updateChat(chat) }
+    LaunchedEffect(query?.id, workflows) { query?.let(workflows::receive) }
+    LaunchedEffect(workflowState.merchant) { workflowState.merchant?.let { contextModel.setCurrentMerchant(JSONObject(it).toMerchantSummary()) } }
     val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(workflowState.notice) { workflowState.notice?.let { snackbar.showSnackbar(it); workflows.consumeNotice() } }
+    LaunchedEffect(workflowState.error) { workflowState.error?.let { snackbar.showSnackbar(it) } }
     val models = remember(state.adminUrl, state.accountName, state.authStage) { PanelRouteModels() }
     DisposableEffect(models) { onDispose { models.clear() } }
-    val navigation = remember(navigator, bridge) { object : PanelNavigation by navigator {
+    val navigation = remember(navigator, bridge, workflows) { object : PanelNavigation by navigator {
         override fun evidence(order: OrderSummary) {
-            val data = JSONObject().put("trade_no", order.tradeNo).put("out_trade_no", order.merchantTradeNo).put("uid", order.merchantId).put("money", order.amount).put("currency", order.currency)
-            bridge.selectEvidence(data.toString(), "订单 ${order.tradeNo} 凭证")
-            navigator.push(PanelRoute("evidence", module = data.toString()))
+            val data = workflows.rawOrder(order.tradeNo).put("trade_no", order.tradeNo).put("out_trade_no", order.merchantTradeNo).put("uid", order.merchantId).put("money", order.amount).put("currency", order.currency)
+            if (!data.has("_source")) data.put("_source", MessageSource().json())
+            val caption = evidenceCaption(data)
+            bridge.selectEvidence(data.toString(), caption)
+            navigator.push(PanelRoute("evidence", module = data.put("_caption", caption).toString()))
         }
     } }
     BackHandler { if (!navigator.pop()) bridge.collapse() }
-    CompositionLocalProvider(LocalPanelNavigation provides navigation) {
+    CompositionLocalProvider(LocalPanelNavigation provides navigation, LocalPanelWorkflows provides workflows, LocalWorkflowCopy provides bridge::copy) {
         PanelOverlayHost {
             Column(Modifier.fillMaxSize().background(Mist)) {
                 Row(Modifier.fillMaxWidth().height(36.dp).padding(start = 12.dp, end = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -144,27 +179,30 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                             val holder = rememberSaveableStateHolder()
                             val route = navigator.current
                             holder.SaveableStateProvider(route.id) {
-                                EmbeddedRoute(route, environment, auth, navigator, bridge, chat, query, evidenceRevision, snackbar, models)
+                                EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions)
                             }
                         }
                     }
                 }
                 if (state.authStage == AuthStage.AUTHENTICATED) NavigationBar(containerColor = androidx.compose.ui.graphics.Color.White, modifier = Modifier.height(64.dp), windowInsets = WindowInsets(0, 0, 0, 0)) {
-                    listOf(Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView)).forEach { (id, title, icon) ->
+                    listOf(Triple("recognition", "识别", Icons.Default.DocumentScanner), Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("merchants", "商户", Icons.Default.Storefront), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView)).forEach { (id, title, icon) ->
                         NavigationBarItem(selected = navigator.tab == id, onClick = { navigator.select(id) }, icon = { Icon(icon, title, Modifier.size(20.dp)) }, label = { Text(title, fontSize = 11.sp) }, colors = NavigationBarItemDefaults.colors(selectedIconColor = GreenDark, selectedTextColor = GreenDark, indicatorColor = GreenTint, unselectedIconColor = Muted, unselectedTextColor = Muted))
                     }
                 }
             }
+            if (state.authStage == AuthStage.AUTHENTICATED) CurrentMerchantDialogs(merchantActions, workflows, chat)
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) { SnackbarHost(snackbar) }
         }
     }
 }
 
-@Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, snackbar: SnackbarHostState, models: PanelRouteModels) {
+@Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, evidenceRevision: Int, snackbar: SnackbarHostState, models: PanelRouteModels, workflows: PanelWorkflows, merchantActions: CurrentMerchantActions) {
     val back = { if (!navigator.pop()) bridge.collapse() }
     val authState by auth.state.collectAsState()
     val modelKey = environment.adminBaseUrl + ":" + authState.accountName + ":" + route.id
     val owner = models.owner(modelKey)
+    if (route.kind == "recognition") { RecognitionScreen(workflows, merchantActions, chat, navigator, bridge); return }
+    if (route.kind == "merchant_records") { MerchantRecordsScreen(route, workflows, back); return }
     if (route.kind == "module") {
         if (PaymentAdminCatalog.contains(route.module)) {
             val model: PaymentAdminViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = PaymentAdminViewModel.Factory(environment.repository, PaymentAdminCatalog.find(route.module), route.channelType, route.channelId, FormDraftStore(androidx.compose.ui.platform.LocalContext.current, bridge.accountScope())))
@@ -189,57 +227,53 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     })
     val state by model.state.collectAsState()
     var search by remember { mutableIntStateOf(0) }
+    var merchantTab by rememberSaveable(route.id) { mutableStateOf(if (route.merchantId.isBlank()) "context" else "all") }
     var lookupError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(route.id) {
         when (route.kind) {
-            "orders" -> model.loadOrders(1, OrderSearchFilters(channelId = route.channelId, merchantId = route.merchantId))
+            "orders" -> {
+                model.loadOrders(1, OrderSearchFilters(channelId = route.channelId, merchantId = route.merchantId, column = route.queryColumn.ifBlank { "trade_no" }, value = route.queryValue.ifBlank { route.orderId }))
+                if (route.orderId.isNotBlank()) model.loadOrderDetail(route.orderId)
+            }
             "settlements" -> model.loadSettlements(1, SettlementSearchFilters(merchantId = route.merchantId))
-            "merchants" -> model.loadMerchants(1, MerchantSearchFilters(column = "uid", value = route.merchantId))
+            "merchants" -> if (route.merchantId.isNotBlank()) model.loadMerchants(1, MerchantSearchFilters(column = "uid", value = route.merchantId))
         }
     }
-    LaunchedEffect(query?.id) {
-        if (route.kind != "orders" || query == null || query.value.isBlank() || navigator.lastQueryId == query.id) return@LaunchedEffect
-        navigator.lastQueryId = query.id
-        runCatching { withContext(Dispatchers.IO) { JSONObject(bridge.call("orders.search", JSONObject().put("text", query.value).put("kind", query.kind).toString())) } }.onSuccess { result ->
-            val column = when (result.optString("kind")) { "PID" -> "uid"; "MERCHANT_ORDER" -> "out_trade_no"; "CHANNEL_ORDER" -> "api_trade_no"; else -> "trade_no" }
-            model.loadOrders(1, OrderSearchFilters(column = column, value = result.optString("value", query.value)))
-        }.onFailure { lookupError = it.message ?: "识别查询失败" }
-    }
+    LaunchedEffect(merchantTab) { if (route.kind == "merchants" && route.merchantId.isBlank() && merchantTab == "all") model.loadMerchants(1) }
     state.message?.let { msg -> LaunchedEffect(msg) { snackbar.showSnackbar(msg); model.consumeMessage() } }
     Column(Modifier.fillMaxSize()) {
         val title = when (route.kind) { "orders" -> "订单"; "settlements" -> "结算"; "merchants" -> "商户"; else -> "更多" }
         PayTopBar(title, if (route.kind == "more") null else back) {
-            if (route.kind in setOf("orders", "settlements", "merchants")) IconButton(onClick = { search++ }) { Icon(Icons.Default.Search, "完整搜索") }
+            if (route.kind in setOf("orders", "settlements", "merchants")) IconButton(onClick = { if (route.kind == "merchants") merchantTab = "all"; search++ }) { Icon(Icons.Default.Search, "完整搜索") }
             if (route.kind == "more") IconButton(onClick = { navigator.push(PanelRoute("settings")) }) { Icon(Icons.Default.Settings, "后台设置") }
         }
         lookupError?.let { Text(it, color = Danger, modifier = Modifier.padding(12.dp)) }
         when (route.kind) {
             "orders" -> OrdersScreen(state, model, search, showSearchEntry = false)
             "settlements" -> SettlementsScreen(state, model, search)
-            "merchants" -> MerchantsScreen(state, model, search)
-            else -> Column {
-                if (chat.telegramId.isNotBlank()) TextButton(onClick = { search++ }) { Text("查询当前 TG 商户：${chat.telegramId}") }
-                LaunchedEffect(search, chat.telegramId) {
-                    if (search == 0 || chat.telegramId.isBlank()) return@LaunchedEffect
-                    runCatching { withContext(Dispatchers.IO) { JSONObject(bridge.call("merchant.lookup", JSONObject().put("column", "telegram_id").put("value", chat.telegramId).toString())) } }.onSuccess { result ->
-                        val rows = result.optJSONArray("rows")
-                        if (rows?.length() == 1) navigator.merchants(rows.getJSONObject(0).getString("uid")) else lookupError = "没有找到与此 TGID 精确绑定的商户"
-                    }.onFailure { lookupError = it.message }
-                }
-                ModernManage({ navigator.module(it) }, { navigator.domains() }, { navigator.push(PanelRoute("settings")) })
+            "merchants" -> {
+                if (route.merchantId.isBlank()) PayPills(listOf("context" to "当前会话", "all" to "全部商户"), merchantTab) { merchantTab = it }
+                if (merchantTab == "context") LazyColumn(contentPadding = PaddingValues(12.dp)) { item { CurrentMerchantCard(workflows, merchantActions, chat, navigator) } }
+                else MerchantsScreen(state, model, search)
             }
+            else -> ModernManage({ navigator.module(it) }, { navigator.domains() }, { navigator.push(PanelRoute("settings")) })
         }
     }
     BatchDialog(state.batch, model::startBatch, model::closeBatch, model::retryBatch)
 }
 
 @Composable private fun EvidenceScreen(order: JSONObject, bridge: NativePanelBridge, revision: Int, back: () -> Unit) {
-    var caption by remember { mutableStateOf(order.optString("_caption", "订单 ${order.optString("trade_no")} 凭证")) }
+    val workflows = LocalPanelWorkflows.current
+    val localState = workflows?.state?.collectAsState()?.value
+    var caption by rememberSaveable(order.optString("trade_no")) { mutableStateOf(order.optString("_caption", evidenceCaption(order))) }
+    var status by rememberSaveable(order.optString("trade_no")) { mutableStateOf(workflows?.case(order.optString("trade_no"))?.optString("status", "待处理") ?: "待处理") }
+    LaunchedEffect(caption, status) { kotlinx.coroutines.delay(400); workflows?.saveDraft(order, caption, status) }
     val paths = remember(revision) { bridge.evidencePaths().toList() }
     Column(Modifier.fillMaxSize()) {
-        PayTopBar("图片凭证", back)
-        LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item { Text("订单 ${order.optString("trade_no")}", color = Ink) }
+        PayTopBar("选择付款凭证", back)
+        LazyColumn(Modifier.weight(1f).testTag("receipt-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            item { PayCard { Text("订单 ${order.optString("trade_no")}", color = Ink); Text("商户 PID ${order.optString("uid")} · ${order.optString("currency", "CNY")} ${order.optString("money")}", color = Muted, fontSize = 12.sp) } }
+            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册 / 文件") }; OutlinedButton(onClick = { workflows?.saveDraft(order, caption, status); bridge.pickEvidenceFromChat() }, modifier = Modifier.weight(1f)) { Text("从聊天选图") } } }
             paths.forEachIndexed { index, path -> item(key = path) {
                 val bitmap by produceState<android.graphics.Bitmap?>(null, path, revision) { value = withContext(Dispatchers.IO) { bridge.evidencePreview(path) } }
                 DisposableEffect(bitmap) { onDispose { bitmap?.recycle() } }
@@ -249,7 +283,17 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                 }
             } }
             item { OutlinedTextField(caption, { caption = it.take(1024) }, label = { Text("凭证说明") }, modifier = Modifier.fillMaxWidth()) }
-            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册") }; OutlinedButton(onClick = bridge::pickEvidenceFromChat, modifier = Modifier.weight(1f)) { Text("聊天图片") } } }
+            item { PayPills(listOf("查单", "补单", "回调异常", "退款核实").map { it to it }, "") { caption = evidenceCaption(order, it) } }
+            item { PayPills(listOf("待处理", "已发出", "等待回复", "已解决").map { it to it }, status) { status = it } }
+            item { Text("发送对象由你下一步手动选择，商户 TGID 和支付通道不会决定收件人。", color = Muted, fontSize = 12.sp) }
+            item { TextButton(onClick = { workflows?.saveDraft(order, caption, status) }) { Text("保存凭证草稿及处理状态") } }
+            if (localState != null && workflows != null) {
+                val record = workflows.case(order.optString("trade_no"))
+                if (record.optString("sendState").isNotBlank()) item { Text(record.optString("sendState"), color = GreenDark, fontSize = 12.sp) }
+                if (record.optString("note").isNotBlank()) item { Text("内部备注：${record.optString("note")}", color = Muted, fontSize = 12.sp) }
+                val log = record.optJSONArray("log")
+                if (log != null) items(log.length()) { index -> Text(log.optString(index), color = Muted, fontSize = 11.sp) }
+            }
         }
         Button(enabled = paths.isNotEmpty(), onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().padding(12.dp).height(48.dp)) { Text("选择收件人并预览") }
     }
