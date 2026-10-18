@@ -8511,7 +8511,7 @@ new file mode 100644
 +        fragmentView = tools; return fragmentView;
 +    }
 +    @Override public void onResume() { super.onResume(); if (tools != null) tools.onShown(); }
-+    @Override public boolean onBackPressed() { if (tools != null) { tools.handleBack(); return false; } return true; }
++    @Override public boolean onBackPressed(boolean invoked) { if (tools != null) { if (invoked) tools.handleBack(); return false; } return super.onBackPressed(invoked); }
 +    @Override public void onPause() { if (tools != null) tools.onHidden(); super.onPause(); }
 +    @Override public void onFragmentDestroy() { if (tools != null) { tools.close(); tools = null; } super.onFragmentDestroy(); }
 +}
