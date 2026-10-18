@@ -7,14 +7,13 @@ cp -R "$package_dir/FutoonAdmin" "$test_root/FutoonAdmin"
 cat > "$test_root/settings.gradle.kts" <<'GRADLE'
 pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
 dependencyResolutionManagement { repositories { google(); mavenCentral() } }
-rootProject.name = "FutoonNativePortRegression"
+rootProject.name = "FutoonPanelBusinessFusionRegression"
 include(":FutoonAdmin")
 GRADLE
 cat > "$test_root/build.gradle.kts" <<'GRADLE'
 plugins {
     id("com.android.library") version "8.13.2" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0" apply false
 }
 GRADLE
 printf 'android.useAndroidX=true\n' > "$test_root/gradle.properties"

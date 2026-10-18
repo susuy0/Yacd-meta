@@ -4945,10 +4945,9 @@ index 0000000..59a1ecc
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java
 new file mode 100644
-index 0000000..36203de
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java
-@@ -0,0 +1,455 @@
+@@ -0,0 +1,459 @@
 +package org.telegram.messenger.futoon;
 +
 +import org.json.JSONArray;
@@ -4965,7 +4964,9 @@ index 0000000..36203de
 +
 +/** Typed operations adapted from FutoonPayAdmin 1.3.4, never an arbitrary URL bridge. */
 +public final class FutoonBusinessApi {
++    public interface Engine { boolean supports(String op); JSONObject call(String op,JSONObject params) throws Exception; }
 +    private final FutoonApi api;
++    private final Engine engine;
 +    private final Map<String, Form> forms = new LinkedHashMap<>();
 +    private final Map<String, String> modulePaths = new HashMap<>();
 +    private static final class Form {
@@ -4976,7 +4977,8 @@ index 0000000..36203de
 +        final Set<String> editable = new HashSet<>();
 +        long expires = System.currentTimeMillis() + 600000;
 +    }
-+    public FutoonBusinessApi(FutoonApi api) { this.api = api; }
++    public FutoonBusinessApi(FutoonApi api) { this(api,null); }
++    public FutoonBusinessApi(FutoonApi api,Engine engine) { this.api=api;this.engine=engine; }
 +    public static boolean mutates(String op) {
 +        return Arrays.asList("order.action", "merchant.balance", "merchant.status", "merchant.group",
 +                "merchant.resetKey", "form.save", "domain.action", "blacklist.add", "blacklist.remove",
@@ -5046,6 +5048,7 @@ index 0000000..36203de
 +        throw new IOException("商户查询结果过多，无法确认唯一匹配，请核对后台精确搜索");
 +    }
 +    public JSONObject call(String op, JSONObject p) throws Exception {
++        if(engine!=null && engine.supports(op))return engine.call(op,p);
 +        String uid = p.optString("uid"), record = p.optString("id");
 +        switch (op) {
 +            case "batch.notify": {
@@ -8647,7 +8650,7 @@ index 55d530f..8913fb4 100644
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7180
++APP_VERSION_CODE=7181
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
@@ -8712,71 +8715,41 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNat
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,29 @@
 +package org.telegram.messenger.futoon;
 +
-+import android.app.Activity;
-+import android.content.Intent;
-+import com.futoonpay.admin.FutoonIntegration;
-+import com.futoonpay.admin.MainActivity;
-+import com.futoonpay.admin.NativeModuleActivity;
++import com.futoonpay.admin.PanelBusinessEngine;
++import com.futoonpay.admin.PanelSession;
++import com.futoonpay.admin.data.SessionExpiredException;
 +import org.json.JSONObject;
-+import org.telegram.messenger.ApplicationLoader;
 +import org.telegram.messenger.UserConfig;
 +
-+/** Launches the original Compose admin with the current Telegram account's encrypted session. */
++/** Adapts the original business repository to the existing chat panel; starts no Activities. */
 +public final class FutoonNativeBridge {
 +    private FutoonNativeBridge() {}
-+    public static void install() { FutoonIntegration.setRestorer(FutoonNativeBridge::restore); }
-+    public static FutoonIntegration.Store restore(String owner) {
-+        ApplicationLoader.postInitApplication();
-+        for (int account = 0; account < UserConfig.MAX_ACCOUNT_COUNT; account++) {
-+            UserConfig config = UserConfig.getInstance(account);
-+            if (config.isClientActivated() && Long.toString(config.getClientUserId()).equals(owner)) return new Store(account,0,0,0);
-+        }
-+        return null;
-+    }
-+    public static void open(Activity activity,int account,String tab,String module,long dialog,long topic,long message) {
-+        UserConfig config=UserConfig.getInstance(account);
-+        if (!config.isClientActivated()) return;
-+        String owner=Long.toString(config.getClientUserId());
-+        FutoonIntegration.register(owner,new Store(account,dialog,topic,message));
-+        Intent intent=new Intent(activity,module.isEmpty()?MainActivity.class:NativeModuleActivity.class)
-+            .putExtra(FutoonIntegration.EXTRA_SCOPE,owner);
-+        if(module.isEmpty())intent.putExtra(MainActivity.EXTRA_TAB,tab.equals("more")?"MORE":"ORDERS");
-+        else intent.putExtra(NativeModuleActivity.EXTRA_MODULE,module);
-+        activity.startActivity(intent);
-+    }
-+    private static final class Store implements FutoonIntegration.Store {
-+        private final int account;
-+        private final long owner,dialog,topic,message;
-+        private final FutoonStore store;
-+        Store(int account,long dialog,long topic,long message) {
-+            this.account=account;this.dialog=dialog;this.topic=topic;this.message=message;
-+            owner=UserConfig.getInstance(account).getClientUserId();store=new FutoonStore(account);
-+        }
-+        public boolean isActive(){return UserConfig.getInstance(account).isClientActivated()&&UserConfig.getInstance(account).getClientUserId()==owner;}
-+        private void check()throws java.io.IOException{if(!isActive())throw new java.io.IOException("Telegram 账号已变化，请重新打开富通");}
-+        public String address(){return isActive()?store.address():"";}
-+        public void setAddress(String address){if(isActive())store.address(address);}
-+        public String loadCookies(String address)throws Exception{check();return store.session(address).load();}
-+        public void saveCookies(String address,String cookies)throws Exception{check();store.session(address).save(cookies);}
-+        public void clearCookies(String address)throws Exception{check();store.session(address).clear();}
-+        public void prepareEvidence(String tradeNo,String merchantTradeNo,String merchantId,String amount,String currency) {
-+            if(!isActive())return;
-+            try {
-+                JSONObject order=new JSONObject().put("trade_no",tradeNo).put("out_trade_no",merchantTradeNo).put("uid",merchantId).put("money",amount).put("currency",currency);
-+                FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),"请协助核查此订单\n系统订单号："+tradeNo+"\n商户订单号："+merchantTradeNo,dialog);
-+                FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=message;draft.sourceTopic=topic;
-+            }catch(Exception ignored){}
-+        }
++    public static FutoonBusinessApi.Engine create(int account,FutoonStore store) {
++        final long owner=UserConfig.getInstance(account).getClientUserId();
++        final String address=store.address();
++        PanelBusinessEngine core=new PanelBusinessEngine(new PanelSession(){
++            public boolean isActive(){return UserConfig.getInstance(account).isClientActivated()&&UserConfig.getInstance(account).getClientUserId()==owner;}
++            public String address(){return store.address();}
++            public String loadCookies(){try{return store.session(address).load();}catch(Exception e){throw new IllegalStateException(e);}}
++            public void saveCookies(String json){try{store.session(address).save(json);}catch(Exception e){throw new IllegalStateException(e);}}
++            public void clearCookies(){try{store.session(address).clear();}catch(Exception e){throw new IllegalStateException(e);}}
++        });
++        return new FutoonBusinessApi.Engine(){
++            public boolean supports(String op){return core.supports(op);}
++            public JSONObject call(String op,JSONObject p)throws Exception {
++                try{return core.execute(op,p);}catch(SessionExpiredException e){throw new FutoonApi.SessionExpired();}
++            }
++        };
 +    }
 +}
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/main/assets/futoon/panel.js
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,470 @@
+@@ -0,0 +1,487 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8929,7 +8902,7 @@ new file mode 100644
 + }
 + return {body,actions:btn('导出清单','batch.export')+btn('生成异常汇总','batch.summary','btn-primary block')};
 +}
-+const modules=[['channels','通道','通道详情、配置、测试支付','plug'],['payment_types','支付方式','费率与通道绑定','sliders'],['rolls','通道轮询','路由规则与权重','route'],['channel_monitor','通道监测','成功率与近期订单','chart'],['proxies','中转代理','代理列表与关联','globe'],['stats','业务数据','订单、金额和支付表现','chart'],['settlements','结算','列表、状态和收款资料','wallet'],['domains','域名审核','通过、拒绝和审核记录','globe'],['blacklist','黑名单','查询、添加和删除','ban'],['login','后台连接','后台地址、验证码和登录状态','lock']];
++const modules=[['channels','支付通道','通道配置、账户与测试支付','plug'],['payment_types','支付方式','费率与通道绑定','sliders'],['rolls','轮询组','规则与通道路由权重','route'],['channel_monitor','通道监测','成功率、检测与恢复操作','chart'],['proxies','中转代理','代理配置与关联','globe'],['domains','域名审核','添加、通过与拒绝审核','globe'],['login','设置','后台连接与当前会话','lock'],['funds','资金明细','余额变化与交易流水','wallet'],['risk','风控记录','风险命中与请求记录','ban'],['blacklist','支付黑名单','查询、添加与移除规则','ban'],['merchant_stats','商户统计','按日期查看交易表现','chart'],['inactive','5日无流水商户','连续5日无交易商户','store'],['profit_receivers','分账接收方','接收方账户与关系','user'],['profit_orders','分账记录','分账订单与处理结果','list'],['transfer','企业付款','付款任务与收款方','wallet'],['announcements','公告管理','站内公告与启停','list'],['payment_settings','支付与结算设置','支付、结算、预付款与企业付款','sliders'],['site_settings','站点与账号设置','站点、模板、邮件、任务与管理员','sliders'],['integrations','公众号与证书','微信公众号、OAuth、证书与客服','globe'],['login_logs','登录日志','管理员与商户登录记录','list'],['settlements','结算','结算列表与收款资料','wallet'],['stats','业务数据','订单数量与支付表现','chart']];
 +function moreView(){return {body:modules.map(([id,t,sub,i])=>'<button class="linkrow" data-act="module.open" data-module="'+id+'">'+icon(i)+'<span class="text"><b>'+t+'</b><small>'+sub+'</small></span>'+icon('next','ic-sm')+'</button>').join('')};}
 +function loginView(){return {body:'<h2 class="title">连接富通后台</h2>'+field('address','完整 HTTPS 后台目录',S.cfg.address||'','url','例如 https://pay.example.com/自定义后台目录/')+
 + field('username','后台账号',S.cfg.username||'')+field('password','后台密码',S.login?.password||'','password')+
@@ -8939,11 +8912,25 @@ new file mode 100644
 + actions:btn('登录富通','login.submit','btn-primary block')};}
 +const names={uid:'商户 PID',id:'记录 ID',username:'商户名称',account:'账号',url:'网站',email:'邮箱',groupname:'用户组',money:'金额',realmoney:'实付',status:'状态',type:'类型',content:'内容',addtime:'创建时间',endtime:'完成时间',remark:'备注',name:'名称',rate:'费率',channel:'通道',api_trade_no:'通道订单号',out_trade_no:'商户订单号',trade_no:'系统订单号',pay_account:'收款账号',pay_name:'收款姓名',pay_type:'结算方式',result:'处理结果',freeze_money:'冻结余额',telegram_id:'TGID',oldmoney:'变更前',newmoney:'变更后'};
 +function recordFields(o){return Object.entries(o||{}).filter(([k,v])=>v!==null&&typeof v!=='object'&&!/password|passwd|secret|token|private|key|paypwd/i.test(k)).map(([k,v])=>kv(names[k]||k,v,/id|no$/.test(k))).join('');}
++function documentTools(){
++ let out=(S.docNotices||[]).map(x=>note(x)).join('');
++ if((S.sections||[]).length>1)out+='<div class="tags">'+S.sections.map(x=>'<button class="chip '+(S.section===x.index?'on':'')+'" data-act="module.section" data-section="'+x.index+'">'+esc(x.title)+'</button>').join('')+'</div>';
++ out+='<div class="toolbar">'+(S.docActions||[]).map((x,i)=>btn(esc(x.label),'module.documentAction',x.destructive?'btn-danger':'btn-outline','data-index="'+i+'"')).join('')+(S.docForms||[]).map((x,i)=>btn(esc(x.title||'配置表单'),'module.documentForm','btn-outline','data-index="'+i+'"')).join('')+'</div>';
++ return out;
++}
++function backendForm(r){setForm(r.title||'编辑业务配置',r.fields,'backendForm',{ticket:r.ticket,route:r.kind==='route',routeOptions:r.routeOptions,returnModule:S.module},(modules.find(x=>x[0]===S.module)?.[1]||S.module)+' · '+(r.title||'配置'));}
++async function documentAction(x){
++ if(!x)throw new Error('操作已过期，请刷新');
++ if(x.editor){const r=await call('module.inspect',{ticket:x.ticket});if(r.navigate){await records('channels',1,'',{type:r.type||'',query:r.id||''});return;}backendForm(r);}
++ else{const r=await call('module.action',{ticket:x.ticket},'确认'+x.label,(modules.find(x=>x[0]===S.module)?.[1]||S.module)+'\n'+x.label+'\n'+(S.record?.cells?.join(' · ')||S.record?.id||''));toast(r.msg||'后台已确认');await records(S.module,S.recordPage||1,S.recordQuery||'');}
++}
 +function recordsView(){
 + if(S.module==='channel_monitor')return monitorView();
 + const title=modules.find(x=>x[0]===S.module)?.[1]||'资金流水';
-+ let body='<div class="rf between"><span class="title">'+esc(title)+'</span>'+btn('刷新','records.reload','btn-text sm')+'</div>'+
++ let body=documentTools()+'<div class="rf between"><span class="title">'+esc(title)+'</span>'+btn('刷新','records.reload','btn-text sm')+'</div>'+
 + '<div class="rf g8"><input id="recordQuery" placeholder="筛选当前页 / 输入通道 ID" value="'+esc(S.recordQuery||'')+'">'+btn('筛选','records.search','btn-outline')+'</div>';
++ if(['channels','payment_types','rolls','proxies'].includes(S.module))body+=btn('新增配置','module.add','btn-primary block');
++ if(['channels','rolls'].includes(S.module))body+='<div class="tags">'+(S.module==='channels'?[['all','全部'],['assigned','运行中'],['disabled','已停用'],['unassigned','待确认']]:[['all','全部'],['assigned','运行中'],['disabled','已停用'],['unassigned','待确认']]).map(([key,label])=>'<button class="chip '+((S.moduleTab||'all')===key?'on':'')+'" data-act="module.tab" data-tab="'+key+'">'+label+'</button>').join('')+'</div>';
 + if(S.module==='blacklist')body+=btn('添加黑名单','blacklist.add','btn-primary block');
 + if(S.module==='domains')body+=btn('添加域名','domain.add','btn-primary block');
 + if(S.tables){
@@ -8956,7 +8943,7 @@ new file mode 100644
 +function monitorMetric(row,prefixes,key){for(const prefix of prefixes){const value=row[prefix+key];if(value!==undefined&&value!==null&&value!=='')return value;}return '未提供';}
 +function monitorView(){
 + const window=S.monitorWindow||'5min';
-+ let body='<div class="rf between"><b class="title">通道监测</b>'+btn('刷新','records.reload','btn-text sm')+'</div><div class="rf g8"><input id="recordQuery" inputmode="numeric" placeholder="通道 ID，可留空" value="'+esc(S.recordQuery||'')+'">'+btn('查询','records.search')+'</div><div class="tags">'+monitorWindows.map(([key,label])=>'<button class="chip '+(window===key?'on':'')+'" data-act="monitor.window" data-window="'+key+'">'+label+'</button>').join('')+'</div>';
++ let body=documentTools()+'<div class="rf between"><b class="title">通道监测</b>'+btn('刷新','records.reload','btn-text sm')+'</div><div class="rf g8"><input id="recordQuery" inputmode="numeric" placeholder="通道 ID，可留空" value="'+esc(S.recordQuery||'')+'">'+btn('查询','records.search')+'</div><div class="tags">'+monitorWindows.map(([key,label])=>'<button class="chip '+(window===key?'on':'')+'" data-act="monitor.window" data-window="'+key+'">'+label+'</button>').join('')+'</div>';
 + body+=S.records.length?S.records.map((r,i)=>'<button class="order-card" data-act="record.open" data-index="'+i+'"><div class="rf between"><b>'+esc(r.name||r.channel_name||'通道 '+r.id)+'</b>'+badge(String(r.status)==='1'?'启用':String(r.status)==='0'?'停用':r.status||'未提供状态')+'</div><div class="grid2">'+kv('成功率',monitorMetric(r,['success_rate_','rate_'],window))+kv('成功 / 总数',monitorMetric(r,['success_count_','successful_'],window)+' / '+monitorMetric(r,['total_count_','total_'],window))+'</div><div class="t-cap c2">ID '+esc(r.id||'未提供')+' · '+esc(r.typename||r.plugin||'')+'</div>'+(r.lasttime?'<div class="t-cap c2">最近检测 '+esc(r.lasttime)+'</div>':'')+'</button>').join(''):'<div class="empty">当前筛选下没有通道监测数据</div>';
 + body+='<div class="t-cap c2">第 '+(S.recordPage||1)+' 页 · 共 '+(S.recordTotal??S.records.length)+' 条；缺失指标显示“未提供”。</div>';
 + return {body,actions:btn('上一页','records.prev')+btn('下一页','records.next')};
@@ -8964,11 +8951,13 @@ new file mode 100644
 +function moduleDetailView(){
 + const r=S.record||{},module=S.module;
 + let body='<div class="card col g8">'+(r.cells?r.cells.map((v,i)=>kv(S.recordHeaders?.[i]||'字段 '+(i+1),v)).join(''):recordFields(r))+'</div>';
-+ if(['channels','payment_types','rolls'].includes(module)&&r.id){
++ if(!r.actions?.length&&['channels','payment_types','rolls'].includes(module)&&r.id){
 +  body+='<div class="grid2">'+btn('编辑配置','module.edit')+btn('开启','module.enable')+btn('停用','module.disable')+btn('删除','module.delete','btn-danger')+'</div>';
 +  if(module==='channels')body+='<div class="toolbar">'+btn('账户配置','module.account')+btn('通道统计','channel.stats')+btn('近期订单','channel.orders')+btn('测试支付','channel.test')+'</div>';
 +  if(module==='rolls')body+=btn('编辑轮询路由','module.route','btn-primary block');
 + }
++ if(r.fields)body+=r.fields.map(x=>kv(x.label,x.value)).join('');
++ if(r.actions?.length)body+='<div class="grid2">'+r.actions.map((x,i)=>btn(esc(x.label),'module.rowAction',x.destructive?'btn-danger':'btn-outline','data-index="'+i+'"')).join('')+'</div>';
 + if(module==='settlements')body+='<div class="grid2">'+btn('修改结算状态','settlement.status')+btn('编辑收款资料','settlement.info')+'</div>';
 + if(module==='domains')body+='<div class="grid2">'+btn('审核通过','domain.approve','btn-primary')+btn('拒绝审核','domain.reject','btn-danger')+btn('删除域名','domain.delete','btn-danger')+'</div>';
 + if(module==='channel_monitor'&&r.id)body+=btn('编辑该通道','monitor.edit','btn-primary block')+btn('该通道近期订单','channel.orders','btn-outline block');
@@ -8980,7 +8969,7 @@ new file mode 100644
 + let body='<div class="title">'+esc(f.title)+'</div>'+ (f.summary?note(f.summary):'')+(f.pluginLoading?note('正在加载可用支付插件…'):'')+(f.pluginError?note(f.pluginError,'err'):'')+
 + f.fields.map((x,i)=>{
 +  const value=f.values[x.name]??x.value??'',id='form-'+i;
-+  if(x.type==='select'||x.type==='multiselect')return '<label>'+esc(x.label||names[x.name]||x.name)+'<select id="'+id+'" '+(x.type==='multiselect'?'multiple size="5"':'')+' data-field="'+esc(x.name)+'" '+(x.readOnly?'disabled':'')+'>'+x.options.map(o=>'<option value="'+esc(o.value)+'" '+((x.type==='multiselect'?String(value).split(',').includes(String(o.value)):String(o.value)===String(value))?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label>';
++  if(x.type==='select'||x.type==='multiselect')return '<label>'+esc(x.label||names[x.name]||x.name)+'<select id="'+id+'" '+(x.type==='multiselect'?'multiple size="5"':'')+' data-field="'+esc(x.name)+'" '+(x.readOnly?'disabled':'')+'>'+(x.options||[]).map(o=>'<option value="'+esc(o.value)+'" '+((x.type==='multiselect'?String(value).split(',').includes(String(o.value)):String(o.value)===String(value))?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label>';
 +  if(x.type==='checkbox')return '<label class="selectline"><input id="'+id+'" type="checkbox" data-field="'+esc(x.name)+'" '+(String(value)==='1'?'checked':'')+' '+(x.readOnly?'disabled':'')+'><span>'+esc(x.label||x.name)+'</span></label>';
 +  const tag=x.type==='textarea'?'textarea':'input';
 +  return '<label>'+esc(x.label||names[x.name]||x.name)+(tag==='textarea'?'<textarea id="'+id+'" data-field="'+esc(x.name)+'">'+esc(value)+'</textarea>':'<input id="'+id+'" data-field="'+esc(x.name)+'" type="'+(x.type==='password'?'password':'text')+'" '+(f.kind==='manual'?'inputmode="numeric" placeholder="输入完整 TGID 或商户 PID"':x.type==='number'?'inputmode="numeric"':'')+' value="'+esc(value)+'" '+(x.readOnly?'readonly':'')+'>')+'</label>';
@@ -9049,12 +9038,13 @@ new file mode 100644
 + const r=await call('order.action',{id:o.trade_no,action,...extra},'确认'+actionName,summary);
 + toast(r.msg||'后台已确认');const c=S.local.cases[o.trade_no]||{log:[]};c.log=[new Date().toLocaleString()+' · '+action+' · '+(r.msg||'后台已确认'),...(c.log||[])].slice(0,40);S.local.cases[o.trade_no]=c;save();return r;
 +}
-+async function records(module,page=1,query=''){
++async function records(module,page=1,query='',extra={}){
++ if(S.module!==module){S.section=0;S.moduleTab='all';S.channelType='';}
 + S.module=module;S.recordPage=page;S.tables=null;S.records=[];S.recordQuery=query;
 + let r;
-+ if(['channels','payment_types','rolls','proxies','channel_monitor'].includes(module))r=await call('module.read',{module,page,query});
++ if(!['settlements','domains','flow'].includes(module))r=await call('module.read',{module,page,query,section:S.section||0,tab:S.moduleTab||'all',type:S.channelType||'',...extra});
 + else r=await call(({settlements:'settlements.list',domains:'domains.list',blacklist:'blacklist.list',flow:'merchant.flow'})[module],{page,uid:module==='flow'?S.m?.uid||'':S.recordsUid||'',content:query});
-+ S.tables=r.tables||null;S.records=r.rows||[];S.recordTotal=r.total;
++ S.tables=r.tables||null;S.records=r.rows||[];S.recordTotal=r.total;S.docForms=r.forms||[];S.docActions=r.actions||[];S.docNotices=r.notices||[];S.sections=r.sections||[];S.section=r.section||0;
 + if(query&&module!=='channel_monitor'&&!r.tables)S.records=S.records.filter(x=>JSON.stringify(x).includes(query));
 + S.page='records';
 +}
@@ -9078,7 +9068,7 @@ new file mode 100644
 +  if(v.reason.trim().length<2)throw new Error('请填写余额调整原因');
 +  const preview=await call('balance.preview',{before:p.before,amount:v.amount,direction:v.direction});
 +  r=await call('merchant.balance',{uid:p.uid,currency:v.currency,direction:v.direction,amount:v.amount},'确认余额调整','商户 PID '+p.uid+'\n币种 '+v.currency+'\n'+(v.direction==='add'?'增加':'扣除')+' '+preview.amount+'\n变更前 '+preview.before+'\n预计变更后 '+preview.after+'\n原因 '+v.reason);
-+ }else if(form.kind==='backendForm')r=await call('form.save',{ticket:p.ticket,values:v},'保存业务配置',form.summary);
++ }else if(form.kind==='backendForm')r=await call('form.save',{ticket:p.ticket,values:v},'保存业务配置',form.summary+'\n'+Object.entries(v).filter(([k])=>!/pwd|password|secret|token|key/i.test(k)).map(([k,x])=>k+'：'+x).join('\n'));
 + else if(form.kind==='refund'||form.kind==='apiRefund')r=await orderAction(form.kind==='refund'?'refund':'apirefund',{money:v.money,remark:v.remark,paypwd:v.paypwd||''},form.order);
 + else if(form.kind==='orderStatus')r=await orderAction('setStatus',{status:Number(v.status)},form.order);
 + else if(form.kind==='notes'){
@@ -9089,15 +9079,14 @@ new file mode 100644
 +  if(form.kind==='settlementStatus')v.status=Number(v.status);
 +  r=await call(ops[form.kind],{...p,...v},form.title,form.summary+'\n'+Object.entries(v).filter(([k])=>!/pwd|password/.test(k)).map(([k,x])=>(names[k]||k)+'：'+x).join('\n'));
 + }
-+ form.dirty=false;if(r?.partial){S.error=r.msg;return;}toast(r?.msg||'已完成');S.form=null;S.page=S.order&&['refund','apiRefund','orderStatus','notes'].includes(form.kind)?'detail':'';
++ form.dirty=false;if(r?.partial){S.error=r.msg;return;}toast(r?.msg||'已完成');if(form.kind==='backendForm'&&p.returnModule){S.form=null;await records(p.returnModule,S.recordPage||1,S.recordQuery||'');return;}S.form=null;S.page=S.order&&['refund','apiRefund','orderStatus','notes'].includes(form.kind)?'detail':'';
 + if(['balance','group','switches'].includes(form.kind))await lookup('uid',p.uid,true);
 +}
 +async function action(a,el){
 + if(a==='monitor.window'){S.monitorWindow=el.dataset.window;return;}
 + if(a==='monitor.edit'){const r=await call('module.editor',{module:'channels',id:String(S.record.id),editor:'detail'});setForm('编辑通道配置',r.fields,'backendForm',{ticket:r.ticket},'通道 ID '+S.record.id);return;}
 + if(a==='route.add'){const form=S.form;if(!form?.params?.route)return;const i=form.fields.filter(x=>x.name.endsWith('[channel]')).length;if(i>=100)throw new Error('最多 100 条路由');for(const x of [f('list['+i+'][channel]','路由 '+(i+1)+' · 通道','','select',form.params.routeOptions||[]),f('list['+i+'][weight]','权重','1','number')]){form.fields.push(x);form.values[x.name]=x.value;}form.dirty=true;return;}
-+ if(S.cfg.nativeAdmin&&['tab.orders','tab.more'].includes(a)){if(hasUnsavedChanges()){toast('请先保存或取消当前编辑');return;}await call('native.open',{tab:a.slice(4)});return;}
-+ if(a.startsWith('tab.')){if(hasUnsavedChanges()){S.nextTab=a.slice(4);S.modal='discard';render();return;}hideToast();S.tab=a.slice(4);S.page='';S.form=null;S.stack=[];S.error='';render();return;}
++ if(a.startsWith('tab.')){if(hasUnsavedChanges()){S.nextTab=a.slice(4);S.modal='discard';render();return;}hideToast();S.tab=a.slice(4);S.page='';S.form=null;S.stack=[];S.error='';render();if(S.tab==='orders'&&S.active&&!S.orders.length)await search(1,true);return;}
 + if(a==='collapse'){draft();S.visible=false;await call('ui.collapse');return;}
 + if(a==='resize'){S.large=!S.large;await call('ui.resize',{large:S.large});render();return;}
 + if(a==='back'){back();return;}
@@ -9162,7 +9151,13 @@ new file mode 100644
 + if(a==='batch.export'){await call('export',{name:'futoon-batch.csv',text:csv(S.batch.flatMap(x=>x.orders||[]))});return;}
 + if(a==='batch.summary'){setForm('异常订单汇总',[f('text','可编辑汇总',S.batch.filter(x=>x.state==='failed'||x.orders?.some(o=>String(o.status)!=='1')).map(x=>x.value+'：'+(x.error||x.orders.map(o=>status(o)+' '+amount(o)).join('；'))).join('\n'),'textarea')],'summary');return;}
 + if(a==='batch.notify'){const list=[...new Set(S.batch.filter(x=>x.selected!==false).flatMap(x=>(x.orders||[]).map(o=>o.trade_no)))];if(!list.length)throw new Error('请先查询并选择订单');const r=await call('batch.notify',{orders:list},'批量补发商户通知','以下 '+list.length+' 笔订单将补发通知：\n'+list.join('\n'));S.form=null;setForm('批量通知结果',[f('text','逐项结果',JSON.stringify(r,null,2),'textarea')],'summary');return;}
-+ if(a==='module.open'){const module=el.dataset.module;show(module==='login'?'login':module==='stats'?'stats':'records');if(module==='stats')S.stats=await call('stats');else if(module!=='login'){S.recordsUid='';await records(module);}return;}
++ if(a==='module.section'){S.section=Number(el.dataset.section);await records(S.module,1,S.recordQuery||'');return;}
++ if(a==='module.tab'){S.moduleTab=el.dataset.tab;await records(S.module,1,S.recordQuery||'');return;}
++ if(a==='module.documentForm'){const r=await call('module.form',{ticket:S.docForms[Number(el.dataset.index)].ticket});backendForm(r);return;}
++ if(a==='module.documentAction'){await documentAction(S.docActions[Number(el.dataset.index)]);return;}
++ if(a==='module.rowAction'){await documentAction(S.record.actions[Number(el.dataset.index)]);return;}
++ if(a==='module.add'){backendForm(await call('module.editor',{module:S.module,editor:'add'}));return;}
++ if(a==='module.open'){const module=el.dataset.module;show(module==='login'?'login':module==='stats'?'stats':'records');if(module==='stats')S.stats=await call('stats');else if(module!=='login'){S.recordsUid='';S.section=0;S.moduleTab='all';await records(module);}return;}
 + if(a==='records.reload'||a==='records.search'||a==='records.prev'||a==='records.next'){await records(S.module,a==='records.prev'?Math.max(1,S.recordPage-1):a==='records.next'?S.recordPage+1:1,a==='records.search'?read('recordQuery'):S.recordQuery);return;}
 + if(a==='record.open'){show('record',S.records[Number(el.dataset.index)]);return;}
 + if(a==='module.row'){const t=S.tables[Number(el.dataset.table)];S.recordHeaders=t.headers;show('record',t.rows[Number(el.dataset.index)]);return;}
@@ -9227,13 +9222,8 @@ new file mode 100644
 +  catch(e){S.page='login';}
 +  S.initialized=true;render();
 + },
-+ async nativeReturned(config){
-+  const changed=S.backendAddress!==config.address;S.cfg={...S.cfg,...config};S.m=null;S.lookup='none';
-+  if(changed){S.rev++;S.backendAddress=config.address;S.m=null;S.order=null;S.orders=[];S.photos=[];S.local=emptyLocal();S.page='';S.form=null;S.stack=[];}
-+  try{const r=await call('session.state');S.active=!!r.active;if(S.active){S.page='';if(changed)S.local={...emptyLocal(),...await call('local.read')};}else S.page='login';}catch(e){S.active=false;S.page='login';}render();
-+ },
 + context:setContext,
-+ result(r){const p=S.promises.get(String(r.id));if(!p)return;S.promises.delete(String(r.id));if(r.ok)p.resolve(r.data);else{const e=new Error(r.error);e.expired=r.expired;p.reject(e);}},
++ result(r){const p=S.promises.get(String(r.id));if(!p)return;S.promises.delete(String(r.id));if(r.ok&&!(r.data&&typeof r.data==='object'&&'code' in r.data&&![0,200].includes(Number(r.data.code))&&!r.data.partial))p.resolve(r.data);else{const e=new Error(r.error||r.data?.msg||'后台拒绝了操作');e.expired=r.expired;p.reject(e);}},
 + recognized(r){S.sourceText=r.text;S.sourceMessage=r.message;S.sourceContext={...S.ctx};S.candidates=r.items||[];S.tab='orders';S.page='recognize';render();},
 + photos(items){S.photos=items;S.tab='voucher';S.page='';draft();render();},
 + adoptDraft(d){S.order=d.order;S.caption=d.caption;S.sourceMessage=d.sourceMessage;S.sourceContext={dialog:d.sourceDialog,topic:d.sourceTopic};S.tab='voucher';S.page='';render();},
@@ -9251,7 +9241,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,206 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9443,13 +9433,15 @@ new file mode 100644
 + await page.locator('#captcha').press('Enter');
 + await page.waitForFunction(()=>Futoon.debugState().active&&Futoon.debugState().page==='');
 + assert.equal(await page.evaluate(()=>Futoon.debugState().login.password),undefined,'Successful login clears transient password');
-+ // In the installed client the primary Orders and More entries open the original native module.
-+ await page.evaluate(()=>{Futoon.debugState().cfg.nativeAdmin=true;testRequests.length=0;});
++ // Every entry stays in the existing panel, including original document sections/forms.
++ await page.evaluate(()=>{testRequests.length=0;});
 + await page.locator('[data-act="tab.orders"]').click();
-+ await page.waitForFunction(()=>testRequests.some(x=>x.op==='native.open'&&x.params.tab==='orders'));
++ await page.locator('#query').waitFor();
 + await page.locator('[data-act="tab.more"]').click();
-+ await page.waitForFunction(()=>testRequests.some(x=>x.op==='native.open'&&x.params.tab==='more'));
-+ assert.equal(await page.evaluate(()=>testRequests.filter(x=>x.op==='module.read').length),0,'native navigation must not open the replacement web module');
++ assert.equal(await page.locator('[data-act="module.open"]').count(),22,'all 20 original entries plus settlement and business data');
++ await page.locator('[data-act="module.open"][data-module="site_settings"]').click();
++ await page.waitForFunction(()=>testRequests.some(x=>x.op==='module.read'&&x.params.module==='site_settings'));
++ assert.equal(await page.evaluate(()=>testRequests.filter(x=>x.op==='native.open').length),0,'no standalone Activity launch');
 + const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
 + assert(!overflow,'panel should fit viewport');assert.deepEqual(errors,[]);
 + fs.writeFileSync(qa+'/result.json',JSON.stringify({passed:true,errors,requestCount:await page.evaluate(()=>testRequests.length),checks:['TGID lookup','balance direction and exact amount','order search and detail','receipt selection preview not sent','OCR review without mutations','batch query','channel list','dark theme','viewport overflow','route edit and save','monitor window metrics','editing focus retained','small screen and keyboard layout']},null,2));
@@ -9517,17 +9509,6 @@ diff --git a/TMessagesProj/build.gradle b/TMessagesProj/build.gradle
  
  task checkVisibility {
      doFirst {
-diff --git a/build.gradle b/build.gradle
---- a/build.gradle
-+++ b/build.gradle
-@@ -11,6 +11,7 @@
-         classpath 'com.huawei.agconnect:agcp:1.9.1.301'
-         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.0'
-         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0"
-+        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.0"
-     }
- }
- repositories {
 diff --git a/settings.gradle b/settings.gradle
 --- a/settings.gradle
 +++ b/settings.gradle
@@ -9539,11 +9520,10 @@ diff --git a/settings.gradle b/settings.gradle
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
-@@ -51,6 +51,8 @@
+@@ -51,6 +51,7 @@
  
  public class ApplicationLoader extends Application {
  
-+    static { org.telegram.messenger.futoon.FutoonNativeBridge.install(); }
 +
      public static ApplicationLoader applicationLoaderInstance;
  
@@ -9552,7 +9532,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,510 @@
+@@ -0,0 +1,502 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -9608,14 +9588,13 @@ new file mode 100644
 +    private long dialogId, topicId;
 +    private int generation;
 +    private int lastBottomInset = -1, chooseGeneration;
-+    private volatile boolean refreshNativeClient;
-+    private boolean nativeAdminOpened,loaded,expanded,large=true,destroyed,paused,mutationBusy,keyboard,ballPositioned;
++    private boolean loaded,expanded,large=true,destroyed,paused,mutationBusy,keyboard,ballPositioned;
 +    private float downX,downY,startX,startY;
 +    private boolean dragged;
 +    private String chooseRequest;
 +    private long sourceMessage;
 +    private FutoonApi.Order sourceOrder;
-+    private String activeOrder="", nativeAdminAddress="";
++    private String activeOrder="";
 +    private JSONObject adoptedDraft;
 +
 +    public FutoonPanel(ChatActivity host,FrameLayout parent,int account) {
@@ -9720,7 +9699,7 @@ new file mode 100644
 +    }
 +    private String config(){
 +        try{return new JSONObject().put("nonce",nonce).put("context",context).put("address",store.address()).put("username",store.username())
-+                .put("nativeAdmin",true).put("dark",Theme.isCurrentThemeDark()).put("large",large).put("visible",expanded&&!paused).put("account",account).toString();}catch(Exception e){return "{}";}
++                .put("dark",Theme.isCurrentThemeDark()).put("large",large).put("visible",expanded&&!paused).put("account",account).toString();}catch(Exception e){return "{}";}
 +    }
 +    public void bind(FutoonIdentity identity,String label,long dialog,long topic) {
 +        String key=account+":"+dialog+":"+topic+":"+(identity==null?"":identity.telegramId);
@@ -9773,7 +9752,6 @@ new file mode 100644
 +        return true;
 +    }
 +    public void resume(){paused=false;
-+        if(nativeAdminOpened){nativeAdminOpened=false;refreshNativeClient=true;if(!nativeAdminAddress.equals(store.address())){generation++;photos.clear();activeOrder="";adoptedDraft=null;}js("window.Futoon.nativeReturned("+config()+")");}
 +if(expanded&&web!=null){web.onResume();js("window.Futoon.resume()");}}
 +    public void pause(){paused=true;if(web!=null){js("window.Futoon.persist();window.Futoon.hidden()");web.onPause();}}
 +    public void destroy(){
@@ -9814,10 +9792,9 @@ new file mode 100644
 +        });
 +    }
 +    private void client()throws Exception{
-+        if(refreshNativeClient){api=null;business=null;refreshNativeClient=false;}
 +        String address=store.address();
 +        if(address.isEmpty())throw new FutoonApi.SessionExpired();
-+        if(api==null){api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api);}
++        if(api==null){api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));}
 +    }
 +    private void dispatch(String raw){
 +        if(!valid())return;
@@ -9827,11 +9804,6 @@ new file mode 100644
 +            if(id.length()>80||!pending.add(id))return;
 +            String op=request.getString("op");JSONObject p=request.optJSONObject("params");if(p==null)p=new JSONObject();
 +            final String rid=id;final JSONObject args=p;
-+            if(op.equals("native.open")){
-+                if(mutationBusy)throw new IOException("请等待当前操作完成");
-+                nativeAdminAddress=store.address();nativeAdminOpened=true;FutoonNativeBridge.open(host.getParentActivity(),account,p.optString("tab","orders"),"",dialogId,topicId,sourceMessage);
-+                reply(id,true,null);collapse();return;
-+            }
 +            if(op.equals("ui.collapse")){collapse();reply(id,true,null);return;}
 +            if(op.equals("ui.resize")){large=p.optBoolean("large");resize();reply(id,true,null);return;}
 +            if(op.equals("ui.copy")){((ClipboardManager)root.getContext().getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("富通",p.optString("text")));reply(id,true,null);return;}
@@ -9899,7 +9871,7 @@ new file mode 100644
 +            if(op.equals("session.captcha")){
 +                if(mutationBusy)throw new IOException("请等待当前操作结束后再切换后台");
 +                generation++;
-+                work(id,false,()->{String address=FutoonApi.normalizeAddress(args.getString("address"));store.address(address);store.username(args.optString("username"));api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api);return new JSONObject().put("image","data:image/png;base64,"+android.util.Base64.encodeToString(api.captcha(),android.util.Base64.NO_WRAP));});return;
++                work(id,false,()->{String address=FutoonApi.normalizeAddress(args.getString("address"));store.address(address);store.username(args.optString("username"));api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));return new JSONObject().put("image","data:image/png;base64,"+android.util.Base64.encodeToString(api.captcha(),android.util.Base64.NO_WRAP));});return;
 +            }
 +            if(op.equals("session.login")){work(id,false,()->{client();String result=api.login(args.getString("username"),args.getString("password"),args.getString("captcha"));store.username(args.getString("username"));return result;});return;}
 +            if(op.equals("session.logout")){if(mutationBusy)throw new IOException("请等待当前操作结束后再退出后台");generation++;work(id,false,()->{client();api.logout();return true;});return;}
