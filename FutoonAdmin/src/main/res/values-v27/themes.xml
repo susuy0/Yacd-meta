@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.FutoonPay" parent="Theme.FutoonPay.Base">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

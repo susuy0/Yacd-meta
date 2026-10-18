@@ -1,33 +1,25 @@
-# VineChat Futoon v0.3.2 Lite
+# VineChat Futoon v0.4.0 — 原生移植待构建
 
-Android Telegram business client with a FUTOON panel. Upstream Telegram is pinned to `f32ffeec763f0bdbf4bec25b52d654f77bff733d`; `integration.patch` contains the fork changes. The previous repository contents were replaced as requested; history is retained.
+订单与“更多”入口接入原独立安卓版 FutoonPayAdmin 1.3.4 的 Kotlin / Jetpack Compose 页面。`FutoonAdmin/` 保留原版页面、数据模型、PHP 后台适配与全部原版测试；`SOURCE.json` 记录原源码包哈希和文件哈希。订单和更多的主要入口不再使用之前重新编写的网页列表。
 
-## This version
+## 本次范围
 
-- Correct the native panel height below Telegram's toolbar and above system navigation / IME. Both large and small windows stay inside their usable area. Block actions have normal height and footer actions stay visible.
-- Unrecognized groups show one clear state and a manual TGID/PID lookup action. No-match keeps the identifier and query type. Cancel works with a focused input; confirmed discard switches to the requested tab and Back restores scroll position.
-- Login fields survive captcha loading and unrelated updates. Passwords remain transient and are cleared on successful login. Backend changes / logout clear business context. Operation notices stay above footer actions and do not follow a new chat.
-- Coalesce UI rendering per frame and retain unchanged DOM. Decode only bounded evidence previews using Telegram's image loader, preserving EXIF orientation and transparency. Guard image selection/edit/restore callbacks when the conversation changes.
+- 原版订单列表、状态筛选、完整搜索、分页、详情、通道成功率和趋势、多选及批量操作。
+- “更多”全部 20 个入口：支付通道、支付方式、轮询组、通道监测、中转代理、域名审核、设置、资金明细、风控记录、支付黑名单、商户统计、5 日无流水商户、分账接收方、分账记录、企业付款、公告管理、支付与结算设置、站点与账号设置、公众号与证书、登录日志。
+- 原版通道/轮询/支付方式/代理的新增、编辑、启停、删除、路由成员和权重等操作沿用原实现。后台原来未提供的能力仍按原版显示状态。
+- 共用当前 Telegram 账号的加密后台会话；账号隔离、子页面账号继承与进程恢复适配。原生页面提供返回聊天按钮，原生订单详情可准备凭证草稿，返回聊天选择图片和发送对象。
+- 原版概览、结算、商户页面也随原生模块保留，以支持页面之间的业务跳转。
 
-- Fix the v0.3 startup crash: color refresh skips the omitted Contacts and Calls tab slots. A regression check executes the real resume/theme-refresh methods and confirms that removing the fix reproduces the original exception. R8 mappings are retained with each APK. Browser checks also cover ordinary groups, manual lookup, login, dirty navigation, notices and portrait / keyboard / landscape sizes; their screenshots are kept in a separate UI-check artifact.
+## 验证状态
 
-- The panel defaults to nearly full height, with a compact header, independent content scrolling and pinned actions/navigation. It preserves input focus and scroll position during data updates. The floating entry remembers its edge/height.
-- The WebView is created only when opening FUTOON. Hidden panels pause rendering. Heavy blur, continuous animated media and debug logging are disabled by default.
-- Call native targets (TgCalls/WebRTC RTC transports, call DSP and call WASM backend and conference cryptography) are removed from linking. Microphone Opus encoding and recording worker queues are removed. OpenH264/Opus decoding remain for ordinary received media.
-- Android call/phonebook services, activities, receivers and call provider declarations are removed. Phonebook and microphone permissions are removed. Phonebook sync/authenticator implementations are removed. The navigation has Chats, Settings and Profile.
-- Saved Messages database/cache/sync/search/pinning/reminder logic is replaced with a small protocol compatibility surface. Existing server messages are not deleted.
-- R8 optimization and resource shrinking are enabled; debug and native debugging are off. `ci/audit_apk.py` checks the final manifest and native exported symbols. `REMOVED-JAVA.txt` records optimizer removals.
-- Channel monitor parsing and configuration editors are ported from FutoonPayAdmin 1.3.4. Monitor supports nested/string/array/map list formats, read-only GET fallback and six metric windows. Route editing supports channel choices, additional routes, weights and validation. Editors select the correct page form, lock record identity and preserve blank secrets. Payment plugins reload for the selected type; saving waits for loading and validates matching plugins.
+静态检查已通过：JavaScript 和 Shell 语法、XML、构建与 Application 补丁应用；已核对全部 37 个原版 Kotlin 文件保留、27 个原版测试文件逐字不变。新增共享 Cookie、退出登录、账号隔离、子页面跳转、进程恢复及全部“更多”入口测试。
 
-## Build and install
+**尚未完成 Android 编译、原版单元/Compose 回归运行及安装包构建。** 用户已明确授权将原版源码上传至该公开仓库进行构建，CI 验证中。
 
-Push to `master` starts GitHub Actions. It runs the startup color regression, 177 business/geometry checks, browser UI regressions, Java compilation, native compilation, shrinking and APK audits. Download the `VineChat-Futoon-v0.3.2-lite-*` artifact from Actions. The APK package is `com.futoonpay.vinechat.beta`, ARM64 by default, with the same development signing certificate as v0.2/v0.3 and a higher version code.
+## 构建方式
 
-Telegram API credentials are optional for development: the source's bundled ID/hash are used when `VINE_API_ID` and `VINE_API_HASH` are absent. To configure your own values, set both repository secrets. The `GOOGLE_SERVICES_JSON_BASE64` secret supplies this package's Firebase configuration. Without it, the artifact is labeled `development-no-fcm`; background push delivery is not verified. `workflow_dispatch` can require push config and select all four architectures.
+仓库：`susuy0/Yacd-meta`；Telegram 固定上游：`f32ffeec763f0bdbf4bec25b52d654f77bff733d`。`integration.patch` 安装现有精简客户端修改并接入 `FutoonAdmin` Android 库。
 
-Live Telegram/FUTOON login, real image delivery, financial mutations and device performance require real-device/backend validation. CI fixtures do not perform live business mutations. All recipients are chosen by the user in Telegram's native picker. Business mutations require native confirmation.
+推送后，工作流将运行原有启动、业务、布局和浏览器回归，以及原版管理端单元/Compose 测试和 Lint，再执行完整 ARM64 APK 构建。目标包名 `com.futoonpay.vinechat.beta`，版本代码 `71809`，沿用现有开发签名；实际覆盖安装兼容性还需构建后验证。
 
-## License
-
-GPL-2.0-or-later, following upstream Telegram. See LICENSE. Upstream: https://github.com/DrKLO/Telegram
-
+Telegram API 凭据与 Firebase 推送配置沿用现有仓库配置。本次不包含账号密码、后台会话、真实业务数据或签名私钥。没有执行真实资金、订单状态或 Telegram 消息发送操作。
