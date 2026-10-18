@@ -14,7 +14,7 @@ required_modules = {
 }
 missing = sorted(module for module in required_modules if f'"{module}"' not in ui)
 assert not missing, f"native More modules missing: {missing}"
-assert "class NativePanelView" in ui and ": ComposeView" in ui
+assert "class NativePanelView" in ui and ": FrameLayout" in ui and "ComposeView(context)" in ui
 assert "NavigationBarItem" in ui and "NativeTab.ORDERS" in ui and "NativeTab.SETTLEMENTS" in ui
 assert "NativeFormScreen" in ui and "SelectField" in ui and "MultiSelectField" in ui
 assert "PendingAction" in ui and "确认提交" in ui
