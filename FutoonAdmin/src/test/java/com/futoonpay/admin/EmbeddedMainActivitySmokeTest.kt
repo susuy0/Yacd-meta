@@ -3,9 +3,8 @@ package com.futoonpay.admin
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import org.junit.Assert.*
