@@ -5,7 +5,12 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.WindowInsets
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import com.futoonpay.admin.data.AdminCookieStore
 import com.futoonpay.admin.data.FutoonApiClient
@@ -90,7 +95,35 @@ open class EmbeddedAdminActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val owner = intent.getStringExtra(FutoonIntegration.EXTRA_SCOPE)
         if (owner != null && FutoonIntegration.store(owner)?.isActive() != true) finish()
-        if (!isFinishing) FutoonIntegration.track(this)
+        if (!isFinishing) {
+            FutoonIntegration.track(this)
+            if (owner != null) configureFloatingWindow()
+        }
+    }
+    private fun configureFloatingWindow() {
+        val display = resources.displayMetrics
+        fun dp(value: Int) = (value * display.density + .5f).toInt()
+        var availableWidth = display.widthPixels
+        var availableHeight = display.heightPixels - dp(48)
+        if (Build.VERSION.SDK_INT >= 30) {
+            val metrics = windowManager.currentWindowMetrics
+            val insets = metrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            val width = metrics.bounds.width() - insets.left - insets.right
+            val height = metrics.bounds.height() - insets.top - insets.bottom
+            if (width > 0 && height > 0) { availableWidth = width; availableHeight = height }
+        }
+        window.attributes = window.attributes.apply {
+            this.width = minOf(dp(680), (availableWidth - dp(16)).coerceAtLeast(1))
+            this.height = (availableHeight - dp(16)).coerceAtLeast(1)
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            y = dp(8)
+            dimAmount = .30f
+        }
+        window.setBackgroundDrawable(GradientDrawable().apply { setColor(android.graphics.Color.WHITE); cornerRadius = dp(16).toFloat() })
+        window.decorView.clipToOutline = true
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        setFinishOnTouchOutside(false)
     }
     override fun onResume() {
         super.onResume()

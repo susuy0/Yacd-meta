@@ -33,6 +33,10 @@ class EmbeddedNavigationTest {
         val controller = Robolectric.buildActivity(ScopeProbeActivity::class.java,
             Intent(context, ScopeProbeActivity::class.java).putExtra(FutoonIntegration.EXTRA_SCOPE,"101")).setup()
         val activity = controller.get()
+        assertTrue(activity.window.attributes.width > activity.resources.displayMetrics.widthPixels / 2)
+        assertTrue(activity.window.attributes.height > activity.resources.displayMetrics.heightPixels / 2)
+        assertTrue(activity.window.attributes.width < activity.resources.displayMetrics.widthPixels)
+        assertTrue(activity.window.attributes.height < activity.resources.displayMetrics.heightPixels)
         activity.startActivity(Intent(activity, NativeModuleActivity::class.java).putExtra(NativeModuleActivity.EXTRA_MODULE,"rolls"))
         val child = shadowOf(activity).nextStartedActivity
         assertEquals("101",child.getStringExtra(FutoonIntegration.EXTRA_SCOPE))

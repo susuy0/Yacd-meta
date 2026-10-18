@@ -15,7 +15,7 @@ class MainActivity : EmbeddedAdminActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (isFinishing) return
-        enableEdgeToEdge()
+        if (!FutoonIntegration.isEmbedded(this)) enableEdgeToEdge()
         setContent {
             FutoonTheme {
                 val app = FutoonApplication.from(this)

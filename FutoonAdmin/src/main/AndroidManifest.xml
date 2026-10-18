@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <activity android:name="com.futoonpay.admin.MainActivity" android:exported="false" android:theme="@style/Theme.FutoonPay" android:windowSoftInputMode="adjustResize" />
-        <activity android:name="com.futoonpay.admin.NativeModuleActivity" android:exported="false" android:theme="@style/Theme.FutoonPay" android:windowSoftInputMode="adjustResize" />
-        <activity android:name="com.futoonpay.admin.DomainAuditActivity" android:exported="false" android:theme="@style/Theme.FutoonPay" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.futoonpay.admin.MainActivity" android:exported="false" android:theme="@style/Theme.FutoonPay.Floating" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.futoonpay.admin.NativeModuleActivity" android:exported="false" android:theme="@style/Theme.FutoonPay.Floating" android:windowSoftInputMode="adjustResize" />
+        <activity android:name="com.futoonpay.admin.DomainAuditActivity" android:exported="false" android:theme="@style/Theme.FutoonPay.Floating" android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>

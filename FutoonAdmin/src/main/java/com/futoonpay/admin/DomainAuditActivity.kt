@@ -102,7 +102,7 @@ class DomainAuditActivity : EmbeddedAdminActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (isFinishing) return
-        enableEdgeToEdge()
+        if (!FutoonIntegration.isEmbedded(this)) enableEdgeToEdge()
         val app = FutoonApplication.from(this)
         if (!app.hasConfiguredEndpoint) {
             startActivity(android.content.Intent(this, MainActivity::class.java))
