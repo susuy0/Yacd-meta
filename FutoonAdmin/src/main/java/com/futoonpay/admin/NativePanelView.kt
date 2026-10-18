@@ -7,6 +7,7 @@ import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -130,7 +131,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     BackHandler { if (!navigator.pop()) bridge.collapse() }
     CompositionLocalProvider(LocalPanelNavigation provides navigation) {
         PanelOverlayHost {
-            Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().background(Mist)) {
                 Row(Modifier.fillMaxWidth().height(36.dp).padding(start = 12.dp, end = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(if (chat.telegramId.isBlank()) chat.label.ifBlank { "FUTOON PAY" } else "${chat.label} · TG ${chat.telegramId}", Modifier.weight(1f), color = Muted, fontSize = 10.sp, maxLines = 1)
                     IconButton(onClick = bridge::collapse, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Close, "收起悬浮窗", Modifier.size(19.dp)) }
@@ -150,7 +151,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                 }
                 if (state.authStage == AuthStage.AUTHENTICATED) NavigationBar(containerColor = androidx.compose.ui.graphics.Color.White, modifier = Modifier.height(64.dp), windowInsets = WindowInsets(0, 0, 0, 0)) {
                     listOf(Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView)).forEach { (id, title, icon) ->
-                        NavigationBarItem(selected = navigator.tab == id, onClick = { navigator.select(id) }, icon = { Icon(icon, title, Modifier.size(20.dp)) }, label = { Text(title, fontSize = 11.sp) })
+                        NavigationBarItem(selected = navigator.tab == id, onClick = { navigator.select(id) }, icon = { Icon(icon, title, Modifier.size(20.dp)) }, label = { Text(title, fontSize = 11.sp) }, colors = NavigationBarItemDefaults.colors(selectedIconColor = GreenDark, selectedTextColor = GreenDark, indicatorColor = GreenTint, unselectedIconColor = Muted, unselectedTextColor = Muted))
                     }
                 }
             }
@@ -161,7 +162,8 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 
 @Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, snackbar: SnackbarHostState, models: PanelRouteModels) {
     val back = { if (!navigator.pop()) bridge.collapse() }
-    val modelKey = environment.adminBaseUrl + ":" + auth.state.value.accountName + ":" + route.id
+    val authState by auth.state.collectAsState()
+    val modelKey = environment.adminBaseUrl + ":" + authState.accountName + ":" + route.id
     val owner = models.owner(modelKey)
     if (route.kind == "module") {
         if (PaymentAdminCatalog.contains(route.module)) {
