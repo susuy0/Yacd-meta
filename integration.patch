@@ -8890,10 +8890,9 @@ index f22821a..b69bb1c 100644
                  info.path = entry.imagePath;
              } else if (entry.path != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
-index 8f1a10b..27de731 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
-@@ -90,11 +90,11 @@ import me.vkryl.android.animator.FactorAnimator;
+@@ -90,11 +90,11 @@
  
  public class MainTabsActivity extends ViewPagerActivity implements NotificationCenter.NotificationCenterDelegate, FactorAnimator.Target {
  
@@ -8909,7 +8908,7 @@ index 8f1a10b..27de731 100644
  
      private static final int INDEX_CHATS = 0;
      private static final int INDEX_CONTACTS = 1;
-@@ -103,7 +103,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -103,7 +103,7 @@
      private static final int INDEX_PROFILE = 4;
  
      private static int indexToPosition(int index) {
@@ -8918,7 +8917,7 @@ index 8f1a10b..27de731 100644
      }
  
      private static final int ANIMATOR_ID_TABS_VISIBLE = 0;
-@@ -313,22 +313,17 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -313,22 +313,17 @@
  
          tabs = new GlassTabView[5];
          tabs[INDEX_CHATS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CHATS, R.string.MainTabsChats);
@@ -8942,7 +8941,7 @@ index 8f1a10b..27de731 100644
  
              final int position = indexToPosition(index);
              tabs[index].setOnClickListener(v -> {
-@@ -349,7 +344,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -349,7 +344,7 @@
              });
  
              tabsView.addView(tabs[index]);
@@ -8951,7 +8950,7 @@ index 8f1a10b..27de731 100644
          }
          checkUi_callTabVisible(getUserConfig().showCallsTab, false);
  
-@@ -412,50 +407,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -412,50 +407,11 @@
      }
  
      public boolean openContactsSelector(View anchor) {
@@ -9004,7 +9003,7 @@ index 8f1a10b..27de731 100644
      }
  
      private Integer pendingFolderId;
-@@ -807,19 +763,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -807,19 +763,7 @@
  
      @Override
      protected BaseFragment createBaseFragmentAt(int position) {
@@ -9025,7 +9024,7 @@ index 8f1a10b..27de731 100644
              Bundle args = new Bundle();
              args.putBoolean("hasMainTabs", true);
              return new SettingsActivity(args);
-@@ -851,12 +795,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -851,12 +795,14 @@
      public void selectTab(int position, boolean animated) {
          for (int a = 0; a < tabs.length; a++) {
              GlassTabView tab = tabs[a];
@@ -9040,7 +9039,7 @@ index 8f1a10b..27de731 100644
              final int position = indexToPosition(index);
              final float visibility = Math.max(0, 1f - Math.abs(position - animatedPosition));
              tabs[index].setGestureSelectedOverride(visibility, allow);
-@@ -1087,9 +1033,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -1087,9 +1033,9 @@
      }
  
      private void checkUi_callTabVisible(boolean callTabsVisible, boolean animated) {
@@ -9051,6 +9050,15 @@ index 8f1a10b..27de731 100644
          }
      }
  
+@@ -1226,6 +1172,8 @@
+         }
+         if (tabs != null) {
+             for (GlassTabView tabView : tabs) {
++                // Lite omits the contacts and calls views, leaving their slots empty.
++                if (tabView == null) continue;
+                 tabView.updateColorsLottie();
+             }
+         }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 index f0a3ad0..ca380ab 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
@@ -9800,7 +9808,7 @@ index 55d530f..8913fb4 100644
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7177
++APP_VERSION_CODE=7178
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
@@ -9834,3 +9842,4 @@ index 7d4f1ab..54247fd 100644
 -apply from: file("TMessagesProj_Modules/media/core_settings.gradle")
 \ No newline at end of file
 +apply from: file("TMessagesProj_Modules/media/core_settings.gradle")
+

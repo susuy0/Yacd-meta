@@ -1,24 +1,24 @@
 {
-  "version": "0.3 lite",
+  "version": "0.3.1 lite startup fix",
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
   "files": 58,
-  "patch_sha256": "665ba764dc4cb2315cbac57edd93e522b546e15252495c754c6cd6008d9c0bd2",
+  "patch_sha256": "eed1b3575b11578cea21ddd43d2b16046e00218fb55cc1e87fcafaf0a35a70f5",
   "validation": {
-    "core_checks": 132,
-    "panel_ui": "passed",
-    "full_android_build": "passed",
-    "removed_component_audit": "passed",
-    "live_push_delivery": "not tested",
+    "core_checks": "pending CI",
+    "panel_ui": "pending CI",
+    "startup_color_regression": "pending CI",
+    "java_compilation": "pending CI",
+    "full_native_and_shrink": "pending CI",
+    "removed_component_audit": "pending CI",
+    "android_device_launch": "not tested",
     "real_financial_mutations": "not performed",
-    "java_compilation": "passed",
-    "full_native_and_shrink": "passed",
-    "apk_signature_and_checksum": "passed"
+    "live_push_delivery": "not tested"
   },
   "github_repository": "susuy0/Yacd-meta",
-  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39049394474",
-  "build_commit": "1316253971483923857b75b97fac2382335cecb6",
-  "apk": {
+  "previous_build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39049394474",
+  "previous_build_commit": "1316253971483923857b75b97fac2382335cecb6",
+  "previous_apk": {
     "bytes": 39733398,
     "MiB": 37.9,
     "sha256": "e7487db274a2203e38b27c1254b1a58215eabff78a91ccfb130ef7ef6cb4659c",
@@ -26,5 +26,6 @@
     "reduction_percent": 45.0,
     "native_core_bytes": 9893208,
     "signature_matches_v02": true
-  }
+  },
+  "versionCode": 71789
 }
