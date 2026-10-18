@@ -38,4 +38,12 @@ class NativeDraftAndQrTest {
         assertEquals(url, decoded.text)
         assertNull(paymentQr("")); assertNull(paymentQr("x".repeat(3000)))
     }
+    @Test fun configurationDraftsNeverCrossTelegramAccounts() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val first = FormDraftStore(context, "tg-user-101")
+        val second = FormDraftStore(context, "tg-user-202")
+        first.save("https://one.example/admin/", form().copy(fields = form().fields.map { if (it.name == "name") it.copy(value = "private draft") else it }))
+        assertEquals("private draft", first.restore("https://one.example/admin/", form()).fields[1].value)
+        assertEquals("原名称", second.restore("https://one.example/admin/", form()).fields[1].value)
+    }
 }

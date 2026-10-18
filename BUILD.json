@@ -1,9 +1,9 @@
 {
-  "version": "0.6.0 fully native panel",
-  "versionCode": 71829,
+  "version": "0.6.1 original Android UI embedded panel",
+  "versionCode": 71839,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "59583ca20da59b58ac729af82482a5e17afe49a21ef28bbc52bc48e77926fa7a",
+  "patch_sha256": "44c47ec3d5332da32bafc53865cf2021cd451d14c21b05347b7826c43e27272c",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
   "standalone_admin_activities": 0,
   "original_data_files": 23,
