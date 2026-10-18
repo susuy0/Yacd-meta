@@ -1,83 +1,16 @@
 {
-  "version": "0.7.0 native recognition and merchant workflows",
-  "versionCode": 71849,
-  "source_commit": "05256ea37418942da8c5a105d8eb0b8fa2ee6d65",
-  "ci_run": 39112840793,
-  "ci_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39112840793",
+  "version": "0.7.1 native chat tools",
+  "versionCode": 71859,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "00c399d0e2d4c20d0a3d919f57ebeedf27aada7c522f5593654cf2235d0ffe98",
+  "patch_sha256": "dcab9dd6b98c8cf4f6c05f8df50f7be08e21153d39f14b3bb4ed4c5d07f2a536",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
-  "original_source_version": "FUTOON PAY Android 1.3.4",
-  "workflow_source_version": "VineChat FUTOON v0.5",
-  "retained_original_files": {
-    "total": 41,
-    "production": 21,
-    "tests": 20
-  },
-  "validation": {
-    "tests": 193,
-    "failures": 0,
-    "errors": 0,
-    "skipped": 0,
-    "lint_errors": 0,
-    "lint_warnings": 27,
-    "screenshots": 25,
-    "report_artifact_id": 12131525909,
-    "report_zip_sha256": "58c91ee7042eae6c0763fc3fce7d95b35c3d5739e9239f3b8279767090cb5083",
-    "core_contract_checks": 132,
-    "geometry_checks": 45,
-    "startup_regression": "passed including original-crash negative control",
-    "androidx_callback_regression": "passed including negative control",
-    "host_java": "passed",
-    "full_build": "success",
-    "real_device_backend": "not tested",
-    "live_telegram_send": "not tested",
-    "ocr_qr_gallery_on_device": "not tested",
-    "performance_benchmark": "not measured",
-    "removed_components_audit": "passed: call/contact services, contact/audio-record permissions and call/record native exports absent",
-    "native_entry_points": [
-      "OrdersScreen",
-      "SettlementsScreen",
-      "ModernManage",
-      "MerchantProfileScreen",
-      "RecognitionScreen",
-      "CurrentMerchantCard",
-      "EvidenceScreen",
-      "OrderWorkflowTools",
-      "PaymentAdminRoot",
-      "NativeModuleRoot",
-      "DomainAuditRoot"
-    ]
-  },
-  "push_mode": "development-no-fcm",
-  "apk": {
-    "file_name": "VineChat-Futoon-v0.7.0-native-arm64.apk",
-    "bytes": 40996544,
-    "sha256": "8307844cb1059a7aca764df181b7b7bed161bfe20030cff9adafb95d01f0b5d9",
-    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
-    "v2_signature": "verified",
-    "zip_crc": "verified",
-    "abis": [
-      "arm64-v8a"
-    ],
-    "futoon_assets": 0,
-    "native_core_bytes": 9893208,
-    "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71849,
-    "versionName": "13.0.2",
-    "minSdkVersion": 23,
-    "targetSdkVersion": 36
-  },
-  "artifact": {
-    "id": 12131391974,
-    "zip_sha256": "b1b138ea0d66e3b1de5e6a264ac401c94e32f49f3227509fdea80aed6b9b9ec4",
-    "mapping_sha256": "c6ea36ca15ad7a8b5151bb40ea5d2b76e1c64926a007d1b5c8e9fb2c36a519bc",
-    "removed_java_sha256": "572e3fc5858c70a55595d6c89236e90e1fe1cccdb66847ddae91d76794dc4321"
-  },
   "standalone_admin_activities": 0,
-  "build_timings": {
-    "host_java": "2m38s",
-    "native_r8_apk": "9m46s"
+  "original_data_files": 23,
+  "validation": {
+    "business_adapter": "pending CI",
+    "panel_ui": "pending CI",
+    "full_build": "pending CI",
+    "device_backend": "not tested"
   }
 }
