@@ -32,7 +32,7 @@ Telegram 主设置新增「FutoonPay 设置」，包含会话 Tag 和快速回�
 
 上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71869`，ARM64，minSdk 23 / targetSdk 36。
 
-本轮修复快速回复独立弹窗缺少窗口生命周期引起的崩溃，并统一处理设置页、业务面板的嵌入式 Compose 挂载与销毁。新增不使用 ComponentActivity/Compose 测试规则的真实窗口回归，包含旧实现崩溃负对照；完整构建与 APK 核验结果待 CI 完成后记录。
+本轮修复快速回复独立弹窗缺少窗口生命周期引起的崩溃，并统一处理设置页、业务面板的嵌入式 Compose 挂载与销毁。源码 `777af7b18045085f3163461d579a9ed552ec213b` 的 [CI 39120443973](https://github.com/susuy0/Yacd-meta/actions/runs/39120443973) 已全部通过：213 项原生测试（含 7 项无窗口所有者的真实 Activity/Dialog 回归和旧崩溃负对照）、132 项业务契约、45 项几何检查及发送键/宿主桥接回归；Lint 0 错误 / 28 警告。完整 Java、原生库、R8、APK 和已移除组件审计通过；最终 APK 41,018,680 字节，版本代码 71869，沿用原签名并通过 v2 签名、哈希、包名、标签、原生入口及两个界面的生命周期修复核验。
 
 逐项范围见 `NATIVE-PORT-CHECKLIST.md`，最终构建证据见 `BUILD.json`。CI 包含原业务测试、完整原生交互回归、Lint、宿主 Java、原生库、APK 和已移除组件审计。
 
