@@ -1602,7 +1602,7 @@ new file mode 100644
 +function merchantView(){
 + if(!S.active)return {body:note('连接富通后台后，可以识别当前聊天的商户并查询订单。'),actions:btn('连接富通后台','login.open','btn-primary block')};
 + if(S.lookup==='loading')return {body:'<div class="loading">'+icon('spin','spin')+'正在按 TGID 查询商户…</div>'};
-+ if(!S.m)return {body:'<section class="merchant-empty">'+icon('store')+'<h2 class="t-title">'+(S.lookup==='unbound'?'未找到绑定商户':S.lookup==='failed'?'商户查询未完成':'选择要操作的商户')+'</h2><p>'+esc(S.lookup==='unbound'?'TGID '+S.ctx.tgid+' 尚未绑定商户，可以按商户 PID 查询。':S.lookup==='failed'?'请重新识别，或输入 TGID / PID 手动查询。':'普通群聊不会自动匹配商户，请按 TGID 或商户 PID 查询。')+'</p></section>',
++ if(!S.m)return {body:'<section class="merchant-empty">'+icon('store')+'<h2 class="t-title">'+(S.lookup==='unbound'?'未找到对应商户':S.lookup==='failed'?'商户查询未完成':'选择要操作的商户')+'</h2><p>'+esc(S.lookup==='unbound'?(S.ctx.tgid?'TGID '+S.ctx.tgid+' 尚未绑定商户，可以按商户 PID 查询。':'请核对号码，或切换 TGID / 商户 PID 重新查询。'):S.lookup==='failed'?'请重新识别，或输入 TGID / PID 手动查询。':'普通群聊不会自动匹配商户，请按 TGID 或商户 PID 查询。')+'</p></section>',
 +  actions:(S.ctx.tgid?btn('重新识别','merchant.refresh'):'')+btn('手动查询 TGID / PID','merchant.manual','btn-primary block')};
 + const m=S.m,b=m.balances||{},balance=b.CNY??m.money;
 + let body=(S.manual?note('当前使用手动指定商户；自动识别的 TGID 不变。'):'')+
@@ -8492,7 +8492,7 @@ new file mode 100644
 +        this.host=host;this.account=account;owner=UserConfig.getInstance(account).getClientUserId();store=new FutoonStore(account);
 +        delivery=FutoonDeliveryTracker.get(account);deliveryListener=row->js("window.Futoon.sent("+row+")");delivery.addListener(deliveryListener);
 +        Context c=parent.getContext();
-+        root=new FrameLayout(c);root.setClipChildren(false);root.setClipToPadding(false);
++        root=new FrameLayout(c);root.setClipChildren(true);root.setClipToPadding(true);
 +        parent.addView(root,new FrameLayout.LayoutParams(-1,-1));
 +        scrim=new View(c);scrim.setBackgroundColor(0x5508140e);scrim.setVisibility(View.GONE);scrim.setOnClickListener(v->collapse());
 +        root.addView(scrim,new FrameLayout.LayoutParams(-1,-1));
@@ -8631,7 +8631,7 @@ new file mode 100644
 +        expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);
 +    }
 +    private void resize(){
-+        int available=root.getHeight();if(available<=0)return;
++        int available=root.getHeight();
 +        FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)web.getLayoutParams();
 +        int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(360),large,keyboard);
 +        int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;
@@ -9636,7 +9636,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,197 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9790,6 +9790,10 @@ new file mode 100644
 + assert.equal(await page.locator('[data-field=value]').inputValue(),'555','No-match keeps the form and the typed identifier');
 + await checkLayout('manual lookup no match');
 + await page.screenshot({path:qa+'/manual-lookup-fixed.png'});
++ await page.getByRole('button',{name:'取消',exact:true}).click();
++ await page.waitForFunction(()=>Futoon.debugState().page==='');
++ assert(!(await page.locator('.body').innerText()).includes('undefined'),'Cancel after no-match must retain a valid ordinary-group state');
++ await page.getByRole('button',{name:'手动查询 TGID / PID',exact:true}).click();
 + await page.locator('[data-field=value]').fill('5824870757');
 + await page.locator('[data-field=value]').press('Enter');
 + await page.waitForFunction(()=>Futoon.debugState().m?.uid==='20418'&&Futoon.debugState().page==='');
