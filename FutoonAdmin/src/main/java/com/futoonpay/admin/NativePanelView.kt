@@ -276,7 +276,8 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
             item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册 / 文件") }; OutlinedButton(onClick = { workflows?.saveDraft(order, caption, status); bridge.pickEvidenceFromChat() }, modifier = Modifier.weight(1f)) { Text("从聊天选图") } } }
             paths.forEachIndexed { index, path -> item(key = path) {
                 val bitmap by produceState<android.graphics.Bitmap?>(null, path, revision) { value = withContext(Dispatchers.IO) { bridge.evidencePreview(path) } }
-                DisposableEffect(bitmap) { onDispose { bitmap?.recycle() } }
+                // Compose display lists can retain a thumbnail after this item leaves composition.
+                // These bounded previews must stay valid until their rendering references are collected.
                 PayCard {
                     bitmap?.let { Image(it.asImageBitmap(), "凭证 ${index + 1}", Modifier.fillMaxWidth().heightIn(max = 160.dp)) }
                     Row { TextButton(onClick = { bridge.editEvidence(index) }) { Text("编辑") }; TextButton(onClick = { bridge.removeEvidence(index) }) { Text("移除", color = Danger) } }
