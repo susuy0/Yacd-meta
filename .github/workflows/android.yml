@@ -54,6 +54,14 @@ jobs:
         run: |
           export PLAYWRIGHT_MODULE="$RUNNER_TEMP/futoon-ui/node_modules/playwright"
           node "$RUNNER_TEMP/vinechat-ui/Tools/futoon/PanelUiTest.cjs"
+      - name: Keep UI regression screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Futoon-v0.3.2-UI-checks
+          path: ${{ runner.temp }}/vinechat-ui/build/futoon-ui-qa/*
+          if-no-files-found: warn
+          retention-days: 30
   android:
     needs: [core-checks, panel-ui]
     runs-on: ubuntu-24.04
@@ -119,14 +127,14 @@ jobs:
       - name: Collect APK and checksum
         run: |
           mkdir -p output
-          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.3.1-lite-test.apk
+          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.3.2-lite-test.apk
           cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/usage.txt output/REMOVED-JAVA.txt
           cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/mapping.txt output/mapping.txt
           cd output
-          sha256sum VineChat-Futoon-v0.3.1-lite-test.apk mapping.txt > SHA256SUMS
+          sha256sum VineChat-Futoon-v0.3.2-lite-test.apk mapping.txt > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: VineChat-Futoon-v0.3.1-lite-${{ steps.config.outputs.push_mode }}
+          name: VineChat-Futoon-v0.3.2-lite-${{ steps.config.outputs.push_mode }}
           path: output/*
           if-no-files-found: error
           retention-days: 30

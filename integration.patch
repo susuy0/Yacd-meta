@@ -1440,13 +1440,12 @@ index 0000000..4428ed6
 +<body data-theme="light"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-sprout" viewBox="0 0 24 24"><path d="M12 21v-9M12 12c0-4 2.6-6.6 7.5-7 .3 4.7-2.5 7.3-7.5 7zM12 16c0-3-2.2-5-6.5-5.3-.2 3.4 2 5.4 6.5 5.3z"/></symbol><symbol id="i-hash" viewBox="0 0 24 24"><path d="M9 4 7 20M17 4l-2 16M4.5 9h15.5M4 15h15.5"/></symbol><symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4 3.5 7.5 7 11M3.5 7.5h14M17 13l3.5 3.5L17 20M20.5 16.5h-14"/></symbol><symbol id="i-shrink" viewBox="0 0 24 24"><path d="M20 10h-6V4M4 14h6v6M14 10l7-7M3 21l7-7"/></symbol><symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol><symbol id="i-min" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol><symbol id="i-order" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="M4.5 10v10h15V10M3 10l2-6h14l2 6zM9.5 20v-5.5h5V20"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m4 18 5-5 4 4 3-3 4 4"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol><symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/></symbol><symbol id="i-xc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.5 2"/></symbol><symbol id="i-spin" viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 8 8"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5v-3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol><symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.2c-.4-.8-1.4-1.3-2.5-1.3-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.1 0-2.1-.5-2.5-1.3M12 6v2M12 16v2"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></symbol><symbol id="i-text" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></symbol><symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h12M16 14h2"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></symbol><symbol id="i-route" viewBox="0 0 24 24"><path d="M5 6h6a5 5 0 0 1 5 5v7M13 15l3 3 3-3"/></symbol><symbol id="i-next" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol><symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a14 14 0 0 1 4-2.6M21 9a14 14 0 0 0-8.5-3.9M6.5 12.5a9 9 0 0 1 3-1.7M17.5 12.5a9 9 0 0 0-2.6-1.6M9.5 16a4.5 4.5 0 0 1 5 0M12 19.5v.1M4 4l16 16"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-out" viewBox="0 0 24 24"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/></symbol><symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4M4.5 3.5v4h4M4 13a8 8 0 0 0 14.3 4M19.5 20.5v-4h-4"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol><symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4M4.5 3.5v4h4M4 13a8 8 0 0 0 14.3 4M19.5 20.5v-4h-4"/></symbol><symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol><symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="18.5" r="1.5" fill="currentColor" stroke="none"/></symbol><symbol id="i-clip" viewBox="0 0 24 24"><path d="m20 11.5-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 3 10.5l6.5 2.5L12 20zM9.5 13 21 3"/></symbol><symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 16.8v.2"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.6-3.6 3.3-5.5 7-5.5s6.4 1.9 7 5.5"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M14 9l2 2"/></symbol><symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM19 14v.01M14 19.5v.01M19 19h1M17.5 17.5V20"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z"/></symbol><symbol id="i-cursor" viewBox="0 0 24 24"><path d="M9 4h6M12 4v16M9 20h6"/></symbol><symbol id="i-msg" viewBox="0 0 24 24"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></symbol><symbol id="i-lines" viewBox="0 0 24 24"><path d="M4 6h12M4 11.5h16M4 17h9"/></symbol><symbol id="i-jump" viewBox="0 0 24 24"><path d="m9 14-5-5 5-5M4 9h10a6 6 0 0 1 6 6v3"/></symbol><symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></symbol><symbol id="i-crop" viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></symbol><symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 3 6.2M4 6v6h6"/></symbol><symbol id="i-mosaic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16M12 4v16M8 8v.01M16 16v.01"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol></defs></svg><main id="app"></main><div id="toast" role="status"></div><script src="panel.js"></script></body></html>
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.css b/TMessagesProj/src/main/assets/futoon/panel.css
 new file mode 100644
-index 0000000..5f3d940
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.css
-@@ -0,0 +1,61 @@
-+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+@@ -0,0 +1,80 @@
++html,body,#app{margin:0;width:100%;height:100%;min-height:0;overflow:hidden;background:transparent}
 +body{font-family:Roboto,"Noto Sans SC",system-ui,sans-serif!important}
-+.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
++.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;max-height:100%;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
 +.hd{flex:none}.body{overflow:auto;flex:1;min-height:0;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:12px}
 +.tabbar,.actionbar{flex:none}.tabbar{padding-bottom:max(6px,env(safe-area-inset-bottom))}
 +.hd-chat{flex:1;min-width:0}.hd-ctx{flex-wrap:wrap}.hd-top .btn-icon{flex:none}
@@ -1505,12 +1504,30 @@ index 0000000..5f3d940
 +
 +/* Never squeeze controls to fit: long pages scroll at their natural height. */
 +.body>*{flex-shrink:0}
++/* Block buttons fill the width. They must never consume a column's spare height. */
++.panel .body>.btn.block{flex:0 0 auto;width:100%;align-self:stretch}
++.panel .body{flex:1 1 0%;min-height:0}
++.panel button.btn{min-height:48px;white-space:normal;padding-block:10px;flex-shrink:0}
++.panel .actionbar .btn{flex:1 1 0%;min-height:48px;padding:10px 8px}
++.panel .actionbar .btn:first-child:not(:last-child){flex-grow:.65}
++.panel .hd-chat>span{min-width:0;display:block}
++.panel .hd-ctx>b{min-width:0;max-width:100%}
++.panel .src{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;display:block}
++.panel button.panel-control{min-height:40px;padding:0 10px;border-radius:10px;background:var(--surface-2);font-size:13px;white-space:nowrap}
++.panel button.panel-control.primary{color:var(--primary-ink);background:var(--primary-soft)}
++.panel button.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:76px}
++.merchant-empty{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 14px;text-align:center;background:var(--surface-2);border:1px solid var(--line);border-radius:14px}
++.merchant-empty>.ic{width:40px;height:40px;color:var(--primary-ink)}
++.merchant-empty p{max-width:30em;color:var(--text-2);font-size:14px;line-height:1.65}
++.panel input:focus,.panel textarea:focus,.panel select:focus{outline:2px solid var(--primary);outline-offset:1px}
++.panel button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
++.panel .btn:disabled{background:var(--surface-3);color:var(--text-3);border-color:transparent}
++@media(max-height:360px){.hd-top{min-height:36px}.panel button.panel-control{min-height:36px}.panel .hd{padding:2px 8px}.panel .actionbar{padding:4px 8px}.panel .actionbar .btn{min-height:40px;padding:6px}.panel .tab{min-height:36px;gap:0}.tabbar .ic{width:16px;height:16px}.merchant-empty{padding:14px 10px}}
 diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/main/assets/futoon/panel.js
 new file mode 100644
-index 0000000..8f96f6f
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,438 @@
+@@ -0,0 +1,454 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1523,7 +1540,8 @@ index 0000000..8f96f6f
 +const note=(text,type='info')=>'<div class="banner '+type+'">'+esc(text)+'</div>';
 +const amount=o=>(o.currency||o.currency_code||'CNY')+' '+(o.money??'未提供');
 +const labels=['待支付','已支付','已退款','已冻结'],status=o=>labels[Number(o.status)]||'未知状态';
-+let renderedView='';
++let renderedView='',renderPending=false,lastMarkup='';
++const emptyLocal=()=>({history:[],favorites:[],cases:{},drafts:{},groups:{},targets:[]});
 +const S={visible:true,large:true,cfg:{},ctx:{},rev:0,m:null,lookup:'none',active:false,tab:'merchant',page:'',stack:[],error:'',busy:false,orders:[],order:null,total:0,n:1,q:'',kind:'AUTO',filters:{},candidates:[],sourceText:'',sourceMessage:0,photos:[],caption:'',batch:[],batchRunning:false,batchCancel:false,form:null,module:'channels',records:[],record:null,local:{history:[],favorites:[],cases:{},drafts:{},groups:{},targets:[]},seq:0,promises:new Map(),initialized:false};
 +function call(op,params={},label='',summary=''){
 + return new Promise((resolve,reject)=>{
@@ -1546,11 +1564,13 @@ index 0000000..8f96f6f
 +function contextLookup(){if(S.ctx.tgid)return lookup();const pid=S.local.groups?.[S.ctx.key];if(pid)return lookup('uid',pid,true);return Promise.resolve();}
 +function show(page='',data){S.error='';S.stack.push({page:S.page,form:S.form,record:S.record,scroll:document.querySelector('.body')?.scrollTop||0});S.page=page;if(data)S.record=data;render();}
 +function back(){
-+ const active=document.activeElement;if(active&&/INPUT|TEXTAREA|SELECT/.test(active.tagName)){active.blur();return;}
-+ if(S.form?.dirty){S.modal='discard';render();return;}
-+ if(S.page){const x=S.stack.pop();S.page=x?.page||'';S.form=x?.form||null;S.record=x?.record||null;S.error='';render();return;}
++ const active=document.activeElement;if(active&&/INPUT|TEXTAREA|SELECT/.test(active.tagName))active.blur();
++ if(S.modal){S.modal='';S.nextTab=null;S.nextBack=false;render();return;}
++ if(hasUnsavedChanges()){S.nextBack=true;S.modal='discard';render();return;}
++ if(S.page){const x=S.stack.pop();S.page=x?.page||'';S.form=x?.form||null;S.record=x?.record||null;S.restoreScroll=x?.scroll||0;S.error='';render();return;}
 + call('ui.collapse').catch(()=>{});
 +}
++function hasUnsavedChanges(){return S.form?.dirty&&!['manual','filters','reply','summary'].includes(S.form.kind);}
 +async function run(fn){
 + if(S.busy)return;S.busy=true;S.error='';
 + try{const task=fn();render();await task;}catch(e){S.error=e.message||'操作失败';if(e.expired){S.active=false;S.page='login';}}
@@ -1566,10 +1586,10 @@ index 0000000..8f96f6f
 + render();
 +}
 +function setContext(ctx){
-+ if(S.ctx.key===ctx.key)return;
++ if(S.ctx.key===ctx.key){S.ctx=ctx;render();return;}
 + S.rev++;S.ctx=ctx;S.m=null;S.lookup=ctx.tgid?'loading':'none';S.manual=false;S.orders=[];S.n=1;S.error='';
 + if(S.form?.dirty){S.pendingReset=true;S.modal='context';}
-+ else{S.page='';S.stack=[];S.form=null;S.order=null;S.photos=[];S.caption='';}
++ else{S.tab='merchant';S.page='';S.stack=[];S.form=null;S.order=null;S.photos=[];S.caption='';}
 + render();
 + if(S.active&&S.visible)contextLookup();
 +}
@@ -1578,10 +1598,10 @@ index 0000000..8f96f6f
 + return '<button class="order-card" data-act="'+act+'" data-index="'+index+'"><div class="rf between g8"><span class="b clamp1">'+esc(o.username||'商户 '+o.uid)+'</span>'+badge(status(o),Number(o.status)===1?'ok':'warn')+'</div><div class="rf between g8"><span class="mono">'+esc(o.trade_no)+'</span><strong>'+esc(amount(o))+'</strong></div><div class="t-cap c2">'+esc(o.addtime||'时间未提供')+' · PID '+esc(o.uid)+'</div><div class="t-cap cp">'+esc(match)+'</div></button>';
 +}
 +function merchantView(){
-+ if(!S.active)return {body:note('登录富通后台后，可以识别当前聊天的商户并查询订单。')+btn('连接富通后台','login.open','btn-primary block')};
++ if(!S.active)return {body:note('连接富通后台后，可以识别当前聊天的商户并查询订单。'),actions:btn('连接富通后台','login.open','btn-primary block')};
 + if(S.lookup==='loading')return {body:'<div class="loading">'+icon('spin','spin')+'正在按 TGID 查询商户…</div>'};
-+ if(!S.m)return {body:note(S.lookup==='unbound'?'TGID '+S.ctx.tgid+' 尚未绑定商户':S.lookup==='failed'?'商户查询失败，请重试或手动查询':'当前会话未识别到商户；普通群可以手动指定。',S.lookup==='failed'?'err':'info')+
-+  '<div class="empty">'+icon('store')+'<p>按 Telegram 用户 ID 精确查询富通商户</p></div>'+btn('手动查询 TGID / PID','merchant.manual','btn-primary block')+(S.ctx.tgid?btn('重新识别','merchant.refresh','btn-outline block'):'')};
++ if(!S.m)return {body:'<section class="merchant-empty">'+icon('store')+'<h2 class="t-title">'+(S.lookup==='unbound'?'未找到绑定商户':S.lookup==='failed'?'商户查询未完成':'选择要操作的商户')+'</h2><p>'+esc(S.lookup==='unbound'?'TGID '+S.ctx.tgid+' 尚未绑定商户，可以按商户 PID 查询。':S.lookup==='failed'?'请重新识别，或输入 TGID / PID 手动查询。':'普通群聊不会自动匹配商户，请按 TGID 或商户 PID 查询。')+'</p></section>',
++  actions:(S.ctx.tgid?btn('重新识别','merchant.refresh'):'')+btn('手动查询 TGID / PID','merchant.manual','btn-primary block')};
 + const m=S.m,b=m.balances||{},balance=b.CNY??m.money;
 + let body=(S.manual?note('当前使用手动指定商户；自动识别的 TGID 不变。'):'')+
 +  '<div class="card raised col g8"><div class="rf between"><span class="title">'+esc(m.username||'商户 '+m.uid)+'</span>'+badge(String(m.status)==='1'?'账号正常':'账号受限',String(m.status)==='1'?'ok':'warn')+'</div>'+
@@ -1660,9 +1680,9 @@ index 0000000..8f96f6f
 +}
 +const modules=[['channels','通道','通道详情、配置、测试支付','plug'],['payment_types','支付方式','费率与通道绑定','sliders'],['rolls','通道轮询','路由规则与权重','route'],['channel_monitor','通道监测','成功率与近期订单','chart'],['proxies','中转代理','代理列表与关联','globe'],['stats','业务数据','订单、金额和支付表现','chart'],['settlements','结算','列表、状态和收款资料','wallet'],['domains','域名审核','通过、拒绝和审核记录','globe'],['blacklist','黑名单','查询、添加和删除','ban'],['login','后台连接','后台地址、验证码和登录状态','lock']];
 +function moreView(){return {body:modules.map(([id,t,sub,i])=>'<button class="linkrow" data-act="module.open" data-module="'+id+'">'+icon(i)+'<span class="text"><b>'+t+'</b><small>'+sub+'</small></span>'+icon('next','ic-sm')+'</button>').join('')};}
-+function loginView(){return {body:field('address','完整 HTTPS 后台目录',S.cfg.address||'','url','例如 https://pay.example.com/自定义后台目录/')+
-+ field('username','后台账号',S.cfg.username||'')+field('password','后台密码','','password')+
-+ '<div class="rf g8"><div style="flex:1">'+field('captcha','验证码','')+'</div><button data-act="login.captcha" class="btn btn-outline" style="margin-top:20px">'+(S.captcha?'<img src="'+S.captcha+'" alt="验证码" style="max-width:110px;max-height:48px">':'加载验证码')+'</button></div>'+
++function loginView(){return {body:'<h2 class="title">连接富通后台</h2>'+field('address','完整 HTTPS 后台目录',S.cfg.address||'','url','例如 https://pay.example.com/自定义后台目录/')+
++ field('username','后台账号',S.cfg.username||'')+field('password','后台密码',S.login?.password||'','password')+
++ '<div class="rf g8"><div style="flex:1;min-width:0">'+field('captcha','验证码',S.login?.captcha||'')+'</div><button data-act="login.captcha" class="btn btn-outline" style="margin-top:20px">'+(S.captcha?'<img src="'+S.captcha+'" alt="验证码" style="max-width:110px;max-height:48px">':'加载验证码')+'</button></div>'+
 + note(S.active?'富通会话已连接，Telegram 账号与后台会话分别管理。':'不会保存后台密码；登录会话按当前 Telegram 账号加密隔离。')+
 + (S.active?btn('退出富通登录','login.logout','btn-outline block'):''),
 + actions:btn('登录富通','login.submit','btn-primary block')};}
@@ -1712,12 +1732,12 @@ index 0000000..8f96f6f
 +  if(x.type==='select'||x.type==='multiselect')return '<label>'+esc(x.label||names[x.name]||x.name)+'<select id="'+id+'" '+(x.type==='multiselect'?'multiple size="5"':'')+' data-field="'+esc(x.name)+'" '+(x.readOnly?'disabled':'')+'>'+x.options.map(o=>'<option value="'+esc(o.value)+'" '+((x.type==='multiselect'?String(value).split(',').includes(String(o.value)):String(o.value)===String(value))?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></label>';
 +  if(x.type==='checkbox')return '<label class="selectline"><input id="'+id+'" type="checkbox" data-field="'+esc(x.name)+'" '+(String(value)==='1'?'checked':'')+' '+(x.readOnly?'disabled':'')+'><span>'+esc(x.label||x.name)+'</span></label>';
 +  const tag=x.type==='textarea'?'textarea':'input';
-+  return '<label>'+esc(x.label||names[x.name]||x.name)+(tag==='textarea'?'<textarea id="'+id+'" data-field="'+esc(x.name)+'">'+esc(value)+'</textarea>':'<input id="'+id+'" data-field="'+esc(x.name)+'" type="'+(x.type==='password'?'password':'text')+'" value="'+esc(value)+'" '+(x.readOnly?'readonly':'')+'>')+'</label>';
++  return '<label>'+esc(x.label||names[x.name]||x.name)+(tag==='textarea'?'<textarea id="'+id+'" data-field="'+esc(x.name)+'">'+esc(value)+'</textarea>':'<input id="'+id+'" data-field="'+esc(x.name)+'" type="'+(x.type==='password'?'password':'text')+'" '+(f.kind==='manual'?'inputmode="numeric" placeholder="输入完整 TGID 或商户 PID"':x.type==='number'?'inputmode="numeric"':'')+' value="'+esc(value)+'" '+(x.readOnly?'readonly':'')+'>')+'</label>';
 + }).join('');
 + if(f.params?.route)body+=note('每条路由选择通道并填写权重；选择“不使用”可移除此行。')+btn('添加路由通道','route.add','btn-outline block');
 + if(f.kind==='balance')body+=btn('计算变更前后余额','balance.preview','btn-outline block')+(f.preview?'<div class="card highlight">'+kv('变更前',f.preview.before)+kv(f.values.direction==='add'?'本次增加':'本次扣除',f.preview.amount)+kv('变更后',f.preview.after)+'</div>':'')+
 + note('当前仅支持 CNY 余额调整；其他币种仍可查看。');
-+ return {body,actions:btn('取消','back')+btn(f.kind==='reply'?'复制回复':f.kind==='summary'?'复制汇总':f.kind==='filters'?'应用筛选':'核对并提交','form.submit','btn-primary block',f.pluginLoading||f.pluginError?'disabled':'')};
++ return {body,actions:btn('取消','back')+btn(f.kind==='manual'?'查询商户':f.kind==='reply'?'复制回复':f.kind==='summary'?'复制汇总':f.kind==='filters'?'应用筛选':'核对并提交','form.submit','btn-primary block',f.pluginLoading||f.pluginError?'disabled':'')};
 +}
 +function smallListView(){
 + let body='<div class="title">'+({history:'最近查询',favorites:'收藏订单',drafts:'凭证草稿'})[S.page]+'</div>';
@@ -1732,23 +1752,28 @@ index 0000000..8f96f6f
 + (d.rows||[]).map((o,i)=>orderCard(o,i,'stats.order')).join(''),actions:btn('刷新业务数据','stats.reload','btn-primary block')};
 +}
 +function render(){
++ if(!S.visible||renderPending)return;
++ renderPending=true;requestAnimationFrame(()=>{renderPending=false;renderNow();});
++}
++function renderNow(){
 + if(!S.visible)return;
 + const view=[S.ctx.key,S.tab,S.page,S.order?.trade_no,S.form?.title].join(':');
-+ const same=view===renderedView,oldBody=document.querySelector('.body'),scroll=same?oldBody?.scrollTop||0:0;
++ const same=view===renderedView,oldBody=document.querySelector('.body'),scroll=S.restoreScroll??(same?oldBody?.scrollTop||0:0);
 + const focused=same?document.activeElement:null,focusId=focused?.id,fieldName=focused?.dataset?.field;
 + const selection=focused&&/INPUT|TEXTAREA/.test(focused.tagName)&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
 + let v;
 + if(S.page==='login')v=loginView();else if(S.page==='detail')v=detailView();else if(S.page==='recognize'||S.page==='ocr')v=recognizeView(S.page==='ocr');else if(S.page==='form')v=formView();else if(S.page==='records')v=recordsView();else if(S.page==='record')v=moduleDetailView();else if(['history','favorites','drafts'].includes(S.page))v=smallListView();else if(S.page==='stats')v=statsView();else v=({merchant:merchantView,orders:ordersView,voucher:voucherView,batch:batchView,more:moreView}[S.tab]||merchantView)();
 + const m=S.form?.merchant||S.m,ctx=S.form?.context||S.ctx;
-+ $('app').innerHTML='<section class="panel"><header class="hd"><div class="hd-top">'+(S.page?'<button class="btn-icon" data-act="back" aria-label="返回">'+icon('back')+'</button>':'')+
++ const markup='<section class="panel"><header class="hd"><div class="hd-top">'+(S.page?'<button class="btn-icon" data-act="back" aria-label="返回">'+icon('back')+'</button>':'')+
 + '<div class="hd-chat">'+'<span class="clamp1">'+esc(ctx.label||'FUTOON')+'</span></div><button class="panel-control" data-act="resize" aria-label="切换大窗小窗">'+(S.large?'小窗':'展开')+'</button><button class="panel-control primary" data-act="collapse" aria-label="收起回聊天">回聊天</button></div>'+
-+ '<div class="hd-ctx">'+(m?'<span class="pid mono"><span class="l">PID</span>'+esc(m.uid)+'</span><b class="clamp1">'+esc(m.username||'')+'</b>':badge(S.lookup==='loading'?'识别中…':'未识别商户',S.lookup==='loading'?'info':'warn'))+
-+ '<span class="src">'+esc(S.manual?'手动指定':ctx.source||'未识别')+'</span></div></header><div class="body" '+(S.busy?'aria-busy="true"':'')+'>'+
++ '<div class="hd-ctx">'+(m?'<span class="pid mono"><span class="l">PID</span>'+esc(m.uid)+'</span><b class="clamp1">'+esc(m.username||'')+'</b>':badge(!S.active?'未连接后台':S.lookup==='loading'?'识别中…':S.lookup==='unbound'?'未绑定商户':S.lookup==='failed'?'查询失败':'未指定商户',S.lookup==='loading'?'info':'warn'))+
++ (m||ctx.tgid?'<span class="src">'+esc(S.manual?'手动指定':ctx.source||'当前会话')+'</span>':'')+'</div></header><div class="body" '+(S.busy?'aria-busy="true"':'')+'>'+
 + (S.error?note(S.error,'err'):'')+(S.busy?'<div class="loading">'+icon('spin','spin')+'处理中…</div>':'')+v.body+'</div>'+
 + (v.actions?'<div class="actionbar '+(S.busy?'busy':'')+'">'+v.actions+'</div>':'')+
 + '<nav class="tabbar" aria-label="业务导航">'+[['orders','订单','order'],['merchant','商户','store'],['voucher','凭证','image'],['batch','批量','layers'],['more','更多','grid']].map(([id,t,i])=>'<button class="tab '+(S.tab===id?'on':'')+'" data-act="tab.'+id+'">'+icon(i)+t+'</button>').join('')+'</nav></section>'+
 + (S.modal?'<div class="dialog-backdrop"><div class="dialog"><div class="title">'+(S.modal==='context'?'聊天对象已变化':'放弃未提交内容？')+'</div><p class="plain">'+(S.modal==='context'?'正在编辑的表单仍属于原商户，尚未切换操作目标。可以继续核对，或放弃后查看新聊天。':'离开后不会提交当前修改。')+'</p><div class="toolbar">'+btn('继续编辑','modal.keep')+btn('放弃修改','modal.discard','btn-danger')+'</div></div></div>':'');
-+ renderedView=view;const body=document.querySelector('.body');if(body)body.scrollTop=scroll;
++ if(markup===lastMarkup)return;
++ $('app').innerHTML=markup;lastMarkup=markup;renderedView=view;S.restoreScroll=null;const body=document.querySelector('.body');if(body)body.scrollTop=scroll;
 + const target=focusId?$(focusId):fieldName?document.querySelector('[data-field="'+CSS.escape(fieldName)+'"]'):null;
 + if(target){target.focus({preventScroll:true});if(selection)try{target.setSelectionRange(...selection);}catch(ignored){}}
 +}
@@ -1794,7 +1819,7 @@ index 0000000..8f96f6f
 +}
 +async function submitForm(){
 + const form=S.form;if(!form)return;if(form.pluginLoading)throw new Error('请等待支付插件加载完成');if(form.pluginError)throw new Error(form.pluginError);const v={...form.values},p={...form.params};let r;
-+ if(form.kind==='manual'){await lookup(v.column,v.value,true);form.dirty=false;S.page='';return;}
++ if(form.kind==='manual'){if(!/^[1-9][0-9]{0,18}$/.test(v.value.trim()))throw new Error('请输入完整的正整数 TGID 或商户 PID');await lookup(v.column,v.value.trim(),true);if(!S.m)throw new Error(S.error||'未找到对应商户，请核对查询类型和号码');form.dirty=false;S.form=null;S.page='';S.stack=[];return;}
 + if(form.kind==='filters'){if(v.column&&!v.value.trim())throw new Error('请填写搜索字段值');S.filters={uid:v.uid,channel:v.channel,starttime:v.starttime,endtime:v.endtime,status:v.status||'-1',...(v.column?{column:v.column,value:v.value.trim()}:{})};for(const k of Object.keys(S.filters))if(!S.filters[k])delete S.filters[k];if(v.column)S.q='';form.dirty=false;S.page='';S.tab='orders';await search(1,true);return;}
 + if(form.kind==='reply'||form.kind==='summary'){await call('ui.copy',{text:v.text});toast('已复制，可回到聊天编辑后发送');form.dirty=false;return;}
 + if(form.kind==='balance'){
@@ -1819,16 +1844,16 @@ index 0000000..8f96f6f
 + if(a==='monitor.window'){S.monitorWindow=el.dataset.window;return;}
 + if(a==='monitor.edit'){const r=await call('module.editor',{module:'channels',id:String(S.record.id),editor:'detail'});setForm('编辑通道配置',r.fields,'backendForm',{ticket:r.ticket},'通道 ID '+S.record.id);return;}
 + if(a==='route.add'){const form=S.form;if(!form?.params?.route)return;const i=form.fields.filter(x=>x.name.endsWith('[channel]')).length;if(i>=100)throw new Error('最多 100 条路由');for(const x of [f('list['+i+'][channel]','路由 '+(i+1)+' · 通道','','select',form.params.routeOptions||[]),f('list['+i+'][weight]','权重','1','number')]){form.fields.push(x);form.values[x.name]=x.value;}form.dirty=true;return;}
-+ if(a.startsWith('tab.')){if(S.form?.dirty){S.modal='discard';render();return;}S.tab=a.slice(4);S.page='';S.form=null;S.error='';render();return;}
++ if(a.startsWith('tab.')){if(hasUnsavedChanges()){S.nextTab=a.slice(4);S.modal='discard';render();return;}S.tab=a.slice(4);S.page='';S.form=null;S.stack=[];S.error='';render();return;}
 + if(a==='collapse'){draft();S.visible=false;await call('ui.collapse');return;}
 + if(a==='resize'){S.large=!S.large;await call('ui.resize',{large:S.large});render();return;}
 + if(a==='back'){back();return;}
-+ if(a==='modal.keep'){S.modal='';render();return;}
-+ if(a==='modal.discard'){S.modal='';if(S.form)S.form.dirty=false;S.form=null;S.page='';S.stack=[];render();return;}
++ if(a==='modal.keep'){S.modal='';S.nextTab=null;S.nextBack=false;render();return;}
++ if(a==='modal.discard'){S.modal='';if(S.form)S.form.dirty=false;S.form=null;if(S.nextBack){S.nextBack=false;back();}else{if(S.nextTab)S.tab=S.nextTab;S.page='';S.stack=[];}S.nextTab=null;render();return;}
 + if(a==='login.open'){show('login');return;}
-+ if(a==='login.captcha'){S.cfg.address=read('address');S.cfg.username=read('username');const r=await call('session.captcha',{address:S.cfg.address,username:S.cfg.username});S.captcha=r.image;return;}
-+ if(a==='login.submit'){const username=read('username'),password=read('password'),captcha=read('captcha');await call('session.login',{username,password,captcha});S.active=true;S.page='';S.cfg.username=username;S.local={...S.local,...await call('local.read')};if(S.ctx.tgid)await lookup();return;}
-+ if(a==='login.logout'){await call('session.logout');S.active=false;S.m=null;S.page='login';return;}
++ if(a==='login.captcha'){const address=read('address').trim();if(!address)throw new Error('请填写完整 HTTPS 后台目录');S.cfg.address=address;S.cfg.username=read('username');const r=await call('session.captcha',{address,username:S.cfg.username});S.captcha=r.image;S.login={password:S.login?.password||'',captcha:''};if(S.backendAddress!==address){S.backendAddress=address;S.rev++;S.active=false;S.m=null;S.order=null;S.orders=[];S.photos=[];S.local={...emptyLocal(),...await call('local.read')};}return;}
++ if(a==='login.submit'){const username=read('username'),password=read('password'),captcha=read('captcha');if(!username||!password||!captcha)throw new Error('请填写账号、密码和验证码');await call('session.login',{username,password,captcha});S.active=true;S.login={};S.page='';S.cfg.username=username;S.local={...emptyLocal(),...await call('local.read')};await contextLookup();return;}
++ if(a==='login.logout'){await call('session.logout');S.rev++;S.active=false;S.m=null;S.order=null;S.orders=[];S.photos=[];S.local=emptyLocal();S.login={};S.page='login';return;}
 + if(a==='merchant.manual'){setForm('手动查询商户',[f('column','查询类型','telegram_id','select',[{value:'telegram_id',label:'Telegram 用户 ID'},{value:'uid',label:'商户 PID'}]),f('value','TGID 或 PID',S.ctx.tgid||'')],'manual');return;}
 + if(a==='merchant.refresh'){await lookup(S.manual?'uid':'telegram_id',S.manual?S.m?.uid:S.ctx.tgid,S.manual);return;}
 + if(a==='merchant.restore'){S.m=null;S.manual=false;await lookup('telegram_id',S.ctx.tgid,false);return;}
@@ -1912,6 +1937,9 @@ index 0000000..8f96f6f
 + const el=e.target;
 + if(el.dataset.field&&S.form){S.form.values[el.dataset.field]=el.type==='checkbox'?(el.checked?'1':'0'):el.multiple?[...el.selectedOptions].map(o=>o.value).join(','):el.value;S.form.dirty=true;S.form.preview=null;}
 + if(el.id==='query')S.q=el.value;if(el.id==='sourceText')S.sourceText=el.value;if(el.id==='caption'){S.caption=el.value;}if(el.id==='batchText')S.batchText=el.value;
++ if(el.id==='recordQuery')S.recordQuery=el.value;
++ if(el.id==='address')S.cfg.address=el.value;if(el.id==='username')S.cfg.username=el.value;
++ if(el.id==='password'||el.id==='captcha'){S.login=S.login||{};S.login[el.id]=el.value;}
 +});
 +$('app').addEventListener('change',e=>{
 + const el=e.target;if(el.id==='kind')S.kind=el.value;
@@ -1927,10 +1955,15 @@ index 0000000..8f96f6f
 + if(el.id==='batchGroup'){S.batchGroup=el.value;render();}
 + if(el.id==='template'&&el.value){S.caption='请协助'+el.value+'\n'+orderSummary()+'\n商户订单号：'+(S.order.out_trade_no||'')+'\n';render();}
 +});
++$('app').addEventListener('keydown',e=>{
++ if(e.key!=='Enter'||e.isComposing||e.target.tagName!=='INPUT')return;
++ const id=e.target.id,operation=id==='query'?'order.search':id==='recordQuery'?'records.search':id==='captcha'?'login.submit':e.target.dataset.field==='value'&&S.form?.kind==='manual'?'form.submit':'';
++ if(operation){e.preventDefault();run(()=>action(operation,e.target));}
++});
 +window.Futoon={
 + async init(config){
 +  S.cfg=config;S.visible=config.visible!==false;S.large=config.large!==false;document.body.dataset.theme=config.dark?'dark':'light';S.ctx=config.context||{};render();
-+  try{const r=await call('session.state');S.active=!!r.active;if(S.active){S.local={...S.local,...await call('local.read')};if(S.visible){await contextLookup();await refreshDeliveries();}}else S.page='login';}
++  try{const r=await call('session.state');S.backendAddress=r.address||S.cfg.address;S.active=!!r.active;if(S.active){S.local={...emptyLocal(),...await call('local.read')};if(S.visible){await contextLookup();await refreshDeliveries();}}else S.page='login';}
 +  catch(e){S.page='login';}
 +  S.initialized=true;render();
 + },
@@ -7311,10 +7344,9 @@ index 5d4d97c..67cc056 100644
                      return true;
                  } else if (itemId == android.R.id.selectAll) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
-index 9dec6be..4374d81 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
-@@ -1212,6 +1212,8 @@ public class ChatActivity extends BaseFragment implements
+@@ -1212,6 +1212,8 @@
      public final static int OPTION_DELETE = 1;
      public final static int OPTION_FORWARD = 2;
      public final static int OPTION_COPY = 3;
@@ -7323,7 +7355,7 @@ index 9dec6be..4374d81 100644
      public final static int OPTION_SAVE_TO_GALLERY = 4;
      public final static int OPTION_APPLY_LOCALIZATION_OR_THEME = 5;
      public final static int OPTION_SHARE = 6;
-@@ -3401,6 +3403,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -3401,6 +3403,7 @@
  
      @Override
      public void onFragmentDestroy() {
@@ -7331,10 +7363,11 @@ index 9dec6be..4374d81 100644
          super.onFragmentDestroy();
          if (messageMetricsView != null) {
              messageMetricsView.finish();
-@@ -3612,6 +3615,37 @@ public class ChatActivity extends BaseFragment implements
+@@ -3611,6 +3614,37 @@
+     }
  
      private Runnable justForTest;
- 
++
 +    private FutoonPanel futoonPanel;
 +
 +    public void bindFutoonContext() {
@@ -7365,11 +7398,10 @@ index 9dec6be..4374d81 100644
 +        args.putInt("message_id", (int) messageId);
 +        if (getMessagesController().checkCanOpenChat(args, this)) presentFragment(new ChatActivity(args));
 +    }
-+
+ 
      @Override
      public View createView(Context context) {
-         Timer t = Timer.create("ChatActivity.createView");
-@@ -3737,6 +3771,21 @@ public class ChatActivity extends BaseFragment implements
+@@ -3737,6 +3771,21 @@
          actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
              @Override
              public void onItemClick(final int id) {
@@ -7391,7 +7423,7 @@ index 9dec6be..4374d81 100644
                  if (id == -1) {
                      if (isInPollAddOptionMode()) {
                          pollAddOptionModeClose();
-@@ -4309,7 +4358,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -4309,7 +4358,7 @@
                  audioCallIconItem = menu.lazilyAddItem(call, R.drawable.call, themeDelegate);
                  audioCallIconItem.setContentDescription(LocaleController.getString(R.string.Call));
                  userFull = getMessagesController().getUserFull(currentUser.id);
@@ -7400,7 +7432,7 @@ index 9dec6be..4374d81 100644
                      showAudioCallAsIcon = !inPreviewMode;
                      audioCallIconItem.setVisibility(View.VISIBLE);
                  } else {
-@@ -4448,7 +4497,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -4448,7 +4497,7 @@
              if (currentUser != null && chatMode != MODE_SAVED) {
                  headerItem.lazilyAddSubItem(call, R.drawable.msg_callback, LocaleController.getString(R.string.Call));
                  headerItem.lazilyAddSubItem(video_call, R.drawable.msg_videocall, LocaleController.getString(R.string.VideoCall));
@@ -7409,17 +7441,17 @@ index 9dec6be..4374d81 100644
                      headerItem.showSubItem(call);
                      if (userFull.video_calls_available) {
                          headerItem.showSubItem(video_call);
-@@ -4542,6 +4591,9 @@ public class ChatActivity extends BaseFragment implements
+@@ -4541,6 +4590,9 @@
+             headerItem.lazilyAddSubItem(share_business_link, R.drawable.msg_share, getString(R.string.LinkActionShare));
              headerItem.lazilyAddSubItem(rename_business_link, R.drawable.msg_edit, getString(R.string.Rename));
              headerItem.lazilyAddSubItem(delete_business_link, R.drawable.msg_delete, getString(R.string.Delete)).setColors(Theme.getColor(Theme.key_text_RedRegular), Theme.getColor(Theme.key_text_RedRegular));
-         }
++        }
 +        if (headerItem != null && chatMode == MODE_DEFAULT) {
 +            headerItem.lazilyAddSubItem(OPTION_FUTOON_LOOKUP, R.drawable.msg_search, "富通查单");
-+        }
+         }
          if (ChatObject.isForum(currentChat) && isTopic && getParentLayout() != null && getParentLayout().getFragmentStack() != null && chatMode == MODE_DEFAULT) {
              boolean hasMyForum = false;
-             for (int i = 0; i < getParentLayout().getFragmentStack().size(); ++i) {
-@@ -8757,6 +8809,10 @@ public class ChatActivity extends BaseFragment implements
+@@ -8757,6 +8809,10 @@
              }
          });
  
@@ -7430,7 +7462,7 @@ index 9dec6be..4374d81 100644
          View overlay = textSelectionHelper.getOverlayView(context);
          if (overlay != null) {
              if (overlay.getParent() instanceof ViewGroup) {
-@@ -9022,6 +9078,10 @@ public class ChatActivity extends BaseFragment implements
+@@ -9022,6 +9078,10 @@
          onBottomItemsVisibilityChanged();
          ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
          Timer.finish(t);
@@ -7441,7 +7473,15 @@ index 9dec6be..4374d81 100644
  
          return fragmentView;
      }
-@@ -10373,6 +10433,9 @@ public class ChatActivity extends BaseFragment implements
+@@ -9091,6 +9151,7 @@
+         }
+ 
+         windowInsetsStateHolder.setInsets(insets);
++        if (futoonPanel != null) futoonPanel.onBottomInsetChanged(windowInsetsStateHolder.getCurrentMaxBottomInset());
+         
+         if (messagesSearchListContainer != null) {
+             messagesSearchListContainer.setPadding(insetsLeft, 0, insetsRight, 0);
+@@ -10373,6 +10434,9 @@
          actionMode.setOnLayoutListener(actionBar::invalidate);
  
          if (currentEncryptedChat == null) {
@@ -7451,7 +7491,7 @@ index 9dec6be..4374d81 100644
              final boolean isSavedMessages = getDialogId() == getUserConfig().getClientUserId() && (chatMode == 0 || chatMode == MODE_SAVED);
              actionModeViews.add(actionMode.addItemWithWidth(save_to, R.drawable.msg_download, dp(48), LocaleController.getString(R.string.SaveToMusic)));
              actionModeViews.add(actionMode.addItemWithWidth(edit, R.drawable.msg_edit, dp(48), LocaleController.getString(R.string.Edit)));
-@@ -18409,7 +18472,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -18409,7 +18473,7 @@
                      TLRPC.UserFull userInfo = getCurrentUserInfo();
                      if (showAudioCallAsIcon) {
                          headerItem.hideSubItem(call);
@@ -7460,7 +7500,21 @@ index 9dec6be..4374d81 100644
                          headerItem.showSubItem(call, true);
                      }
                  }
-@@ -19867,6 +19930,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -18571,6 +18635,13 @@
+                     int h = allHeight - AndroidUtilities.statusBarHeight - AndroidUtilities.navigationBarHeight;
+                     int contentHeightSpec = View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY);
+                     child.measure(contentWidthSpec, contentHeightSpec);
++                } else if (futoonPanel != null && futoonPanel.isView(child)) {
++                    // This child is laid out below the action bar, unlike full-screen overlays.
++                    // Deduct that offset and the navigation bar / IME from its measured height.
++                    int panelHeight = org.telegram.messenger.futoon.FutoonPanelLayout.contentHeight(
++                        allHeight, getPaddingTop(), actionBar.getVisibility() == VISIBLE ? actionBarHeight : 0,
++                        windowInsetsStateHolder.getCurrentMaxBottomInset());
++                    child.measure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(panelHeight, MeasureSpec.EXACTLY));
+                 } else if (child == topicsTabs) {
+                     int height = allHeight;
+                     if (actionBar.getVisibility() == VISIBLE) {
+@@ -19867,6 +19938,7 @@
              if (a == photoPathes.size() - 1 && caption != null) {
                  entry.caption = caption;
              }
@@ -7468,7 +7522,7 @@ index 9dec6be..4374d81 100644
              entries.add(entry);
          }
  
-@@ -20417,6 +20481,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -20417,6 +20489,7 @@
  
      @Override
      public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
@@ -7476,7 +7530,7 @@ index 9dec6be..4374d81 100644
          if (resultCode == Activity.RESULT_OK) {
              if (requestCode == 0 || requestCode == 2) {
                  createChatAttachView();
-@@ -24051,8 +24116,8 @@ public class ChatActivity extends BaseFragment implements
+@@ -24051,8 +24124,8 @@
                      }
                  }
                  if (headerItem != null) {
@@ -7487,7 +7541,7 @@ index 9dec6be..4374d81 100644
                          if (showAudioCallAsIcon) {
                              if (audioCallIconItem != null) {
                                  View item = audioCallIconItem.createView();
-@@ -29796,7 +29861,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -29796,7 +29869,7 @@
          super.setInPreviewMode(value);
          if (currentUser != null && audioCallIconItem != null) {
              TLRPC.UserFull userFull = getMessagesController().getUserFull(currentUser.id);
@@ -7496,7 +7550,7 @@ index 9dec6be..4374d81 100644
                  showAudioCallAsIcon = !inPreviewMode;
                  audioCallIconItem.setVisibility(View.VISIBLE);
              } else {
-@@ -29880,6 +29945,8 @@ public class ChatActivity extends BaseFragment implements
+@@ -29880,6 +29953,8 @@
      @Override
      public void onResume() {
          super.onResume();
@@ -7505,7 +7559,7 @@ index 9dec6be..4374d81 100644
          checkShowBlur(false);
          activityResumeTime = System.currentTimeMillis();
          if (openImport && getSendMessagesHelper().getImportingHistory(dialog_id) != null) {
-@@ -30091,6 +30158,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -30091,6 +30166,7 @@
  
      @Override
      public void onPause() {
@@ -7513,7 +7567,7 @@ index 9dec6be..4374d81 100644
          super.onPause();
          scrolling = false;
          if (scrimPopupWindow != null) {
-@@ -31010,6 +31078,17 @@ public class ChatActivity extends BaseFragment implements
+@@ -31010,6 +31086,17 @@
              final ArrayList<Integer> options = new ArrayList<>();
              View optionsView = null;
  
@@ -7531,7 +7585,7 @@ index 9dec6be..4374d81 100644
              if (AndroidUtilities.isAccessibilityScreenReaderEnabled() && message.messageOwner != null && message.messageOwner.from_id != null && message.messageOwner.from_id.user_id != getUserConfig().clientUserId && chatMode != MODE_SAVED) {
                  items.add(LocaleController.getString(R.string.OpenProfile));
                  options.add(OPTION_OPEN_PROFILE);
-@@ -33425,6 +33504,18 @@ public class ChatActivity extends BaseFragment implements
+@@ -33425,6 +33512,18 @@
          }
          boolean preserveDim = false;
          switch (option) {
@@ -7550,7 +7604,7 @@ index 9dec6be..4374d81 100644
              case OPTION_RETRY: {
                  final MessageObject object = selectedObject;
                  final MessageObject.GroupedMessages group = selectedObjectGroup;
-@@ -34734,6 +34825,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -34734,6 +34833,7 @@
  
      @Override
      public boolean onBackPressed(boolean invoked) {
@@ -8357,10 +8411,9 @@ index 0000000..fae8d2e
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000..3e81a63
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,472 @@
+@@ -0,0 +1,502 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -8415,6 +8468,7 @@ index 0000000..3e81a63
 +    private String contextKey="", initialText="", exportText="", exportName="";
 +    private long dialogId, topicId;
 +    private int generation;
++    private int lastBottomInset = -1, chooseGeneration;
 +    private boolean loaded,expanded,large=true,destroyed,paused,mutationBusy,keyboard,ballPositioned;
 +    private float downX,downY,startX,startY;
 +    private boolean dragged;
@@ -8473,6 +8527,8 @@ index 0000000..3e81a63
 +        web=new WebView(c);web.setVisibility(View.GONE);web.setBackgroundColor(Color.TRANSPARENT);
 +        web.setElevation(dp(12));
 +        web.getSettings().setJavaScriptEnabled(true);
++        web.getSettings().setUseWideViewPort(true);
++        web.getSettings().setLoadWithOverviewMode(false);
 +        web.getSettings().setDomStorageEnabled(false);
 +        web.getSettings().setAllowFileAccess(false);web.getSettings().setAllowContentAccess(false);
 +        web.getSettings().setAllowFileAccessFromFileURLs(false);web.getSettings().setAllowUniversalAccessFromFileURLs(false);
@@ -8489,7 +8545,7 @@ index 0000000..3e81a63
 +                    String path=u.getPath();
 +                    if(path!=null&&path.startsWith("/media/")) {
 +                        File f=media.get(path.substring(7));
-+                        try {if(f!=null&&f.isFile())return new WebResourceResponse("image/jpeg",null,new FileInputStream(f));}catch(Exception ignored){}
++                        try {if(f!=null&&f.isFile())return thumbnail(f);}catch(Exception ignored){}
 +                    }
 +                    WebResourceResponse asset=assets.shouldInterceptRequest(u);
 +                    if(asset!=null){
@@ -8517,6 +8573,11 @@ index 0000000..3e81a63
 +        web.loadUrl("https://futoon.local/assets/futoon/index.html#"+nonce);
 +    }
 +    private int dp(float n){return AndroidUtilities.dp(n);}
++    public boolean isView(View view){return view==root;}
++    public void onBottomInsetChanged(int inset){
++        if(lastBottomInset==inset)return;
++        lastBottomInset=inset;root.requestLayout();
++    }
 +    private String config(){
 +        try{return new JSONObject().put("nonce",nonce).put("context",context).put("address",store.address()).put("username",store.username())
 +                .put("dark",Theme.isCurrentThemeDark()).put("large",large).put("visible",expanded&&!paused).put("account",account).toString();}catch(Exception e){return "{}";}
@@ -8562,7 +8623,7 @@ index 0000000..3e81a63
 +    private void resize(){
 +        int available=root.getHeight();if(available<=0)return;
 +        FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)web.getLayoutParams();
-+        int h=Math.max(dp(160),large||keyboard?available-dp(8):Math.min(available-dp(8),Math.max(dp(360),(int)(available*.65))));
++        int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(360),large,keyboard);
 +        int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;
 +        if(p.height!=h||p.width!=width){p.height=h;p.width=width;web.setLayoutParams(p);}
 +    }
@@ -8578,7 +8639,8 @@ index 0000000..3e81a63
 +        NotificationCenter nc=NotificationCenter.getInstance(account);
 +        for(int event:new int[]{NotificationCenter.fileLoaded,NotificationCenter.fileLoadFailed})nc.removeObserver(this,event);
 +        delivery.removeListener(deliveryListener);
-+        if(web!=null){web.removeJavascriptInterface("FutoonNative");web.stopLoading();web.destroy();web=null;}((FrameLayout)root.getParent()).removeView(root);
++        if(web!=null){web.removeJavascriptInterface("FutoonNative");web.stopLoading();web.destroy();web=null;}
++        if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);
 +    }
 +    private boolean valid(){return !destroyed&&owner==UserConfig.getInstance(account).getClientUserId()&&UserConfig.getInstance(account).isClientActivated();}
 +    private void js(String code){if(web!=null&&loaded&&valid())web.evaluateJavascript(code,null);}
@@ -8634,24 +8696,27 @@ index 0000000..3e81a63
 +            }
 +            if(op.equals("evidence.clear")){photos.clear();activeOrder=p.optString("order");FutoonStore.clearDraft(account);adoptedDraft=null;reply(id,photoList(),null);return;}
 +            if(op.equals("evidence.restore")){
++                final int restoreGeneration=generation;
 +                activeOrder=p.getString("order");
++                final String restoreOrder=activeOrder;
 +                work(id,false,()->{
 +                    String rawData=store.readLocal(store.address());JSONArray paths=new JSONArray();
 +                    if(!rawData.isEmpty()){
 +                        JSONObject proofMap=new JSONObject(rawData).optJSONObject("_nativeProofs");
-+                        if(proofMap!=null&&proofMap.optJSONArray(activeOrder)!=null)paths=proofMap.getJSONArray(activeOrder);
++                        if(proofMap!=null&&proofMap.optJSONArray(restoreOrder)!=null)paths=proofMap.getJSONArray(restoreOrder);
 +                    }
 +                    ArrayList<File> restored=new ArrayList<>();
 +                    String ownedRoot=root.getContext().getCacheDir().getCanonicalPath()+File.separator;
 +                    for(int i=0;i<paths.length()&&restored.size()<10;i++){File f=new File(paths.getString(i));if(f.isFile()&&f.getCanonicalPath().startsWith(ownedRoot))restored.add(f);}
 +                    final ArrayList<File> found=restored;
-+                    AndroidUtilities.runOnUIThread(()->{photos.clear();photos.addAll(found);try{js("window.Futoon.photos("+photoList()+")");}catch(Exception ignored){}});
++                    AndroidUtilities.runOnUIThread(()->{if(!valid()||restoreGeneration!=generation)return;photos.clear();photos.addAll(found);try{js("window.Futoon.photos("+photoList()+")");}catch(Exception ignored){}});
 +                    return new JSONObject().put("count",restored.size());
 +                });return;
 +            }
 +            if(op.equals("evidence.gallery")||op.equals("ocr.gallery")){
 +                if(chooseRequest!=null)throw new IOException("已有图片选择正在进行");
 +                chooseRequest=id+":"+op;
++                chooseGeneration=generation;
 +                Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_ALLOW_MULTIPLE,op.equals("evidence.gallery"));
 +                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 +                host.startActivityForResult(intent,PICK_IMAGES);return;
@@ -8659,7 +8724,9 @@ index 0000000..3e81a63
 +            if(op.equals("evidence.remove")){int index=p.getInt("index");if(index>=0&&index<photos.size())photos.remove(index);reply(id,photoList(),null);return;}
 +            if(op.equals("evidence.edit")){
 +                int index=p.getInt("index");if(index<0||index>=photos.size())throw new IOException("凭证不存在");
++                final int editGeneration=generation;final File original=photos.get(index);
 +                new FutoonImageEditor(host.getParentActivity(),photos.get(index),file->{
++                    if(!valid()||editGeneration!=generation||index>=photos.size()||!photos.get(index).equals(original)){reply(rid,null,new IOException("聊天对象或凭证已变化，请重新选择"));return;}
 +                    photos.set(index,file);
 +                    try{reply(rid,photoList(),null);}catch(Exception error){reply(rid,null,error);}
 +                },()->reply(rid,null,new IOException("已取消编辑"))).show();return;
@@ -8725,6 +8792,7 @@ index 0000000..3e81a63
 +    }
 +    private JSONArray photoList()throws Exception{
 +        JSONArray out=new JSONArray();
++        media.clear();
 +        for(File f:photos){String token=UUID.nameUUIDFromBytes((f.getAbsolutePath()+f.lastModified()).getBytes(StandardCharsets.UTF_8)).toString();media.put(token,f);out.put(new JSONObject().put("url","https://futoon.local/media/"+token).put("name",f.getName()));}
 +        return out;
 +    }
@@ -8780,6 +8848,8 @@ index 0000000..3e81a63
 +        if(requestCode!=PICK_IMAGES)return false;
 +        String choice=chooseRequest;chooseRequest=null;if(choice==null)return true;
 +        int colon=choice.indexOf(':');String rid=choice.substring(0,colon),op=choice.substring(colon+1);
++        if(!valid()||chooseGeneration!=generation){reply(rid,null,new IOException("聊天对象已变化，请重新选择图片"));return true;}
++        final int pickGeneration=generation;
 +        if(resultCode!=Activity.RESULT_OK||data==null){reply(rid,null,new IOException("已取消选择"));return true;}
 +        ArrayList<Uri> uris=new ArrayList<>();
 +        if(data.getClipData()!=null)for(int i=0;i<data.getClipData().getItemCount()&&i<10;i++)uris.add(data.getClipData().getItemAt(i).getUri());
@@ -8789,7 +8859,7 @@ index 0000000..3e81a63
 +            WORK.execute(()->{try{File f=copyImage(uris.get(0));AndroidUtilities.runOnUIThread(()->ocr(rid,f));}catch(Exception e){AndroidUtilities.runOnUIThread(()->reply(rid,null,e));}});
 +        }else work(rid,false,()->{
 +            ArrayList<File> files=new ArrayList<>();for(Uri u:uris)files.add(copyImage(u));
-+            AndroidUtilities.runOnUIThread(()->{for(File f:files)if(photos.size()<10)photos.add(f);try{js("window.Futoon.photos("+photoList()+")");}catch(Exception ignored){}});
++            AndroidUtilities.runOnUIThread(()->{if(!valid()||pickGeneration!=generation)return;for(File f:files)if(photos.size()<10)photos.add(f);try{js("window.Futoon.photos("+photoList()+")");}catch(Exception ignored){}});
 +            return true;
 +        });
 +        return true;
@@ -8805,16 +8875,29 @@ index 0000000..3e81a63
 +        }finally{if(!ok)f.delete();}
 +    }
 +    private void ocr(String rid,File file){
++        final int ocrGeneration=generation;
 +        try {
 +            com.google.mlkit.vision.text.TextRecognizer recognizer=TextRecognition.getClient(new ChineseTextRecognizerOptions.Builder().build());
 +            recognizer.process(InputImage.fromFilePath(root.getContext(),Uri.fromFile(file))).addOnSuccessListener(text->{
 +                try{
++                    if(!valid()||ocrGeneration!=generation)throw new IOException("聊天对象已变化，请重新识别");
 +                    String raw=text.getText(),qr=decodeQr(file);
 +                    if(!qr.isEmpty())raw+="\n二维码内容："+qr;
 +                    reply(rid,new JSONObject().put("text",raw).put("items",candidates(raw)),null);
 +                }catch(Exception e){reply(rid,null,e);}finally{recognizer.close();}
 +            }).addOnFailureListener(e->{recognizer.close();reply(rid,null,e);});
 +        }catch(Exception e){reply(rid,null,e);}
++    }
++    private WebResourceResponse thumbnail(File file)throws IOException{
++        BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;
++        BitmapFactory.decodeFile(file.getPath(),options);options.inSampleSize=1;
++        while(Math.max(options.outWidth,options.outHeight)/options.inSampleSize>640)options.inSampleSize*=2;
++        options.inJustDecodeBounds=false;Bitmap bitmap=BitmapFactory.decodeFile(file.getPath(),options);
++        if(bitmap==null)throw new IOException("图片预览不可用");
++        byte[] bytes;
++        try(ByteArrayOutputStream out=new ByteArrayOutputStream()){bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bytes=out.toByteArray();}
++        finally{bitmap.recycle();}
++        return new WebResourceResponse("image/jpeg",null,200,"OK",Collections.singletonMap("Cache-Control","private, max-age=600"),new ByteArrayInputStream(bytes));
 +    }
 +    private String decodeQr(File file){
 +        Bitmap bitmap=null;
@@ -9542,10 +9625,9 @@ index 0000000..d401dc2
 +}
 diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
-index 0000000..44cf4e6
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,188 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9562,7 +9644,8 @@ index 0000000..44cf4e6
 +   if(r.op==='session.state')data={active:true};
 +   if(r.op==='local.read')data={};
 +   if(r.op==='delivery.read')data={};
-+   if(r.op==='merchant.lookup')data={rows:r.params.value==='000'?[]:[merchant],total:1};
++   if(r.op==='merchant.lookup')data={rows:['000','555'].includes(r.params.value)?[]:[merchant],total:1};
++   if(r.op==='session.captcha')data={image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='};
 +   if(r.op==='orders.search'||r.op==='orders.list')data={rows:[order],total:1};
 +   if(r.op==='order.detail')data=order;
 +   if(r.op==='balance.preview')data={before:'1000.00',amount:'100.00',after:r.params.direction==='add'?'1100.00':'900.00'};
@@ -9673,6 +9756,60 @@ index 0000000..44cf4e6
 + await page.evaluate(()=>{document.body.dataset.theme='dark';Futoon.context({key:'private2',label:'私聊用户',tgid:'5824870757',source:'来自私聊对方 TGID'});});
 + await page.waitForFunction(()=>Futoon.debugState().m?.uid==='20418');
 + await page.screenshot({path:qa+'/merchant-dark.png'});
++ // Reproduce the ordinary-group and manual-lookup states shown in the device screenshots.
++ await page.evaluate(()=>{document.body.dataset.theme='light';Futoon.context({key:'ordinary-group',dialog:'-100100',label:'id1014 1021 1024富通-顶尖',source:'未识别商户'});});
++ await page.waitForFunction(()=>!Futoon.debugState().m&&!Futoon.debugState().busy);
++ async function checkLayout(label){
++  const layout=await page.evaluate(()=>{const rect=e=>e?.getBoundingClientRect(),body=document.querySelector('.body'),a=rect(document.querySelector('.actionbar')),t=rect(document.querySelector('.tabbar'));return {overflow:document.documentElement.scrollWidth>innerWidth,body:body?.clientHeight,actions:!a||a.top>=0&&a.bottom<=innerHeight+1,tabs:t.top>=0&&t.bottom<=innerHeight+1,hugeButtons:[...document.querySelectorAll('.btn')].filter(x=>rect(x).height>96).map(x=>({text:x.textContent,height:rect(x).height}))};});
++  assert(!layout.overflow&&layout.body>0&&layout.actions&&layout.tabs&&!layout.hugeButtons.length,JSON.stringify({label,layout}));
++ }
++ for(const size of [{width:393,height:712},{width:393,height:416},{width:320,height:330},{width:844,height:240}]){
++  await page.setViewportSize(size);await checkLayout('ordinary group '+JSON.stringify(size));
++ }
++ await page.setViewportSize({width:393,height:712});
++ await page.screenshot({path:qa+'/ordinary-group-fixed.png'});
++ const manual=page.getByRole('button',{name:'手动查询 TGID / PID',exact:true});
++ const manualBox=await manual.boundingBox();assert(manualBox.height>=44&&manualBox.height<=68,'Manual lookup is a normal-sized action');
++ assert.equal(await page.locator('.hd-ctx .src').count(),0,'Unrecognized state must not repeat the same badge');
++ await manual.click();await page.locator('[data-field=value]').fill('555');
++ await page.locator('[data-field=value]').press('Enter');
++ await page.getByText('未找到对应商户，请核对查询类型和号码',{exact:true}).waitFor();
++ assert.equal(await page.locator('[data-field=value]').inputValue(),'555','No-match keeps the form and the typed identifier');
++ await checkLayout('manual lookup no match');
++ await page.screenshot({path:qa+'/manual-lookup-fixed.png'});
++ await page.locator('[data-field=value]').fill('5824870757');
++ await page.locator('[data-field=value]').press('Enter');
++ await page.waitForFunction(()=>Futoon.debugState().m?.uid==='20418'&&Futoon.debugState().page==='');
++ await page.getByRole('button',{name:'切换商户',exact:true}).click();
++ await page.locator('[data-field=value]').fill('123'); // active input must not swallow Cancel
++ await page.getByRole('button',{name:'取消',exact:true}).click();
++ await page.waitForFunction(()=>Futoon.debugState().page==='');
++ await page.getByRole('button',{name:'余额调整',exact:true}).click();
++ await page.locator('[data-field=amount]').fill('5.00');
++ await page.locator('[data-act="tab.orders"]').click();
++ await page.getByRole('button',{name:'放弃修改',exact:true}).click();
++ await page.waitForFunction(()=>Futoon.debugState().tab==='orders'&&Futoon.debugState().page==='');
++ // Loading captcha and unrelated delivery updates must retain in-memory login inputs.
++ await page.locator('[data-act="tab.more"]').click();
++ await page.locator('[data-act="module.open"][data-module="login"]').click();
++ await page.getByRole('button',{name:'退出富通登录',exact:true}).click();
++ await page.locator('#address').fill('https://example.test/admin/');
++ await page.locator('#username').fill('qa-user');await page.locator('#password').fill('fixture-password');
++ await page.getByRole('button',{name:'加载验证码',exact:true}).click();
++ await page.waitForFunction(()=>!Futoon.debugState().busy&&!!Futoon.debugState().captcha);
++ assert.equal(await page.locator('#password').inputValue(),'fixture-password');
++ await page.locator('#captcha').fill('ABCD');
++ await page.evaluate(()=>{window.focusedInput=document.activeElement;for(let i=0;i<20;i++)Futoon.sent({draft:'fixture',sent:1,pending:0,failed:0});});
++ await page.waitForTimeout(80);
++ assert.equal(await page.locator('#captcha').inputValue(),'ABCD');
++ await page.evaluate(()=>{window.focusedInput=document.activeElement;Futoon.sent({draft:'fixture',sent:1,pending:0,failed:0});});
++ await page.waitForTimeout(80);
++ assert(await page.evaluate(()=>document.activeElement===window.focusedInput),'Unchanged updates must not rebuild the focused DOM');
++ for(const size of [{width:393,height:712},{width:393,height:416},{width:320,height:330},{width:844,height:240}]){await page.setViewportSize(size);await checkLayout('login '+JSON.stringify(size));}
++ await page.setViewportSize({width:393,height:712});await page.screenshot({path:qa+'/login-fixed.png'});
++ await page.locator('#captcha').press('Enter');
++ await page.waitForFunction(()=>Futoon.debugState().active&&Futoon.debugState().page==='');
++ assert.equal(await page.evaluate(()=>Futoon.debugState().login.password),undefined,'Successful login clears transient password');
 + const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
 + assert(!overflow,'panel should fit viewport');assert.deepEqual(errors,[]);
 + fs.writeFileSync(qa+'/result.json',JSON.stringify({passed:true,errors,requestCount:await page.evaluate(()=>testRequests.length),checks:['TGID lookup','balance direction and exact amount','order search and detail','receipt selection preview not sent','OCR review without mutations','batch query','channel list','dark theme','viewport overflow','route edit and save','monitor window metrics','editing focus retained','small screen and keyboard layout']},null,2));
@@ -9734,11 +9871,10 @@ index 0000000..03b683b
 +bash Tools/futoon/run-tests.sh
 +```
 diff --git a/Tools/futoon/run-tests.sh b/Tools/futoon/run-tests.sh
-new file mode 100644
-index 0000000..2e43782
+new file mode 100755
 --- /dev/null
 +++ b/Tools/futoon/run-tests.sh
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,39 @@
 +#!/usr/bin/env bash
 +set -euo pipefail
 +project_root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -9771,10 +9907,13 @@ index 0000000..2e43782
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonIdentity.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java" \
++    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java" \
++    "$project_root/Tools/futoon/FutoonPanelLayoutTest.java" \
 +    "$project_root/Tools/futoon/FutoonCoreTest.java" "$project_root/Tools/futoon/FutoonExtendedTest.java" "$project_root/Tools/futoon/FutoonModuleTest.java"
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonCoreTest
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonExtendedTest
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonModuleTest
++java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonPanelLayoutTest
 diff --git a/build.gradle b/build.gradle
 index f7c8fcb..87ee7c5 100644
 --- a/build.gradle
@@ -9808,7 +9947,7 @@ index 55d530f..8913fb4 100644
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7178
++APP_VERSION_CODE=7179
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
@@ -9843,3 +9982,58 @@ index 7d4f1ab..54247fd 100644
 \ No newline at end of file
 +apply from: file("TMessagesProj_Modules/media/core_settings.gradle")
 
+
+diff --git a/Tools/futoon/FutoonPanelLayoutTest.java b/Tools/futoon/FutoonPanelLayoutTest.java
+new file mode 100644
+--- /dev/null
++++ b/Tools/futoon/FutoonPanelLayoutTest.java
+@@ -0,0 +1,27 @@
++package org.telegram.messenger.futoon;
++
++public final class FutoonPanelLayoutTest {
++    private static int checks;
++    private static void check(boolean value,String message){checks++;if(!value)throw new AssertionError(message);}
++    public static void main(String[] args){
++        // Parent height, padding, action bar (including status bar), system navigation / IME.
++        int[][] windows={{844,0,92,24},{844,0,92,320},{844,0,92,360},
++                {390,0,64,24},{390,0,64,220},{480,0,80,48},{300,12,64,120},{160,0,56,100}};
++        for(int[] w:windows){
++            int content=FutoonPanelLayout.contentHeight(w[0],w[1],w[2],w[3]);
++            int top=w[1]+w[2],bottom=w[0]-w[3];
++            check(top+content<=bottom,"Panel must fit below the toolbar and above navigation/IME");
++            for(boolean large:new boolean[]{false,true})for(boolean keyboard:new boolean[]{false,true}){
++                int sheet=FutoonPanelLayout.sheetHeight(content,8,360,large,keyboard);
++                check(sheet>=0&&sheet+16<=Math.max(16,content),"Sheet margins and preferred minimum cannot overflow");
++            }
++        }
++        check(FutoonPanelLayout.contentHeight(844,0,92,24)==728,"Pixel portrait usable area");
++        check(FutoonPanelLayout.contentHeight(844,0,92,320)==432,"Keyboard replaces navigation inset, not added twice");
++        check(FutoonPanelLayout.contentHeight(100,0,92,40)==0,"Oversized insets clamp to zero");
++        check(FutoonPanelLayout.sheetHeight(728,8,360,true,false)==712,"Expanded sheet respects both margins");
++        // The previous MATCH_PARENT measurement necessarily extended past the screen.
++        check(92+844>844-24,"Fixture reproduces old parent-measurement overshoot");
++        System.out.println("PASS: "+checks+" native panel geometry checks (portrait, landscape, IME, small windows)");
++    }
++}
+
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java
+new file mode 100644
+--- /dev/null
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java
+@@ -0,0 +1,16 @@
++package org.telegram.messenger.futoon;
++
++/** Pixel geometry shared by the chat container and floating sheet. No Android dependencies. */
++public final class FutoonPanelLayout {
++    private FutoonPanelLayout() {}
++
++    public static int contentHeight(int parentHeight, int paddingTop, int actionBarHeight, int bottomInset) {
++        return Math.max(0, parentHeight - Math.max(0, paddingTop)
++                - Math.max(0, actionBarHeight) - Math.max(0, bottomInset));
++    }
++
++    public static int sheetHeight(int available, int margin, int preferredMinimum, boolean large, boolean keyboard) {
++        int maximum = Math.max(0, available - Math.max(0, margin) * 2);
++        return large || keyboard ? maximum : Math.min(maximum, Math.max(preferredMinimum, available * 65 / 100));
++    }
++}

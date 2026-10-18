@@ -1,38 +1,25 @@
 {
-  "version": "0.3.1 lite startup fix",
+  "version": "0.3.2 panel layout and interaction fixes",
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "files": 58,
-  "patch_sha256": "eed1b3575b11578cea21ddd43d2b16046e00218fb55cc1e87fcafaf0a35a70f5",
+  "files": 60,
+  "patch_sha256": "fedca84c2447a244b6cb74e29730477ae96fe42fc4b29830397bc3ab16d7ce27",
   "validation": {
-    "core_checks": 132,
-    "panel_ui": "passed",
-    "startup_color_regression": "passed (including original-crash negative control)",
-    "java_compilation": "passed",
-    "full_native_and_shrink": "passed",
-    "removed_component_audit": "passed",
+    "core_checks": "pending CI",
+    "panel_ui": "pending CI",
+    "native_panel_geometry": "pending CI",
+    "startup_color_regression": "pending CI",
+    "java_compilation": "pending CI",
+    "full_native_and_shrink": "pending CI",
+    "removed_component_audit": "pending CI",
     "android_device_launch": "not tested",
     "real_financial_mutations": "not performed",
-    "live_push_delivery": "not tested",
-    "apk_signature_and_checksum": "passed",
-    "futoon_assets": "5/5 unchanged"
+    "live_push_delivery": "not tested"
   },
   "github_repository": "susuy0/Yacd-meta",
-  "previous_build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39049394474",
-  "previous_build_commit": "1316253971483923857b75b97fac2382335cecb6",
+  "previous_build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39082736383",
+  "previous_build_commit": "cdfe8cd2eec0e2ae3c5d99375df050850607ef04",
   "previous_apk": {
-    "bytes": 39733398,
-    "MiB": 37.9,
-    "sha256": "e7487db274a2203e38b27c1254b1a58215eabff78a91ccfb130ef7ef6cb4659c",
-    "versionCode": 71779,
-    "reduction_percent": 45.0,
-    "native_core_bytes": 9893208,
-    "signature_matches_v02": true
-  },
-  "versionCode": 71789,
-  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39082736383",
-  "build_commit": "cdfe8cd2eec0e2ae3c5d99375df050850607ef04",
-  "apk": {
     "bytes": 39733399,
     "sha256": "ffd25ef9bfa310faf08dbcbedc1f2de7802b2ec301ab617e95607f785b0b0f9a",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
@@ -51,9 +38,5 @@
     "MiB": 37.9,
     "signature_matches_v03": true
   },
-  "r8_mapping": {
-    "artifact": "mapping.txt",
-    "bytes": 186268938,
-    "sha256": "9bc0f819159619cdddef07c391dab11ecb10aa5fae91ac3923d5af89c808f593"
-  }
+  "versionCode": 71799
 }
