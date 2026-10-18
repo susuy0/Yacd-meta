@@ -1,11 +1,8 @@
 {
-  "version": "0.7.1 native chat tools",
-  "versionCode": 71859,
+  "version": "0.7.2 embedded lifecycle fix",
+  "versionCode": 71869,
   "app_name": "短信",
   "home_title": "Futoon chat",
-  "source_commit": "40c4e5ffb5940895494167768945e1ba4b17bdb7",
-  "ci_run": 39118289614,
-  "ci_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39118289614",
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
@@ -19,76 +16,8 @@
   "standalone_admin_activities": 0,
   "push_mode": "development-no-fcm",
   "validation": {
-    "tests": 206,
-    "failures": 0,
-    "errors": 0,
-    "skipped": 0,
-    "lint_errors": 0,
-    "lint_warnings": 28,
-    "screenshots": 28,
-    "report_artifact_id": 12132969247,
-    "report_zip_sha256": "26494bb50030264385bbc8741bc65cc15ef2eb7cd1cc8f472b3348fff2681fb2",
-    "core_contract_checks": 132,
-    "geometry_checks": 45,
-    "send_button_regression": "passed with original missing-button negative control",
-    "quick_reply_host_bridge": "passed: actual native show/dismiss bridge, editable draft, no duplicate insertion, account/lifecycle guards, settings and original options",
-    "startup_regression": "passed including original-crash negative control",
-    "androidx_callback_regression": "passed including negative control",
-    "host_java": "passed",
-    "full_build": "success",
-    "real_device_backend": "not tested",
-    "live_telegram_send": "not tested",
-    "performance_benchmark": "not measured",
-    "settings_host_regression": "passed: actual native settings source compiled, lifecycle forwarding and pinned predictive-back API",
-    "removed_components_audit": "passed",
-    "native_entry_points": [
-      "OrdersScreen",
-      "SettlementsScreen",
-      "ModernManage",
-      "MerchantProfileScreen",
-      "RecognitionScreen",
-      "CurrentMerchantCard",
-      "EvidenceScreen",
-      "OrderWorkflowTools",
-      "PaymentAdminRoot",
-      "NativeModuleRoot",
-      "DomainAuditRoot",
-      "ChatToolsScreen"
-    ],
-    "chat_native_entry_points": [
-      "chat_tag_renderer",
-      "quick_reply_host_bridge",
-      "profile_tgid_row"
-    ]
+    "status": "pending CI",
+    "regression": "actual ownerless Activity/Dialog windows, original crash negative control"
   },
-  "patch_sha256": "49260dbc192266b4645113712aea95c40662f596f6ac940e04a33b14a76b2666",
-  "apk": {
-    "file_name": "SMS-Futoon-v0.7.1-arm64.apk",
-    "bytes": 41019829,
-    "sha256": "12e8d42fbc9a6814dac75170e24e4403c3e6e1d153baf487222a6a08430848b0",
-    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
-    "v2_signature": "verified",
-    "zip_crc": "verified",
-    "abis": [
-      "arm64-v8a"
-    ],
-    "futoon_assets": 0,
-    "native_core_bytes": 9893208,
-    "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71859,
-    "versionName": "13.0.2",
-    "minSdkVersion": 23,
-    "targetSdkVersion": 36,
-    "application_label": "短信"
-  },
-  "artifact": {
-    "id": 12133846070,
-    "zip_sha256": "9155aa6c9eb0029645d09dc9c860d1d1a19eec4cb81d16ee25191c9758db6a7e",
-    "mapping_sha256": "6437cc37630b50be278c4017580c26647aec3e08ab78597ea6f69ca897e3f070",
-    "removed_java_sha256": "f7e4f5579bd82733fb566b05d83b8b4572d8b399e69f57c452651fb4926aaf11"
-  },
-  "build_timings": {
-    "host_java": "2m1s",
-    "native_r8_apk": "7m33s"
-  }
+  "patch_sha256": "c98987ea7c531ebe773a65043b7ba3d16b207018361f402584f330fbe2047277"
 }

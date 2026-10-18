@@ -1,4 +1,4 @@
-# 短信 / Futoon chat v0.7.1
+# 短信 / Futoon chat v0.7.2
 
 Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / 商户 / 结算 / 更多」五个独立 Tab。
 
@@ -30,9 +30,9 @@ Telegram 主设置新增「FutoonPay 设置」，包含会话 Tag 和快速回�
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71859`，ARM64，minSdk 23 / targetSdk 36。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71869`，ARM64，minSdk 23 / targetSdk 36。
 
-本轮源码 `40c4e5ffb5940895494167768945e1ba4b17bdb7` 的 [CI 构建 39118289614](https://github.com/susuy0/Yacd-meta/actions/runs/39118289614) 已通过：206 项原生测试、132 项业务契约、45 项几何检查及发送键/宿主桥接回归；Lint 0 错误 / 28 警告，生成 28 张回归截图。完整宿主 Java、原生库、R8、APK 和已移除组件审计全部通过。最终 APK 41,019,829 字节，版本代码 71859，应用名称「短信」，沿用原签名，v2 签名与哈希均已核验。
+本轮修复快速回复独立弹窗缺少窗口生命周期引起的崩溃，并统一处理设置页、业务面板的嵌入式 Compose 挂载与销毁。新增不使用 ComponentActivity/Compose 测试规则的真实窗口回归，包含旧实现崩溃负对照；完整构建与 APK 核验结果待 CI 完成后记录。
 
 逐项范围见 `NATIVE-PORT-CHECKLIST.md`，最终构建证据见 `BUILD.json`。CI 包含原业务测试、完整原生交互回归、Lint、宿主 Java、原生库、APK 和已移除组件审计。
 

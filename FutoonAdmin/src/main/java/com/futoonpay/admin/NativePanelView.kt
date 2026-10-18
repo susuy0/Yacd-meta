@@ -82,6 +82,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     override val savedStateRegistry get() = stateController.savedStateRegistry
     override val onBackPressedDispatcher = OnBackPressedDispatcher { bridge.collapse() }
     private val compose = ComposeView(context)
+    private val composition = PanelComposition(compose, registry)
     private val environment = EmbeddedEnvironment(bridge)
     private val navigation = PanelNavigator()
     private var chat by mutableStateOf(ChatScope())
@@ -105,6 +106,10 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (!closed) composition.attach()
+    }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
     fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }
     fun recognize(text: String?) { recognizeText(text.orEmpty(), chat.dialog, chat.topic, 0, false) }
@@ -122,7 +127,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
     fun onHidden() { if (!closed) registry.currentState = Lifecycle.State.CREATED }
-    fun close() { if (closed) return; closed = true; registry.currentState = Lifecycle.State.DESTROYED; viewModelStore.clear(); compose.disposeComposition() }
+    fun close() { if (closed) return; closed = true; registry.currentState = Lifecycle.State.DESTROYED; viewModelStore.clear(); composition.close() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

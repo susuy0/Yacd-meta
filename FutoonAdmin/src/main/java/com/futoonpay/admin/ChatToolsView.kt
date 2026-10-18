@@ -43,6 +43,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
     private val registry = LifecycleRegistry(this)
     private val controller = SavedStateRegistryController.create(this)
     private val compose = ComposeView(context)
+    private val composition = PanelComposition(compose, registry)
     private var closed = false
     private var panelHeight = 0
     override val lifecycle: Lifecycle get() = registry
@@ -59,6 +60,10 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         } } }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (!closed) composition.attach()
+    }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun setPanelHeight(pixels: Int) { panelHeight = pixels.coerceAtLeast(0); requestLayout() }
@@ -67,7 +72,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         super.onMeasure(widthMeasureSpec, bounded)
     }
     fun onHidden() { if (!closed) registry.currentState = Lifecycle.State.CREATED }
-    fun close() { if (closed) return; closed = true; registry.currentState = Lifecycle.State.DESTROYED; viewModelStore.clear(); compose.disposeComposition() }
+    fun close() { if (closed) return; closed = true; registry.currentState = Lifecycle.State.DESTROYED; viewModelStore.clear(); composition.close() }
 }
 
 private data class ChatEditor(val kind: String, val id: String = "", val first: String = "", val second: String = "")
