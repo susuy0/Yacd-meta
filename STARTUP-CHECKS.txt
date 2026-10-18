@@ -1,0 +1,48 @@
+VineChat Futoon v0.3.1 startup regression
+
+Reported package: com.futoonpay.vinechat.beta, versionCode 71779
+Reported frame: org.telegram.ui.of0.d0:74 -> of0.onResume:4
+Old APK SHA-256: e7487db274a2203e38b27c1254b1a58215eabff78a91ccfb130ef7ef6cb4659c
+
+Binary inspection of the shipped APK:
+classes3.dex, of0.d0 code offset 9002440, instruction address 73:
+invoke-virtual java.lang.Object.getClass, debug position line 74.
+of0.onResume invokes of0.d0 at instruction address 3.
+This matches the reported stack positions exactly. The color refresh inlines
+GlassTabView.updateColorsLottie and checks its receiver before accessing fields.
+
+Source cause:
+MainTabsActivity creates a five-slot tab array and instantiates Chats (0),
+Settings (2), Profile (4). Contacts (1) and Calls (3) are intentionally omitted.
+onResume calls blur3_updateColors, whose enhanced loop still dereferenced all
+five slots. The same method is also used by theme change delegates.
+
+Fix:
+Skip omitted tab slots during color refresh, consistent with the create,
+selection and gesture traversal loops. Preserve updates for all surviving tabs.
+Increase APP_VERSION_CODE from 7177 to 7178 (APK versionCode 71789).
+Retain mapping.txt in build artifacts for future crash retracing.
+
+Regression execution:
+ci/test_startup_colors.py compiles and executes the actual source bodies of
+onResume, blur3_updateColors and blur3_updateFadeColors with view doubles.
+Covers null array, all-null slots, sparse Lite tabs, 20 repeated resumes and
+20 direct theme refreshes. Asserts that all surviving tabs refresh and that
+remaining lifecycle work completes. Removing the guard must reproduce the
+original NullPointerException. Both positive and negative controls passed CI.
+The unchanged 132 Futoon checks and browser panel/editor regressions also passed.
+
+Limits:
+This is a JVM lifecycle regression and binary/source inspection, not an Android
+instrumentation test. No logged-in real-device launch or live business mutation
+has been performed by this CI run.
+
+Build result: success, run 39082736383, source cdfe8cd2eec0e2ae3c5d99375df050850607ef04.
+Java compile: 1m53s. Native compilation/R8/APK: 8m33s.
+New R8 mapping confirms MainTabsActivity -> org.telegram.ui.of0 and
+blur3_updateColors -> d0, matching the original class/method identification.
+APK versionCode 71789. APK v2 signature, signed content digest, checksum and
+ZIP CRC verified. Signing certificate matches v0.3. All 5 Futoon assets match.
+Final APK DEX check: the original getClass at instruction 73 is replaced by
+if-nez to instruction 76 (color update). A null tab falls through to goto at
+75, which skips the update body to instruction 112 (loop increment).

@@ -1,8 +1,10 @@
-# VineChat Futoon v0.3 Lite
+# VineChat Futoon v0.3.1 Lite
 
 Android Telegram business client with a FUTOON panel. Upstream Telegram is pinned to `f32ffeec763f0bdbf4bec25b52d654f77bff733d`; `integration.patch` contains the fork changes. The previous repository contents were replaced as requested; history is retained.
 
 ## This version
+
+- Fix the v0.3 startup crash: color refresh skips the omitted Contacts and Calls tab slots. A regression check executes the real resume/theme-refresh methods and confirms that removing the fix reproduces the original exception. R8 mappings are retained with each APK.
 
 - The panel defaults to nearly full height, with a compact header, independent content scrolling and pinned actions/navigation. It preserves input focus and scroll position during data updates. The floating entry remembers its edge/height.
 - The WebView is created only when opening FUTOON. Hidden panels pause rendering. Heavy blur, continuous animated media and debug logging are disabled by default.
@@ -14,7 +16,7 @@ Android Telegram business client with a FUTOON panel. Upstream Telegram is pinne
 
 ## Build and install
 
-Push to `master` starts GitHub Actions. It runs 132 core checks, browser UI regressions, Java compilation, native compilation, shrinking and APK audits. Download the `VineChat-Futoon-v0.3-lite-*` artifact from Actions. The APK package is `com.futoonpay.vinechat.beta`, ARM64 by default, with the same development signing certificate as v0.2 and a higher version code.
+Push to `master` starts GitHub Actions. It runs the startup color regression, 132 core checks, browser UI regressions, Java compilation, native compilation, shrinking and APK audits. Download the `VineChat-Futoon-v0.3.1-lite-*` artifact from Actions. The APK package is `com.futoonpay.vinechat.beta`, ARM64 by default, with the same development signing certificate as v0.2/v0.3 and a higher version code.
 
 Telegram API credentials are optional for development: the source's bundled ID/hash are used when `VINE_API_ID` and `VINE_API_HASH` are absent. To configure your own values, set both repository secrets. The `GOOGLE_SERVICES_JSON_BASE64` secret supplies this package's Firebase configuration. Without it, the artifact is labeled `development-no-fcm`; background push delivery is not verified. `workflow_dispatch` can require push config and select all four architectures.
 
@@ -23,3 +25,4 @@ Live Telegram/FUTOON login, real image delivery, financial mutations and device 
 ## License
 
 GPL-2.0-or-later, following upstream Telegram. See LICENSE. Upstream: https://github.com/DrKLO/Telegram
+
