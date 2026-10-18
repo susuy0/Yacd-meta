@@ -13,21 +13,22 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
     constructor(session: PanelSession): this(FutoonApiClient(PanelCookieJar(session,session.address().toHttpUrl()),session.address().toHttpUrl()))
     private val repository=FutoonRepository(api)
     private data class DocumentState(val module: String,val path: String,val document: NativeDocument)
-    private data class FormState(val module: String,val path: String,val form: NativeForm,val uid: String="",val expires: Long=System.currentTimeMillis()+600000)
+    private data class FormState(val module: String,val path: String,val form: NativeForm,val uid: String="",val accountForm: NativeForm?=null,val routeForm: NativeForm?=null,val primarySaved: Boolean=false,val expires: Long=System.currentTimeMillis()+600000)
     private data class ActionState(val state: DocumentState,val action: NativeAction,val expires: Long=System.currentTimeMillis()+600000)
     private val documents=linkedMapOf<String,DocumentState>()
     private val forms=linkedMapOf<String,FormState>()
     private val actions=linkedMapOf<String,ActionState>()
     private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor")
     private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","profit_receivers","profit_orders","transfer","announcements","payment_settings","site_settings","integrations","login_logs")
-    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify")
+    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify")
     @Throws(Exception::class) fun execute(op: String,p: JSONObject): JSONObject = runBlocking {
         require(supports(op)) { "不支持的业务操作" }
         when(op) {
             "orders.list" -> {
                 val filters=orderFilters(p)
                 val rows=repository.orders(page(p),filters)
-                JSONObject().put("rows",JSONArray(rows.rows.map(::orderJson))).put("total",rows.total).put("pageSize",30)
+                val metrics=orderPageMetrics(rows.rows)
+                JSONObject().put("metrics",JSONObject().put("count",metrics.count).put("successful",metrics.successful).put("rate",metrics.rate).put("amounts",JSONObject(metrics.amounts.mapValues {it.value.toPlainString()}))).put("rows",JSONArray(rows.rows.map(::orderJson))).put("total",rows.total).put("pageSize",30)
             }
             "orders.metrics" -> {
                 val rows=repository.orders(page(p),orderFilters(p)).rows
@@ -48,9 +49,25 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "module.editor" -> editor(p)
             "module.form" -> {
                 val key=p.getString("ticket"); val f=forms[key] ?: error("表单已过期，请刷新")
-                formJson(key,f)
+                if(f.module in paymentModules)prepareEditor(f.module,f.path,f.form) else formJson(key,f)
             }
-            "module.plugins" -> JSONObject().put("options",JSONArray(repository.paymentPlugins(p.getString("type")).map(::optionJson)))
+            "module.plugins" -> {
+                val type=p.getString("type");val options=repository.paymentPlugins(type)
+                forms[p.optString("ticket")]?.let { state ->
+                    require(state.module=="channels")
+                    forms[p.getString("ticket")]=state.copy(form=state.form.copy(fields=state.form.fields.filterNot {it.name.startsWith("account::")}.map {f->when(f.name){"type"->f.copy(value=type);"plugin"->f.copy(value="",type="select",options=options);else->f}}),accountForm=null,primarySaved=false)
+                }
+                JSONObject().put("options",JSONArray(options.map(::optionJson)))
+            }
+            "module.accountFields" -> {
+                val ticket=p.getString("ticket");val state=forms[ticket] ?: error("表单已过期")
+                require(state.module=="channels");val plugin=p.getString("plugin")
+                require(state.form.fields.firstOrNull {it.name=="plugin"}?.options?.any {it.value==plugin}==true){"支付插件无效"}
+                val id=state.form.fields.firstOrNull {it.name=="id"}?.value.orEmpty()
+                val account=repository.pluginAccountForm(plugin,id)
+                val updated=state.copy(form=state.form.copy(fields=state.form.fields.filterNot {it.name.startsWith("account::")}.map {if(it.name=="plugin")it.copy(value=plugin) else it}+account?.fields.orEmpty().filter {it.type!="hidden"}.map {it.copy(name="account::${it.name}")}),accountForm=account,primarySaved=false)
+                forms[ticket]=updated;formJson(ticket,updated)
+            }
             "module.inspect" -> {
                 val a=actionState(p.getString("ticket"))
                 require(editorAction(a.action) || a.action.endpoint.startsWith("futoon://")) { "此操作需要核对后提交" }
@@ -59,7 +76,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
                     JSONObject().put("navigate",if(uri.host=="channels")"channels" else "channel").put("id",query(a.action.endpoint,"id")).put("type",query(a.action.endpoint,"type"))
                 } else {
                     require(a.state.module in paymentModules) { "后台未提供可编辑的表单" }
-                    registerForm(a.state.module,a.state.path,repository.paymentEditor(a.state.module,a.action,a.state.document))
+                    prepareEditor(a.state.module,a.state.path,repository.paymentEditor(a.state.module,a.action,a.state.document))
                 }
             }
             "module.action" -> {
@@ -108,7 +125,12 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
         if(module in paymentModules) {
             val roll=RollGroupTab.values().firstOrNull {it.key==p.optString("tab")} ?: RollGroupTab.ALL
             val channel=PaymentChannelTab.values().firstOrNull {it.key==p.optString("tab")} ?: PaymentChannelTab.ALL
-            val doc=repository.paymentDocument(module,page(p),p.optString("query"),roll,channel,p.optString("type"))
+            val loaded=repository.paymentDocument(module,page(p),p.optString("query"),roll,channel,p.optString("type"))
+            val query=p.optString("query").trim()
+            val doc=if(query.isBlank()||module=="channel_monitor")loaded else loaded.copy(tables=loaded.tables.map {table->
+                val indices=table.rows.indices.filter {i->table.rows[i].any {it.contains(query,true)}}
+                table.copy(rows=indices.map {table.rows[it]},rowActions=indices.map {table.rowActions.getOrNull(it).orEmpty()})
+            })
             return documentJson(DocumentState(module,"",doc))
         }
         val definition=ModuleCatalog.find(module)
@@ -154,20 +176,49 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
         val id=p.optString("id");val kind=p.optString("editor","detail")
         if(kind=="add") {
             val template=state.document.forms.filter {f->when(module){"channels"->f.fields.any {it.name=="plugin"}&&f.fields.any {it.name=="rate"};"payment_types"->f.fields.any {it.name=="showname"}&&f.fields.any {it.name=="device"};"rolls"->f.fields.any {it.name=="kind"}&&f.fields.any {it.name=="type"};else->f.fields.size>=3}}.maxByOrNull {it.fields.size}
-            if(template==null) {val a=state.document.actions.firstOrNull {it.label.contains("新增")||it.label.contains("添加")} ?: error("后台没有提供新增表单");return registerForm(module,state.path,repository.paymentEditor(module,a,state.document))}
+            if(template==null) {val a=state.document.actions.firstOrNull {it.label.contains("新增")||it.label.contains("添加")} ?: error("后台没有提供新增表单");return prepareEditor(module,state.path,repository.paymentEditor(module,a,state.document))}
             val fields=template.fields.map {f->f.copy(value=when(f.name){"action"->"add";"id","name","showname","rate","plugin","daytop","paymin","paymax"->"";else->if(f.sensitive)"" else f.value})}
             val suffix=when(module){"channels"->"Channel";"payment_types"->"PayType";"rolls"->"Roll";else->""}
-            return registerForm(module,state.path,template.copy(title="新增配置",action=if(suffix.isBlank())template.action else "ajax_pay.php?act=save$suffix",method="POST",fields=fields))
+            return prepareEditor(module,state.path,template.copy(title="新增配置",action=if(suffix.isBlank())template.action else "ajax_pay.php?act=save$suffix",method="POST",fields=fields))
         }
         val checked=id(id)
         val endpoint=when(kind){"route"->"rollInfo";"account"->"channelInfo";else->when(module){"channels"->"getChannel";"payment_types"->"getPayType";"rolls"->"getRoll";else->"getProxy"}}
-        return registerForm(module,state.path,repository.paymentEditor(module,NativeAction(if(kind=="route")"编辑路由" else "编辑配置","ajax_pay.php?act=$endpoint&id=$checked"),state.document))
+        return prepareEditor(module,state.path,repository.paymentEditor(module,NativeAction(if(kind=="route")"编辑路由" else "编辑配置","ajax_pay.php?act=$endpoint&id=$checked"),state.document))
+    }
+    /** Business flow ported from PaymentAdminViewModel: save primary, then account/member configuration. */
+    private suspend fun prepareEditor(module: String,path: String,original: NativeForm): JSONObject {
+        var form=original
+        var account: NativeForm?=null;var routes: NativeForm?=null
+        val id=form.fields.firstOrNull {it.name=="id"}?.value.orEmpty()
+        if(module=="channels" && form.action.contains("saveChannel") && !form.action.contains("saveChannelInfo")) {
+            val type=form.fields.firstOrNull {it.name=="type"}?.value.orEmpty()
+            val plugin=form.fields.firstOrNull {it.name=="plugin"}?.value.orEmpty()
+            val options=repository.paymentPlugins(type)
+            form=form.copy(fields=form.fields.map {if(it.name=="plugin")it.copy(type="select",options=options) else it})
+            if(plugin.isNotBlank()) {
+                account=if(id.isNotBlank())repository.paymentEditor("channels",NativeAction("账户配置","ajax_pay.php?act=channelInfo&id=$id"),documents[module]?.document ?: error("请刷新列表")) else repository.pluginAccountForm(plugin,id)
+                form=form.copy(fields=form.fields+account?.fields.orEmpty().filter {it.type!="hidden"}.map {it.copy(name="account::${it.name}")})
+            }
+        }
+        if(module=="rolls" && form.action.contains("saveRoll") && !form.action.contains("saveRollInfo")) {
+            routes=if(id.isNotBlank())repository.paymentEditor("rolls",NativeAction("成员通道","ajax_pay.php?act=rollInfo&id=$id"),documents[module]?.document ?: error("请刷新列表")) else {
+                val channels=repository.paymentDocument("channels").tables.flatMap {it.toPaymentChannelItems()}
+                NativeForm("成员通道","ajax_pay.php?act=saveRollInfo&id=","POST",listOf(NativeField("list[0][channel]","成员通道","","select",listOf(NativeOption("","不使用"))+channels.map {NativeOption(it.id,it.name)}),NativeField("list[0][weight]","权重","1","number")))
+            }
+            form=form.copy(fields=form.fields+routes.fields.filter {it.name.startsWith("list[")})
+        }
+        if(module=="payment_types" && form.methodBindingField()!=null) {
+            val channels=repository.configurationChannels()
+            form=form.copy(fields=form.fields.map {f->if(f.name in METHOD_BINDING_NAMES && f.type=="multiselect")f.copy(options=(channels.filter {it.typeId==id}.map {NativeOption(it.id,"${it.name} #${it.id}")}+f.options+selectedChannelIds(f.value).map {NativeOption(it,"原有通道 #$it")}).distinctBy {it.value}) else f})
+        }
+        trimTickets();val ticket=UUID.randomUUID().toString();val state=FormState(module,path,form,accountForm=account,routeForm=routes);forms[ticket]=state
+        return formJson(ticket,state)
     }
     private fun registerForm(module: String,path: String,form: NativeForm,uid: String=""): JSONObject {
         trimTickets();val ticket=UUID.randomUUID().toString();val state=FormState(module,path,form,uid);forms[ticket]=state;return formJson(ticket,state)
     }
     private fun formJson(ticket: String,s: FormState): JSONObject {
-        val route=s.form.action.contains("saveRollInfo")
+        val route=s.form.action.contains("saveRollInfo")||s.routeForm!=null
         return JSONObject().put("ticket",ticket).put("title",s.form.title).put("kind",if(route)"route" else "form").put("fields",JSONArray(s.form.fields.filter {it.type!="hidden"}.map {f->JSONObject().put("name",f.name).put("label",f.label).put("value",f.value).put("type",f.type).put("options",JSONArray(f.options.map(::optionJson))).put("sensitive",f.sensitive).put("required",f.required).put("readOnly",f.readOnly)})).put("routeOptions",JSONArray(s.form.fields.firstOrNull {it.name.endsWith("[channel]") }?.options.orEmpty().map(::optionJson)))
     }
     private suspend fun saveForm(p: JSONObject): JSONObject {
@@ -177,17 +228,37 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
         val values=form.fields.associate {it.name to it.value}.toMutableMap()
         val it=raw.keys();while(it.hasNext()) {val k=it.next();val v=raw.optString(k)
             val route=Regex("list\\[([0-9]{1,2})]\\[(channel|weight)]").matchEntire(k)
-            if(form.action.contains("saveRollInfo") && route!=null) {require(route.groupValues[1].toInt()<100);if(k.endsWith("[channel]"))require(v in routeOptions){"路由通道已失效，请重新加载"};values[k]=v;continue}
+            if((form.action.contains("saveRollInfo")||state.routeForm!=null) && route!=null) {require(route.groupValues[1].toInt()<100);if(k.endsWith("[channel]"))require(v in routeOptions){"路由通道已失效，请重新加载"};values[k]=v;continue}
             val f=allowed[k] ?: continue
             require(!f.required||v.isNotBlank()){ "${f.label}不能为空" }
             if(f.type=="select" && v.isNotBlank())require(f.options.any {it.value==v}){"${f.label}选项已变化，请重新加载"}
             if(f.type=="multiselect")require(selectedChannelIds(v).all {id->f.options.any {it.value==id}}){"通道选项无效"}
             if(!f.sensitive||v.isNotBlank())values[k]=v
         }
-        val r=when {state.uid.isNotBlank()->repository.saveMerchantProfile(state.uid,form,values);state.module in paymentModules->repository.submitPaymentForm(state.module,form,values);else->repository.submitNativeForm(state.path,form,values)}
-        // Ambiguous saves are not silently replayed with a stale ticket.
-        forms.remove(ticket)
-        return result(r)
+        val composite=state.accountForm!=null || state.routeForm!=null
+        val primary=form.copy(fields=form.fields.filterNot {it.name.startsWith("account::")||(state.routeForm!=null&&it.name.startsWith("list["))})
+        var recordId=primary.fields.firstOrNull {it.name=="id"}?.value.orEmpty()
+        if(!state.primarySaved) {
+            val primaryValues=values.filterKeys {!it.startsWith("account::")&&!(state.routeForm!=null&&it.startsWith("list["))}
+            val primaryResult=when {state.uid.isNotBlank()->repository.saveMerchantProfile(state.uid,primary,primaryValues);state.module in paymentModules->repository.submitPaymentForm(state.module,primary,primaryValues);else->repository.submitNativeForm(state.path,primary,primaryValues)}
+            if(!primaryResult.success) {if(primaryResult.partial)forms.remove(ticket);return result(primaryResult)}
+            recordId=recordId.ifBlank {primaryResult.recordId}
+            if(composite) {
+                if(recordId.isBlank()) {forms.remove(ticket);return result(ApiResult(false,"基本信息已创建，后台没有返回 ID；请回列表完成后续配置，避免重复创建",partial=true))}
+                val fields=form.fields.map {f->when(f.name){"id"->f.copy(value=recordId);"action"->f.copy(value="edit");else->f}}+if(form.fields.none {it.name=="id"})listOf(NativeField("id","ID",recordId,"hidden")) else emptyList()
+                forms[ticket]=state.copy(form=form.copy(fields=fields),primarySaved=true)
+            }
+        }
+        state.accountForm?.let {account->
+            val fields=account.fields.associate {it.name to it.value}.toMutableMap().apply {putAll(values.filterKeys {it.startsWith("account::")}.mapKeys {it.key.removePrefix("account::")})}
+            val r=repository.submitPaymentForm(state.module,account.copy(action="ajax_pay.php?act=saveChannelInfo&id=$recordId"),fields)
+            if(!r.success)return result(r.copy(partial=true,message="基本信息已保存，账户配置失败：${r.message}"))
+        }
+        state.routeForm?.let {route->
+            val r=repository.submitPaymentForm(state.module,route.copy(action="ajax_pay.php?act=saveRollInfo&id=$recordId"),values.filterKeys {it.startsWith("list[")})
+            if(!r.success)return result(r.copy(partial=true,message="基本信息已保存，成员配置失败：${r.message}"))
+        }
+        forms.remove(ticket);return result(ApiResult(true,"保存成功",recordId))
     }
     private fun trimTickets() {val now=System.currentTimeMillis();forms.entries.removeAll {it.value.expires<=now};actions.entries.removeAll {it.value.expires<=now};while(forms.size>200)forms.remove(forms.keys.first());while(actions.size>2000)actions.remove(actions.keys.first())}
     private fun optionJson(o: NativeOption)=JSONObject().put("value",o.value).put("label",o.label)

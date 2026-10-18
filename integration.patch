@@ -8749,7 +8749,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/m
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,487 @@
+@@ -0,0 +1,496 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8848,6 +8848,7 @@ new file mode 100644
 + let body=queryBar()+'<div class="toolbar">'+btn('整段文字识别','recognize.open')+btn('截图识别','ocr.pick')+btn('完整筛选','order.filters')+(Object.keys(S.filters).length?btn('清空筛选','order.clearFilters'):'' )+'</div>'+(S.queryWarning?note(S.queryWarning,'warn'):'')+
 + '<div class="tags">'+[['-1','全部'],['0','待支付'],['1','已支付'],['2','已退款'],['3','已冻结']].map(([s,t])=>'<button class="chip '+((S.filters.status||'-1')===s?'on':'')+'" data-act="order.statusFilter" data-value="'+s+'">'+t+'</button>').join('')+'</div>';
 + if(S.filters.uid)body+=note('当前按商户 PID '+S.filters.uid+' 筛选')+btn('查看其他商户结果','order.clearMerchant','btn-text');
++ if(S.orderMetrics)body+='<div class="card">'+kv('当前页订单 / 已支付',S.orderMetrics.count+' / '+S.orderMetrics.successful)+kv('当前页成功率',S.orderMetrics.rate==null?'未提供':S.orderMetrics.rate.toFixed(1)+'%')+Object.entries(S.orderMetrics.amounts||{}).map(([code,v])=>kv('当前页金额 '+code,v)).join('')+'</div>';
 + if(S.orders.length)body+='<div class="rf between"><span class="t-cap c2">共 '+S.total+' 条 · 第 '+S.n+' 页</span>'+btn('导出当前结果','order.export','btn-text sm')+'</div>'+S.orders.map((o,i)=>orderCard(o,i)).join('');
 + else body+='<div class="empty">'+icon('order')+'<p>查询结果会显示在这里</p></div>';
 + body+='<div class="toolbar">'+btn('最近查询','order.history')+btn('收藏订单','order.favorites')+btn('恢复凭证草稿','voucher.drafts')+'</div>';
@@ -9028,7 +9029,7 @@ new file mode 100644
 + let r;
 + if(S.q){if(S.filters.column)throw new Error('订单号与其他字段搜索请只保留一种，可先清空筛选');r=await call('orders.search',{...S.filters,text:S.q,kind:S.kind,page});}
 + else r=await call('orders.list',{...S.filters,page});
-+ if(rev!==S.rev)return;S.queryWarning=r.warning||'';S.orders=r.rows||[];S.total=r.total??S.orders.length;if(S.q)history(S.q,S.kind);
++ if(rev!==S.rev)return;S.queryWarning=r.warning||'';S.orderMetrics=r.metrics||null;S.orders=r.rows||[];S.total=r.total??S.orders.length;if(S.q)history(S.q,S.kind);
 +}
 +async function openOrder(o){const r=await call('order.detail',{id:o.trade_no});S.order={...o,...r};show('detail');}
 +function orderSummary(o=S.order){return '订单 '+o.trade_no+'\n商户 PID '+o.uid+'\n金额 '+amount(o);}
@@ -9081,6 +9082,13 @@ new file mode 100644
 + }
 + form.dirty=false;if(r?.partial){S.error=r.msg;return;}toast(r?.msg||'已完成');if(form.kind==='backendForm'&&p.returnModule){S.form=null;await records(p.returnModule,S.recordPage||1,S.recordQuery||'');return;}S.form=null;S.page=S.order&&['refund','apiRefund','orderStatus','notes'].includes(form.kind)?'detail':'';
 + if(['balance','group','switches'].includes(form.kind))await lookup('uid',p.uid,true);
++}
++async function loadPluginAccount(form){
++ if(!form.params?.ticket||!form.values.plugin)return;
++ const r=await call('module.accountFields',{ticket:form.params.ticket,plugin:form.values.plugin});
++ if(S.form!==form)return;
++ const values={...form.values};Object.keys(values).filter(k=>k.startsWith('account::')).forEach(k=>delete values[k]);
++ form.fields=r.fields;form.values={...Object.fromEntries(r.fields.map(x=>[x.name,x.value??''])),...values};
 +}
 +async function action(a,el){
 + if(a==='monitor.window'){S.monitorWindow=el.dataset.window;return;}
@@ -9193,7 +9201,7 @@ new file mode 100644
 + const el=e.target;if(el.id==='kind')S.kind=el.value;
 + if(el.dataset.field==='type'&&S.form?.fields.some(x=>x.name==='plugin')){
 +  const form=S.form,type=el.value;form.pluginLoading=true;form.pluginError='';render();
-+  call('module.plugins',{type}).then(result=>{if(S.form!==form||form.values.type!==type)return;const options=result.options||[],plugin=form.fields.find(x=>x.name==='plugin');plugin.options=options;if(!options.some(x=>x.value===form.values.plugin))form.values.plugin=options[0]?.value||'';})
++  call('module.plugins',{type,ticket:form.params.ticket}).then(result=>{if(S.form!==form||form.values.type!==type)return;const options=result.options||[],plugin=form.fields.find(x=>x.name==='plugin');plugin.options=options;if(!options.some(x=>x.value===form.values.plugin))form.values.plugin=options[0]?.value||'';if(form.values.plugin)return loadPluginAccount(form);})
 +   .catch(error=>{if(S.form===form&&form.values.type===type)form.pluginError='支付插件加载失败，请重新选择支付方式：'+error.message;})
 +   .finally(()=>{if(S.form===form&&form.values.type===type){form.pluginLoading=false;render();}});
 + }
@@ -9208,6 +9216,7 @@ new file mode 100644
 + const id=e.target.id,operation=id==='query'?'order.search':id==='recordQuery'?'records.search':id==='captcha'?'login.submit':e.target.dataset.field==='value'&&S.form?.kind==='manual'?'form.submit':'';
 + if(operation){e.preventDefault();run(()=>action(operation,e.target));}
 +});
++$('app').addEventListener('change',e=>{if(e.target.dataset.field!=='plugin'||!S.form?.params?.ticket)return;const form=S.form;form.pluginLoading=true;render();loadPluginAccount(form).catch(err=>{form.pluginError=err.message;}).finally(()=>{form.pluginLoading=false;render();});});
 +window.addEventListener('resize',()=>requestAnimationFrame(()=>{
 + positionToast();const el=document.activeElement,body=document.querySelector('.body');
 + if(el&&body?.contains(el)&&/INPUT|TEXTAREA|SELECT/.test(el.tagName)){
@@ -9241,7 +9250,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,209 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9272,6 +9281,7 @@ new file mode 100644
 +   if(r.op==='module.read'&&r.params.module==='channel_monitor')data={rows:[{id:'88',name:'示例通道',status:'1',success_rate_5min:'92.5%',success_rate_24hour:'97.1%',total_count_5min:40,success_count_5min:37}],total:1};
 +   if(r.op==='module.editor')data={ticket:'edit88',kind:r.params.editor==='route'?'route':'form',routeOptions:[{value:'',label:'不使用'},{value:'11',label:'微信A'},{value:'22',label:'微信B'}],fields:r.params.editor==='route'?[{name:'list[0][channel]',label:'路由 1 · 通道',type:'select',value:'11',options:[{value:'',label:'不使用'},{value:'11',label:'微信A'},{value:'22',label:'微信B'}]},{name:'list[0][weight]',label:'权重',value:'7',type:'number'}]:[{name:'name',label:'名称',value:'示例通道',type:'text'}]};
 +   if(r.op==='module.plugins')data={options:[{value:'wx2',label:'微信插件2'}]};
++   if(r.op==='module.accountFields')data={fields:[{name:'name',label:'名称',value:'示例通道',type:'text'},{name:'type',label:'支付方式',type:'select',value:'2',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx2',options:[{value:'wx2',label:'微信插件2'}]}]};
 +   if(r.op==='module.editor'&&r.params.module==='channels')data.fields.push({name:'type',label:'支付方式',type:'select',value:'1',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx1',options:[{value:'wx1',label:'微信插件1'}]});
 +   if(r.op==='form.save')data={code:0,msg:'保存成功'};
 +   if(r.op==='stats')data={count:100,paid:90,rows:[order]};
@@ -9437,7 +9447,9 @@ new file mode 100644
 + await page.evaluate(()=>{testRequests.length=0;});
 + await page.locator('[data-act="tab.orders"]').click();
 + await page.locator('#query').waitFor();
++ await page.waitForFunction(()=>!Futoon.debugState().busy);
 + await page.locator('[data-act="tab.more"]').click();
++ await page.locator('[data-act="module.open"]').first().waitFor();
 + assert.equal(await page.locator('[data-act="module.open"]').count(),22,'all 20 original entries plus settlement and business data');
 + await page.locator('[data-act="module.open"][data-module="site_settings"]').click();
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='module.read'&&x.params.module==='site_settings'));

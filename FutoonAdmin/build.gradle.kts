@@ -33,6 +33,7 @@ dependencies {
     implementation("com.google.zxing:core:3.5.4")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.test:core:1.6.1")
     testImplementation("org.json:json:20240303")
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")

@@ -3,7 +3,7 @@
   "versionCode": 71819,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "e4fafdaf945dd958d489d5d96802dcebee4a5f9394807dda3a8bcb0c0c3db6b0",
+  "patch_sha256": "4579da10d9bb560779ec5dc41cc585076d3a96392ab9aed15261c7c4896a9ca4",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
   "standalone_admin_activities": 0,
   "original_data_files": 23,
