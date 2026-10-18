@@ -8111,3 +8111,14 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java b/T
              actionBarLayout.onUserLeaveHint();
          }
 
+diff --git a/build.gradle b/build.gradle
+--- a/build.gradle
++++ b/build.gradle
+@@ -11,6 +11,7 @@
+         classpath 'com.huawei.agconnect:agcp:1.9.1.301'
+         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.0'
+         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0"
++        classpath "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:2.1.0"
+     }
+ }
+ repositories {
