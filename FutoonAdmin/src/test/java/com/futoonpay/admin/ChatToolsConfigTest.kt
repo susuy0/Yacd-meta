@@ -55,7 +55,7 @@ class ChatToolsConfigTest {
             assertEquals(1, (decorated as Spanned).getSpans(0, decorated.length, ReplacementSpan::class.java).size)
             val layout = StaticLayout.Builder.obtain(decorated, 0, decorated.length, paint, 300).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
             assertEquals(1, layout.lineCount)
-            assertTrue(layout.getLineWidth(0) <= 301f)
+            assertTrue("Tag overflow: ${layout.getLineWidth(0)}, title=$title, text=$decorated", layout.getLineWidth(0) <= 301f)
             val bitmap = Bitmap.createBitmap(320, 100, Bitmap.Config.ARGB_8888)
             layout.draw(Canvas(bitmap))
             val pixels = IntArray(320 * 100); bitmap.getPixels(pixels, 0, 320, 0, 0, 320, 100)

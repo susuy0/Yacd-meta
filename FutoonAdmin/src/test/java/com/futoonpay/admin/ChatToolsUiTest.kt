@@ -28,7 +28,7 @@ class ChatToolsUiTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val bridge = ChatToolsFixture()
     private fun root(picker: Boolean = false, short: Boolean = false) {
-        compose.setContent { FutoonTheme { PanelOverlayHost { Box(Modifier.width(390.dp).height(if (short) 350.dp else 650.dp).testTag("chat-tools-panel")) { ChatToolsScreen(bridge, picker) } } } }
+        compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(if (short) 350.dp else 650.dp).testTag("chat-tools-panel")) { PanelOverlayHost { ChatToolsScreen(bridge, picker) } } } }
         compose.waitUntil(5000) { compose.onAllNodesWithText(if (picker) "查单" else "新增 Tag").fetchSemanticsNodes().isNotEmpty() }
     }
     private fun screenshot(name: String) {

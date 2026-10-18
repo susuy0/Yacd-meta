@@ -1,6 +1,14 @@
-# VineChat FUTOON v0.7.0 Native
+# 短信 / Futoon chat v0.7.1
 
 Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / 商户 / 结算 / 更多」五个独立 Tab。
+
+## 聊天工具
+
+应用名称为「短信」，聊天首页标题为「Futoon chat」。普通 Telegram 用户资料显示完整 Telegram ID，点击可复制。
+
+Telegram 主设置新增「FutoonPay 设置」，包含会话 Tag 和快速回复。Tag 按完整 TGID 匹配，显示在聊天列表会话名和聊天顶部；工单话题复用末尾 TGID 识别。设置按登录的 Telegram 用户隔离保存。
+
+长按发送键打开快速回复，按 Tab → 分类 → 文案切换；文案插入当前输入位置，可继续修改后手动发送。空输入时也保留入口，原发送选项仍可打开。设置中支持新增、编辑、删除 Tag、Tab、分类和文案，删除分类/Tab 前确认。
 
 ## 识别、查单与付款凭证
 
@@ -22,7 +30,7 @@ Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / �
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71849`，ARM64，minSdk 23 / targetSdk 36。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71859`，ARM64，minSdk 23 / targetSdk 36。
 
 本轮源码 `05256ea37418942da8c5a105d8eb0b8fa2ee6d65` 的 [CI 构建 39112840793](https://github.com/susuy0/Yacd-meta/actions/runs/39112840793) 已通过：193 项原生测试、132 项业务契约、45 项几何检查；Lint 0 错误 / 27 警告，生成 25 张回归截图。完整宿主 Java、原生库、R8、APK 和已移除组件审计全部通过。最终 APK 40,996,544 字节，沿用原签名，v2 签名与哈希均已核验。
 

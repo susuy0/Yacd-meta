@@ -6,6 +6,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -53,7 +54,9 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         setViewTreeLifecycleOwner(this); setViewTreeViewModelStoreOwner(this); setViewTreeSavedStateRegistryOwner(this)
         compose.id = android.view.View.generateViewId()
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        compose.setContent { CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) { FutoonTheme { PanelOverlayHost { ChatToolsScreen(bridge, picker, initialPage) } } } }
+        compose.setContent { CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) { FutoonTheme {
+            Box(if (picker) Modifier.fillMaxSize().background(Mist) else Modifier.fillMaxSize().background(Mist).statusBarsPadding().navigationBarsPadding()) { PanelOverlayHost { ChatToolsScreen(bridge, picker, initialPage) } }
+        } } }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
@@ -98,7 +101,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     val data = config
     val tab = data?.tabs?.find { it.id == tabId } ?: data?.tabs?.firstOrNull()
     val category = tab?.categories?.find { it.id == categoryId } ?: tab?.categories?.firstOrNull()
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(Mist)) {
         PayTopBar(if (picker) "快速回复" else "FutoonPay 设置", bridge::close)
         if (!picker) PayPills(listOf("tags" to "会话 Tag", "replies" to "快速回复"), page) { page = it }
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())

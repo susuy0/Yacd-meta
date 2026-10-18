@@ -7,6 +7,7 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextPaint
 import android.text.TextUtils
+import android.text.Layout
 import android.text.style.ReplacementSpan
 import kotlin.math.ceil
 import kotlin.math.max
@@ -17,12 +18,26 @@ object ChatTagRenderer {
     @JvmStatic fun decorate(name: CharSequence?, tag: String, paint: TextPaint, width: Int, density: Float, dark: Boolean): CharSequence? {
         if (name == null || tag.isEmpty() || width < 36 * density) return name
         val small = TextPaint(paint).apply { textSize = paint.textSize * .7f }
-        val text = TextUtils.ellipsize(tag, small, max(1f, min(120 * density, width * .48f) - 14 * density), TextUtils.TruncateAt.END).toString()
+        val text = fit(tag.replace('\n', ' ').replace('\r', ' '), small, max(1f, min(120 * density, width * .48f) - 14 * density)).toString()
         if (text.isEmpty()) return name
         val badge = Badge(text, density, dark)
         val badgeWidth = badge.getSize(paint, "", 0, 0, null)
-        val title = TextUtils.ellipsize(name, paint, max(0, width - badgeWidth).toFloat(), TextUtils.TruncateAt.END)
+        val title = fit(name, paint, max(0, width - badgeWidth).toFloat())
         return SpannableStringBuilder(title).apply { val start = length; append('\uFFFC'); setSpan(badge, start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
+    }
+    private fun fit(text: CharSequence, paint: TextPaint, width: Float): CharSequence {
+        if (width <= 0) return ""
+        if (Layout.getDesiredWidth(text, paint) <= width) return text
+        if (Layout.getDesiredWidth("…", paint) > width) return ""
+        var low = 0
+        var high = Character.codePointCount(text, 0, text.length)
+        while (low < high) {
+            val middle = (low + high + 1) / 2
+            val end = Character.offsetByCodePoints(text, 0, middle)
+            val candidate = SpannableStringBuilder(text, 0, end).append("…")
+            if (Layout.getDesiredWidth(candidate, paint) <= width) low = middle else high = middle - 1
+        }
+        return SpannableStringBuilder(text, 0, Character.offsetByCodePoints(text, 0, low)).append("…")
     }
     private class Badge(val text: String, val density: Float, val dark: Boolean) : ReplacementSpan() {
         override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int = ceil(Paint(paint).apply { textSize = paint.textSize * .7f }.measureText(this.text) + 14 * density).toInt()
