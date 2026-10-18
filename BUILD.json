@@ -5,11 +5,12 @@
   "versionCode": 71809,
   "native_admin_source": "FutoonPayAdmin-source-v1.3.4.zip",
   "native_admin_source_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
-  "original_files_unchanged": 65,
+  "original_files_unchanged": 64,
   "adapted_original_files": [
     "build.gradle.kts",
     "src/main/AndroidManifest.xml",
     "src/main/res/values/strings.xml",
+    "src/main/res/values/themes.xml",
     "src/main/java/com/futoonpay/admin/DomainAuditActivity.kt",
     "src/main/java/com/futoonpay/admin/FutoonApplication.kt",
     "src/main/java/com/futoonpay/admin/MainActivity.kt",
@@ -21,10 +22,10 @@
   ],
   "patch_sha256": "c11a1267419d7ba8300841369cab68391068d05c7ff20b850fd615e6b5416946",
   "validation": {
-    "original_native_tests": 170,
+    "original_native_tests": 171,
     "embedded_session_and_navigation": "passed",
     "panel_ui": "passed",
-    "full_build": "pending CI",
+    "full_build": "passed",
     "real_financial_mutations": "not performed",
     "device_performance": "not tested",
     "static_checks": "passed",
@@ -35,12 +36,62 @@
     "core_and_geometry": "passed",
     "native_lint_errors": 0,
     "native_lint_warnings": 24,
-    "androidx_callback_compatibility": "pending CI"
+    "androidx_callback_compatibility": "passed including original-error negative control",
+    "native_test_errors": 0,
+    "real_embedded_activity_startup_and_teardown": "passed",
+    "native_floating_bounds": "passed",
+    "java_compilation": "passed",
+    "native_compilation_and_shrinking": "passed",
+    "removed_component_audit": "passed",
+    "apk_signature_and_checksum": "passed",
+    "native_activities_and_dex": "3/3 verified, all private",
+    "futoon_assets": "5/5 match source",
+    "core_checks": 132,
+    "native_panel_geometry_checks": 45
   },
   "publication": "explicitly authorized by user",
   "relocated_original_resources": [
     "src/main/res/mipmap-anydpi/ic_launcher.xml"
   ],
-  "build_commit": "f0d34af073caddedc73478bf58fffb94e67cd687",
-  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39088166919"
+  "build_commit": "b67e52b1507c952eb02b550032bb6b4b49becfeb",
+  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39089871138",
+  "build_job": "https://github.com/susuy0/Yacd-meta/actions/runs/39089871138/jobs/117564333395",
+  "verification_commit": "7a867bce7d0ec7a264b5d681e7a137b42c9804aa",
+  "verification_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39090676474",
+  "runtime_inputs_unchanged_between_build_and_verification": true,
+  "verification_only_changes": [
+    ".github/workflows/android.yml",
+    "FutoonAdmin/src/test/java/com/futoonpay/admin/EmbeddedMainActivitySmokeTest.kt",
+    "FutoonAdmin/src/test/java/com/futoonpay/admin/EmbeddedNavigationTest.kt",
+    "ci/test_native_admin.sh"
+  ],
+  "apk": {
+    "file": "VineChat-Futoon-v0.4.0-lite-arm64.apk",
+    "bytes": 40989166,
+    "MiB": 39.1,
+    "sha256": "d0d4da6020decee44eccdcc09932276a8798101105a627f802189553b1acf776",
+    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
+    "signature_matches_v032": true,
+    "v2_signature": "verified",
+    "zip_crc": "verified",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "package": "com.futoonpay.vinechat.beta",
+    "versionCode": 71809,
+    "versionName": "13.0.2",
+    "minSdkVersion": 23,
+    "targetSdkVersion": 36,
+    "native_core_bytes": 9893208
+  },
+  "artifact": {
+    "id": 12123055647,
+    "bytes": 59884810,
+    "sha256": "efd8ccd36926e7dc1500345069f5278c2697ad5fbf454371876a6100bc7a86ed"
+  },
+  "mapping": {
+    "file": "mapping.txt",
+    "bytes": 222109009,
+    "sha256": "21dc60a8d3614fcc429c29c8518a05689f548c0c8d40c14c2c509dd50663683c"
+  }
 }
