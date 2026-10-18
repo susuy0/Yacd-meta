@@ -8,6 +8,7 @@ import android.graphics.Canvas
 import android.os.Looper
 import android.view.View
 import android.widget.FrameLayout
+import java.time.Duration
 import androidx.compose.material3.Text
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
@@ -62,7 +63,7 @@ class OwnerlessWindowRegressionTest {
     }
 
     private fun render(root: View) {
-        shadowOf(Looper.getMainLooper()).idle()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(32))
         root.measure(View.MeasureSpec.makeMeasureSpec(780, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1200, View.MeasureSpec.EXACTLY))
         root.layout(0, 0, root.measuredWidth, root.measuredHeight)
         val bitmap = Bitmap.createBitmap(780, 1200, Bitmap.Config.ARGB_8888)
@@ -105,9 +106,12 @@ class OwnerlessWindowRegressionTest {
         assertEquals(Lifecycle.State.RESUMED, panel.lifecycle.currentState)
         panel.handleBack()
         assertEquals(1, bridge.closed)
+        val child = compose(panel)
         panel.close(); panel.close(); panel.onShown()
+        render(root)
         assertEquals(Lifecycle.State.DESTROYED, panel.lifecycle.currentState)
-        assertFalse(compose(panel).hasComposition)
+        assertFalse(child.hasComposition)
+        assertEquals(0, panel.childCount)
         assertEquals("", bridge.inserted)
         assertEquals(0, bridge.writes)
     }
@@ -140,8 +144,10 @@ class OwnerlessWindowRegressionTest {
         assertNull(root.findViewTreeLifecycleOwner())
         panel.onHidden(); panel.onShown()
         render(root)
+        val child = compose(panel)
         panel.close()
-        assertFalse(compose(panel).hasComposition)
+        render(root)
+        assertFalse(child.hasComposition)
         assertEquals(0, bridge.sent.get())
     }
 
@@ -171,11 +177,23 @@ class OwnerlessWindowRegressionTest {
         dialog(root).show()
         first.onShown(); second.onShown()
         render(root)
+        val child = compose(first)
         first.close()
         render(root)
-        assertFalse(compose(first).hasComposition)
+        assertFalse(child.hasComposition)
         assertTrue(compose(second).hasComposition)
         assertEquals(Lifecycle.State.RESUMED, second.lifecycle.currentState)
         assertNull(root.findViewTreeLifecycleOwner())
+    }
+
+    @Test fun dismissedBeforeFirstTraversalNeverAttachesDestroyedComposeContent() {
+        val panel = ChatToolsView(activity, ChatToolsFixture(), true)
+        cleanup += panel::close
+        panel.close()
+        val root = content(panel)
+        dialog(root).show()
+        render(root)
+        assertEquals(0, panel.childCount)
+        assertEquals(Lifecycle.State.DESTROYED, panel.lifecycle.currentState)
     }
 }
