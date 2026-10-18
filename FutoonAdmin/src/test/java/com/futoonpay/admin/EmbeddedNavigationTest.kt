@@ -11,11 +11,13 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 class ScopeProbeActivity : EmbeddedAdminActivity()
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class EmbeddedNavigationTest {
     private class Store(var active: Boolean = true) : FutoonIntegration.Store {
         var preparedOrder = ""
@@ -70,5 +72,18 @@ class EmbeddedNavigationTest {
         assertTrue(first.get().isFinishing)
         assertTrue(second.get().isFinishing)
         first.pause().stop().destroy();second.pause().stop().destroy()
+    }
+    @Test fun realEmbeddedMainActivityStartsInTheHostApplicationWithoutAnotherApplicationClass() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        FutoonIntegration.register("404",Store())
+        val controller = Robolectric.buildActivity(MainActivity::class.java,
+            Intent(context,MainActivity::class.java).putExtra(FutoonIntegration.EXTRA_SCOPE,"404")
+                .putExtra(MainActivity.EXTRA_TAB,"ORDERS")).setup().visible()
+        shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(64))
+        val activity = controller.get()
+        assertFalse(activity.isFinishing)
+        assertTrue(activity.findViewById<android.view.ViewGroup>(android.R.id.content).childCount > 0)
+        assertTrue(activity.window.attributes.width > 0)
+        controller.pause().stop().destroy()
     }
 }
