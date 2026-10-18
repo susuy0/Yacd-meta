@@ -11,6 +11,7 @@ for name in ['RECORD_AUDIO','READ_CONTACTS','WRITE_CONTACTS']:
     assert 'android.permission.'+name not in permissions,name
 nm=sdk/'ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm'
 with zipfile.ZipFile(apk) as z,tempfile.TemporaryDirectory() as work:
+    assert not any(name.startswith('assets/futoon/') for name in z.namelist()), 'Obsolete business WebView assets must not be packaged'
     for entry in z.namelist():
         if entry.startswith('lib/') and entry.endswith('/libtmessages.49.so'):
             lib=pathlib.Path(work)/'core.so';lib.write_bytes(z.read(entry))

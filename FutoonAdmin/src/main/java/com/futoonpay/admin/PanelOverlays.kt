@@ -32,7 +32,7 @@ private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null 
 }
 
 /** Original full-screen detail components are drawn within the floating panel bounds. */
-@Composable internal fun PanelDialog(onDismissRequest: () -> Unit, properties: DialogProperties = DialogProperties(), content: @Composable () -> Unit) {
+@Composable internal fun PanelDialog(onDismissRequest: () -> Unit, properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false), content: @Composable () -> Unit) {
     val store = LocalOverlays.current
     if (store == null) { androidx.compose.ui.window.Dialog(onDismissRequest, properties = properties, content = content); return }
     val id = remember { UUID.randomUUID().toString() }

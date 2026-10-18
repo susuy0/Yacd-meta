@@ -57,6 +57,17 @@ interface NativePanelBridge {
 internal data class RecognizedQuery(val value: String, val kind: String, val id: String = UUID.randomUUID().toString())
 internal data class ChatScope(val label: String = "当前会话", val telegramId: String = "", val source: String = "")
 
+/** Limit cached modules while retaining navigation and editable state across tab switches. */
+internal class PanelRouteModels {
+    private val owners = linkedMapOf<String, ViewModelStoreOwner>()
+    fun owner(key: String): ViewModelStoreOwner {
+        owners.remove(key)?.let { owners[key] = it; return it }
+        while (owners.size >= 16) owners.remove(owners.keys.first())?.viewModelStore?.clear()
+        return object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() }.also { owners[key] = it }
+    }
+    fun clear() { owners.values.forEach { it.viewModelStore.clear() }; owners.clear() }
+}
+
 /** Owns lifecycle, state, back handling and original Android UI inside the Telegram panel. */
 class NativePanelView(context: Context, private val bridge: NativePanelBridge) : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
     private val registry = LifecycleRegistry(this)
@@ -93,6 +104,8 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     fun recognize(text: String?) { navigation.showOrdersForQuery(); query = RecognizedQuery(text.orEmpty(), "AUTO") }
     fun recognizeCandidate(value: String?, kind: String?) { navigation.showOrdersForQuery(); query = RecognizedQuery(value.orEmpty(), kind.orEmpty()) }
     fun updateEvidenceCount(count: Int) { evidenceRevision++ }
+    fun adoptEvidence(order: String, caption: String) { navigatorEvidence(order, caption) }
+    private fun navigatorEvidence(order: String, caption: String) { navigation.push(PanelRoute("evidence", module = JSONObject(order).put("_caption", caption).toString())) }
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
     fun onHidden() { if (!closed) registry.currentState = Lifecycle.State.CREATED }
@@ -104,6 +117,8 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     val auth: AppViewModel = viewModel(key = "session", factory = AppViewModel.Factory(environment))
     val state by auth.state.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val models = remember(state.adminUrl, state.accountName, state.authStage) { PanelRouteModels() }
+    DisposableEffect(models) { onDispose { models.clear() } }
     val navigation = remember(navigator, bridge) { object : PanelNavigation by navigator {
         override fun evidence(order: OrderSummary) {
             val data = JSONObject().put("trade_no", order.tradeNo).put("out_trade_no", order.merchantTradeNo).put("uid", order.merchantId).put("money", order.amount).put("currency", order.currency)
@@ -127,7 +142,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                             val holder = rememberSaveableStateHolder()
                             val route = navigator.current
                             holder.SaveableStateProvider(route.id) {
-                                EmbeddedRoute(route, environment, auth, navigator, bridge, chat, query, evidenceRevision, snackbar)
+                                EmbeddedRoute(route, environment, auth, navigator, bridge, chat, query, evidenceRevision, snackbar, models)
                             }
                         }
                     }
@@ -143,21 +158,22 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     }
 }
 
-@Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, snackbar: SnackbarHostState) {
+@Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, snackbar: SnackbarHostState, models: PanelRouteModels) {
     val back = { if (!navigator.pop()) bridge.collapse() }
     val modelKey = environment.adminBaseUrl + ":" + auth.state.value.accountName + ":" + route.id
+    val owner = models.owner(modelKey)
     if (route.kind == "module") {
         if (PaymentAdminCatalog.contains(route.module)) {
-            val model: PaymentAdminViewModel = viewModel(key = modelKey, factory = PaymentAdminViewModel.Factory(environment.repository, PaymentAdminCatalog.find(route.module), route.channelType, route.channelId, FormDraftStore(androidx.compose.ui.platform.LocalContext.current, bridge.accountScope())))
+            val model: PaymentAdminViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = PaymentAdminViewModel.Factory(environment.repository, PaymentAdminCatalog.find(route.module), route.channelType, route.channelId, FormDraftStore(androidx.compose.ui.platform.LocalContext.current, bridge.accountScope())))
             PaymentAdminRoot(model, back)
         } else {
-            val model: NativeModuleViewModel = viewModel(key = modelKey, factory = NativeModuleViewModel.Factory(environment.repository, ModuleCatalog.find(route.module)))
+            val model: NativeModuleViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = NativeModuleViewModel.Factory(environment.repository, ModuleCatalog.find(route.module)))
             NativeModuleRoot(model, back)
         }
         return
     }
     if (route.kind == "domains") {
-        val model: DomainAuditViewModel = viewModel(key = modelKey, factory = DomainAuditViewModel.Factory(environment.repository, route.merchantId))
+        val model: DomainAuditViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = DomainAuditViewModel.Factory(environment.repository, route.merchantId))
         DomainAuditRoot(model, back); return
     }
     if (route.kind == "settings") {
@@ -165,7 +181,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         SettingsScreen(state, back, auth::connectBackend, auth::logout); return
     }
     if (route.kind == "evidence") { EvidenceScreen(JSONObject(route.module), bridge, evidenceRevision, back); return }
-    val model: AppViewModel = viewModel(key = modelKey, factory = object : ViewModelProvider.Factory {
+    val model: AppViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(environment, loadOnStart = false) as T
     })
     val state by model.state.collectAsState()
@@ -215,7 +231,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 }
 
 @Composable private fun EvidenceScreen(order: JSONObject, bridge: NativePanelBridge, revision: Int, back: () -> Unit) {
-    var caption by remember { mutableStateOf("订单 ${order.optString("trade_no")} 凭证") }
+    var caption by remember { mutableStateOf(order.optString("_caption", "订单 ${order.optString("trade_no")} 凭证")) }
     val paths = remember(revision) { bridge.evidencePaths().toList() }
     Column(Modifier.fillMaxSize()) {
         PayTopBar("图片凭证", back)

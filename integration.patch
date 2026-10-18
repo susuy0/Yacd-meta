@@ -7713,7 +7713,7 @@ index 55d530f..8913fb4 100644
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7182
++APP_VERSION_CODE=7183
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
@@ -7895,7 +7895,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,136 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -7978,6 +7978,7 @@ new file mode 100644
 +
 +    private void ensurePanel(){
 +        if(panel!=null)return;
++        restoreDraftFiles();
 +        panel=new NativePanelView(root.getContext(),new NativePanelBridge(){
 +            public String address(){return store.address();}
 +            public String username(){return store.username();}
@@ -7997,12 +7998,12 @@ new file mode 100644
 +            public void copy(String text){AndroidUtilities.runOnUIThread(()->{((ClipboardManager)root.getContext().getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("富通",text));toast("已复制");});}
 +            public void selectEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->prepareEvidence(order,caption));}
 +            public void openGallery(){AndroidUtilities.runOnUIThread(FutoonPanel.this::openGallery);}
-+            public void sendEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->sendEvidence(order,caption));}
++            public void sendEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->FutoonPanel.this.sendEvidence(order,caption));}
 +        });
 +        panel.setVisibility(View.GONE);panel.setElevation(dp(12));
 +        GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(Color.WHITE);panelBg.setCornerRadius(dp(18));panel.setBackground(panelBg);panel.setClipToOutline(true);
 +        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,dp(600),Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL);lp.setMargins(dp(8),0,dp(8),dp(8));root.addView(panel,lp);
-+        applyContext();if(!initialText.isEmpty()){panel.recognize(initialText);initialText="";}
++        applyContext();FutoonStore.Draft saved=FutoonStore.draft(account);if(saved!=null&&saved.address.equals(store.address())){panel.adoptEvidence(saved.order.data.toString(),saved.caption);panel.updateEvidenceCount(photos.size());}if(!initialText.isEmpty()){panel.recognize(initialText);initialText="";}
 +    }
 +    private void ensureClient()throws Exception{String address=store.address();if(address.isEmpty())throw new FutoonApi.SessionExpired();if(api==null){api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));}}
 +    private void applyContext(){if(panel!=null)panel.updateContext(context.optString("label"),context.optString("tgid"),context.optString("source"));}
@@ -8020,11 +8021,12 @@ new file mode 100644
 +    public void pause(){paused=true;if(panel!=null)panel.onHidden();}
 +    public void destroy(){if(destroyed)return;destroyed=true;generation++;NotificationCenter nc=NotificationCenter.getInstance(account);nc.removeObserver(this,NotificationCenter.fileLoaded);nc.removeObserver(this,NotificationCenter.fileLoadFailed);if(panel!=null){panel.close();panel=null;}if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);}
 +
-+    private void prepareEvidence(String raw,String caption){try{JSONObject order=new JSONObject(raw);activeOrder=order.optString("trade_no");FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),caption,dialogId);FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=sourceMessage;draft.sourceTopic=topicId;draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());if(panel!=null)panel.updateEvidenceCount(photos.size());}catch(Exception e){toast("订单凭证初始化失败："+e.getMessage());}}
++    private void prepareEvidence(String raw,String caption){try{JSONObject order=new JSONObject(raw);String next=order.optString("trade_no");if(!activeOrder.isEmpty()&&!activeOrder.equals(next))photos.clear();activeOrder=next;FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),caption,dialogId);FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=sourceMessage;draft.sourceTopic=topicId;draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());if(panel!=null)panel.updateEvidenceCount(photos.size());}catch(Exception e){toast("订单凭证初始化失败："+e.getMessage());}}
 +    private void openGallery(){if(choosing){toast("已有图片选择正在进行");return;}choosing=true;Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);try{host.startActivityForResult(intent,PICK_IMAGES);}catch(Exception e){choosing=false;toast("无法打开图片选择器");}}
 +    private void sendEvidence(String raw,String caption){try{prepareEvidence(raw,caption);if(photos.isEmpty())throw new IOException("请先选择凭证图片");ArrayList<String> paths=new ArrayList<>();for(File f:photos){if(!f.isFile())throw new IOException("凭证文件已失效");paths.add(f.getAbsolutePath());}if(!(host.getParentActivity() instanceof LaunchActivity))throw new IOException("无法打开发送预览");((LaunchActivity)host.getParentActivity()).shareFutoonEvidence(account,paths,caption,activeOrder);collapse();}catch(Exception e){toast(e.getMessage());}}
-+    public void addChatPhoto(MessageObject message){if(!canUsePhoto(account,message)){toast("这张图片受保护或不可用");return;}if(photos.size()>=10){toast("每次最多选择 10 张凭证");return;}File f=message.messageOwner.attachPath==null?null:new File(message.messageOwner.attachPath);if(f==null||!f.isFile())f=FileLoader.getInstance(account).getPathToMessage(message.messageOwner);if(f!=null&&f.isFile()){appendPhoto(f);return;}String name;if(message.getDocument()!=null){name=FileLoader.getAttachFileName(message.getDocument());downloading.put(name,message);FileLoader.getInstance(account).loadFile(message.getDocument(),message,FileLoader.PRIORITY_HIGH,0);}else{TLRPC.PhotoSize size=FileLoader.getClosestPhotoSizeWithSize(message.messageOwner.media.photo.sizes,AndroidUtilities.getPhotoSize());if(size==null){toast("图片不可用");return;}name=FileLoader.getAttachFileName(size);downloading.put(name,message);FileLoader.getInstance(account).loadFile(ImageLocation.getForPhoto(size,message.messageOwner.media.photo),message,"jpg",FileLoader.PRIORITY_HIGH,0);}toast("正在下载凭证图片");}
++    public void addChatPhoto(MessageObject message){restoreDraftFiles();if(!canUsePhoto(account,message)){toast("这张图片受保护或不可用");return;}if(photos.size()>=10){toast("每次最多选择 10 张凭证");return;}File f=message.messageOwner.attachPath==null?null:new File(message.messageOwner.attachPath);if(f==null||!f.isFile())f=FileLoader.getInstance(account).getPathToMessage(message.messageOwner);if(f!=null&&f.isFile()){appendPhoto(f);return;}String name;if(message.getDocument()!=null){name=FileLoader.getAttachFileName(message.getDocument());downloading.put(name,message);FileLoader.getInstance(account).loadFile(message.getDocument(),message,FileLoader.PRIORITY_HIGH,0);}else{TLRPC.PhotoSize size=FileLoader.getClosestPhotoSizeWithSize(message.messageOwner.media.photo.sizes,AndroidUtilities.getPhotoSize());if(size==null){toast("图片不可用");return;}name=FileLoader.getAttachFileName(size);downloading.put(name,message);FileLoader.getInstance(account).loadFile(ImageLocation.getForPhoto(size,message.messageOwner.media.photo),message,"jpg",FileLoader.PRIORITY_HIGH,0);}toast("正在下载凭证图片");}
 +    private void appendPhoto(File source){if(!valid())return;if(source.length()>25*1024*1024){toast("请选择 25 MB 以内的图片");return;}if(source.getAbsolutePath().startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)){if(!photos.contains(source))photos.add(source);syncDraft();open("");return;}final int gen=generation;WORK.execute(()->{try{File dir=new File(root.getContext().getCacheDir(),"futoon-evidence");if(!dir.exists())dir.mkdirs();File copy=File.createTempFile("proof-",".jpg",dir);try(InputStream in=new FileInputStream(source);OutputStream out=new FileOutputStream(copy)){byte[] bytes=new byte[8192];int n;while((n=in.read(bytes))!=-1)out.write(bytes,0,n);}AndroidUtilities.runOnUIThread(()->{if(gen==generation)appendPhoto(copy);});}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("凭证缓存失败："+e.getMessage()));}});}
++    private void restoreDraftFiles(){FutoonStore.Draft draft=FutoonStore.draft(account);if(draft==null||!draft.address.equals(store.address())||!activeOrder.isEmpty())return;activeOrder=draft.order.id();sourceMessage=draft.sourceMessage;for(String path:draft.imagePaths){File file=new File(path);if(file.isFile()&&path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)&&!photos.contains(file))photos.add(file);}}
 +    private void syncDraft(){FutoonStore.Draft draft=FutoonStore.draft(account);if(draft!=null&&draft.address.equals(store.address())){draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());}if(panel!=null)panel.updateEvidenceCount(photos.size());}
 +    public boolean activityResult(int requestCode,int resultCode,Intent data){if(requestCode!=PICK_IMAGES)return false;choosing=false;if(resultCode!=Activity.RESULT_OK||data==null)return true;ArrayList<Uri> uris=new ArrayList<>();if(data.getClipData()!=null)for(int i=0;i<data.getClipData().getItemCount()&&i<10;i++)uris.add(data.getClipData().getItemAt(i).getUri());else if(data.getData()!=null)uris.add(data.getData());final int gen=generation;WORK.execute(()->{ArrayList<File> files=new ArrayList<>();try{for(Uri uri:uris)files.add(copyImage(uri));AndroidUtilities.runOnUIThread(()->{if(gen!=generation)return;for(File file:files)if(photos.size()<10)photos.add(file);syncDraft();});}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("读取图片失败："+e.getMessage()));}});return true;}
 +    private File copyImage(Uri uri)throws Exception{File dir=new File(root.getContext().getCacheDir(),"futoon-evidence");if(!dir.exists()&&!dir.mkdirs())throw new IOException("无法创建缓存");File f=File.createTempFile("proof-",".jpg",dir);boolean ok=false;try(InputStream in=root.getContext().getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(f)){if(in==null)throw new IOException("图片不可读");byte[] buf=new byte[8192];int n,total=0;while((n=in.read(buf))!=-1){total+=n;if(total>25*1024*1024)throw new IOException("图片超过 25 MB");out.write(buf,0,n);}android.graphics.BitmapFactory.Options dimensions=new android.graphics.BitmapFactory.Options();dimensions.inJustDecodeBounds=true;android.graphics.BitmapFactory.decodeFile(f.getPath(),dimensions);if(dimensions.outWidth<=0||dimensions.outHeight<=0)throw new IOException("所选文件不是有效图片");ok=true;return f;}finally{if(!ok)f.delete();}}

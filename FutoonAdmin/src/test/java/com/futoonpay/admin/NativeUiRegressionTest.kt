@@ -35,7 +35,7 @@ class NativeUiRegressionTest {
     private val orders = listOf(order("S2610081430158812", 1), order("S2610081428074401", 0))
     private val stat = OrderChannelStat("12", "蓝色微信", 92.0, total = 50, successful = 46, processing = 3, source = ChannelRateSource.OFFICIAL, countsOfficial = true)
     private fun screen(content: @Composable () -> Unit) {
-        compose.setContent { FutoonTheme { Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() } } }
+        compose.setContent { FutoonTheme { PanelOverlayHost { Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() } } } }
         compose.waitForIdle()
     }
     private fun screenshot(name: String) {

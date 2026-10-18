@@ -15,4 +15,5 @@ for required in ("OrdersScreen(state, model", "SettlementsScreen(state, model", 
 assert "setViewTreeLifecycleOwner(this)" in ui
 assert "viewModelStore.clear()" in ui
 assert "PanelOverlayHost" in ui and "PanelDialog" in ui
+assert "FutoonPanel.this.sendEvidence(order,caption)" in host, "Evidence bridge must invoke its host instead of recursively calling itself"
 print("Native composition audit passed; interactive verification is performed by Robolectric Compose tests.")

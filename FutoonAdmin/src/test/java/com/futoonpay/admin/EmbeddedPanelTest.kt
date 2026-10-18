@@ -9,6 +9,8 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.Lifecycle
 import com.futoonpay.admin.data.*
 import com.futoonpay.admin.ui.theme.FutoonTheme
@@ -27,11 +29,15 @@ class EmbeddedPanelTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val bridge = FixtureBridge()
     private val navigator = PanelNavigator()
-    private fun screen(content: @Composable () -> Unit) { compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp)) { content() } } }; compose.waitForIdle() }
+    private fun screen(content: @Composable () -> Unit) { compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp).testTag("native-floating-panel")) { content() } } }; compose.waitForIdle() }
+    private fun screenshot(name: String) {
+        val bitmap = compose.onNodeWithTag("native-floating-panel").captureToImage().asAndroidBitmap()
+        java.io.File("build/ui-screenshots/$name.png").apply { parentFile.mkdirs() }.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+    }
     private fun environment() = TestEnvironment(FutoonRepository(fixtureClient({ request ->
         when (request.url.queryParameter("act")) {
             "getcount" -> 200 to """{"count1":1}"""
-            "orderList" -> 200 to """{"total":1,"rows":[{"trade_no":"S2610180001","uid":"1011","money":"10.00","realmoney":"10.00","status":1,"name":"测试订单"}]}"""
+            "orderList" -> 200 to """{"total":1,"rows":[{"trade_no":"S2610180001","uid":"1011","money":"10.00","realmoney":"10.00","status":1,"channel":"12","addtime":"2026-10-18 14:30:00","name":"测试订单"}]}"""
             "settleList" -> 200 to """{"total":1,"rows":[{"id":"42","uid":"1011","money":"88.00","status":0,"type":"支付宝","account":"fixture"}]}"""
             else -> 200 to """{"total":0,"rows":[]}"""
         }
@@ -40,14 +46,17 @@ class EmbeddedPanelTest {
         val env = environment()
         screen { EmbeddedPanelRoot(env, bridge, navigator, ChatScope("私聊", "5824870757"), null, 0) }
         compose.waitUntil(10000) { compose.onAllNodesWithText("S2610180001").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("S2610180001").assertExists()
+        compose.onNodeWithText("S2610180001").assertIsDisplayed()
+        screenshot("20-embedded-orders-default")
         compose.onNode(hasText("结算") and hasClickAction()).performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithText("88.00", substring = true).fetchSemanticsNodes().isNotEmpty() }
         assertEquals("settlements", navigator.current.kind)
+        screenshot("21-embedded-settlements")
         assertEquals(0, bridge.sent.get())
         compose.onNode(hasText("更多") and hasClickAction()).performClick()
         compose.onNodeWithText("支付通道").assertExists()
         compose.onNodeWithText("轮询组").assertExists()
+        screenshot("22-embedded-more")
         assertEquals(0, bridge.closed.get())
     }
     @Test fun viewOwnsLifecycleAndCanPauseReopenAndDestroy() {

@@ -89,7 +89,6 @@
     "src/test/java/com/futoonpay/admin/MerchantBalanceUiTest.kt": "f9e248604ef94b346d42ae6826c5c6121a7a24eb51675ec68644a48851d757e7",
     "src/test/java/com/futoonpay/admin/data/AdminEndpointStoreTest.kt": "b27bbc8e963d9c65e3568fddecff7091785d8f71be93d3de005067dfc31540fd",
     "src/test/java/com/futoonpay/admin/data/ApiTransportRegressionTest.kt": "a8c846072b200a135587151cb64b0690f0f95dd81f903976933838830e652f23",
-    "src/test/java/com/futoonpay/admin/data/NativeDraftAndQrTest.kt": "fe30e168422d94d0ec3ae75013ed5218b7ff58614b805ccbf656b770a55947c9",
     "src/test/java/com/futoonpay/admin/data/OrderPageMetricsTest.kt": "a7193e5794f7ff528f21d2bf58ca9941b1b1fb7a94b1e32df4225dfa8df364df",
     "src/test/java/com/futoonpay/admin/data/MerchantBalanceAdjustmentTest.kt": "d36df4aca431fad141d668d2d57f6c9ae260e2cf0b2c14b17ee7f05ae4523a7e",
     "src/test/java/com/futoonpay/admin/data/OrderChannelStatsTest.kt": "db3b4ec1706f194dea1c4c49d332adfd79cb8f9ee345d937d425b3111aba277a",

@@ -152,6 +152,7 @@ internal class NativeModuleViewModel(
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
     private fun runAction(action: suspend () -> ApiResult) = viewModelScope.launch {
+        if (_state.value.loading) return@launch
         _state.update { it.copy(loading = true, message = null) }
         runCatching { action() }
             .onSuccess { result ->
