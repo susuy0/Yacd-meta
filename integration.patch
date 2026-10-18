@@ -1381,7 +1381,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.css b/TMessagesProj/src/
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.css
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,82 @@
 +html,body,#app{margin:0;width:100%;height:100%;min-height:0;overflow:hidden;background:transparent}
 +body{font-family:Roboto,"Noto Sans SC",system-ui,sans-serif!important}
 +.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;max-height:100%;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
@@ -1462,6 +1462,8 @@ new file mode 100644
 +.panel button:focus-visible{outline:2px solid var(--primary);outline-offset:-3px}
 +.panel .btn:disabled{background:var(--surface-3);color:var(--text-3);border-color:transparent}
 +@media(max-height:360px){.hd-top{min-height:36px}.panel button.panel-control{min-height:36px}.panel .hd{padding:2px 8px}.panel .actionbar{padding:4px 8px}.panel .actionbar .btn{min-height:40px;padding:6px}.panel .tab{min-height:36px;gap:0}.tabbar .ic{width:16px;height:16px}.merchant-empty{padding:14px 10px}}
++
++.selectable-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:8px}.row-select{width:20px!important;height:20px!important;min-height:20px!important;accent-color:var(--primary,#006344)}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java b/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java
 deleted file mode 100644
 index 5482ff4..0000000
@@ -4982,7 +4984,7 @@ new file mode 100644
 +    public static boolean mutates(String op) {
 +        return Arrays.asList("order.action", "merchant.balance", "merchant.status", "merchant.group",
 +                "merchant.resetKey", "form.save", "domain.action", "blacklist.add", "blacklist.remove",
-+                "settlement.status", "settlement.info", "module.action", "channel.test", "batch.notify").contains(op);
++                "settlement.status", "settlement.info", "module.action", "channel.test", "batch.notify", "batch.run").contains(op);
 +    }
 +    public static BigDecimal amount(String text) {
 +        if (text == null || !text.matches("[0-9]{1,14}(?:\\.[0-9]{1,2})?")) throw new IllegalArgumentException("金额必须是大于 0 的正数，最多两位小数");
@@ -8749,7 +8751,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/m
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,498 @@
+@@ -0,0 +1,507 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8761,6 +8763,7 @@ new file mode 100644
 +const kv=(k,v,mono=false)=>'<div class="kv"><span class="k">'+esc(k)+'</span><span class="v '+(mono?'mono':'')+'">'+esc(v===''||v==null?'未提供':v)+'</span></div>';
 +const note=(text,type='info')=>'<div class="banner '+type+'">'+esc(text)+'</div>';
 +const amount=o=>(o.currency||o.currency_code||'CNY')+' '+(o.money??'未提供');
++const selections={orders:new Set(),records:new Set()};
 +const labels=['待支付','已支付','已退款','已冻结'],status=o=>labels[Number(o.status)]||'未知状态';
 +let renderedView='',renderPending=false,lastMarkup='';
 +const emptyLocal=()=>({history:[],favorites:[],cases:{},drafts:{},groups:{},targets:[]});
@@ -8844,12 +8847,15 @@ new file mode 100644
 + return '<div class="rf g8"><input id="query" value="'+esc(S.q)+'" placeholder="输入订单号或商户 PID"><button class="btn btn-primary" data-act="order.search">'+icon('search','ic-sm')+'查询</button></div>'+
 + '<select id="kind">'+[['AUTO','自动识别'],['PID','商户 PID'],['SYSTEM_ORDER','系统订单号'],['MERCHANT_ORDER','商户订单号'],['CHANNEL_ORDER','通道订单号']].map(([v,t])=>'<option value="'+v+'" '+(S.kind===v?'selected':'')+'>'+t+'</option>').join('')+'</select>';
 +}
++function selectionBox(id,kind){if(kind==='records'&&!['channels','payment_types','rolls','proxies','channel_monitor','settlements'].includes(S.module))return '';return '<input type="checkbox" class="row-select" aria-label="选择 '+esc(id)+'" data-selection="'+kind+'" data-id="'+esc(id)+'" '+(selections[kind].has(String(id))?'checked':'')+'>';}
++function batchBar(kind){const count=selections[kind].size;return '<div class="toolbar">'+btn(count?'清空所选 '+count+' 项':'选择当前页','selection.toggle','btn-outline sm','data-kind="'+kind+'"')+(count?btn('批量操作','selection.prepare','btn-primary sm','data-kind="'+kind+'"'):'')+'</div>';}
++function batchResultView(){const r=S.batchOutcome||{};return {body:'<h2 class="title">'+esc(r.title||'批量结果')+'</h2>'+(r.results||[]).map(x=>'<div class="card">'+kv(x.label||x.id,x.status)+note(x.message)+'</div>').join('')};}
 +function ordersView(){
 + let body=queryBar()+'<div class="toolbar">'+btn('整段文字识别','recognize.open')+btn('截图识别','ocr.pick')+btn('完整筛选','order.filters')+(Object.keys(S.filters).length?btn('清空筛选','order.clearFilters'):'' )+'</div>'+(S.queryWarning?note(S.queryWarning,'warn'):'')+
 + '<div class="tags">'+[['-1','全部'],['0','待支付'],['1','已支付'],['2','已退款'],['3','已冻结']].map(([s,t])=>'<button class="chip '+((S.filters.status||'-1')===s?'on':'')+'" data-act="order.statusFilter" data-value="'+s+'">'+t+'</button>').join('')+'</div>';
 + if(S.filters.uid)body+=note('当前按商户 PID '+S.filters.uid+' 筛选')+btn('查看其他商户结果','order.clearMerchant','btn-text');
 + if(S.orderMetrics)body+='<div class="card">'+kv('当前页订单 / 已支付',S.orderMetrics.count+' / '+S.orderMetrics.successful)+kv('当前页成功率',S.orderMetrics.rate==null?'未提供':S.orderMetrics.rate.toFixed(1)+'%')+Object.entries(S.orderMetrics.amounts||{}).map(([code,v])=>kv('当前页金额 '+code,v)).join('')+'</div>';
-+ if(S.orders.length)body+='<div class="rf between"><span class="t-cap c2">共 '+S.total+' 条 · 第 '+S.n+' 页</span>'+btn('导出当前结果','order.export','btn-text sm')+'</div>'+S.orders.map((o,i)=>orderCard(o,i)).join('');
++ if(S.orders.length)body+='<div class="rf between"><span class="t-cap c2">共 '+S.total+' 条 · 第 '+S.n+' 页</span>'+btn('导出当前结果','order.export','btn-text sm')+'</div>'+batchBar('orders')+S.orders.map((o,i)=>'<div class="selectable-row">'+selectionBox(o.trade_no,'orders')+orderCard(o,i)+'</div>').join('');
 + else body+='<div class="empty">'+icon('order')+'<p>查询结果会显示在这里</p></div>';
 + body+='<div class="toolbar">'+btn('最近查询','order.history')+btn('收藏订单','order.favorites')+btn('恢复凭证草稿','voucher.drafts')+'</div>';
 + return {body,actions:btn('上一页','order.prev')+btn('下一页','order.next')};
@@ -8928,15 +8934,15 @@ new file mode 100644
 +function recordsView(){
 + if(S.module==='channel_monitor')return monitorView();
 + const title=modules.find(x=>x[0]===S.module)?.[1]||'资金流水';
-+ let body=documentTools()+'<div class="rf between"><span class="title">'+esc(title)+'</span>'+btn('刷新','records.reload','btn-text sm')+'</div>'+
++ let body=documentTools()+(['channels','payment_types','rolls','proxies','channel_monitor','settlements'].includes(S.module)?batchBar('records'):'')+'<div class="rf between"><span class="title">'+esc(title)+'</span>'+btn('刷新','records.reload','btn-text sm')+'</div>'+
 + '<div class="rf g8"><input id="recordQuery" placeholder="筛选当前页 / 输入通道 ID" value="'+esc(S.recordQuery||'')+'">'+btn('筛选','records.search','btn-outline')+'</div>';
 + if(['channels','payment_types','rolls','proxies'].includes(S.module))body+=btn('新增配置','module.add','btn-primary block');
 + if(['channels','rolls'].includes(S.module))body+='<div class="tags">'+(S.module==='channels'?[['all','全部'],['assigned','运行中'],['disabled','已停用'],['unassigned','待确认']]:[['all','全部'],['assigned','运行中'],['disabled','已停用'],['unassigned','待确认']]).map(([key,label])=>'<button class="chip '+((S.moduleTab||'all')===key?'on':'')+'" data-act="module.tab" data-tab="'+key+'">'+label+'</button>').join('')+'</div>';
 + if(S.module==='blacklist')body+=btn('添加黑名单','blacklist.add','btn-primary block');
 + if(S.module==='domains')body+=btn('添加域名','domain.add','btn-primary block');
 + if(S.tables){
-+  body+=S.tables.map((t,ti)=>'<div class="scroll-x"><table class="table"><thead><tr>'+t.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'<th>操作</th></tr></thead><tbody>'+t.rows.map((r,i)=>'<tr>'+r.cells.map(c=>'<td>'+esc(c)+'</td>').join('')+'<td>'+btn('详情','module.row','btn-text sm','data-table="'+ti+'" data-index="'+i+'"')+'</td></tr>').join('')+'</tbody></table></div>').join('');
-+ }else body+=S.records.length?S.records.map((r,i)=>'<button class="order-card" data-act="record.open" data-index="'+i+'"><div class="rf between"><b>'+esc(r.domain||r.content||r.name||r.username||'记录 '+r.id)+'</b>'+badge('状态 '+(r.status??'未提供'))+'</div><div class="t-cap">'+esc(['ID '+(r.id||''),r.uid?'PID '+r.uid:'',r.money?amount(r):'',r.addtime||''].filter(Boolean).join(' · '))+'</div></button>').join(''):'<div class="empty">后台当前页没有记录</div>';
++  body+=S.tables.map((t,ti)=>'<div class="scroll-x"><table class="table"><thead><tr><th>选择</th>'+t.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'<th>操作</th></tr></thead><tbody>'+t.rows.map((r,i)=>'<tr><td>'+selectionBox(r.id,'records')+'</td>'+r.cells.map(c=>'<td>'+esc(c)+'</td>').join('')+'<td>'+btn('详情','module.row','btn-text sm','data-table="'+ti+'" data-index="'+i+'"')+'</td></tr>').join('')+'</tbody></table></div>').join('');
++ }else body+=S.records.length?S.records.map((r,i)=>'<div class="'+(['channels','payment_types','rolls','proxies','channel_monitor','settlements'].includes(S.module)?'selectable-row':'')+'">'+selectionBox(r.id,'records')+'<button class="order-card" data-act="record.open" data-index="'+i+'"><div class="rf between"><b>'+esc(r.domain||r.content||r.name||r.username||'记录 '+r.id)+'</b>'+badge('状态 '+(r.status??'未提供'))+'</div><div class="t-cap">'+esc(['ID '+(r.id||''),r.uid?'PID '+r.uid:'',r.money?amount(r):'',r.addtime||''].filter(Boolean).join(' · '))+'</div></button></div>').join(''):'<div class="empty">后台当前页没有记录</div>';
 + body+='<div class="t-cap c2">第 '+(S.recordPage||1)+' 页'+(S.recordTotal!=null?' · 共 '+S.recordTotal+' 条':'')+'</div>';
 + return {body,actions:btn('上一页','records.prev')+btn('下一页','records.next')};
 +}
@@ -8944,8 +8950,8 @@ new file mode 100644
 +function monitorMetric(row,prefixes,key){for(const prefix of prefixes){const value=row[prefix+key];if(value!==undefined&&value!==null&&value!=='')return value;}return '未提供';}
 +function monitorView(){
 + const window=S.monitorWindow||'5min';
-+ let body=documentTools()+'<div class="rf between"><b class="title">通道监测</b>'+btn('刷新','records.reload','btn-text sm')+'</div><div class="rf g8"><input id="recordQuery" inputmode="numeric" placeholder="通道 ID，可留空" value="'+esc(S.recordQuery||'')+'">'+btn('查询','records.search')+'</div><div class="tags">'+monitorWindows.map(([key,label])=>'<button class="chip '+(window===key?'on':'')+'" data-act="monitor.window" data-window="'+key+'">'+label+'</button>').join('')+'</div>';
-+ body+=S.records.length?S.records.map((r,i)=>'<button class="order-card" data-act="record.open" data-index="'+i+'"><div class="rf between"><b>'+esc(r.name||r.channel_name||'通道 '+r.id)+'</b>'+badge(String(r.status)==='1'?'启用':String(r.status)==='0'?'停用':r.status||'未提供状态')+'</div><div class="grid2">'+kv('成功率',monitorMetric(r,['success_rate_','rate_'],window))+kv('成功 / 总数',monitorMetric(r,['success_count_','successful_'],window)+' / '+monitorMetric(r,['total_count_','total_'],window))+'</div><div class="t-cap c2">ID '+esc(r.id||'未提供')+' · '+esc(r.typename||r.plugin||'')+'</div>'+(r.lasttime?'<div class="t-cap c2">最近检测 '+esc(r.lasttime)+'</div>':'')+'</button>').join(''):'<div class="empty">当前筛选下没有通道监测数据</div>';
++ let body=documentTools()+(['channels','payment_types','rolls','proxies','channel_monitor','settlements'].includes(S.module)?batchBar('records'):'')+'<div class="rf between"><b class="title">通道监测</b>'+btn('刷新','records.reload','btn-text sm')+'</div><div class="rf g8"><input id="recordQuery" inputmode="numeric" placeholder="通道 ID，可留空" value="'+esc(S.recordQuery||'')+'">'+btn('查询','records.search')+'</div><div class="tags">'+monitorWindows.map(([key,label])=>'<button class="chip '+(window===key?'on':'')+'" data-act="monitor.window" data-window="'+key+'">'+label+'</button>').join('')+'</div>';
++ body+=S.records.length?S.records.map((r,i)=>'<div class="'+(['channels','payment_types','rolls','proxies','channel_monitor','settlements'].includes(S.module)?'selectable-row':'')+'">'+selectionBox(r.id,'records')+'<button class="order-card" data-act="record.open" data-index="'+i+'"><div class="rf between"><b>'+esc(r.name||r.channel_name||'通道 '+r.id)+'</b>'+badge(String(r.status)==='1'?'启用':String(r.status)==='0'?'停用':r.status||'未提供状态')+'</div><div class="grid2">'+kv('成功率',monitorMetric(r,['success_rate_','rate_'],window))+kv('成功 / 总数',monitorMetric(r,['success_count_','successful_'],window)+' / '+monitorMetric(r,['total_count_','total_'],window))+'</div><div class="t-cap c2">ID '+esc(r.id||'未提供')+' · '+esc(r.typename||r.plugin||'')+'</div>'+(r.lasttime?'<div class="t-cap c2">最近检测 '+esc(r.lasttime)+'</div>':'')+'</button></div>').join(''):'<div class="empty">当前筛选下没有通道监测数据</div>';
 + body+='<div class="t-cap c2">第 '+(S.recordPage||1)+' 页 · 共 '+(S.recordTotal??S.records.length)+' 条；缺失指标显示“未提供”。</div>';
 + return {body,actions:btn('上一页','records.prev')+btn('下一页','records.next')};
 +}
@@ -9004,7 +9010,7 @@ new file mode 100644
 + const focused=same?document.activeElement:null,focusId=focused?.id,fieldName=focused?.dataset?.field;
 + const selection=focused&&/INPUT|TEXTAREA/.test(focused.tagName)&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
 + let v;
-+ if(S.page==='login')v=loginView();else if(S.page==='detail')v=detailView();else if(S.page==='recognize'||S.page==='ocr')v=recognizeView(S.page==='ocr');else if(S.page==='form')v=formView();else if(S.page==='records')v=recordsView();else if(S.page==='record')v=moduleDetailView();else if(['history','favorites','drafts'].includes(S.page))v=smallListView();else if(S.page==='stats')v=statsView();else v=({merchant:merchantView,orders:ordersView,voucher:voucherView,batch:batchView,more:moreView}[S.tab]||merchantView)();
++ if(S.page==='login')v=loginView();else if(S.page==='detail')v=detailView();else if(S.page==='recognize'||S.page==='ocr')v=recognizeView(S.page==='ocr');else if(S.page==='form')v=formView();else if(S.page==='batchResult')v=batchResultView();else if(S.page==='records')v=recordsView();else if(S.page==='record')v=moduleDetailView();else if(['history','favorites','drafts'].includes(S.page))v=smallListView();else if(S.page==='stats')v=statsView();else v=({merchant:merchantView,orders:ordersView,voucher:voucherView,batch:batchView,more:moreView}[S.tab]||merchantView)();
 + const m=S.form?.merchant||S.m,ctx=S.form?.context||S.ctx;
 + const markup='<section class="panel"><header class="hd"><div class="hd-top">'+(S.page?'<button class="btn-icon" data-act="back" aria-label="返回">'+icon('back')+'</button>':'')+
 + '<div class="hd-chat">'+'<span class="clamp1">'+esc(ctx.label||'FUTOON')+'</span></div><button class="panel-control" data-act="resize" aria-label="切换大窗小窗">'+(S.large?'小窗':'展开')+'</button><button class="panel-control primary" data-act="collapse" aria-label="收起回聊天">回聊天</button></div>'+
@@ -9030,7 +9036,7 @@ new file mode 100644
 + let r;
 + if(S.q){if(S.filters.column)throw new Error('订单号与其他字段搜索请只保留一种，可先清空筛选');r=await call('orders.search',{...S.filters,text:S.q,kind:S.kind,page});}
 + else r=await call('orders.list',{...S.filters,page});
-+ if(rev!==S.rev)return;S.queryWarning=r.warning||'';S.orderMetrics=r.metrics||null;S.orders=r.rows||[];S.total=r.total??S.orders.length;if(S.q)history(S.q,S.kind);
++ if(rev!==S.rev)return;S.queryWarning=r.warning||'';S.orderMetrics=r.metrics||null;S.orders=r.rows||[];selections.orders.clear();S.total=r.total??S.orders.length;if(S.q)history(S.q,S.kind);
 +}
 +async function openOrder(o){const r=await call('order.detail',{id:o.trade_no});S.order={...o,...r};show('detail');}
 +function orderSummary(o=S.order){return '订单 '+o.trade_no+'\n商户 PID '+o.uid+'\n金额 '+amount(o);}
@@ -9047,7 +9053,7 @@ new file mode 100644
 + let r;
 + if(!['settlements','domains','flow'].includes(module))r=await call('module.read',{module,page,query,section:S.section||0,tab:S.moduleTab||'all',type:S.channelType||'',...extra});
 + else r=await call(({settlements:'settlements.list',domains:'domains.list',blacklist:'blacklist.list',flow:'merchant.flow'})[module],{page,uid:module==='flow'?S.m?.uid||'':S.recordsUid||'',content:query});
-+ S.tables=r.tables||null;S.records=r.rows||[];S.recordTotal=r.total;S.docForms=r.forms||[];S.docActions=r.actions||[];S.docNotices=r.notices||[];S.sections=r.sections||[];S.section=r.section||0;
++ S.tables=r.tables||null;S.records=r.rows||[];S.recordTotal=r.total;selections.records.clear();S.docForms=r.forms||[];S.docActions=r.actions||[];S.docNotices=r.notices||[];S.sections=r.sections||[];S.section=r.section||0;
 + if(query&&module!=='channel_monitor'&&!r.tables)S.records=S.records.filter(x=>JSON.stringify(x).includes(query));
 + S.page='records';
 +}
@@ -9067,6 +9073,7 @@ new file mode 100644
 + if(form.kind==='manual'){if(!/^[1-9][0-9]{0,18}$/.test(v.value.trim()))throw new Error('请输入完整的正整数 TGID 或商户 PID');await lookup(v.column,v.value.trim(),true);if(!S.m)throw new Error(S.error||'未找到对应商户，请核对查询类型和号码');form.dirty=false;S.form=null;S.page='';S.stack=[];return;}
 + if(form.kind==='filters'){if(v.column&&!v.value.trim())throw new Error('请填写搜索字段值');S.filters={uid:v.uid,channel:v.channel,starttime:v.starttime,endtime:v.endtime,status:v.status||'-1',...(v.column?{column:v.column,value:v.value.trim()}:{})};for(const k of Object.keys(S.filters))if(!S.filters[k])delete S.filters[k];if(v.column)S.q='';form.dirty=false;S.page='';S.tab='orders';await search(1,true);return;}
 + if(form.kind==='reply'||form.kind==='summary'){await call('ui.copy',{text:v.text});toast('已复制，可回到聊天编辑后发送');form.dirty=false;return;}
++ if(form.kind==='batchOperation'){const option=(S.batchOptions||[]).find(x=>x.ticket===v.option);if(!option)throw new Error('请重新选择操作');S.batchOutcome=await call('batch.run',{ticket:option.ticket},option.title,option.warning+'\n'+option.targets.join('\n'));form.dirty=false;S.form=null;S.page='batchResult';return;}
 + if(form.kind==='balance'){
 +  if(v.reason.trim().length<2)throw new Error('请填写余额调整原因');
 +  const preview=await call('balance.preview',{before:p.before,amount:v.amount,direction:v.direction});
@@ -9093,6 +9100,9 @@ new file mode 100644
 + form.fields=r.fields;form.values={...Object.fromEntries(r.fields.map(x=>[x.name,x.value??''])),...values};
 +}
 +async function action(a,el){
++ if(a==='selection.toggle'){const kind=el.dataset.kind,selection=selections[kind];if(selection.size)selection.clear();else{const rows=kind==='orders'?S.orders:S.tables?S.tables.flatMap(t=>t.rows):S.records;rows.forEach(x=>{const id=kind==='orders'?x.trade_no:x.id;if(id)selection.add(String(id));});}return;}
++ if(a==='selection.prepare'){const kind=el.dataset.kind,module=kind==='orders'?'orders':S.module;const r=await call('batch.options',{module,ids:[...selections[kind]]});if(!r.options?.length)throw new Error('所选记录没有共同可用的批量操作');S.batchOptions=r.options;setForm('批量操作 · '+selections[kind].size+' 项',[f('option','选择操作',r.options[0].ticket,'select',r.options.map(x=>({value:x.ticket,label:x.title})))],'batchOperation');return;}
++
 + if(a==='monitor.window'){S.monitorWindow=el.dataset.window;return;}
 + if(a==='monitor.edit'){const r=await call('module.editor',{module:'channels',id:String(S.record.id),editor:'detail'});setForm('编辑通道配置',r.fields,'backendForm',{ticket:r.ticket},'通道 ID '+S.record.id);return;}
 + if(a==='route.add'){const form=S.form;if(!form?.params?.route)return;const i=form.fields.filter(x=>x.name.endsWith('[channel]')).length;if(i>=100)throw new Error('最多 100 条路由');for(const x of [f('list['+i+'][channel]','路由 '+(i+1)+' · 通道','','select',form.params.routeOptions||[]),f('list['+i+'][weight]','权重','1','number')]){form.fields.push(x);form.values[x.name]=x.value;}form.dirty=true;return;}
@@ -9218,6 +9228,7 @@ new file mode 100644
 + const id=e.target.id,operation=id==='query'?'order.search':id==='recordQuery'?'records.search':id==='captcha'?'login.submit':e.target.dataset.field==='value'&&S.form?.kind==='manual'?'form.submit':'';
 + if(operation){e.preventDefault();run(()=>action(operation,e.target));}
 +});
++$('app').addEventListener('change',e=>{const kind=e.target.dataset.selection;if(!kind)return;const id=e.target.dataset.id;if(e.target.checked)selections[kind].add(id);else selections[kind].delete(id);render();});
 +$('app').addEventListener('change',e=>{if(e.target.dataset.field!=='plugin'||!S.form?.params?.ticket)return;const form=S.form;form.pluginLoading=true;render();loadPluginAccount(form).catch(err=>{form.pluginError=err.message;}).finally(()=>{form.pluginLoading=false;render();});});
 +window.addEventListener('resize',()=>requestAnimationFrame(()=>{
 + positionToast();const el=document.activeElement,body=document.querySelector('.body');
@@ -9252,7 +9263,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,219 @@
+@@ -0,0 +1,230 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9288,6 +9299,8 @@ new file mode 100644
 +   if(r.op==='module.accountFields')data={fields:[{name:'name',label:'名称',value:'示例通道',type:'text'},{name:'type',label:'支付方式',type:'select',value:'2',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx2',options:[{value:'wx2',label:'微信插件2'}]}]};
 +   if(r.op==='module.editor'&&r.params.module==='channels')data.fields.push({name:'type',label:'支付方式',type:'select',value:'1',options:[{value:'1',label:'支付方式1'},{value:'2',label:'支付方式2'}]},{name:'plugin',label:'支付插件',type:'select',value:'wx1',options:[{value:'wx1',label:'微信插件1'}]});
 +   if(r.op==='form.save')data={code:0,msg:'保存成功'};
++   if(r.op==='batch.options')data={options:[{ticket:'batch-order-notify',title:'补发通知',warning:'核对后提交',targets:r.params.ids}]};
++   if(r.op==='batch.run')data={title:'补发通知',results:[{id:'SYS20261017001',label:'SYS20261017001',status:'成功',message:'已处理'}]};
 +   if(r.op==='stats')data={count:100,paid:90,rows:[order]};
 +   if(r.op==='settlements.list'||r.op==='domains.list'||r.op==='blacklist.list')data={rows:[],total:0};
 +   setTimeout(()=>window.Futoon.result({id:r.id,ok:true,data}),r.op==='module.plugins'?200:10);
@@ -9465,6 +9478,15 @@ new file mode 100644
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='form.save'&&x.params.ticket==='settings-site'&&x.params.values.sitename==='融合面板测试')&&!Futoon.debugState().busy);
 + assert.equal(await page.evaluate(()=>Futoon.debugState().page),'records','saved document stays in floating panel');
 + await page.screenshot({path:qa+'/settings-fused.png'});
++ await page.locator('[data-act="tab.orders"]').click();
++ await page.waitForFunction(()=>!Futoon.debugState().busy);
++ await page.locator('[data-act="selection.toggle"][data-kind="orders"]').click();
++ await page.locator('[data-act="selection.prepare"][data-kind="orders"]').click();
++ await page.locator('[data-field="option"]').waitFor();
++ assert.equal(await page.evaluate(()=>testRequests.filter(x=>x.op==='batch.run').length),0,'selection must not submit mutations');
++ await page.getByRole('button',{name:'核对并提交',exact:true}).click();
++ await page.waitForFunction(()=>Futoon.debugState().page==='batchResult'&&!Futoon.debugState().busy);
++ assert(await page.evaluate(()=>testRequests.some(x=>x.op==='batch.run'&&x.params.ticket==='batch-order-notify'&&x.summary.includes('SYS20261017001'))),'batch forwards issued ticket and reviewable targets');
 + assert.equal(await page.evaluate(()=>testRequests.filter(x=>x.op==='native.open').length),0,'no standalone Activity launch');
 + const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
 + assert(!overflow,'panel should fit viewport');assert.deepEqual(errors,[]);

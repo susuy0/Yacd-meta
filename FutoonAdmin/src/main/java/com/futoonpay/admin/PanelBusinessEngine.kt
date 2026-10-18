@@ -15,18 +15,24 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
     private data class DocumentState(val module: String,val path: String,val document: NativeDocument)
     private data class FormState(val module: String,val path: String,val form: NativeForm,val uid: String="",val accountForm: NativeForm?=null,val routeForm: NativeForm?=null,val primarySaved: Boolean=false,val expires: Long=System.currentTimeMillis()+600000)
     private data class ActionState(val state: DocumentState,val action: NativeAction,val expires: Long=System.currentTimeMillis()+600000)
+    private val batches=linkedMapOf<String,Pair<Long,BatchRequest>>()
+    private var currentOrders=listOf<OrderSummary>()
+    private var currentSettlements=listOf<SettlementSummary>()
+    private var currentPaymentRows=listOf<PaymentBatchRow>()
+    private var currentPaymentModule=""
     private val documents=linkedMapOf<String,DocumentState>()
     private val forms=linkedMapOf<String,FormState>()
     private val actions=linkedMapOf<String,ActionState>()
     private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor")
     private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","profit_receivers","profit_orders","transfer","announcements","payment_settings","site_settings","integrations","login_logs")
-    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify")
+    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
     @Throws(Exception::class) fun execute(op: String,p: JSONObject): JSONObject = runBlocking {
         require(supports(op)) { "不支持的业务操作" }
         when(op) {
             "orders.list" -> {
                 val filters=orderFilters(p)
                 val rows=repository.orders(page(p),filters)
+                currentOrders=rows.rows
                 val metrics=orderPageMetrics(rows.rows)
                 JSONObject().put("metrics",JSONObject().put("count",metrics.count).put("successful",metrics.successful).put("rate",metrics.rate).put("amounts",JSONObject(metrics.amounts.mapValues {it.value.toPlainString()}))).put("rows",JSONArray(rows.rows.map(::orderJson))).put("total",rows.total).put("pageSize",30)
             }
@@ -94,6 +100,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "merchant.balance" -> {require(p.optString("currency","CNY")=="CNY");val direction=p.getString("direction");require(direction in setOf("add","deduct"));result(repository.rechargeMerchant(id(p.getString("uid")),if(direction=="add")"add" else "reduce",amount(p.getString("amount"))))}
             "settlements.list" -> {
                 val r=repository.settlements(page(p),mapOf("uid" to p.optString("uid"),"type" to "0","dstatus" to p.optString("status","-1")))
+                currentSettlements=r.rows
                 JSONObject().put("total",r.total).put("rows",JSONArray(r.rows.map {s -> JSONObject().put("id",s.id).put("uid",s.merchantId).put("username",s.username).put("type",s.payType).put("account",s.account).put("money",s.amount).put("realmoney",s.actualAmount).put("usdt_count",s.usdtAmount).put("usdt_rate",s.usdtRate).put("addtime",s.createdAt).put("endtime",s.completedAt).put("status",s.status).put("result",s.result).put("currency",s.currency)}))
             }
             "settlement.status" -> {val status=p.getInt("status");require(status in 0..3);result(if(status==3)repository.failSettlementWithReason(id(p.getString("id")),p.getString("reason"),id(p.getString("uid")),p.optString("usdt_rate"),p.optString("usdt_count")) else repository.setSettlementStatus(id(p.getString("id")),status,id(p.getString("uid")),p.optString("usdt_rate"),p.optString("usdt_count")))}
@@ -104,6 +111,25 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "blacklist.remove" -> result(repository.deleteBlacklist(id(p.getString("id"))))
             "channel.test" -> {val r=repository.testPayment(id(p.getString("id")),p.optString("name","测试订单"),amount(p.getString("amount")));JSONObject().put("code",if(r.success)0 else -1).put("msg",r.message).put("trade_no",r.tradeNo).put("qrcode",r.qrContent)}
             "channel.stats" -> {val stats=repository.channelStatistics(listOf(id(p.getString("id"))));JSONObject().put("rows",JSONArray(stats.values.map {s->JSONObject().put("id",s.channelId).put("5分钟成功率",s.fiveMinuteRate).put("30分钟成功率",s.thirtyMinuteRate).put("1小时成功率",s.oneHourRate).put("24小时成功率",s.oneDayRate).put("来源",s.source.label)}))}
+            "batch.options" -> {
+                val module=p.getString("module");val ids=p.getJSONArray("ids");require(ids.length() in 1..100)
+                val selected=(0 until ids.length()).map {ids.getString(it)}.toSet()
+                val requests=when(module) {
+                    "orders" -> {
+                        val rows=selected.map {id -> currentOrders.firstOrNull {it.tradeNo==id} ?: repository.orderDetail(orderId(id)).let {d->OrderSummary(d.tradeNo,d.merchantTradeNo,d.merchantId,d.domain,d.name,d.amount,d.paidAmount,d.merchantIncome,d.paymentType,d.channelId,d.plugin,d.createdAt,d.completedAt,d.status,d.settlementStatus,d.currency)} }
+                        orderBatchOptions(rows)
+                    }
+                    "settlements" -> {require(currentSettlements.map {it.id}.containsAll(selected)){"结算记录已变化，请刷新"};settlementBatchOptions(currentSettlements.filter {it.id in selected})}
+                    else -> {require(module==currentPaymentModule && currentPaymentRows.map {it.id}.containsAll(selected)){"配置记录已变化，请刷新"};paymentBatchOptions(module,currentPaymentRows.filter {it.id in selected})}
+                }
+                JSONObject().put("options",JSONArray(requests.map {b->val ticket=UUID.randomUUID().toString();batches[ticket]=System.currentTimeMillis()+600000 to b;JSONObject().put("ticket",ticket).put("title",b.title).put("warning",b.warning).put("targets",JSONArray(b.commands.map {it.label}))}))
+            }
+            "batch.run" -> {
+                val ticket=p.getString("ticket");val (expires,request)=batches.remove(ticket) ?: error("批量操作已过期，请重新选择")
+                require(expires>System.currentTimeMillis()){"批量操作已过期"}
+                val outcomes=repository.runBatch(request.commands)
+                JSONObject().put("title",request.title).put("results",JSONArray(outcomes.map {r->JSONObject().put("id",r.command.id).put("label",r.command.label).put("status",r.status.label).put("message",r.message)}))
+            }
             "batch.notify" -> {
                 val arr=p.getJSONArray("orders");require(arr.length() in 1..100)
                 val commands=(0 until arr.length()).map {orderId(arr.getString(it))}.distinct().map {BatchCommand(it,it,BatchKind.ORDER_ACTION,mapOf("action" to "notify"))}
@@ -151,6 +177,13 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
         documents[state.module]=state
         trimTickets()
         val doc=state.document
+        currentPaymentModule=state.module
+        currentPaymentRows=doc.tables.flatMap {table->table.rows.mapIndexed {i,row->
+            val rowActions=table.rowActions.getOrNull(i).orEmpty()
+            val index=table.headers.indexOfFirst {it.equals("ID",true)||it=="编号"}
+            val id=row.getOrNull(index).orEmpty().ifBlank {rowActions.firstNotNullOfOrNull {query(it.endpoint,"id").takeIf(String::isNotBlank) ?: it.fields["id"]}.orEmpty()}
+            PaymentBatchRow(id,row.take(2).joinToString(" · "),rowActions)
+        }}.filter {it.id.isNotBlank()}
         val tables=JSONArray(doc.tables.map {t -> JSONObject().put("title",t.title).put("headers",JSONArray(t.headers)).put("rows",JSONArray(t.rows.mapIndexed { i,cells ->
             val rowActions=t.rowActions.getOrNull(i).orEmpty()
             val idIndex=t.headers.indexOfFirst {it.trim().lowercase() in setOf("id","通道id","编号","轮询组id","代理id")}
@@ -260,7 +293,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
         }
         forms.remove(ticket);return result(ApiResult(true,"保存成功",recordId))
     }
-    private fun trimTickets() {val now=System.currentTimeMillis();forms.entries.removeAll {it.value.expires<=now};actions.entries.removeAll {it.value.expires<=now};while(forms.size>200)forms.remove(forms.keys.first());while(actions.size>2000)actions.remove(actions.keys.first())}
+    private fun trimTickets() {val now=System.currentTimeMillis();batches.entries.removeAll {it.value.first<=now};while(batches.size>30)batches.remove(batches.keys.first());forms.entries.removeAll {it.value.expires<=now};actions.entries.removeAll {it.value.expires<=now};while(forms.size>200)forms.remove(forms.keys.first());while(actions.size>2000)actions.remove(actions.keys.first())}
     private fun optionJson(o: NativeOption)=JSONObject().put("value",o.value).put("label",o.label)
     private fun result(r: ApiResult)=JSONObject().put("code",if(r.success)0 else -1).put("msg",r.message).put("partial",r.partial).put("id",r.recordId)
     private fun page(p: JSONObject)=p.optInt("page",1).also {require(it in 1..100000)}

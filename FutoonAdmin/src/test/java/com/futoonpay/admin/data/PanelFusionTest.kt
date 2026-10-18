@@ -76,6 +76,20 @@ class PanelFusionTest {
         assertEquals(0,r.getInt("code"));assertEquals(listOf("saveChannel","saveChannelInfo"),writes.map {it.first})
         assertEquals("new",writes[0].second["plugin"]);assertEquals("updated",writes[1].second["appid"])
     }
+    @Test fun originalBatchOptionsUseIssuedTicketsAndSkipIneligibleOrders() {
+        var mutations=0
+        val engine=PanelBusinessEngine(fixtureClient({r->
+            if(r.method=="POST" && r.url.queryParameter("act")=="freeze") {mutations++;200 to """{"code":0}"""}
+            else 200 to """{"total":2,"rows":[{"trade_no":"SYS10001","uid":"18","status":0},{"trade_no":"SYS10002","uid":"18","status":1}]}"""
+        }))
+        engine.execute("orders.list",JSONObject())
+        val options=engine.execute("batch.options",JSONObject().put("module","orders").put("ids",org.json.JSONArray(listOf("SYS10001","SYS10002")))).getJSONArray("options")
+        val freeze=(0 until options.length()).map {options.getJSONObject(it)}.first {it.getString("title")=="冻结订单"}
+        assertEquals(0,mutations)
+        val out=engine.execute("batch.run",JSONObject().put("ticket",freeze.getString("ticket")))
+        assertEquals(1,mutations);assertEquals("已跳过",out.getJSONArray("results").getJSONObject(0).getString("status"))
+        try {engine.execute("batch.run",JSONObject().put("ticket",freeze.getString("ticket")));fail()}catch(_:IllegalStateException){}
+    }
     @Test fun unknownModulesAndForgedActionTicketsCannotRequestBackend() {
         var calls=0;val engine=PanelBusinessEngine(fixtureClient({calls++;200 to "{}"}))
         for(p in listOf(JSONObject().put("module","https://other.test/"),JSONObject().put("ticket","invented"))) {
