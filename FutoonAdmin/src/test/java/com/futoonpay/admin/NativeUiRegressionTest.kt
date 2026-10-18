@@ -112,10 +112,12 @@ class NativeUiRegressionTest {
         compose.onNodeWithText("选择 微信 V3").performClick()
         compose.onNodeWithText("已选择：wx_v3").assertIsDisplayed()
     }
-    @Test fun overviewAndManageUseNativeCards() {
-        screen { ModernDashboard(AppUiState(dashboard = DashboardStats(orderCount = "1284", merchantCount = "82", todayTotal = "386420.50", yesterdaySettled = "52000.00", todayByType = listOf("微信" to "120000.00", "支付宝" to "266420.50"))), {}, {}, {}, {}) }
-        compose.onNodeWithText("今日交易金额").assertIsDisplayed()
-        screenshot("07-overview")
+    @Test fun manageUsesOriginalNativeCardsAndRoutesWithinThePanel() {
+        var selected = ""
+        screen { ModernManage({ selected = it }, {}, {}) }
+        compose.onNodeWithText("支付通道").assertIsDisplayed().performClick()
+        org.junit.Assert.assertEquals("channels", selected)
+        screenshot("07-more")
     }
     @Test fun failedSettlementCheckedPresetRemainsEditable() {
         val item = SettlementSummary("2197", "41882", "测试商户", "支付宝", "", "merchant@example.com", "500.00", "487.50", "", "", "2026-10-08 14:00:00", "", 3, false, false, "账户信息不匹配")
