@@ -7889,62 +7889,6 @@ index 0000000..fae8d2e
 +        }
 +    }
 +}
-diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
-index f22821a..b69bb1c 100644
---- a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
-+++ b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
-@@ -3439,12 +3439,42 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
-         return -1;
-     }
- 
-+    /** Reuses Telegram's media preview, destination permissions, topics and send handling. */
-+    public void shareFutoonEvidence(int account, String imagePath, String caption) {
-+        ArrayList<String> paths = new ArrayList<>(); paths.add(imagePath);
-+        shareFutoonEvidence(account, paths, caption);
-+    }
-+    public void shareFutoonEvidence(int account, ArrayList<String> paths, String caption) {
-+        shareFutoonEvidence(account, paths, caption, "");
-+    }
-+    public void shareFutoonEvidence(int account, ArrayList<String> paths, String caption, String orderId) {
-+        if (!UserConfig.getInstance(account).isClientActivated() || paths == null || paths.isEmpty() || paths.size() > 10) return;
-+        for (String path : paths) if (path == null || !new java.io.File(path).isFile()) return;
-+        org.telegram.messenger.futoon.FutoonDeliveryTracker.get(account);
-+        switchToAccount(account, true);
-+        photoPathsArray = new ArrayList<>();
-+        for (String path : paths) {
-+            SendMessagesHelper.SendingMediaInfo image = new SendMessagesHelper.SendingMediaInfo();
-+            image.path = path;
-+            if (!orderId.isEmpty()) { image.params = new HashMap<>(); image.params.put("futoon_draft", orderId); image.params.put("futoon_backend", new org.telegram.messenger.futoon.FutoonStore(account).address()); }
-+            photoPathsArray.add(image);
-+        }
-+        sendingText = caption;
-+        videoPath = null; voicePath = null; documentsPathsArray = null;
-+        documentsOriginalPathsArray = null; documentsUrisArray = null; contactsToSend = null;
-+        openDialogsToSend(true, false);
-+    }
-+
-     private void openDialogsToSend(boolean animated) {
-+        openDialogsToSend(animated, true);
-+    }
-+
-+    private void openDialogsToSend(boolean animated, boolean allowSwitchAccount) {
-         Bundle args = new Bundle();
-         args.putBoolean("onlySelect", true);
-         args.putBoolean("canSelectTopics", true);
-         args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
--        args.putBoolean("allowSwitchAccount", true);
-+        args.putBoolean("allowSwitchAccount", allowSwitchAccount);
-         if (contactsToSend != null) {
-             if (contactsToSend.size() != 1) {
-                 args.putString("selectAlertString", LocaleController.getString(R.string.SendMessagesToText));
-@@ -6521,6 +6551,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
-         }
-         for (MediaController.PhotoEntry entry : entries) {
-             final SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();
-+            if (entry.futoonParams != null) info.params = new HashMap<>(entry.futoonParams);
-             if (!entry.isVideo && entry.imagePath != null) {
-                 info.path = entry.imagePath;
-             } else if (entry.path != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 --- a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
@@ -10119,3 +10063,92 @@ new file mode 100644
 +        }
 +    }
 +}
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
+--- a/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/LaunchActivity.java
+@@ -362,7 +362,6 @@
+ 
+     private Runnable lockRunnable;
+ 
+-    private List<Runnable> onUserLeaveHintListeners = new ArrayList<>();
+ 
+     private static final int PLAY_SERVICES_REQUEST_CHECK_SETTINGS = 140;
+     public static final int SCREEN_CAPTURE_REQUEST_CODE = 520;
+@@ -1078,14 +1077,6 @@
+             }
+         }
+         FloatingDebugController.setActive(this, SharedConfig.isFloatingDebugActive, false);
+-    }
+-
+-    public void addOnUserLeaveHintListener(Runnable callback) {
+-        onUserLeaveHintListeners.add(callback);
+-    }
+-
+-    public void removeOnUserLeaveHintListener(Runnable callback) {
+-        onUserLeaveHintListeners.remove(callback);
+     }
+ 
+     private BaseFragment getClientNotActivatedFragment() {
+@@ -3439,12 +3430,42 @@
+         return -1;
+     }
+ 
++    /** Reuses Telegram's media preview, destination permissions, topics and send handling. */
++    public void shareFutoonEvidence(int account, String imagePath, String caption) {
++        ArrayList<String> paths = new ArrayList<>(); paths.add(imagePath);
++        shareFutoonEvidence(account, paths, caption);
++    }
++    public void shareFutoonEvidence(int account, ArrayList<String> paths, String caption) {
++        shareFutoonEvidence(account, paths, caption, "");
++    }
++    public void shareFutoonEvidence(int account, ArrayList<String> paths, String caption, String orderId) {
++        if (!UserConfig.getInstance(account).isClientActivated() || paths == null || paths.isEmpty() || paths.size() > 10) return;
++        for (String path : paths) if (path == null || !new java.io.File(path).isFile()) return;
++        org.telegram.messenger.futoon.FutoonDeliveryTracker.get(account);
++        switchToAccount(account, true);
++        photoPathsArray = new ArrayList<>();
++        for (String path : paths) {
++            SendMessagesHelper.SendingMediaInfo image = new SendMessagesHelper.SendingMediaInfo();
++            image.path = path;
++            if (!orderId.isEmpty()) { image.params = new HashMap<>(); image.params.put("futoon_draft", orderId); image.params.put("futoon_backend", new org.telegram.messenger.futoon.FutoonStore(account).address()); }
++            photoPathsArray.add(image);
++        }
++        sendingText = caption;
++        videoPath = null; voicePath = null; documentsPathsArray = null;
++        documentsOriginalPathsArray = null; documentsUrisArray = null; contactsToSend = null;
++        openDialogsToSend(true, false);
++    }
++
+     private void openDialogsToSend(boolean animated) {
++        openDialogsToSend(animated, true);
++    }
++
++    private void openDialogsToSend(boolean animated, boolean allowSwitchAccount) {
+         Bundle args = new Bundle();
+         args.putBoolean("onlySelect", true);
+         args.putBoolean("canSelectTopics", true);
+         args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
+-        args.putBoolean("allowSwitchAccount", true);
++        args.putBoolean("allowSwitchAccount", allowSwitchAccount);
+         if (contactsToSend != null) {
+             if (contactsToSend.size() != 1) {
+                 args.putString("selectAlertString", LocaleController.getString(R.string.SendMessagesToText));
+@@ -6521,6 +6542,7 @@
+         }
+         for (MediaController.PhotoEntry entry : entries) {
+             final SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();
++            if (entry.futoonParams != null) info.params = new HashMap<>(entry.futoonParams);
+             if (!entry.isVideo && entry.imagePath != null) {
+                 info.path = entry.imagePath;
+             } else if (entry.path != null) {
+@@ -6956,9 +6978,7 @@
+     @Override
+     protected void onUserLeaveHint() {
+         pipActivityHandler.onUserLeaveHint();
+-        for (Runnable callback : onUserLeaveHintListeners) {
+-            callback.run();
+-        }
++        super.onUserLeaveHint();
+         if (actionBarLayout != null) {
+             actionBarLayout.onUserLeaveHint();
+         }

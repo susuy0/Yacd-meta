@@ -5,7 +5,7 @@
   "versionCode": 71809,
   "native_admin_source": "FutoonPayAdmin-source-v1.3.4.zip",
   "native_admin_source_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
-  "original_files_unchanged": 67,
+  "original_files_unchanged": 65,
   "adapted_original_files": [
     "build.gradle.kts",
     "src/main/AndroidManifest.xml",
@@ -16,17 +16,31 @@
     "src/main/java/com/futoonpay/admin/NativeModuleActivity.kt",
     "src/main/java/com/futoonpay/admin/ui/AppViewModel.kt",
     "src/main/java/com/futoonpay/admin/ui/CoreScreens.kt",
-    "src/main/java/com/futoonpay/admin/ui/ModernShell.kt"
+    "src/main/java/com/futoonpay/admin/ui/ModernShell.kt",
+    "src/main/java/com/futoonpay/admin/ui/BatchUi.kt"
   ],
-  "patch_sha256": "7e514dee1fc6497c2d343c724c00c1c0062b94c4ca6d71810b0ebc82e5017075",
+  "patch_sha256": "c11a1267419d7ba8300841369cab68391068d05c7ff20b850fd615e6b5416946",
   "validation": {
-    "original_native_tests": "pending CI",
-    "embedded_session_and_navigation": "pending CI",
-    "panel_ui": "pending CI",
+    "original_native_tests": 170,
+    "embedded_session_and_navigation": "passed",
+    "panel_ui": "passed",
     "full_build": "pending CI",
     "real_financial_mutations": "not performed",
     "device_performance": "not tested",
-    "static_checks": "passed"
+    "static_checks": "passed",
+    "native_test_failures": 0,
+    "native_test_skipped": 0,
+    "all_more_entries": 20,
+    "startup_color_regression": "passed including negative control",
+    "core_and_geometry": "passed",
+    "native_lint_errors": 0,
+    "native_lint_warnings": 24,
+    "androidx_callback_compatibility": "pending CI"
   },
-  "publication": "explicitly authorized by user"
+  "publication": "explicitly authorized by user",
+  "relocated_original_resources": [
+    "src/main/res/mipmap-anydpi/ic_launcher.xml"
+  ],
+  "build_commit": "f0d34af073caddedc73478bf58fffb94e67cd687",
+  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39088166919"
 }

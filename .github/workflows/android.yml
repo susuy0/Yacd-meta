@@ -35,6 +35,8 @@ jobs:
         run: bash ci/checkout.sh "$RUNNER_TEMP/vinechat-tests" minimal
       - name: Test Lite startup and theme refresh regression
         run: python3 ci/test_startup_colors.py "$RUNNER_TEMP/vinechat-tests"
+      - name: Test AndroidX leave-hint callback compatibility
+        run: python3 ci/test_activity_callbacks.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test identity, recognition and backend contracts
         run: bash "$RUNNER_TEMP/vinechat-tests/Tools/futoon/run-tests.sh"
   panel-ui:
@@ -96,7 +98,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
   android:
-    needs: [core-checks, panel-ui, native-admin]
+    needs: [core-checks, panel-ui]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
