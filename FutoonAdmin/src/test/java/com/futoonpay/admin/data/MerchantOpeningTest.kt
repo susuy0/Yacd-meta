@@ -132,4 +132,20 @@ class MerchantOpeningTest {
         assertTrue(runCatching { openingMessage("x".repeat(4090) + "{密钥}", "9001", fixtureMerchantKey, mapOf("settle" to "0"), fixtureBinding) }.isFailure)
         assertTrue(runCatching { validateOpeningTemplate("{拼错了}") }.isFailure)
     }
+    @Test fun adjacentChineseVariablesAndLiteralBracesUseTheSameValidationAndRenderingRules() {
+        val template = "🏡{} {商户ID}{结算周期}\n{结算账号姓名} } {"
+        validateOpeningTemplate(template)
+        assertEquals("🏡{} 9001D0\n@fixture } {", openingMessage(template, "9001", fixtureMerchantKey,
+            mapOf("username" to "@fixture", "settle" to "1"), fixtureBinding))
+        val invalid = runCatching { validateOpeningTemplate("{商户ID}{拼错了}") }.exceptionOrNull()
+        assertTrue(invalid is IllegalArgumentException)
+        assertEquals("未知变量：拼错了", invalid?.message)
+    }
+    @Test fun substitutedDollarSignsBackslashesAndVariableSyntaxStayLiteral() {
+        val merchantText = "\$1\\folder{密钥}"
+        val template = "{结算账号姓名} {结算周期} {绑定链接}"
+        val settings = ChatToolsConfig.parse(ChatToolsConfig(openingTemplate = template).json())
+        assertEquals("$merchantText D1 $fixtureBinding", openingMessage(settings.openingTemplate, "9001", fixtureMerchantKey,
+            mapOf("username" to merchantText, "settle" to "0"), fixtureBinding))
+    }
 }

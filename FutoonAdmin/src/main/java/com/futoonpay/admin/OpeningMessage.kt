@@ -42,9 +42,13 @@ https://t.me/futoondocs/14
 ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
 """.trimIndent()
 
+// Android uses ICU, which requires a literal closing brace to be escaped.
+// Share the expression so validation and substitution always recognize the same variables.
+private val openingPlaceholderPattern = Regex("\\{([^{}\\n]+)\\}")
+
 internal fun validateOpeningTemplate(template: String) {
     require(template.isNotBlank() && template.length <= 4096) { "开户文案不能为空，最多 4096 个字符" }
-    val unknown = Regex("\\{([^{}\\n]+)}").findAll(template).map { it.groupValues[1] }.filter { it !in openingPlaceholders }.toList()
+    val unknown = openingPlaceholderPattern.findAll(template).map { it.groupValues[1] }.filter { it !in openingPlaceholders }.toList()
     require(unknown.isEmpty()) { "未知变量：${unknown.joinToString()}" }
 }
 
@@ -53,7 +57,7 @@ internal fun openingMessage(template: String, uid: String, key: String, values: 
     require(uid.isNotBlank() && key.isNotBlank() && binding.isNotBlank()) { "开户信息不完整，请先补全密钥和绑定链接" }
     val replacements = mapOf("商户ID" to uid, "密钥" to key, "网站域名" to values["url"].orEmpty(), "结算账号姓名" to values["username"].orEmpty(), "结算周期" to settlementCycle(values.getValue("settle")), "绑定链接" to binding)
     // One pass: merchant-controlled text containing braces must never expand other variables.
-    return Regex("\\{([^{}\\n]+)}").replace(template) { replacements.getValue(it.groupValues[1]) }.also {
+    return openingPlaceholderPattern.replace(template) { replacements.getValue(it.groupValues[1]) }.also {
         require(it.length <= 4096) { "生成后的开户文案超过 4096 个字符，请缩短模板" }
     }
 }
