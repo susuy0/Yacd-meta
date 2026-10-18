@@ -80,7 +80,7 @@ internal fun PayPills(options: List<Pair<String, String>>, selected: String, onS
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PayTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
-    Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
+    Column(Modifier.fillMaxWidth().background(Color.White)) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(start = if (onBack == null) 16.dp else 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             onBack?.let { IconButton(onClick = it, modifier = Modifier.size(44.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = Ink, modifier = Modifier.size(24.dp)) } }
             Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -92,7 +92,7 @@ internal fun PayTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Co
 
 @Composable
 internal fun PayBottomNav(selected: MainTab?, onSelect: (MainTab) -> Unit) {
-    Column(Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding()) {
+    Column(Modifier.fillMaxWidth().background(Color.White)) {
         HorizontalDivider(color = Line)
         Row(Modifier.fillMaxWidth().height(64.dp)) {
             MainTab.entries.forEach { tab ->
@@ -133,14 +133,16 @@ internal fun AppliedChips(chips: List<Pair<String, String>>, onRemove: (String) 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PaySheet(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Mist,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "关闭") }
+    com.futoonpay.admin.PanelDialog(onDismiss) {
+        Surface(Modifier.fillMaxSize(), color = Mist, shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.fillMaxSize()) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "关闭") }
+                }
+                Column(Modifier.fillMaxWidth().weight(1f).imePadding(), content = content)
+            }
         }
-        Column(Modifier.fillMaxWidth().imePadding(), content = content)
     }
 }
 

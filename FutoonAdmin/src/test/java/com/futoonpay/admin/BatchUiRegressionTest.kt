@@ -46,7 +46,7 @@ class BatchUiRegressionTest {
 
     @Test fun merchantListHasRealMultiSelectAndResetKeyActionMenu() {
         val repo = FutoonRepository(fixtureClient({ 200 to "{\"total\":0,\"rows\":[]}" }))
-        val vm = AppViewModel(FutoonApplication(), repo, loadOnStart = false)
+        val vm = AppViewModel(TestEnvironment(), repo, loadOnStart = false)
         screen { MerchantsScreen(AppUiState(merchants = listOf(merchant("1011")), merchantTotal = 1), vm) }
         compose.onNodeWithText("多选").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("商户操作").performScrollTo().performClick()
@@ -75,7 +75,7 @@ class BatchUiRegressionTest {
     }
     @Test fun merchantMultiSelectUsesTheActualNativeListCards() {
         val repo = FutoonRepository(fixtureClient({ 200 to "{\"total\":0,\"rows\":[]}" }))
-        val vm = AppViewModel(FutoonApplication(), repo, loadOnStart = false)
+        val vm = AppViewModel(TestEnvironment(), repo, loadOnStart = false)
         val rows = listOf(merchant("1011"), merchant("1012"))
         screen { MerchantsScreen(AppUiState(merchants = rows, merchantTotal = 2), vm) }
         compose.onNodeWithText("多选").performScrollTo().performClick()

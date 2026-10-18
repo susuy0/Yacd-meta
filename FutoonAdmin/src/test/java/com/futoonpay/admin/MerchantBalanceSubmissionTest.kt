@@ -24,7 +24,7 @@ class MerchantBalanceSubmissionTest {
     @Before fun setDispatcher() { Dispatchers.setMain(UnconfinedTestDispatcher()) }
     @After fun resetDispatcher() { Dispatchers.resetMain() }
     private fun model(handler: (okhttp3.Request) -> Pair<Int, String>) =
-        AppViewModel(FutoonApplication(), FutoonRepository(fixtureClient(handler)), loadOnStart = false)
+        AppViewModel(TestEnvironment(), FutoonRepository(fixtureClient(handler)), loadOnStart = false)
 
     @Test fun concurrentBalanceActionsIssueOnlyOneMutation() {
         val entered = CountDownLatch(1); val release = CountDownLatch(1); val complete = CountDownLatch(1)

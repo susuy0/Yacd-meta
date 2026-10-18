@@ -98,39 +98,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class DomainAuditActivity : EmbeddedAdminActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        if (isFinishing) return
-        if (!FutoonIntegration.isEmbedded(this)) enableEdgeToEdge()
-        val app = FutoonApplication.from(this)
-        if (!app.hasConfiguredEndpoint) {
-            startActivity(android.content.Intent(this, MainActivity::class.java))
-            finish()
-            return
-        }
-        val repository = FutoonApplication.from(this).repository
-        setContent {
-            FutoonTheme {
-                val expired by app.sessionExpired.collectAsState()
-                LaunchedEffect(expired) { if (expired) finish() }
-                val model: DomainAuditViewModel = viewModel(
-                    factory = DomainAuditViewModel.Factory(
-                        repository,
-                        intent.getStringExtra(EXTRA_MERCHANT_ID).orEmpty(),
-                    )
-                )
-                DomainAuditRoot(model, ::finish)
-            }
-        }
-    }
-
-    companion object {
-        const val EXTRA_MERCHANT_ID = "merchant_id"
-    }
-}
-
-private data class DomainAuditState(
+internal data class DomainAuditState(
     val loading: Boolean = true,
     val page: Int = 1,
     val keyword: String = "",
@@ -142,7 +110,7 @@ private data class DomainAuditState(
     val loadError: String? = null,
 )
 
-private class DomainAuditViewModel(
+internal class DomainAuditViewModel(
     private val repository: FutoonRepository,
     initialMerchantId: String = "",
 ) : ViewModel() {
@@ -205,7 +173,7 @@ private data class PendingDomainAction(val row: DomainAuditSummary, val status: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit) {
+internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     var keyword by rememberSaveable { mutableStateOf(state.keyword) }
@@ -219,6 +187,7 @@ private fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit)
     state.message?.let { message -> LaunchedEffect(message) { snackbar.showSnackbar(message); viewModel.consumeMessage() } }
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {

@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class MerchantProfileSubmissionTest {
     @Before fun setup() { Dispatchers.setMain(UnconfinedTestDispatcher()) }
     @After fun teardown() { Dispatchers.resetMain() }
-    private fun model(handler: (okhttp3.Request) -> Pair<Int, String>) = AppViewModel(FutoonApplication(), FutoonRepository(fixtureClient(handler)), false)
+    private fun model(handler: (okhttp3.Request) -> Pair<Int, String>) = AppViewModel(TestEnvironment(), FutoonRepository(fixtureClient(handler)), false)
     @Test fun failedSavePreservesTheDirtyInputAndAllowsRetry() = runBlocking {
         val calls = AtomicInteger()
         val vm = model { request -> if (request.method == "POST") { calls.incrementAndGet(); 200 to "{\"code\":-1,\"msg\":\"权限不足\"}" } else 200 to profileFixture() }

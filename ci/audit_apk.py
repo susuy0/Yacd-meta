@@ -4,6 +4,8 @@ aapt=sdk/'build-tools/36.0.0/aapt'
 manifest=subprocess.check_output([str(aapt),'dump','xmltree',str(apk),'AndroidManifest.xml'],text=True)
 for component in ['org.telegram.messenger.voip.VoIPService','org.telegram.messenger.voip.TelegramConnectionService','org.telegram.messenger.ContactsSyncAdapterService','org.telegram.messenger.AuthenticatorService','org.telegram.ui.VoIPPermissionActivity','org.telegram.ui.VoIPFeedbackActivity']:
     assert component not in manifest,component
+for screen in ['com.futoonpay.admin.MainActivity','com.futoonpay.admin.NativeModuleActivity','com.futoonpay.admin.DomainAuditActivity']:
+    assert screen not in manifest, 'Standalone admin screen must not be packaged: '+screen
 permissions=subprocess.check_output([str(aapt),'dump','permissions',str(apk)],text=True)
 for name in ['RECORD_AUDIO','READ_CONTACTS','WRITE_CONTACTS']:
     assert 'android.permission.'+name not in permissions,name
@@ -19,3 +21,4 @@ with zipfile.ZipFile(apk) as z,tempfile.TemporaryDirectory() as work:
                 assert required in symbols,required
             print(entry,lib.stat().st_size,'bytes; call/record engine exports absent; voice decoder exports present')
 print('PASS: removed Android components, permissions and native engines audited')
+

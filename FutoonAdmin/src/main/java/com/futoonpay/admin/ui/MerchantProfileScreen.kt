@@ -7,7 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import com.futoonpay.admin.PanelDialog as Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.futoonpay.admin.NativeFieldEditor
 import com.futoonpay.admin.ui.theme.Danger
@@ -27,7 +27,7 @@ internal fun MerchantProfileScreen(state: AppUiState, onClose: () -> Unit, onFie
     val valid = form != null && form.fields.none { it.required && !it.readOnly && !it.sensitive && it.value.isBlank() }
     Scaffold(containerColor = MaterialTheme.colorScheme.background,
         topBar = { PayTopBar("编辑商户 · UID ${state.merchantEditorUid}", onClose) },
-        bottomBar = { Surface(shadowElevation = 6.dp) { Row(Modifier.navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        bottomBar = { Surface(shadowElevation = 6.dp) { Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(onClick = onClose, shape = RoundedCornerShape(10.dp), enabled = !state.merchantEditorSaving, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
             Button(onClick = onSave, shape = RoundedCornerShape(10.dp), enabled = valid && !busy, modifier = Modifier.weight(2f).height(48.dp)) { Text(if (state.merchantEditorSaving) "保存中…" else "保存资料") }
         } } }) { padding ->

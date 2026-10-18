@@ -22,7 +22,7 @@ patch_args=()
 if [[ "$mode" == minimal ]]; then patch_args+=(--exclude="TMessagesProj/jni/*"); fi
 git -C "$destination" apply "${patch_args[@]}" --check "$package_dir/integration.patch"
 git -C "$destination" apply "${patch_args[@]}" "$package_dir/integration.patch"
-# Keep original Compose source as a separately reviewable Android library.
+# Bring in the original data/business library; all interaction stays in the host panel.
 cp -R "$package_dir/FutoonAdmin" "$destination/FutoonAdmin"
 if [[ "$mode" == full ]]; then
     git -C "$destination" submodule update --init --recursive --depth 1 --jobs 2

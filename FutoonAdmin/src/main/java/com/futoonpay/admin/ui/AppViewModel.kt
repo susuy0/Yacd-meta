@@ -3,7 +3,7 @@ package com.futoonpay.admin.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.futoonpay.admin.FutoonEnvironment
+import com.futoonpay.admin.PanelEnvironment as FutoonApplication
 import com.futoonpay.admin.data.ApiResult
 import com.futoonpay.admin.data.BatchProgress
 import com.futoonpay.admin.data.BatchRequest
@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class AuthStage { CHECKING, LOGIN, AUTHENTICATED }
-enum class MainTab(val title: String) { DASHBOARD("概览"), ORDERS("订单"), SETTLEMENTS("结算"), MERCHANTS("商户"), MORE("更多") }
+enum class MainTab(val title: String) { DASHBOARD("概览"), ORDERS("订单"), SETTLEMENTS("结算"), MERCHANTS("商户"), MORE("管理") }
 
 data class AppUiState(
     val batch: BatchProgress? = null,
@@ -104,7 +104,7 @@ data class SettlementCommand(
 )
 
 class AppViewModel(
-    private val application: FutoonEnvironment,
+    private val application: FutoonApplication,
     private val repositoryOverride: FutoonRepository? = null,
     loadOnStart: Boolean = true,
 ) : ViewModel() {
@@ -211,7 +211,7 @@ class AppViewModel(
                 if (expired) {
                     batchJob?.cancel()
                     _state.update { AppUiState(authStage = AuthStage.LOGIN, adminUrl = it.adminUrl, endpointReady = it.endpointReady, message = "登录已过期，请重新登录") }
-                    refreshCaptcha()
+                    if (loadOnStart) refreshCaptcha()
                 }
             }
         }
@@ -226,7 +226,7 @@ class AppViewModel(
         val valid = runCatching { repository.sessionIsValid() }.getOrDefault(false)
         if (valid) {
             _state.update { it.copy(authStage = AuthStage.AUTHENTICATED) }
-            refreshAll()
+            loadOrders()
         } else {
             _state.update { it.copy(authStage = AuthStage.LOGIN) }
             refreshCaptcha()
@@ -276,7 +276,7 @@ class AppViewModel(
                 if (result.success) {
                     application.markAuthenticated()
                     _state.update { it.copy(authStage = AuthStage.AUTHENTICATED, accountName = username.trim(), loginLoading = false, message = null) }
-                    refreshAll()
+                    loadOrders()
                 } else {
                     _state.update { it.copy(loginLoading = false, message = result.message) }
                     refreshCaptcha()
@@ -551,7 +551,7 @@ class AppViewModel(
         val merchants: com.futoonpay.admin.data.PagedResult<MerchantSummary>,
     )
 
-    class Factory(private val application: FutoonEnvironment) : ViewModelProvider.Factory {
+    class Factory(private val application: FutoonApplication) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(application) as T
     }

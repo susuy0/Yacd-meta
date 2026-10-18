@@ -124,6 +124,7 @@ internal fun BatchDialog(progress: BatchProgress?, onConfirm: () -> Unit, onClos
 @Composable
 private fun KeyResult(uid: String, key: String) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var visible by remember(uid, key) { mutableStateOf(false) }
     var copied by remember(uid, key) { mutableStateOf(false) }
     Text(if (visible) key else "••••••••••••••••••••••••••••••••", fontSize = 11.sp)
@@ -132,9 +133,7 @@ private fun KeyResult(uid: String, key: String) {
         TextButton(onClick = {
             val clip = ClipData.newPlainText("商户 $uid 新密钥", key)
             val sensitiveExtra = if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE"
-            if (Build.VERSION.SDK_INT >= 24) {
             clip.description.extras = PersistableBundle().apply { putBoolean(sensitiveExtra, true) }
-            }
             (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
             copied = true
         }) { Text(if (copied) "已复制" else "复制新密钥", fontSize = 12.sp) }

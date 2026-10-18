@@ -86,11 +86,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.futoonpay.admin.PanelDialog as Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.futoonpay.admin.NativeModuleActivity
-import com.futoonpay.admin.DomainAuditActivity
-import com.futoonpay.admin.MainActivity
 import com.futoonpay.admin.data.MerchantSummary
 import com.futoonpay.admin.data.MerchantFlowSummary
 import com.futoonpay.admin.data.MerchantSearchFilters
@@ -125,6 +122,7 @@ import com.futoonpay.admin.ui.theme.Warning
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import androidx.lifecycle.repeatOnLifecycle
 
 @Composable
 internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSignal: Int = 0, showSearchEntry: Boolean = true) {
@@ -137,8 +135,11 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
     var actionError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(searchSignal) { if (searchSignal > 0) advanced = true }
     LaunchedEffect(state.orderSearch) { filters = state.orderSearch }
-    LaunchedEffect(Unit) {
-        while (isActive) { delay(30_000); viewModel.loadOrderChannelStats() }
+    val panelLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(panelLifecycle) {
+        panelLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (isActive) { delay(30_000); viewModel.loadOrderChannelStats() }
+        }
     }
     Column {
         StatusFilters(listOf(-1 to "全部", 0 to "待支付", 1 to "已支付", 2 to "已退款", 3 to "已冻结"), state.orderSearch.status) {
@@ -323,6 +324,7 @@ private fun ChannelHealthDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     val rate = stat?.fiveMinuteRate
     PaySheet("${stat?.channelName?.ifBlank { "通道" } ?: "通道"} #$channelId", onDismiss) {
         Column(Modifier.fillMaxWidth().heightIn(max = 580.dp)) {
@@ -404,22 +406,17 @@ private fun ChannelHealthDialog(
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                                     item {
                                         TextButton(onClick = {
-                                            context.startActivity(Intent(context, MainActivity::class.java)
-                                                .putExtra(MainActivity.EXTRA_TAB, MainTab.ORDERS.name)
-                                                .putExtra(MainActivity.EXTRA_CHANNEL_ID, channelId))
+                                            navigation.orders(channelId = channelId)
                                         }) { Text("该通道订单") }
                                     }
                                     item {
                                         TextButton(onClick = {
-                                            context.startActivity(Intent(context, NativeModuleActivity::class.java)
-                                                .putExtra(NativeModuleActivity.EXTRA_MODULE, "channels")
-                                                .putExtra(NativeModuleActivity.EXTRA_CHANNEL_ID, channelId))
+                                            navigation.module("channels", channelId = channelId)
                                         }) { Text("通道详情") }
                                     }
                                     item {
                                         TextButton(onClick = {
-                                            context.startActivity(Intent(context, NativeModuleActivity::class.java)
-                                                .putExtra(NativeModuleActivity.EXTRA_MODULE, "channel_monitor"))
+                                            navigation.module("channel_monitor")
                                         }) { Text("通道监测") }
                                     }
                                 }
@@ -445,8 +442,9 @@ private fun HealthHeroMetric(label: String, value: Int?, modifier: Modifier) {
 private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Boolean,
     summary: OrderSummary?, onDismiss: () -> Unit, onAction: (PendingOrderAction) -> Unit) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
+        Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             PayTopBar("订单详情", onDismiss)
             when {
                 loading -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator(strokeWidth = 2.dp) }
@@ -470,20 +468,16 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         item { PayCard {
                             Text("商户与通道", color = Muted, fontSize = 12.sp)
                             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable {
-                                context.startActivity(Intent(context, MainActivity::class.java).putExtra(MainActivity.EXTRA_TAB, MainTab.MERCHANTS.name).putExtra(MainActivity.EXTRA_MERCHANT_ID, detail.merchantId))
+                                navigation.merchants(merchantId = detail.merchantId)
                             }, verticalAlignment = Alignment.CenterVertically) { Text("商户", color = Muted, fontSize = 12.sp, modifier = Modifier.width(78.dp)); Text("UID ${detail.merchantId} ›", color = GreenDark, fontSize = 13.sp) }
                             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable {
-                                context.startActivity(Intent(context, NativeModuleActivity::class.java).putExtra(NativeModuleActivity.EXTRA_MODULE, "channels").putExtra(NativeModuleActivity.EXTRA_CHANNEL_ID, detail.channelId))
+                                navigation.module("channels", channelId = detail.channelId)
                             }, verticalAlignment = Alignment.CenterVertically) { Text("通道", color = Muted, fontSize = 12.sp, modifier = Modifier.width(78.dp)); Text("${detail.channelName.ifBlank { "通道" }} #${detail.channelId} ›", color = GreenDark, fontSize = 13.sp) }
                             DataRow("支付插件", detail.plugin)
                         } }
                         item { DetailBlock("时间 · 通知", listOf("创建时间" to detail.createdAt, "支付时间" to detail.completedAt, "回调通知" to notifyLabel(detail))) }
                         item { DetailBlock("请求信息", listOf("商品信息" to detail.name, "支付账号" to detail.buyer, "网站域名" to detail.domain, "请求 IP" to detail.ip, "附加参数" to detail.parameter)) }
-                        if (com.futoonpay.admin.FutoonIntegration.isEmbedded(context)) item {
-                            OutlinedButton(onClick = {
-                                com.futoonpay.admin.FutoonIntegration.prepareEvidence(context, detail.tradeNo, detail.merchantTradeNo, detail.merchantId, detail.amount, detail.currency)
-                            }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text("回聊天选择凭证") }
-                        }
+                        item { OutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("图片凭证") } }
                         item { Text("其他操作", color = Muted, fontSize = 12.sp) }
                         items(actions.filterNot { it.action == "notify" || it.action == "refund" }) { action ->
                             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(action.label) }
@@ -686,6 +680,7 @@ private data class PendingSettlementAction(
 @Composable
 private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onAction: (PendingSettlementAction) -> Unit) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var expanded by remember { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail), colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp)) {
@@ -714,11 +709,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
             if (item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
             if (item.merchantId.isNotBlank()) {
                 TextButton(onClick = {
-                    context.startActivity(
-                        Intent(context, MainActivity::class.java)
-                            .putExtra(MainActivity.EXTRA_TAB, MainTab.MERCHANTS.name)
-                            .putExtra(MainActivity.EXTRA_MERCHANT_ID, item.merchantId)
-                    )
+                    navigation.merchants(merchantId = item.merchantId)
                 }) { Text("查看关联商户", fontSize = 12.sp) }
             }
         }
@@ -883,6 +874,7 @@ private fun MerchantCard(
     onAction: (MerchantAction) -> Unit,
 ) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var expanded by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail),
@@ -947,28 +939,17 @@ private fun MerchantCard(
                 item { TextButton(onClick = onDetail) { Text("运营概览", fontSize = 12.sp) } }
                 item {
                     TextButton(onClick = {
-                        context.startActivity(
-                            Intent(context, MainActivity::class.java)
-                                .putExtra(MainActivity.EXTRA_TAB, MainTab.ORDERS.name)
-                                .putExtra(MainActivity.EXTRA_MERCHANT_ID, merchant.uid)
-                        )
+                        navigation.orders(merchantId = merchant.uid)
                     }) { Text("订单", fontSize = 12.sp) }
                 }
                 item {
                     TextButton(onClick = {
-                        context.startActivity(
-                            Intent(context, MainActivity::class.java)
-                                .putExtra(MainActivity.EXTRA_TAB, MainTab.SETTLEMENTS.name)
-                                .putExtra(MainActivity.EXTRA_MERCHANT_ID, merchant.uid)
-                        )
+                        navigation.settlements(merchantId = merchant.uid)
                     }) { Text("结算", fontSize = 12.sp) }
                 }
                 item {
                     TextButton(onClick = {
-                        context.startActivity(
-                            Intent(context, DomainAuditActivity::class.java)
-                                .putExtra(DomainAuditActivity.EXTRA_MERCHANT_ID, merchant.uid)
-                        )
+                        navigation.domains(merchantId = merchant.uid)
                     }) { Text("域名", fontSize = 12.sp) }
                 }
             }
@@ -1039,11 +1020,12 @@ internal fun MerchantDetailDialog(
     onResetKey: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var currency by rememberSaveable(merchant.uid) { mutableStateOf("CNY") }
     val amounts = flow?.currencyPoints?.ifEmpty { mapOf("CNY" to flow.points) }.orEmpty()
     val points = amounts[currency].orEmpty()
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding()) {
+        Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             PayTopBar("商户详情", onDismiss)
             LazyColumn(
                 modifier = Modifier.weight(1f),
@@ -1118,22 +1100,17 @@ internal fun MerchantDetailDialog(
                                 if (onResetKey != null) item { TextButton(onClick = onResetKey) { Text("重置密钥") } }
                                 item {
                                     TextButton(onClick = {
-                                        context.startActivity(Intent(context, MainActivity::class.java)
-                                            .putExtra(MainActivity.EXTRA_TAB, MainTab.ORDERS.name)
-                                            .putExtra(MainActivity.EXTRA_MERCHANT_ID, merchant.uid))
+                                        navigation.orders(merchantId = merchant.uid)
                                     }) { Text("商户订单") }
                                 }
                                 item {
                                     TextButton(onClick = {
-                                        context.startActivity(Intent(context, MainActivity::class.java)
-                                            .putExtra(MainActivity.EXTRA_TAB, MainTab.SETTLEMENTS.name)
-                                            .putExtra(MainActivity.EXTRA_MERCHANT_ID, merchant.uid))
+                                        navigation.settlements(merchantId = merchant.uid)
                                     }) { Text("结算记录") }
                                 }
                                 item {
                                     TextButton(onClick = {
-                                        context.startActivity(Intent(context, DomainAuditActivity::class.java)
-                                            .putExtra(DomainAuditActivity.EXTRA_MERCHANT_ID, merchant.uid))
+                                        navigation.domains(merchantId = merchant.uid)
                                     }) { Text("域名审核") }
                                 }
                             }
@@ -1211,6 +1188,7 @@ internal fun MerchantActionDialog(
 @Composable
 internal fun MoreScreen(onLogout: () -> Unit) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     val groups = listOf(
         "运营与账务" to listOf(
             ModuleLink("资金明细", "funds", Icons.Default.Assessment),
@@ -1255,9 +1233,9 @@ internal fun MoreScreen(onLogout: () -> Unit) {
                 Card(
                     modifier = Modifier.fillMaxWidth().clickable {
                         if (entry.id == "domain_audit") {
-                            context.startActivity(Intent(context, DomainAuditActivity::class.java))
+                            navigation.domains()
                         } else {
-                            context.startActivity(Intent(context, NativeModuleActivity::class.java).putExtra(NativeModuleActivity.EXTRA_MODULE, entry.id))
+                            navigation.module(entry.id)
                         }
                     },
                     colors = CardDefaults.cardColors(containerColor = Color.White),

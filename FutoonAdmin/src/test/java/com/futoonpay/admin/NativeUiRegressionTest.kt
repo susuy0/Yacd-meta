@@ -30,7 +30,7 @@ import java.io.File
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class NativeUiRegressionTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
-    private fun model() = AppViewModel(FutoonApplication())
+    private fun model() = AppViewModel(TestEnvironment())
     private fun order(id: String, status: Int) = OrderSummary(id, "M-77310-0042", "41882", "example.com", "年度订阅", "500.00", "500.00", "487.50", "微信扫码", "12", "wxpay_v3", "2026-10-08 14:15:02", "2026-10-08 14:15:41", status, 0)
     private val orders = listOf(order("S2610081430158812", 1), order("S2610081428074401", 0))
     private val stat = OrderChannelStat("12", "蓝色微信", 92.0, total = 50, successful = 46, processing = 3, source = ChannelRateSource.OFFICIAL, countsOfficial = true)

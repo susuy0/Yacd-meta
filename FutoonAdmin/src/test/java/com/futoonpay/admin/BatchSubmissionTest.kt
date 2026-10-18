@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class BatchSubmissionTest {
     @Before fun setup() { Dispatchers.setMain(UnconfinedTestDispatcher()) }
     @After fun teardown() { Dispatchers.resetMain() }
-    private fun vm(handler: (okhttp3.Request) -> Pair<Int, String>) = AppViewModel(FutoonApplication(), FutoonRepository(fixtureClient(handler)), loadOnStart = false)
+    private fun vm(handler: (okhttp3.Request) -> Pair<Int, String>) = AppViewModel(TestEnvironment(), FutoonRepository(fixtureClient(handler)), loadOnStart = false)
     private fun request() = BatchRequest("merchants", "重置密钥", listOf("1011", "1012").map { BatchCommand(it, "UID $it", BatchKind.MERCHANT_KEY) })
     private fun finished(vm: AppViewModel) = runBlocking { withTimeout(5000) { while (vm.state.value.batch?.running == true) delay(10) } }
 

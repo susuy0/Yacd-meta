@@ -46,24 +46,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Prepare panel source
-        run: bash ci/checkout.sh "$RUNNER_TEMP/vinechat-ui" minimal
-      - name: Install browser regression dependencies
-        run: |
-          npm install --prefix "$RUNNER_TEMP/futoon-ui" --no-audit --no-fund playwright@1.62.1
-          "$RUNNER_TEMP/futoon-ui/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Test panel, monitor and route editing
-        run: |
-          export PLAYWRIGHT_MODULE="$RUNNER_TEMP/futoon-ui/node_modules/playwright"
-          node "$RUNNER_TEMP/vinechat-ui/Tools/futoon/PanelUiTest.cjs"
-      - name: Keep UI regression screenshots
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: Futoon-v0.4.0-UI-checks
-          path: ${{ runner.temp }}/vinechat-ui/build/futoon-ui-qa/*
-          if-no-files-found: warn
-          retention-days: 30
+      - name: Audit fully native panel contract
+        run: python3 ci/test_native_panel.py .
   native-admin:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -82,15 +66,15 @@ jobs:
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
         with:
           packages: platform-tools
-      - name: Install native UI test SDK
+      - name: Install business integration test SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Test original v1.3.4 screens, all More entries and embedded sessions
+      - name: Test original v1.3.4 business code and panel adapter
         run: bash ci/test_native_admin.sh "$RUNNER_TEMP/futoon-native-tests"
-      - name: Keep original native UI screenshots and regression reports
+      - name: Keep business integration regression reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Futoon-v0.4.0-native-UI-checks
+          name: Futoon-v0.6.0-native-business-checks
           path: |
             ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/ui-screenshots/*
             ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/reports/*
@@ -99,7 +83,7 @@ jobs:
           retention-days: 30
   android:
     if: github.ref != 'refs/heads/native-startup-validation'
-    needs: [core-checks, panel-ui]
+    needs: [core-checks, panel-ui, native-admin]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
@@ -163,14 +147,14 @@ jobs:
       - name: Collect APK and checksum
         run: |
           mkdir -p output
-          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.4.0-lite-test.apk
+          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.6.0-native-test.apk
           cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/usage.txt output/REMOVED-JAVA.txt
           cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/mapping.txt output/mapping.txt
           cd output
-          sha256sum VineChat-Futoon-v0.4.0-lite-test.apk mapping.txt > SHA256SUMS
+          sha256sum VineChat-Futoon-v0.6.0-native-test.apk mapping.txt > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: VineChat-Futoon-v0.4.0-lite-${{ steps.config.outputs.push_mode }}
+          name: VineChat-Futoon-v0.6.0-native-${{ steps.config.outputs.push_mode }}
           path: output/*
           if-no-files-found: error
           retention-days: 30

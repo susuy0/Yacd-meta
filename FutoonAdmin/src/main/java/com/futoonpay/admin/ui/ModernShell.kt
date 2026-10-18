@@ -31,8 +31,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.futoonpay.admin.BuildConfig
-import com.futoonpay.admin.DomainAuditActivity
-import com.futoonpay.admin.NativeModuleActivity
 import com.futoonpay.admin.data.*
 import com.futoonpay.admin.ui.theme.*
 
@@ -53,7 +51,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
     val address = runCatching { composeBackendAddress(origin, path) }.getOrNull()
     val connected = state.endpointReady && address == state.adminUrl
     val busy = state.loginLoading || state.captchaLoading
-    LazyColumn(Modifier.fillMaxSize().background(Mist).statusBarsPadding().navigationBarsPadding().imePadding(),
+    LazyColumn(Modifier.fillMaxSize().background(Mist).imePadding(),
         contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Spacer(Modifier.height(28.dp))
@@ -110,7 +108,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(16.dp))
-            Text("版本 ${BuildConfig.VERSION_NAME} · ${LocalContext.current.packageName}", color = Muted, fontSize = 10.sp)
+            Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 10.sp)
         }
     }
 }
@@ -122,114 +120,6 @@ private fun LoginField(label: String, value: String, onChange: (String) -> Unit,
     OutlinedTextField(value, onChange, singleLine = true, enabled = enabled,
         placeholder = { Text(placeholder, fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = keyboard), shape = RoundedCornerShape(10.dp))
-}
-
-@Composable
-internal fun ModernMainShell(state: AppUiState, viewModel: AppViewModel, launchTarget: AppLaunchTarget) {
-    var selected by rememberSaveable { mutableStateOf(launchTarget.tab ?: MainTab.DASHBOARD) }
-    var launchApplied by rememberSaveable { mutableStateOf(false) }
-    var settings by rememberSaveable { mutableStateOf(false) }
-    var searchSignal by rememberSaveable { mutableIntStateOf(0) }
-    val snackbar = remember { SnackbarHostState() }
-    val context = LocalContext.current
-    fun module(id: String) { context.startActivity(Intent(context, NativeModuleActivity::class.java).putExtra(NativeModuleActivity.EXTRA_MODULE, id)) }
-    LaunchedEffect(state.refreshing, launchApplied) {
-        if (!state.refreshing && !launchApplied) {
-            launchApplied = true
-            when (launchTarget.tab) {
-                MainTab.ORDERS -> viewModel.loadOrders(1, OrderSearchFilters(channelId = launchTarget.channelId, merchantId = launchTarget.merchantId))
-                MainTab.SETTLEMENTS -> viewModel.loadSettlements(1, SettlementSearchFilters(merchantId = launchTarget.merchantId))
-                MainTab.MERCHANTS -> viewModel.loadMerchants(1, MerchantSearchFilters(column = "uid", value = launchTarget.merchantId))
-                else -> Unit
-            }
-        }
-    }
-    state.message?.let { LaunchedEffect(it) { snackbar.showSnackbar(it); viewModel.consumeMessage() } }
-    if (settings) {
-        SettingsScreen(state, onBack = { settings = false }, onSave = viewModel::connectBackend, onLogout = viewModel::logout)
-        return
-    }
-    Scaffold(containerColor = Mist, snackbarHost = { SnackbarHost(snackbar) }, topBar = {
-        PayTopBar(selected.title, onBack = if (com.futoonpay.admin.FutoonIntegration.isEmbedded(context)) ({ (context as? android.app.Activity)?.finish(); Unit }) else null, actions = {
-            if (selected in listOf(MainTab.ORDERS, MainTab.SETTLEMENTS, MainTab.MERCHANTS)) {
-                IconButton(onClick = { searchSignal++ }) { Icon(Icons.Outlined.Search, "完整搜索") }
-            }
-            if (state.refreshing) CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp)
-            else IconButton(onClick = {
-                when (selected) {
-                    MainTab.DASHBOARD, MainTab.MORE -> viewModel.refreshAll(true)
-                    MainTab.ORDERS -> viewModel.loadOrders(state.orderPage)
-                    MainTab.SETTLEMENTS -> viewModel.loadSettlements(state.settlementPage)
-                    MainTab.MERCHANTS -> viewModel.loadMerchants(state.merchantPage)
-                }
-            }) { Icon(Icons.Outlined.Refresh, "刷新") }
-        })
-    }, bottomBar = {
-        PayBottomNav(selected) { selected = it; searchSignal = 0 }
-    }) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
-            when (selected) {
-                MainTab.DASHBOARD -> ModernDashboard(state, onOrders = { viewModel.loadOrders(1, OrderSearchFilters(status = it)); selected = MainTab.ORDERS },
-                    onSettle = { viewModel.loadSettlements(1, SettlementSearchFilters(status = 0)); selected = MainTab.SETTLEMENTS },
-                    onMonitor = { module("channel_monitor") }, onDomains = { context.startActivity(Intent(context, DomainAuditActivity::class.java)) })
-                MainTab.ORDERS -> OrdersScreen(state, viewModel, searchSignal, showSearchEntry = false)
-                MainTab.SETTLEMENTS -> SettlementsScreen(state, viewModel, searchSignal)
-                MainTab.MERCHANTS -> MerchantsScreen(state, viewModel, searchSignal)
-                MainTab.MORE -> ModernManage(::module, { context.startActivity(Intent(context, DomainAuditActivity::class.java)) }, { settings = true })
-            }
-        }
-    }
-}
-
-@Composable
-internal fun ModernDashboard(state: AppUiState, onOrders: (Int) -> Unit, onSettle: () -> Unit, onMonitor: () -> Unit, onDomains: () -> Unit) {
-    val stats = state.dashboard
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { Text("业务数据 · 今日交易金额截至最近刷新", color = Muted, fontSize = 12.sp) }
-        if (stats == null) item { ListFeedback(state.refreshing, state.message, false, onMonitor) }
-        else {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PayCard(Modifier.weight(1f).clickable { onOrders(-1) }) {
-                        Text("今日订单", color = Muted, fontSize = 12.sp); Text(stats.todayOrderCount?.toString() ?: "—", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
-                        Text("查看订单 ›", color = GreenDark, fontSize = 12.sp)
-                    }
-                    PayCard(Modifier.weight(1f)) {
-                        Text("成功订单", color = Muted, fontSize = 12.sp); Text(stats.todaySuccessfulCount?.toString() ?: "—", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
-                        Text("今日已支付订单", color = Muted, fontSize = 12.sp)
-                    }
-                }
-            }
-            item { PayCard {
-                Text("今日交易金额", color = Muted, fontSize = 12.sp)
-                stats.todayByCurrency.ifEmpty { mapOf("CNY" to stats.todayTotal) }.forEach { (currency, amount) ->
-                    Text(com.futoonpay.admin.data.displayOrderAmount(amount, currency), color = Ink, fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
-                }
-                if (stats.todayByType.isNotEmpty()) {
-                    HorizontalDivider(color = Line)
-                    stats.todayByType.forEach { (name, value) -> DataRow(name, "¥ $value") }
-                }
-            } }
-            item { PayCard(Modifier.clickable(onClick = onSettle)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) { Text("待处理结算", color = Muted, fontSize = 12.sp); Text(stats.pendingSettlementCount?.let { "$it 笔" } ?: "—", fontWeight = FontWeight.SemiBold) }
-                    Text("去处理 ›", color = GreenDark, fontSize = 13.sp)
-                }
-            } }
-            item { SectionLabel("快捷入口") }
-            item { PayCard {
-                MenuRow("通道监测", "成功率、检测结果", Icons.Outlined.Insights, onMonitor)
-                HorizontalDivider(color = Line)
-                MenuRow("待支付订单", "查看服务器完整结果", Icons.Outlined.ReceiptLong, { onOrders(0) })
-                HorizontalDivider(color = Line)
-                MenuRow("域名审核", "授权支付域名", Icons.Outlined.Language, onDomains)
-            } }
-            if (stats.recentDailyTotals.isNotEmpty()) {
-                item { SectionLabel("最近流水") }
-                item { PayCard { stats.recentDailyTotals.take(7).forEach { DataRow(it.first, "¥ ${it.second}") } } }
-            }
-        }
-    }
 }
 
 @Composable
@@ -298,7 +188,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
     var error by remember { mutableStateOf<String?>(null) }
     BackHandler { if (edit) edit = false else onBack() }
     Scaffold(containerColor = Mist, topBar = { PayTopBar(if (edit) "更换后台地址" else "设置", { if (edit) edit = false else onBack() }) }, bottomBar = {
-        if (edit) Surface(color = Color.White) { Row(Modifier.navigationBarsPadding().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (edit) Surface(color = Color.White) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
             Button(shape = RoundedCornerShape(10.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).height(48.dp)) { Text("保存并重新登录") }
         } }
@@ -324,7 +214,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                     Text("更换后需要重新登录", color = Muted, fontSize = 11.sp)
                 } }
                 item { SectionLabel("版本信息") }
-                item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", LocalContext.current.packageName) } }
+                item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", "com.futoonpay.vinechat.beta") } }
                 item { OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("退出登录", color = Danger) } }
             }
         }

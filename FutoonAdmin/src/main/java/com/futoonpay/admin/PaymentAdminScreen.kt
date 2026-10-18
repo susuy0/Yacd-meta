@@ -623,12 +623,9 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
     }
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     fun openChannel(channelId: String) {
-        context.startActivity(
-            Intent(context, NativeModuleActivity::class.java)
-                .putExtra(NativeModuleActivity.EXTRA_MODULE, "channels")
-                .putExtra(NativeModuleActivity.EXTRA_CHANNEL_ID, channelId)
-        )
+        navigation.module("channels", channelId = channelId)
     }
     state.message?.let { message ->
         LaunchedEffect(message) { snackbar.showSnackbar(message); viewModel.consumeMessage() }
@@ -662,18 +659,10 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
             onRefresh = { viewModel.openChannelDetail(channel) },
             onTest = { viewModel.openPaymentTest(channel) },
             onOrders = {
-                context.startActivity(
-                    Intent(context, MainActivity::class.java)
-                        .putExtra(MainActivity.EXTRA_TAB, com.futoonpay.admin.ui.MainTab.ORDERS.name)
-                        .putExtra(MainActivity.EXTRA_CHANNEL_ID, channel.id)
-                )
+                navigation.orders(channelId = channel.id)
             },
             onRelatedType = {
-                context.startActivity(
-                    Intent(context, NativeModuleActivity::class.java)
-                        .putExtra(NativeModuleActivity.EXTRA_MODULE, "channels")
-                        .putExtra(NativeModuleActivity.EXTRA_CHANNEL_TYPE, state.channelDetail?.paymentTypeId.orEmpty())
-                )
+                navigation.module("channels", channelType = state.channelDetail?.paymentTypeId.orEmpty())
             },
             onAction = viewModel::execute,
             onEditorAction = viewModel::openEditor,
@@ -692,12 +681,13 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
     }
 
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             if (state.spec.supportsAdd) Surface(color = Color.White) {
                 Button(shape = RoundedCornerShape(10.dp), onClick = viewModel::openAdd, enabled = !state.loading,
-                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp).height(48.dp)) {
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(48.dp)) {
                     Text("新建" + state.spec.title)
                 }
             }
@@ -728,6 +718,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
 @Composable
 private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, viewModel: PaymentAdminViewModel) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var query by rememberSaveable { mutableStateOf(state.query) }
     var pending by remember { mutableStateOf<NativeAction?>(null) }
     val document = state.document
@@ -735,19 +726,11 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
         when {
             action.endpoint.startsWith("futoon://channels") -> {
                 val type = Uri.parse(action.endpoint).getQueryParameter("type").orEmpty()
-                context.startActivity(
-                    Intent(context, NativeModuleActivity::class.java)
-                        .putExtra(NativeModuleActivity.EXTRA_MODULE, "channels")
-                        .putExtra(NativeModuleActivity.EXTRA_CHANNEL_TYPE, type)
-                )
+                navigation.module("channels", channelType = type)
             }
             action.endpoint.startsWith("futoon://channel-detail") -> {
                 val id = Uri.parse(action.endpoint).getQueryParameter("id").orEmpty()
-                context.startActivity(
-                    Intent(context, NativeModuleActivity::class.java)
-                        .putExtra(NativeModuleActivity.EXTRA_MODULE, "channels")
-                        .putExtra(NativeModuleActivity.EXTRA_CHANNEL_ID, id)
-                )
+                navigation.module("channels", channelId = id)
             }
             action.isEditorAction() -> viewModel.openEditor(action)
             action.destructive -> pending = action
@@ -766,11 +749,7 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
             viewModel::openChannelDetail,
             viewModel::openPaymentTest,
             { item ->
-                context.startActivity(
-                    Intent(context, MainActivity::class.java)
-                        .putExtra(MainActivity.EXTRA_TAB, com.futoonpay.admin.ui.MainTab.ORDERS.name)
-                        .putExtra(MainActivity.EXTRA_CHANNEL_ID, item.id)
-                )
+                navigation.orders(channelId = item.id)
             },
             ::select,
             { viewModel.load() },
@@ -897,6 +876,7 @@ private fun PaymentChannelDetailScreen(
     snackbar: SnackbarHostState,
 ) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var pending by remember { mutableStateOf<NativeAction?>(null) }
     val statusColor = when (channel.status) {
         PaymentChannelStatus.ENABLED -> GreenDark
@@ -904,6 +884,7 @@ private fun PaymentChannelDetailScreen(
         PaymentChannelStatus.UNKNOWN -> Warning
     }
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             PayTopBar("通道详情", onBack,
@@ -1025,6 +1006,7 @@ private fun PaymentTestDialog(
     onSubmit: (String, String) -> Unit,
 ) {
     val context = LocalContext.current
+    val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var name by rememberSaveable(channel.id) { mutableStateOf("支付测试") }
     var amount by rememberSaveable(channel.id) { mutableStateOf("1") }
     val paymentUrl = result?.paymentUrl.orEmpty().let { if (it.startsWith("//")) "https:$it" else it }
@@ -1516,9 +1498,10 @@ internal fun PaymentEditorScreen(
         mutableIntStateOf((channelFields.indexOfLast { it.value.isNotBlank() && it.value != "0" } + 1).coerceAtLeast(1))
     }
     Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            Surface(color = Color.White) { Row(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(color = Color.White) { Row(Modifier.fillMaxWidth().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onBack, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
                 Button(shape = RoundedCornerShape(10.dp), onClick = {
                     val submitted = values.filter { (name, value) -> val field = form.fields.first { it.name == name }; !field.readOnly && (!field.sensitive || value.isNotBlank()) }

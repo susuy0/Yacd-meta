@@ -5,8 +5,8 @@ import org.json.JSONObject
 import java.security.MessageDigest
 
 /** Only configuration values that are not credentials are eligible for a draft. */
-class FormDraftStore(context: Context) {
-    private val preferences = context.getSharedPreferences("futoon_form_drafts", Context.MODE_PRIVATE)
+class FormDraftStore(context: Context, accountScope: String = "standalone") {
+    private val preferences = context.getSharedPreferences("futoon_form_drafts_" + MessageDigest.getInstance("SHA-256").digest(accountScope.toByteArray()).joinToString("") { "%02x".format(it) }, Context.MODE_PRIVATE)
     private fun key(backend: String, form: NativeForm): String {
         val id = form.fields.firstOrNull { it.name == "id" }?.value.orEmpty()
         val scope = "$backend|${form.action}|$id"
