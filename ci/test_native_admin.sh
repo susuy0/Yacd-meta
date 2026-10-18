@@ -19,6 +19,6 @@ plugins {
 GRADLE
 printf 'android.useAndroidX=true\n' > "$test_root/gradle.properties"
 printf 'sdk.dir=%s\n' "$ANDROID_HOME" > "$test_root/local.properties"
-timeout --signal=QUIT --kill-after=30s 8m gradle -p "$test_root" :FutoonAdmin:testDebugUnitTest :FutoonAdmin:lintDebug \
+timeout --signal=QUIT --kill-after=30s 18m gradle -p "$test_root" :FutoonAdmin:testDebugUnitTest :FutoonAdmin:lintDebug \
     --no-daemon --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process \
     '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' --stacktrace

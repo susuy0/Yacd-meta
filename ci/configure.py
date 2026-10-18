@@ -59,3 +59,4 @@ if output:
         f.write("push_mode=" + ("fcm-configured" if data is not None else "development-no-fcm") + "\n")
 print("Configuration installed. Real background delivery still requires an on-device test.")
 
+
