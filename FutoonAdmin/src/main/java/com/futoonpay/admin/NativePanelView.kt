@@ -3,6 +3,7 @@ package com.futoonpay.admin
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.AttributeSet
+import android.widget.FrameLayout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -85,12 +86,14 @@ private data class PanelState(
 class NativePanelView(
     context: Context,
     private val bridge: NativePanelBridge,
-) : ComposeView(context) {
+) : FrameLayout(context) {
     private val model = NativePanelModel(bridge)
+    private val compose = ComposeView(context)
 
     init {
-        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-        setContent { FutoonPanelTheme { NativePanelRoot(model) } }
+        compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+        compose.setContent { FutoonPanelTheme { NativePanelRoot(model) } }
+        addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
 
     fun updateContext(label: String?, telegramId: String?, source: String?) =
@@ -101,7 +104,7 @@ class NativePanelView(
     fun updateEvidenceCount(count: Int) = model.updateEvidenceCount(count)
     fun handleBack(): Boolean = model.back()
     fun onShown() = model.onShown()
-    fun close() { model.close(); disposeComposition() }
+    fun close() { model.close(); compose.disposeComposition() }
 }
 
 private class NativePanelModel(private val bridge: NativePanelBridge) {
@@ -244,10 +247,10 @@ private class NativePanelModel(private val bridge: NativePanelBridge) {
     fun testChannel(id: String, amount: String) = confirm(
         "测试支付通道", "通道 #$id\n金额：¥$amount", "channel.test",
         JSONObject().put("id", id).put("amount", amount).put("name", "原生面板测试订单"),
-        refresh = { refresh() }, result = { r -> message("${r.optString("msg", "测试完成")}\n订单：${r.optString("trade_no")}\n${r.optString("qrcode")}") },
+        result = { r -> message("${r.optString("msg", "测试完成")}\n订单：${r.optString("trade_no")}\n${r.optString("qrcode")}") }, refresh = { refresh() },
     )
 
-    fun confirm(title: String, summary: String, operation: String, params: JSONObject, refresh: () -> Unit, result: ((JSONObject) -> Unit)? = null) =
+    fun confirm(title: String, summary: String, operation: String, params: JSONObject, result: ((JSONObject) -> Unit)? = null, refresh: () -> Unit) =
         _state.update { it.copy(pending = PendingAction(operation, params, title, summary, refresh, result)) }
     fun cancelPending() = _state.update { it.copy(pending = null) }
     fun runPending() {
@@ -331,7 +334,7 @@ private val Danger = Color(0xffba1a1a)
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
-                state.form != null -> NativeFormScreen(state.form, model::saveForm)
+                state.form != null -> state.form?.let { NativeFormScreen(it, model::saveForm) }
                 state.detail != null -> OrderDetailScreen(state, model)
                 state.module == "domains" -> DomainScreen(state, model)
                 state.module == "merchant" -> MerchantScreen(state, model)
