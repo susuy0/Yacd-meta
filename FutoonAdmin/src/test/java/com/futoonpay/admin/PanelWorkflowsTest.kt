@@ -65,6 +65,24 @@ class PanelWorkflowsTest {
         job.join(); assertEquals("new", vm.state.value.text)
         assertTrue(vm.state.value.candidates.all { it.kind == "PID" && it.orders.isEmpty() })
     }
+    @Test fun openingHistoryDuringAQueryReplacesTheInputAndAllowsAnotherQuery() = runBlocking {
+        val entered = CountDownLatch(1); val release = CountDownLatch(1)
+        val bridge = WorkflowFixtureBridge { op, _ -> if (op == "orders.search") { entered.countDown(); release.await(5, TimeUnit.SECONDS) }; null }
+        val vm = PanelWorkflows(bridge); ready(vm); vm.receive(RecognizedQuery("old", "AUTO")); extracted(vm)
+        val job = vm.runQueries()
+        try {
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
+            vm.queryHistory(JSONObject().put("text", "saved PID").put("kind", "PID"))
+            extracted(vm)
+            assertEquals("saved PID", vm.state.value.text)
+            assertFalse(vm.state.value.running)
+            assertTrue(vm.state.value.candidates.all { it.kind == "PID" && it.orders.isEmpty() && it.source.message == 0L })
+        } finally { release.countDown() }
+        job.join()
+        assertTrue(vm.state.value.candidates.all { it.orders.isEmpty() })
+        vm.runQueries().join()
+        assertTrue(vm.state.value.candidates.all { it.phase == "ok" })
+    }
     @Test fun automaticAndManualMerchantLookupsKeepTheirIdentitySeparate() = runBlocking {
         val bridge = WorkflowFixtureBridge(); val vm = PanelWorkflows(bridge); ready(vm)
         vm.updateChat(ChatScope("工单", "5824870757", "来自话题末尾 TGID", "-100:12627", -100, 12627, "12627", "游客"))

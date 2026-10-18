@@ -147,7 +147,7 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
         local.put("history", JSONArray(listOf(JSONObject().put("text", text).put("kind", kind).put("time", System.currentTimeMillis())) + array("history").filter { it.optString("text") != text }.take(29)))
         changed()
     }
-    fun queryHistory(row: JSONObject) { queryGeneration++; source = MessageSource(); setText(row.optString("text")); extract(row.optString("kind", "AUTO")) }
+    fun queryHistory(row: JSONObject) { receive(RecognizedQuery(row.optString("text"), row.optString("kind", "AUTO"))) }
     fun rememberOrder(row: JSONObject) {
         val id = row.optString("trade_no"); if (id.isBlank()) return
         recentOrders.remove(id); recentOrders[id] = row.toString()
