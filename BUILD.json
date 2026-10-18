@@ -5,16 +5,20 @@
   "files": 60,
   "patch_sha256": "34203523a81c6b336ffa10248da7b47ace1fdefba3ca642e156bbc88278894bc",
   "validation": {
-    "core_checks": "pending CI",
-    "panel_ui": "pending CI",
-    "native_panel_geometry": "pending CI",
-    "startup_color_regression": "pending CI",
-    "java_compilation": "pending CI",
-    "full_native_and_shrink": "pending CI",
-    "removed_component_audit": "pending CI",
+    "core_checks": 132,
+    "panel_ui": "passed",
+    "native_panel_geometry": 45,
+    "startup_color_regression": "passed, including original-crash negative control",
+    "java_compilation": "passed",
+    "full_native_and_shrink": "passed",
+    "removed_component_audit": "passed",
     "android_device_launch": "not tested",
     "real_financial_mutations": "not performed",
-    "live_push_delivery": "not tested"
+    "live_push_delivery": "not tested",
+    "total_business_and_geometry_checks": 177,
+    "apk_signature_and_checksum": "passed",
+    "futoon_assets": "5/5 match verified source",
+    "ui_screenshots": "ordinary group, manual lookup, login inspected"
   },
   "github_repository": "susuy0/Yacd-meta",
   "previous_build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39082736383",
@@ -38,5 +42,26 @@
     "MiB": 37.9,
     "signature_matches_v03": true
   },
-  "versionCode": 71799
+  "versionCode": 71799,
+  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39085180973",
+  "build_commit": "78134f529ed3c8b8b320db8cfaa069c894935d60",
+  "apk": {
+    "bytes": 39735876,
+    "MiB": 37.9,
+    "sha256": "634cdff29e384abad7bc0f9dc74ae8a8b988ab83355f134f3cf75a016888a846",
+    "versionCode": 71799,
+    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
+    "signature_matches_v031": true,
+    "v2_signature": "verified",
+    "zip_crc": "verified",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "native_core_bytes": 9893208
+  },
+  "r8_mapping": {
+    "artifact": "mapping.txt",
+    "bytes": 186275154,
+    "sha256": "35da161eed031fa1b78fa5f4c0021725d5dc5fa7bca40402804d4b6198e0d59e"
+  }
 }
