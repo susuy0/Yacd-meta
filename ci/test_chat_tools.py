@@ -82,3 +82,51 @@ assert '"Futoon chat"' in (base/'ui/DialogsActivity.java').read_text()
 assert '"FutoonPay 设置"' in (base/'ui/SettingsActivity.java').read_text()
 assert 'android:label="短信"' in (root/'TMessagesProj/config/debug/AndroidManifest_SDK23.xml').read_text()
 print('PASS: read-only profile TGID, both tag surfaces, draft-only insertion, settings and requested branding')
+
+# Execute the actual Telegram bridge with the same listener replacement contract
+# as BaseFragment.showDialog. No Android device or message send is involved.
+stubs = {
+ 'android/app/Dialog.java': '''package android.app; public class Dialog { public interface OnDismissListener { void onDismiss(Dialog dialog); } public OnDismissListener listener; public void setOnDismissListener(OnDismissListener listener){this.listener=listener;} public void dismiss(){if(listener!=null)listener.onDismiss(this);} }''',
+ 'android/view/View.java': '''package android.view; public class View { public Object getWindowToken(){return this;} }''',
+ 'com/futoonpay/admin/ChatToolsBridge.java': '''package com.futoonpay.admin; public interface ChatToolsBridge { String load(); void save(String json) throws Exception; void selectReply(String text); void manage(); void originalSendOptions(); void close(); }''',
+ 'com/futoonpay/admin/ChatToolsView.java': '''package com.futoonpay.admin; public class ChatToolsView { public static ChatToolsView last; public final ChatToolsBridge bridge; public boolean closed,shown; public int height; public ChatToolsView(Object context,ChatToolsBridge bridge,boolean picker){this.bridge=bridge;last=this;} public void setPanelHeight(int height){this.height=height;} public void onShown(){shown=true;} public void close(){closed=true;} }''',
+ 'org/telegram/messenger/AndroidUtilities.java': '''package org.telegram.messenger; import java.util.*; public class AndroidUtilities { public static class Point {public int y=1000;} public static Point displaySize=new Point(); static List<Runnable> queue=new ArrayList<>(); public static int dp(int value){return value;} public static void runOnUIThread(Runnable action,long delay){queue.add(action);} public static void flush(){List<Runnable> copy=new ArrayList<>(queue);queue.clear();for(Runnable r:copy)r.run();} }''',
+ 'org/telegram/messenger/UserConfig.java': '''package org.telegram.messenger; public class UserConfig {public static long owner=101;public static UserConfig getInstance(int account){return new UserConfig();}public long getClientUserId(){return owner;}}''',
+ 'org/telegram/messenger/futoon/FutoonChatPreferences.java': '''package org.telegram.messenger.futoon; public class FutoonChatPreferences {public static FutoonChatPreferences get(int account){return new FutoonChatPreferences();}public String raw(){return "";}public void save(int account,String json){} }''',
+ 'org/telegram/ui/ActionBar/BottomSheet.java': '''package org.telegram.ui.ActionBar; import android.app.Dialog; public class BottomSheet extends Dialog {public static BottomSheet last;public BottomSheet(){last=this;}public static class Builder {public Builder(Object context){}public Builder setCustomView(Object view){return this;}public BottomSheet create(){return new BottomSheet();}} }''',
+ 'org/telegram/ui/FutoonChatSettingsActivity.java': '''package org.telegram.ui; public class FutoonChatSettingsActivity {public final boolean replies;public FutoonChatSettingsActivity(int account,boolean replies){this.replies=replies;}}''',
+ 'org/telegram/ui/ChatActivity.java': '''package org.telegram.ui; import android.app.Dialog;import android.view.View; public class ChatActivity {public boolean alive=true,reject;public FutoonChatSettingsActivity opened;public Object getParentActivity(){return alive?this:null;}public View getFragmentView(){return alive?new View():null;}public boolean presentFragment(FutoonChatSettingsActivity fragment){opened=fragment;return true;}public Dialog showDialog(Dialog dialog,Dialog.OnDismissListener listener){if(reject)return null;dialog.setOnDismissListener(d->{if(listener!=null)listener.onDismiss(d);});return dialog;} }''',
+ 'org/telegram/ui/QuickReplyBridgeTest.java': '''package org.telegram.ui;
+import com.futoonpay.admin.ChatToolsView;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.UserConfig;
+import org.telegram.ui.ActionBar.BottomSheet;
+public class QuickReplyBridgeTest {
+ static void check(boolean ok,String message){if(!ok)throw new AssertionError(message);}
+ public static void main(String[] args){
+  ChatActivity host=new ChatActivity();StringBuilder draft=new StringBuilder("已有草稿：");int[] options={0};
+  check(FutoonQuickReplies.show(host,0,draft::append,()->options[0]++),"Picker should open");
+  check(ChatToolsView.last.shown&&ChatToolsView.last.height>0,"View needs lifecycle and bounded height");
+  ChatToolsView.last.bridge.selectReply("请提供凭证");
+  check(draft.toString().equals("已有草稿："),"Draft insertion waits for native sheet dismissal");
+  AndroidUtilities.flush();check(draft.toString().equals("已有草稿：请提供凭证"),"Selected text must reach editable draft");
+  check(ChatToolsView.last.closed&&options[0]==0,"Selecting a reply disposes its view and never invokes send options");
+  BottomSheet.last.dismiss();AndroidUtilities.flush();check(draft.toString().equals("已有草稿：请提供凭证"),"Repeated dismissal must not insert twice");
+  FutoonQuickReplies.show(host,0,draft::append,()->options[0]++);ChatToolsView.last.bridge.selectReply("旧账号");UserConfig.owner=202;AndroidUtilities.flush();
+  check(draft.toString().equals("已有草稿：请提供凭证"),"Account switch must invalidate deferred insertion");UserConfig.owner=101;
+  FutoonQuickReplies.show(host,0,draft::append,()->options[0]++);ChatToolsView.last.bridge.selectReply("旧页面");host.alive=false;AndroidUtilities.flush();
+  check(draft.toString().equals("已有草稿：请提供凭证"),"Detached chat must reject deferred insertion");host.alive=true;
+  FutoonQuickReplies.show(host,0,draft::append,()->options[0]++);ChatToolsView.last.bridge.manage();AndroidUtilities.flush();check(host.opened!=null&&host.opened.replies,"Manage opens the quick replies settings tab");
+  FutoonQuickReplies.show(host,0,draft::append,()->options[0]++);ChatToolsView.last.bridge.originalSendOptions();AndroidUtilities.flush();check(options[0]==1,"Original send options remain reachable");
+  host.reject=true;check(!FutoonQuickReplies.show(host,0,draft::append,()->options[0]++),"Failed presentation is reported");check(ChatToolsView.last.closed,"Failed presentation must dispose the view");
+  System.out.println("PASS: actual quick-reply bridge, native dismiss contract, editable draft delivery, single insertion, account/lifecycle guards, settings and original options");
+ }
+}'''
+}
+with tempfile.TemporaryDirectory(prefix='futoon-quick-reply-bridge-') as folder:
+    p=Path(folder)
+    for name,content in stubs.items():
+        target=p/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_text(content)
+    target=p/'org/telegram/ui/FutoonQuickReplies.java';target.write_text((base/'ui/FutoonQuickReplies.java').read_text())
+    subprocess.run(['javac',*[str(f.relative_to(p)) for f in p.rglob('*.java')]],cwd=p,check=True)
+    subprocess.run(['java','org.telegram.ui.QuickReplyBridgeTest'],cwd=p,check=True)

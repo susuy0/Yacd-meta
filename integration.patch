@@ -6759,7 +6759,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4777,7 +4781,29 @@
+@@ -4777,7 +4781,30 @@
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
@@ -6772,7 +6772,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
 +            final long targetDialog = dialog_id;
 +            final long targetTopic = parentFragment.getTopicId();
 +            final long owner = UserConfig.getInstance(currentAccount).getClientUserId();
-+            return org.telegram.ui.FutoonQuickReplies.show(parentFragment, currentAccount, text -> {
++            org.telegram.ui.FutoonQuickReplies.show(parentFragment, currentAccount, text -> {
 +                if (dialog_id != targetDialog || parentFragment == null || parentFragment.getTopicId() != targetTopic || editingMessageObject != null || getWindowToken() == null || UserConfig.getInstance(currentAccount).getClientUserId() != owner || messageEditText == null) return;
 +                android.text.Editable draft = messageEditText.getText();
 +                int start = Math.max(0, messageEditText.getSelectionStart());
@@ -6781,6 +6781,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
 +                messageEditText.setSelection(Math.min(start + text.length(), draft.length()));
 +                messageEditText.requestFocus(); openKeyboard(); checkSendButton(true);
 +            }, () -> onTelegramSendLongClick(view));
++            return true;
 +        }
 +        return onTelegramSendLongClick(view);
 +    }
@@ -6789,7 +6790,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -8114,7 +8140,7 @@
+@@ -8114,7 +8141,7 @@
                      }
                  }
              }
@@ -6798,7 +6799,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8151,14 @@
+@@ -8125,14 +8152,14 @@
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }
@@ -8418,16 +8419,6 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarCo
          titleTextView.setText(value);
          rightDrawableIsScam = false;
          if (scam || fake) {
-@@ -954,7 +968,8 @@
-             }
-         } else if (verified) {
-             verifiedBackground = getResources().getDrawable(R.drawable.verified_area).mutate();
--            verifiedBackground.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_profile_verifiedBackground), PorterDuff.Mode.MULTIPLY));
-+            verifiedBackground.setColorFilter(new PorterDuffColorF
-+ilter(getThemedColor(Theme.key_profile_verifiedBackground), PorterDuff.Mode.MULTIPLY));
-             verifiedCheck = getResources().getDrawable(R.drawable.verified_check).mutate();
-             verifiedCheck.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_profile_verifiedCheck), PorterDuff.Mode.MULTIPLY));
-             Drawable verifiedDrawable = new CombinedDrawable(verifiedBackground, verifiedCheck);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
@@ -8528,10 +8519,9 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonQuickReplies.java
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonQuickReplies.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +package org.telegram.ui;
 +
-+import android.view.ViewGroup;
 +import com.futoonpay.admin.ChatToolsBridge;
 +import com.futoonpay.admin.ChatToolsView;
 +import org.telegram.messenger.AndroidUtilities;
@@ -8557,12 +8547,14 @@ new file mode 100644
 +        }, true);
 +        tools.setPanelHeight(Math.min(AndroidUtilities.dp(560), (int) (AndroidUtilities.displaySize.y * .72f)));
 +        sheet[0] = new BottomSheet.Builder(parent.getParentActivity()).setCustomView(tools).create();
-+        sheet[0].setOnDismissListener(dialog -> {
++        if (parent.showDialog(sheet[0], dialog -> {
 +            tools.close();
 +            Runnable action = after[0]; after[0] = null;
-+            if (action != null && UserConfig.getInstance(account).getClientUserId() == owner) AndroidUtilities.runOnUIThread(action, 100);
-+        });
-+        parent.showDialog(sheet[0]); tools.onShown(); return true;
++            if (action != null) AndroidUtilities.runOnUIThread(() -> {
++                if (UserConfig.getInstance(account).getClientUserId() == owner && parent.getParentActivity() != null && parent.getFragmentView() != null && parent.getFragmentView().getWindowToken() != null) action.run();
++            }, 100);
++        }) == null) { tools.close(); return false; }
++        tools.onShown(); return true;
 +    }
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java
