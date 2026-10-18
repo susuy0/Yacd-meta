@@ -1381,7 +1381,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.css b/TMessagesProj/src/
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.css
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,89 @@
 +html,body,#app{margin:0;width:100%;height:100%;min-height:0;overflow:hidden;background:transparent}
 +body{font-family:Roboto,"Noto Sans SC",system-ui,sans-serif!important}
 +.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;max-height:100%;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
@@ -1469,6 +1469,8 @@ new file mode 100644
 +.panel .toolbar.compact .btn{min-width:0;min-height:32px;padding:6px 3px;font-size:12px;white-space:nowrap}
 +.panel .compact-context .btn{min-height:28px;padding:4px 6px;font-size:12px}
 +.page-metrics summary{cursor:pointer;font-size:12px;color:var(--text-2);padding:4px 0}
++
++.panel #kind{min-height:36px;padding-block:6px;font-size:13px}.panel #query{min-height:42px;padding-block:8px}.panel button[data-act="order.search"]{min-height:42px;padding-block:8px}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java b/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java
 deleted file mode 100644
 index 5482ff4..0000000
@@ -9270,7 +9272,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,238 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9340,9 +9342,13 @@ new file mode 100644
 + await page.getByRole('button',{name:'应用筛选',exact:true}).click();
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='orders.search'&&x.params.status==='1'&&x.params.uid==='20418'&&x.params.kind==='AUTO'));
 + assert(!await page.evaluate(()=>testRequests.some(x=>x.op==='orders.list'&&x.params.column==='trade_no')),'filters must not force AUTO to system order');
++ await page.waitForFunction(()=>!Futoon.debugState().busy&&!Futoon.debugState().form);
++ await page.locator('[data-act="order.open"]').first().waitFor();
 + await page.locator('.body').evaluate(el=>el.scrollTop=0);
 + const firstResult=await page.locator('[data-act="order.open"]').first().boundingBox();
 + const resultBody=await page.locator('.body').boundingBox();
++ await page.screenshot({path:qa+'/orders-default-visibility.png'});
++ console.log('Default order geometry',JSON.stringify({firstResult,resultBody}));
 + assert(firstResult.y+firstResult.height<=resultBody.y+resultBody.height+1,'first order must be fully visible at default panel size');
 + await page.screenshot({path:qa+'/orders-light.png'});
 + await page.locator('[data-act="order.open"]').click();await page.getByRole('button',{name:'选择凭证并发送'}).waitFor();
