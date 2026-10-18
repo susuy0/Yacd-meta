@@ -110,7 +110,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     val category = tab?.categories?.find { it.id == categoryId } ?: tab?.categories?.firstOrNull()
     Column(Modifier.fillMaxSize().background(Mist)) {
         PayTopBar(if (picker) "快速回复" else "FutoonPay 设置", bridge::close)
-        if (!picker) PayPills(listOf("tags" to "会话 Tag", "replies" to "快速回复"), page) { page = it }
+        if (!picker) PayPills(listOf("tags" to "会话 Tag", "replies" to "快速回复", "opening" to "开户文案"), page) { page = it }
         if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (editor == null && deletion == null) error?.let { Text(it, color = Danger, modifier = Modifier.padding(12.dp), fontSize = 12.sp) }
         if (data == null && !loading) TextButton(onClick = { refresh++ }) { Text("重新读取设置") }
@@ -128,6 +128,14 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                     }
                 } }
                 if (data.tags.isEmpty()) item { Text("暂无自定义 Tag", color = Muted) }
+            } else if (data != null && !picker && page == "opening") {
+                item { PayCard {
+                    Text("开户成功文案", style = MaterialTheme.typography.titleMedium)
+                    Text("开户成功后填入当前会话输入框，你可以修改后手动发送。D0 对应开启结算，D1 对应不开启结算。", color = Muted, fontSize = 12.sp)
+                    Text("可用变量：" + openingPlaceholders.joinToString("、") { "{$it}" }, color = Muted, fontSize = 12.sp)
+                    Button(enabled = !saving, onClick = { editor = ChatEditor("opening", id = "opening", second = data.openingTemplate) }) { Text("编辑开户文案") }
+                } }
+                item { PayCard { Text(data.openingTemplate, fontSize = 13.sp) } }
             } else if (data != null) {
                 if (data.tabs.isNotEmpty()) item { PayPills(data.tabs.map { it.id to it.title }, tab?.id.orEmpty()) { tabId = it; categoryId = "" } }
                 if (!picker) item { Row {
@@ -173,21 +181,26 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
         var first by remember(current) { mutableStateOf(current.first) }
         var second by remember(current) { mutableStateOf(current.second) }
         var inputError by remember(current) { mutableStateOf<String?>(null) }
-        val kind = when (current.kind) { "tag" -> "Tag"; "tab" -> "Tab"; "category" -> "分类"; else -> "文案" }
+        val kind = when (current.kind) { "tag" -> "Tag"; "tab" -> "Tab"; "category" -> "分类"; "opening" -> "开户文案"; else -> "文案" }
         PaySheet((if (current.id.isBlank()) "新增" else "编辑") + kind, { if (!saving) editor = null }) {
             Column(Modifier.fillMaxSize().padding(16.dp).testTag("chat-tools-editor"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(first, { first = it.take(64) }, label = { Text(if (current.kind == "tag") "Tag 内容" else "名称") }, singleLine = true, modifier = Modifier.fillMaxWidth(), enabled = !saving)
-                if (current.kind == "tag" || current.kind == "reply") OutlinedTextField(second, { second = it.take(if (current.kind == "tag") 2000 else 4096) }, label = { Text(if (current.kind == "tag") "生效 Telegram ID（多个用逗号分隔）" else "回复内容") }, modifier = Modifier.fillMaxWidth(), minLines = if (current.kind == "reply") 3 else 1, maxLines = 6, enabled = !saving)
+                if (current.kind != "opening") OutlinedTextField(first, { first = it.take(64) }, label = { Text(if (current.kind == "tag") "Tag 内容" else "名称") }, singleLine = true, modifier = Modifier.fillMaxWidth(), enabled = !saving)
+                if (current.kind in setOf("tag", "reply", "opening")) OutlinedTextField(second, { second = it.take(if (current.kind == "tag") 2000 else 4096) }, label = { Text(when (current.kind) { "tag" -> "生效 Telegram ID（多个用逗号分隔）"; "opening" -> "开户文案模板"; else -> "回复内容" }) }, modifier = Modifier.fillMaxWidth(), minLines = if (current.kind == "opening") 6 else if (current.kind == "reply") 3 else 1, maxLines = if (current.kind == "opening") 12 else 6, enabled = !saving)
+                if (current.kind == "opening") {
+                    Text(openingPlaceholders.joinToString("、") { "{$it}" }, color = Muted, fontSize = 12.sp)
+                    TextButton(enabled = !saving, onClick = { second = defaultOpeningTemplate }) { Text("恢复默认模板") }
+                }
                 (inputError ?: error)?.let { Text(it, color = Danger, fontSize = 12.sp) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(enabled = !saving, onClick = { editor = null }, modifier = Modifier.weight(1f)) { Text("取消") }
                     Button(enabled = !saving, modifier = Modifier.weight(1f), onClick = {
                         try {
-                            require(first.isNotBlank()) { "请填写名称" }
+                            require(current.kind == "opening" || first.isNotBlank()) { "请填写名称" }
                             fun <T> replace(list: List<T>, id: (T) -> String, value: T) = if (current.id.isBlank()) list + value else list.map { if (id(it) == current.id) value else it }
                             val next = when (current.kind) {
+                                "opening" -> { validateOpeningTemplate(second); data.copy(openingTemplate = second) }
                                 "tag" -> data.copy(tags = replace(data.tags, { it.id }, ChatTag(current.id.ifBlank { java.util.UUID.randomUUID().toString() }, first.trim(), ChatToolsConfig.parseIds(second))))
                                 "tab" -> data.copy(tabs = replace(data.tabs, { it.id }, ReplyTab(current.id.ifBlank { java.util.UUID.randomUUID().toString() }, first.trim(), data.tabs.find { it.id == current.id }?.categories.orEmpty())))
                                 "category" -> data.copy(tabs = data.tabs.map { t -> if (t.id == tab?.id) t.copy(categories = replace(t.categories, { it.id }, ReplyCategory(current.id.ifBlank { java.util.UUID.randomUUID().toString() }, first.trim(), t.categories.find { it.id == current.id }?.replies.orEmpty()))) else t })

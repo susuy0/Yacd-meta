@@ -32,6 +32,7 @@ internal class PanelNavigator : PanelNavigation {
     fun showOrdersForQuery() { tab = "orders"; stacks["orders"] = emptyList() }
     fun showRecognition() { tab = "recognition"; stacks["recognition"] = emptyList() }
     fun openOrder(tradeNo: String) = push(PanelRoute("orders", orderId = tradeNo))
+    fun merchantOpening() = push(PanelRoute("merchant_opening"))
     val current: PanelRoute get() = stacks[tab]?.lastOrNull() ?: roots.getValue(tab)
     fun select(tab: String) { require(tab in roots); this.tab = tab }
     fun pop(): Boolean { val stack = stacks[tab].orEmpty(); if (stack.isEmpty()) return false; stacks[tab] = stack.dropLast(1); return true }

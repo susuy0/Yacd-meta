@@ -119,6 +119,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             if (state.manualMerchant) TextButton(onClick = workflows::lookupAutomatic) { Text("恢复自动识别") }
         }
         if (merchant != null && chat.dialog < 0 && chat.telegramId.isBlank()) TextButton(onClick = workflows::toggleGroupBinding, enabled = !state.localLoading) { Text(if (workflows.binding().isBlank()) "在本群记住此商户" else "解除本群商户绑定") }
+        TextButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp)); Text("商户开户") }
     }
     if (manual) PaySheet("手动查询商户", { manual = false }) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

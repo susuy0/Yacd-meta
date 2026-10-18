@@ -212,6 +212,31 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     val owner = models.owner(modelKey)
     if (route.kind == "recognition") { RecognitionScreen(workflows, merchantActions, chat, navigator, bridge); return }
     if (route.kind == "merchant_records") { MerchantRecordsScreen(route, workflows, back); return }
+    if (route.kind == "merchant_opening") {
+        val address = environment.adminBaseUrl
+        val account = bridge.accountScope()
+        suspend fun callOpening(operation: String, params: String = "{}"): String = withContext(Dispatchers.IO) {
+            check(bridge.address() == address && bridge.accountScope() == account) { "账号或后台已变化，请重新打开开户" }
+            val result = bridge.call(operation, params)
+            check(bridge.address() == address && bridge.accountScope() == account) { "账号或后台已变化，请重新打开开户" }
+            result
+        }
+        val opening: MerchantOpeningViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = MerchantOpeningViewModel(environment.repository, chat,
+                config = { ChatToolsConfig.parse(callOpening("chat.tools.read")) },
+                writeDraft = { text, target ->
+                    val result = JSONObject(callOpening("ui.draft", JSONObject().put("text", text).put("context", target.key).put("dialog", target.dialog.toString()).put("topic", target.topic.toString()).toString()))
+                    check(result.optBoolean("inserted")) { "当前输入框无法写入，请核对会话后重试" }
+                }) as T
+        })
+        val openingState by opening.state.collectAsState()
+        LaunchedEffect(opening) { if (opening.state.value.form == null && opening.state.value.result == null) opening.load() }
+        LaunchedEffect(openingState.result?.uid) {
+            openingState.result?.takeIf { it.uid.isNotBlank() && opening.chat.key == chat.key }?.let { workflows.lookup("uid", it.uid, true, "本次开户") }
+        }
+        MerchantOpeningScreen(opening, chat, back) { navigator.merchants(it) }
+        return
+    }
     if (route.kind == "module") {
         if (PaymentAdminCatalog.contains(route.module)) {
             val model: PaymentAdminViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = PaymentAdminViewModel.Factory(environment.repository, PaymentAdminCatalog.find(route.module), route.channelType, route.channelId, FormDraftStore(androidx.compose.ui.platform.LocalContext.current, bridge.accountScope())))
@@ -254,6 +279,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         val title = when (route.kind) { "orders" -> "订单"; "settlements" -> "结算"; "merchants" -> "商户"; else -> "更多" }
         PayTopBar(title, if (route.kind == "more") null else back) {
             if (route.kind in setOf("orders", "settlements", "merchants")) IconButton(onClick = { if (route.kind == "merchants") merchantTab = "all"; search++ }) { Icon(Icons.Default.Search, "完整搜索") }
+            if (route.kind == "merchants") IconButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, "商户开户") }
             if (route.kind == "more") IconButton(onClick = { navigator.push(PanelRoute("settings")) }) { Icon(Icons.Default.Settings, "后台设置") }
         }
         lookupError?.let { Text(it, color = Danger, modifier = Modifier.padding(12.dp)) }

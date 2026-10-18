@@ -6456,7 +6456,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          super.onFragmentDestroy();
          if (messageMetricsView != null) {
              messageMetricsView.finish();
-@@ -3611,6 +3614,41 @@
+@@ -3611,6 +3614,46 @@
      }
  
      private Runnable justForTest;
@@ -6465,6 +6465,11 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
 +
 +    public String futoonTelegramId() {
 +        return org.telegram.messenger.futoon.FutoonChatPreferences.peerId(currentUser == null ? 0 : currentUser.id, isTopic && forumTopic != null ? forumTopic.title : null);
++    }
++
++    public boolean futoonInsertDraft(String text, long targetDialog, long targetTopic) {
++        if (dialog_id != targetDialog || getTopicId() != targetTopic || chatActivityEnterView == null) return false;
++        return chatActivityEnterView.insertFutoonDraft(text, targetDialog, targetTopic);
 +    }
 +
 +    public void bindFutoonContext() {
@@ -6498,7 +6503,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
  
      @Override
      public View createView(Context context) {
-@@ -3737,6 +3775,21 @@
+@@ -3737,6 +3780,21 @@
          actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
              @Override
              public void onItemClick(final int id) {
@@ -6520,7 +6525,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                  if (id == -1) {
                      if (isInPollAddOptionMode()) {
                          pollAddOptionModeClose();
-@@ -4309,7 +4362,7 @@
+@@ -4309,7 +4367,7 @@
                  audioCallIconItem = menu.lazilyAddItem(call, R.drawable.call, themeDelegate);
                  audioCallIconItem.setContentDescription(LocaleController.getString(R.string.Call));
                  userFull = getMessagesController().getUserFull(currentUser.id);
@@ -6529,7 +6534,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                      showAudioCallAsIcon = !inPreviewMode;
                      audioCallIconItem.setVisibility(View.VISIBLE);
                  } else {
-@@ -4448,7 +4501,7 @@
+@@ -4448,7 +4506,7 @@
              if (currentUser != null && chatMode != MODE_SAVED) {
                  headerItem.lazilyAddSubItem(call, R.drawable.msg_callback, LocaleController.getString(R.string.Call));
                  headerItem.lazilyAddSubItem(video_call, R.drawable.msg_videocall, LocaleController.getString(R.string.VideoCall));
@@ -6538,7 +6543,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                      headerItem.showSubItem(call);
                      if (userFull.video_calls_available) {
                          headerItem.showSubItem(video_call);
-@@ -4541,6 +4594,9 @@
+@@ -4541,6 +4599,9 @@
              headerItem.lazilyAddSubItem(share_business_link, R.drawable.msg_share, getString(R.string.LinkActionShare));
              headerItem.lazilyAddSubItem(rename_business_link, R.drawable.msg_edit, getString(R.string.Rename));
              headerItem.lazilyAddSubItem(delete_business_link, R.drawable.msg_delete, getString(R.string.Delete)).setColors(Theme.getColor(Theme.key_text_RedRegular), Theme.getColor(Theme.key_text_RedRegular));
@@ -6548,7 +6553,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          }
          if (ChatObject.isForum(currentChat) && isTopic && getParentLayout() != null && getParentLayout().getFragmentStack() != null && chatMode == MODE_DEFAULT) {
              boolean hasMyForum = false;
-@@ -8093,7 +8149,7 @@
+@@ -8093,7 +8154,7 @@
          } else {
              chatActivityEnterView.setDelegate(new ChatActivityEnterViewDelegate());
          }
@@ -6557,7 +6562,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              chatActivityEnterView.setSideButtonsForAttach(sideControlsButtonsLayout);
          }
          chatActivityEnterView.setInAppInsetsController(windowInsetsStateHolder);
-@@ -8757,6 +8813,11 @@
+@@ -8757,6 +8818,11 @@
              }
          });
  
@@ -6569,7 +6574,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          View overlay = textSelectionHelper.getOverlayView(context);
          if (overlay != null) {
              if (overlay.getParent() instanceof ViewGroup) {
-@@ -9022,6 +9083,10 @@
+@@ -9022,6 +9088,10 @@
          onBottomItemsVisibilityChanged();
          ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
          Timer.finish(t);
@@ -6580,7 +6585,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
  
          return fragmentView;
      }
-@@ -9091,6 +9156,7 @@
+@@ -9091,6 +9161,7 @@
          }
  
          windowInsetsStateHolder.setInsets(insets);
@@ -6588,7 +6593,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          
          if (messagesSearchListContainer != null) {
              messagesSearchListContainer.setPadding(insetsLeft, 0, insetsRight, 0);
-@@ -10373,6 +10439,9 @@
+@@ -10373,6 +10444,9 @@
          actionMode.setOnLayoutListener(actionBar::invalidate);
  
          if (currentEncryptedChat == null) {
@@ -6598,7 +6603,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              final boolean isSavedMessages = getDialogId() == getUserConfig().getClientUserId() && (chatMode == 0 || chatMode == MODE_SAVED);
              actionModeViews.add(actionMode.addItemWithWidth(save_to, R.drawable.msg_download, dp(48), LocaleController.getString(R.string.SaveToMusic)));
              actionModeViews.add(actionMode.addItemWithWidth(edit, R.drawable.msg_edit, dp(48), LocaleController.getString(R.string.Edit)));
-@@ -18409,7 +18478,7 @@
+@@ -18409,7 +18483,7 @@
                      TLRPC.UserFull userInfo = getCurrentUserInfo();
                      if (showAudioCallAsIcon) {
                          headerItem.hideSubItem(call);
@@ -6607,7 +6612,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                          headerItem.showSubItem(call, true);
                      }
                  }
-@@ -18571,6 +18640,13 @@
+@@ -18571,6 +18645,13 @@
                      int h = allHeight - AndroidUtilities.statusBarHeight - AndroidUtilities.navigationBarHeight;
                      int contentHeightSpec = View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY);
                      child.measure(contentWidthSpec, contentHeightSpec);
@@ -6621,7 +6626,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                  } else if (child == topicsTabs) {
                      int height = allHeight;
                      if (actionBar.getVisibility() == VISIBLE) {
-@@ -19867,6 +19943,7 @@
+@@ -19867,6 +19948,7 @@
              if (a == photoPathes.size() - 1 && caption != null) {
                  entry.caption = caption;
              }
@@ -6629,7 +6634,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              entries.add(entry);
          }
  
-@@ -20417,6 +20494,7 @@
+@@ -20417,6 +20499,7 @@
  
      @Override
      public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
@@ -6637,7 +6642,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          if (resultCode == Activity.RESULT_OK) {
              if (requestCode == 0 || requestCode == 2) {
                  createChatAttachView();
-@@ -24051,8 +24129,8 @@
+@@ -24051,8 +24134,8 @@
                      }
                  }
                  if (headerItem != null) {
@@ -6648,7 +6653,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                          if (showAudioCallAsIcon) {
                              if (audioCallIconItem != null) {
                                  View item = audioCallIconItem.createView();
-@@ -29796,7 +29874,7 @@
+@@ -29796,7 +29879,7 @@
          super.setInPreviewMode(value);
          if (currentUser != null && audioCallIconItem != null) {
              TLRPC.UserFull userFull = getMessagesController().getUserFull(currentUser.id);
@@ -6657,7 +6662,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                  showAudioCallAsIcon = !inPreviewMode;
                  audioCallIconItem.setVisibility(View.VISIBLE);
              } else {
-@@ -29880,6 +29958,8 @@
+@@ -29880,6 +29963,8 @@
      @Override
      public void onResume() {
          super.onResume();
@@ -6666,7 +6671,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          checkShowBlur(false);
          activityResumeTime = System.currentTimeMillis();
          if (openImport && getSendMessagesHelper().getImportingHistory(dialog_id) != null) {
-@@ -30091,6 +30171,7 @@
+@@ -30091,6 +30176,7 @@
  
      @Override
      public void onPause() {
@@ -6674,7 +6679,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          super.onPause();
          scrolling = false;
          if (scrimPopupWindow != null) {
-@@ -31010,6 +31091,17 @@
+@@ -31010,6 +31096,17 @@
              final ArrayList<Integer> options = new ArrayList<>();
              View optionsView = null;
  
@@ -6692,7 +6697,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              if (AndroidUtilities.isAccessibilityScreenReaderEnabled() && message.messageOwner != null && message.messageOwner.from_id != null && message.messageOwner.from_id.user_id != getUserConfig().clientUserId && chatMode != MODE_SAVED) {
                  items.add(LocaleController.getString(R.string.OpenProfile));
                  options.add(OPTION_OPEN_PROFILE);
-@@ -33425,6 +33517,18 @@
+@@ -33425,6 +33522,18 @@
          }
          boolean preserveDim = false;
          switch (option) {
@@ -6711,7 +6716,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              case OPTION_RETRY: {
                  final MessageObject object = selectedObject;
                  final MessageObject.GroupedMessages group = selectedObjectGroup;
-@@ -34734,6 +34838,7 @@
+@@ -34734,6 +34843,7 @@
  
      @Override
      public boolean onBackPressed(boolean invoked) {
@@ -6719,7 +6724,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          final Bulletin bulletin = Bulletin.getVisibleBulletin();
          if (bulletin != null && bulletin.getLayout() instanceof Bulletin.LottieLayoutWithReactions) {
              if (invoked) {
-@@ -47483,3 +47588,4 @@
+@@ -47483,3 +47593,4 @@
          abstract void drawChatForegroundElements(Canvas canvas, @Nullable RectF position);
      }
  }
@@ -6768,12 +6773,29 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4777,7 +4781,31 @@
+@@ -4777,7 +4781,48 @@
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
 +    private boolean isFutoonComposer() {
 +        return org.telegram.messenger.BuildVars.FUTOON_LITE && parentFragment != null && !isStories && !isLiveComment;
++    }
++
++    /** Inserts account-opening information as an editable draft; never invokes a send action. */
++    public boolean insertFutoonDraft(String text, long targetDialog, long targetTopic) {
++        if (!isFutoonComposer() || text == null || text.isEmpty() || dialog_id != targetDialog || parentFragment.getTopicId() != targetTopic || editingMessageObject != null || isInScheduleMode() || parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || getWindowToken() == null || messageEditText == null || getVisibility() != VISIBLE) return false;
++        final long owner = UserConfig.getInstance(currentAccount).getClientUserId();
++        android.text.Editable draft = messageEditText.getText();
++        int start = Math.min(Math.max(0, messageEditText.getSelectionStart()), draft.length());
++        int end = Math.min(Math.max(start, messageEditText.getSelectionEnd()), draft.length());
++        if (draft.length() - (end - start) + text.length() > 4096) return false;
++        draft.replace(start, end, text);
++        messageEditText.setSelection(start + text.length());
++        messageEditText.requestFocus(); checkSendButton(true);
++        postDelayed(() -> {
++            if (parentFragment != null && dialog_id == targetDialog && parentFragment.getTopicId() == targetTopic && getWindowToken() != null && editingMessageObject == null && UserConfig.getInstance(currentAccount).getClientUserId() == owner) openKeyboard();
++        }, 120);
++        return true;
 +    }
 +
      private boolean onSendLongClick(View view) {
@@ -6800,7 +6822,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -8114,7 +8142,7 @@
+@@ -8114,7 +8159,7 @@
                      }
                  }
              }
@@ -6809,7 +6831,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8153,14 @@
+@@ -8125,14 +8170,14 @@
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }
@@ -7890,7 +7912,7 @@ index 55d530f..8913fb4 100644
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7187
++APP_VERSION_CODE=7188
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
@@ -8072,7 +8094,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,225 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -8239,6 +8261,14 @@ new file mode 100644
 +    private String nativeCall(String operation,JSONObject params)throws Exception{
 +        if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");
 +        final String backend=store.address();final int requestGeneration=generation;
++        if(operation.equals("chat.tools.read"))return FutoonChatPreferences.get(account).raw();
++        if(operation.equals("ui.draft"))return onUi(requestGeneration,backend,()->{
++            String key=account+":"+dialogId+":"+topicId+":"+context.optString("tgid");
++            if(paused||!key.equals(params.optString("context"))||dialogId!=params.optLong("dialog")||topicId!=params.optLong("topic"))throw new IOException("当前会话已变化，请返回原会话填入文案");
++            String text=params.optString("text");
++            if(text.isEmpty()||text.length()>4096||!host.futoonInsertDraft(text,dialogId,topicId))throw new IOException("当前输入框不可用或内容过长，请核对后重试");
++            collapse();return new JSONObject().put("inserted",true).toString();
++        });
 +        if(operation.equals("recognize")){
 +            JSONArray items=new JSONArray();for(FutoonQuery query:FutoonQuery.extract(params.optString("text")))items.put(new JSONObject().put("kind",query.kind.name()).put("value",query.value).put("label",FutoonQuery.label(query.kind)));return items.toString();
 +        }

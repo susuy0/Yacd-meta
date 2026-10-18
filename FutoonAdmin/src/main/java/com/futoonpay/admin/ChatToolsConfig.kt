@@ -10,10 +10,10 @@ data class ReplyCategory(val id: String = UUID.randomUUID().toString(), val titl
 data class ReplyTab(val id: String = UUID.randomUUID().toString(), val title: String, val categories: List<ReplyCategory> = emptyList())
 
 /** Local chat preferences, independent of payment backend credentials and financial operations. */
-data class ChatToolsConfig(val tags: List<ChatTag> = emptyList(), val tabs: List<ReplyTab> = emptyList()) {
+data class ChatToolsConfig(val tags: List<ChatTag> = emptyList(), val tabs: List<ReplyTab> = emptyList(), val openingTemplate: String = defaultOpeningTemplate) {
     private val tagIndex by lazy { buildMap<String, MutableList<String>> { tags.forEach { tag -> tag.telegramIds.forEach { id -> getOrPut(id) { mutableListOf() }.add(tag.text) } } } }
     fun tagFor(telegramId: String): String = tagIndex[telegramId]?.distinct()?.joinToString(" · ").orEmpty()
-    fun json(): String = JSONObject().put("version", 1)
+    fun json(): String = JSONObject().put("version", 1).put("openingTemplate", openingTemplate)
         .put("tags", JSONArray(tags.map { tag -> JSONObject().put("id", tag.id).put("text", tag.text).put("telegramIds", JSONArray(tag.telegramIds)) }))
         .put("tabs", JSONArray(tabs.map { tab -> JSONObject().put("id", tab.id).put("title", tab.title).put("categories", JSONArray(tab.categories.map { category ->
             JSONObject().put("id", category.id).put("title", category.title).put("replies", JSONArray(category.replies.map { reply -> JSONObject().put("id", reply.id).put("title", reply.title).put("body", reply.body) }))
@@ -46,7 +46,9 @@ data class ChatToolsConfig(val tags: List<ChatTag> = emptyList(), val tabs: List
             }) }
             val ids = tags.map { it.id } + tabs.flatMap { listOf(it.id) + it.categories.flatMap { c -> listOf(c.id) + c.replies.map { r -> r.id } } }
             require(ids.distinct().size == ids.size) { "设置中存在重复项目标识" }
-            return ChatToolsConfig(tags, tabs)
+            val openingTemplate = root.optString("openingTemplate", defaultOpeningTemplate)
+            validateOpeningTemplate(openingTemplate)
+            return ChatToolsConfig(tags, tabs, openingTemplate)
         }
     }
 }

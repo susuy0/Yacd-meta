@@ -112,7 +112,6 @@
     "src/main/java/com/futoonpay/admin/data/BackendAddress.kt": "8109d60bfb6919715d84723ace50efb1435aeddd0c7c3d7032bf237b896bb6b6",
     "src/main/java/com/futoonpay/admin/data/RollGroupPresentation.kt": "f646c869c44bd79995ad51798ef1c6fd90f2c599fc6805eeb97d8c869cb0a155",
     "src/main/java/com/futoonpay/admin/data/OrderPageMetrics.kt": "bbafea376500ed23285ce3f5760e8e04d5adea24fa135654cec6ac9978305c4a",
-    "src/main/java/com/futoonpay/admin/data/FutoonApiClient.kt": "16bc4394ddafda9ba182627c3958f73db5f620fed8bdf4d292cb206f97db6aaa",
     "src/main/java/com/futoonpay/admin/data/AdminEndpointStore.kt": "96330038062c0256c0a3000fc4d1e9d810da70bb7bdbbb7fd71da7a26664e167",
     "src/main/java/com/futoonpay/admin/data/ChannelMonitorPresentation.kt": "1451cd3a93c0bfcea760072143907a587730f9d27ad710c35e3e246407e6769b",
     "src/main/java/com/futoonpay/admin/data/OrderChannelStats.kt": "a00ca2fa1a8a04ce098880dd6fdeca2b791c752110e8fd1ac0b92d11164c837d",

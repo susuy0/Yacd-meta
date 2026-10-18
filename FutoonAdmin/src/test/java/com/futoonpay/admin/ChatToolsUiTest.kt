@@ -69,6 +69,17 @@ class ChatToolsUiTest {
         assertEquals("", bridge.inserted)
         screenshot("27-futoon-quick-reply-settings")
     }
+    @Test fun openingTemplateCanBeEditedWithoutLosingTagsOrQuickReplies() {
+        bridge.saved = ChatToolsConfig(tags = listOf(ChatTag(text = "VIP", telegramIds = listOf("5824870757"))), tabs = listOf(ReplyTab(title = "查单"))).json()
+        root(); compose.onNodeWithText("开户文案").performClick()
+        compose.onNodeWithText("编辑开户文案").performClick()
+        val custom = "用户 {商户ID}\n密钥 {密钥}\n周期 {结算周期}\n{绑定链接}"
+        compose.onNode(hasSetTextAction() and hasText("开户文案模板")).performTextReplacement(custom)
+        save()
+        val saved = ChatToolsConfig.parse(bridge.saved)
+        assertEquals(custom, saved.openingTemplate); assertEquals("VIP", saved.tagFor("5824870757")); assertEquals("查单", saved.tabs.single().title)
+        assertEquals("", bridge.inserted)
+    }
     @Test fun pickerSwitchesTabsAndCategoriesAndOnlyReturnsEditableDraftText() {
         bridge.saved = ChatToolsConfig(tabs = listOf(
             ReplyTab(title = "查单", categories = listOf(ReplyCategory(title = "付款", replies = listOf(QuickReply(title = "凭证", body = "请提供付款凭证"))))),

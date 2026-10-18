@@ -63,6 +63,28 @@ class FutoonRepository(
     suspend fun sessionIsValid() = api.sessionIsValid()
     suspend fun logout() = api.logout()
 
+    internal suspend fun merchantOpening(): NativeForm = merchantOpeningForm(api.document(MERCHANT_OPENING_PAGE))
+
+    internal suspend fun openMerchant(reviewed: NativeForm): MerchantOpeningResult {
+        val fields = merchantOpeningSubmission(reviewed, merchantOpening())
+        val email = fields["email"].orEmpty().trim()
+        if (email.isNotBlank()) {
+            val matches = api.page("ajax_user.php?act=userList", "ulist.php", 1, PAGE_SIZE, mapOf("column" to "email", "value" to email)).rows().objectRows()
+                .filter { it.text("email").trim().equals(email, true) }
+            if (matches.isNotEmpty()) return MerchantOpeningResult(OpeningOutcome.REJECTED, message = "该邮箱已关联商户 PID ${matches.joinToString { it.text("uid") }}，请核对后操作")
+        }
+        return try {
+            merchantOpeningResult(api.jsonPost(MERCHANT_OPENING_ACTION, MERCHANT_OPENING_PAGE, fields, once = true))
+        } catch (error: kotlinx.coroutines.CancellationException) { throw error }
+        catch (_: PermissionDeniedException) { MerchantOpeningResult(OpeningOutcome.REJECTED, message = "没有开户权限，请核对后台权限") }
+        catch (_: Exception) { MerchantOpeningResult(OpeningOutcome.UNCERTAIN, message = "请求已提交，但未收到明确结果。请先查询商户，勿重复开户") }
+    }
+
+    internal suspend fun merchantBinding(uid: String): String {
+        require(uid.matches(Regex("[1-9][0-9]{0,18}")) && uid.toLongOrNull() != null) { "无效商户 ID" }
+        return merchantBindingLink(api.jsonGet("ajax_user.php?act=bind", "ulist.php", mapOf("uid" to uid)))
+    }
+
     suspend fun merchantProfile(uid: String): NativeForm =
         merchantProfileForm(api.document("uset.php?my=edit&uid=$uid"), uid)
 

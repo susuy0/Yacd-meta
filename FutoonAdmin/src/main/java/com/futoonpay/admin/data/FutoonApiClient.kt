@@ -176,11 +176,18 @@ class FutoonApiClient(
         endpoint: String,
         referer: String,
         fields: Map<String, String>,
+        once: Boolean = false,
     ): JSONObject = withContext(Dispatchers.IO) {
-        val body = FormBody.Builder().apply { fields.forEach { (key, value) -> add(key, value) } }.build()
+        val form = FormBody.Builder().apply { fields.forEach { (key, value) -> add(key, value) } }.build()
+        val body = if (!once) form else object : okhttp3.RequestBody() {
+            override fun contentType() = form.contentType()
+            override fun contentLength() = form.contentLength()
+            override fun isOneShot() = true
+            override fun writeTo(sink: okio.BufferedSink) = form.writeTo(sink)
+        }
         executeJson(
             Request.Builder().url(resolve(endpoint)).header("Referer", resolve(referer).toString())
-                .post(body).build()
+                .post(body).build(), once
         )
     }
 
@@ -250,7 +257,8 @@ class FutoonApiClient(
         }
     }
 
-    private fun executeJson(request: Request): JSONObject = execute(request).use { response ->
+    private fun executeJson(request: Request, once: Boolean = false): JSONObject =
+        (if (once) client.newBuilder().retryOnConnectionFailure(false).followRedirects(false).followSslRedirects(false).build().newCall(request).execute() else execute(request)).use { response ->
         if (response.code == 401) expireSession()
         if (response.code == 403) throw PermissionDeniedException()
         if (!response.isSuccessful) throw IOException("请求失败（${response.code}）")
