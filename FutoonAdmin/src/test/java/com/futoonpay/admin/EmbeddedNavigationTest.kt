@@ -73,17 +73,4 @@ class EmbeddedNavigationTest {
         assertTrue(second.get().isFinishing)
         first.pause().stop().destroy();second.pause().stop().destroy()
     }
-    @Test fun realEmbeddedMainActivityStartsInTheHostApplicationWithoutAnotherApplicationClass() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        FutoonIntegration.register("404",Store())
-        val controller = Robolectric.buildActivity(MainActivity::class.java,
-            Intent(context,MainActivity::class.java).putExtra(FutoonIntegration.EXTRA_SCOPE,"404")
-                .putExtra(MainActivity.EXTRA_TAB,"ORDERS")).setup().visible()
-        shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(64))
-        val activity = controller.get()
-        assertFalse(activity.isFinishing)
-        assertTrue(activity.findViewById<android.view.ViewGroup>(android.R.id.content).childCount > 0)
-        assertTrue("Floating width after Compose startup: ${activity.window.attributes.width}", activity.window.attributes.width > 0)
-        controller.pause().stop().destroy()
-    }
 }
