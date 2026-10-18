@@ -1,58 +1,61 @@
-VineChat Futoon v0.3.2 panel audit
+VineChat FUTOON v0.7.0 native floating panel
 
-Observed screenshots:
-- A manual lookup action stretched to fill the content column.
-- Footer actions and navigation were clipped below the physical screen.
-- The unrecognized merchant state appeared twice.
+Source: 05256ea37418942da8c5a105d8eb0b8fa2ee6d65
+CI run: 39112840793
 
-Source findings and final changes:
-ChatActivity custom measurement gave the added MATCH_PARENT child the full
-parent height, then custom layout placed it below the action bar. The panel
-now uses parent height minus that offset and the current max system/IME inset.
-FutoonPanelLayout is used directly by the native container and sheet sizing.
-The sheet's preferred minimum can no longer overflow short available space.
-The root clips its children, including zero-height available windows.
+Integration:
+- Five independent native tabs: recognition, orders, merchants, settlements, More.
+- Original FUTOON PAY Android 1.3.4 business forms and validation remain embedded
+  inside the floating panel. No business WebView, HTML assets, or standalone
+  admin Activity is used.
+- Original v0.5 candidate extraction, exact search, message origins, history,
+  favorites, drafts, group binding and merchant lookup are adapted to Compose.
+- A uniquely recognized merchant opens the original native editor directly.
+  Tests verify the submitted UID, manual/automatic lookup and duplicate TGIDs.
+- Receipt assistance preserves order information and lets the user select
+  photos, edit the caption and manually choose recipients in Telegram preview.
+  The supplement template means payment-evidence assistance; it never invokes
+  fillorder or changes payment status. Tests assert the image and caption
+  payload and prohibit these backend mutations.
+- Receipt thumbnails are decoded off the UI thread with bounded dimensions.
+  They are not recycled while Compose display lists can still reference them.
+- History selection supersedes an in-flight query without retaining its running
+  state or allowing an old response to replace the new results.
 
-The shared prototype block-button flex rule grew vertically in a column.
-Direct content buttons no longer grow, and the primary manual lookup action
-is in the fixed footer. Header labels and buttons fit narrow widths. The
-unrecognized group state is compact and does not repeat its source badge.
+Validation completed:
+- 193 native business and Compose/Robolectric tests; zero failed, skipped, errors.
+- Android Lint: zero errors/fatal issues; 27 warnings remain in ported code.
+- 132 Java query/HTTP/identity/monitor/editor contract checks.
+- 45 native geometry checks, including IME, landscape and short windows.
+- Startup null-tab regression and AndroidX callback compatibility, including
+  negative controls that reproduce the original failures.
+- 25 native UI screenshots. The recognition page has its direct merchant edit,
+  query types, OCR entry and fixed footer visible at a 390x650 dp panel size.
+  The 350 dp keyboard-sized panel retains query actions. Receipt preview draws
+  a real fixture bitmap and includes system/merchant/channel order IDs, PID and
+  amount with the editable supplement caption.
+- Existing order, settlement, monitor, route/payment editor, merchant profile,
+  balance and batch regressions are retained.
+- Native panel pause/reopen/destroy lifecycle and independent navigation stacks.
+- Legacy local JSON, per-message origins, stale responses, failed retry, queued
+  cancellation, actual delivery-ack parsing and CSV escaping.
 
-Manual query labels clearly say Query merchant. Invalid identifiers are
-rejected, no-match retains the form and input, and focused Cancel works in one
-click, including return from an unsuccessful ordinary-group lookup. Dirty form discard returns to the requested tab. Back restores scroll.
-Login retains transient password/captcha input through asynchronous renders,
-clears passwords after successful login, and clears backend business state on
-logout/change. Search fields support Enter without submitting financial forms.
+Full Android build and component audit: passed.
+Host Java compilation: 2m38s. Native/R8/APK: 9m46s.
+APK: 40,996,544 bytes; ARM64; versionCode 71849; minSdk 23 / targetSdk 36.
+SHA-256: 8307844cb1059a7aca764df181b7b7bed161bfe20030cff9adafb95d01f0b5d9
+APK v2 signature/content digest, ZIP CRC, artifact digest and checksums verified.
+Signer SHA-256: a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab
+Signing identity is unchanged from prior builds. Business web assets and standalone
+admin Activities are absent. Call/contact services, contact/audio-record permissions
+and call/record native exports are absent; voice playback decoder exports remain.
+Final R8 mapping retains recognition, current-merchant actions, receipt workflow,
+original orders/settlements/More and all original native admin module entry points.
+Mapping and removed-Java reports are retained in the build artifact.
 
-Updates coalesce per animation frame. Identical markup does not rebuild the
-DOM. Input focus, selection and content scroll are preserved. Keyboard-sized
-viewport changes reveal the focused input. Notices sit above footer actions
-and are cleared when navigating to another chat.
-
-Native image previews use Telegram's bounded, orientation-aware decoder and
-preserve alpha. Original receipt files remain the sending source. Native image
-picker, editor and restore callbacks guard conversation generations and file
-identity; failed picker launches release the pending request. Destroy tolerates
-an already-detached root. These native image paths received source review and
-Java compilation, not device instrumentation tests.
-
-Validation scope:
-- 132 business/query/identity/monitor/editor checks with local HTTP fixtures.
-- 45 native geometry checks, including portrait, landscape, system bars, IME,
-  very short windows, and the previous MATCH_PARENT overshoot condition.
-- Startup color regression, including an original-crash negative control.
-- Browser UI regressions for merchant/order/balance/receipts/OCR/batch,
-  channels/monitor/routes/plugins/dark theme, plus ordinary group/no match,
-  focused Cancel, dirty navigation, captcha/password retention, unchanged DOM,
-  notices, and 393x712, 393x416, 320x330, 844x240 layouts.
-- Generated ordinary-group, manual-query and login screenshots were inspected.
-
-No real merchant financial operation or Telegram send was performed.
-No real-device launch, FPS benchmark, or Android IME instrumentation was run.
-
-Final build: 39085180973 (success). Source: 78134f529ed3c8b8b320db8cfaa069c894935d60.
-Java compile 1m43s; native/R8/APK 8m15s. Removed-component audit passed.
-APK v2 signature/content digest, ZIP CRC and checksums verified. Package and
-signing certificate match v0.3.1. VersionCode 71799. All 5 Futoon assets match
-the source tested by browser CI. APK size 39,735,876 bytes (37.9 MiB).
+Limits:
+Fixtures do not connect to a live payment backend or send Telegram messages.
+OCR/QR/gallery, Telegram recipient selection and actual network delivery require
+real-device verification. Robolectric SDK 35 and source/JVM geometry tests do not
+replace Android 17 instrumentation or an FPS/memory benchmark. FCM is not
+configured; this remains a development-no-fcm test build.

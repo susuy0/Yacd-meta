@@ -24,6 +24,8 @@ Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / �
 
 上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71849`，ARM64，minSdk 23 / targetSdk 36。
 
+本轮源码 `05256ea37418942da8c5a105d8eb0b8fa2ee6d65` 的 [CI 构建 39112840793](https://github.com/susuy0/Yacd-meta/actions/runs/39112840793) 已通过：193 项原生测试、132 项业务契约、45 项几何检查；Lint 0 错误 / 27 警告，生成 25 张回归截图。完整宿主 Java、原生库、R8、APK 和已移除组件审计全部通过。最终 APK 40,996,544 字节，沿用原签名，v2 签名与哈希均已核验。
+
 逐项范围见 `NATIVE-PORT-CHECKLIST.md`，最终构建证据见 `BUILD.json`。CI 包含原业务测试、完整原生交互回归、Lint、宿主 Java、原生库、APK 和已移除组件审计。
 
 测试使用固定响应，不连接真实付款后台，不执行真实资金操作或 Telegram 消息发送。真机和实际后台尚未联调；未配置 FCM 时构建为 development-no-fcm 测试包。

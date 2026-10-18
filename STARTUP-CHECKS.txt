@@ -1,3 +1,20 @@
+VineChat FUTOON v0.7.0 startup verification
+
+Current source: 05256ea37418942da8c5a105d8eb0b8fa2ee6d65
+Current CI run: 39112840793
+
+The original null-tab color-refresh fix remains in the current patch.
+The actual source-body JVM regression and its negative control passed again:
+removing the guard reproduces the reported NullPointerException. The separate
+AndroidX leave-hint compatibility regression and its negative control passed.
+Full Telegram host Java compilation also passed for this source.
+
+This is source/JVM verification, not a logged-in Android 17 device launch.
+Current full build passed. APK versionCode 71849, unchanged signing certificate,
+APK v2 signature/content digest and ZIP CRC are verified; evidence is in BUILD.json.
+
+Historical incident analysis and verification of the original v0.3.1 fix:
+
 VineChat Futoon v0.3.1 startup regression
 
 Reported package: com.futoonpay.vinechat.beta, versionCode 71779
