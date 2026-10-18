@@ -18,7 +18,7 @@
     "src/main/java/com/futoonpay/admin/ui/CoreScreens.kt",
     "src/main/java/com/futoonpay/admin/ui/ModernShell.kt"
   ],
-  "patch_sha256": "57784d179e25d293aff693c7168cdeb851661764ea6bfdfef7b9f78f7f68c29f",
+  "patch_sha256": "7e514dee1fc6497c2d343c724c00c1c0062b94c4ca6d71810b0ebc82e5017075",
   "validation": {
     "original_native_tests": "pending CI",
     "embedded_session_and_navigation": "pending CI",

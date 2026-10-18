@@ -18,13 +18,14 @@ class ScopeProbeActivity : EmbeddedAdminActivity()
 @Config(sdk = [35], application = Application::class)
 class EmbeddedNavigationTest {
     private class Store(var active: Boolean = true) : FutoonIntegration.Store {
+        var preparedOrder = ""
         override fun isActive() = active
         override fun address() = ""
         override fun setAddress(address: String) {}
         override fun loadCookies(address: String) = ""
         override fun saveCookies(address: String, cookies: String) {}
         override fun clearCookies(address: String) {}
-        override fun prepareEvidence(tradeNo: String, merchantTradeNo: String, merchantId: String, amount: String, currency: String) {}
+        override fun prepareEvidence(tradeNo: String, merchantTradeNo: String, merchantId: String, amount: String, currency: String) { preparedOrder = tradeNo }
     }
     @Test fun nestedNativeActivitiesKeepTheOriginatingTelegramIdentity() {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -51,5 +52,19 @@ class EmbeddedNavigationTest {
             Intent(context,ScopeProbeActivity::class.java).putExtra(FutoonIntegration.EXTRA_SCOPE,"999")).create()
         assertTrue(missing.get().isFinishing)
         restored.pause().stop().destroy(); missing.destroy()
+    }
+    @Test fun evidenceFromNestedOrdersReturnsThroughTheWholeNativeStack() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = Store()
+        FutoonIntegration.register("303",store)
+        val first = Robolectric.buildActivity(ScopeProbeActivity::class.java,
+            Intent(context,ScopeProbeActivity::class.java).putExtra(FutoonIntegration.EXTRA_SCOPE,"303")).setup()
+        val second = Robolectric.buildActivity(ScopeProbeActivity::class.java,
+            Intent(context,ScopeProbeActivity::class.java).putExtra(FutoonIntegration.EXTRA_SCOPE,"303")).setup()
+        FutoonIntegration.prepareEvidence(second.get(),"ORDER303","SHOP303","3","30.00","CNY")
+        assertEquals("ORDER303",store.preparedOrder)
+        assertTrue(first.get().isFinishing)
+        assertTrue(second.get().isFinishing)
+        first.pause().stop().destroy();second.pause().stop().destroy()
     }
 }

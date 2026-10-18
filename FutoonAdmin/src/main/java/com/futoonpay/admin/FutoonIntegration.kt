@@ -18,6 +18,7 @@ import okhttp3.HttpUrl
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.lang.ref.WeakReference
 
 /** Only the host integration changes; screens and PHP repository come from version 1.3.4. */
 object FutoonIntegration {
@@ -34,6 +35,7 @@ object FutoonIntegration {
     fun interface Restorer { fun restore(scope: String): Store? }
     private val stores = mutableMapOf<String, Store>()
     private val environments = mutableMapOf<String, EmbeddedEnvironment>()
+    private val activities = mutableMapOf<String, MutableList<WeakReference<Activity>>>()
     private var restorer: Restorer? = null
     @JvmStatic fun setRestorer(value: Restorer) { restorer = value }
     @JvmStatic @Synchronized fun register(scope: String, store: Store) {
@@ -48,6 +50,14 @@ object FutoonIntegration {
         else -> null
     }
     fun isEmbedded(context: Context) = scope(context) != null
+    internal fun track(activity: Activity) {
+        val owner = scope(activity) ?: return
+        activities.getOrPut(owner) { mutableListOf() }.add(WeakReference(activity))
+    }
+    internal fun untrack(activity: Activity) {
+        activities.values.forEach { refs -> refs.removeAll { it.get() == null || it.get() === activity } }
+        activities.entries.removeAll { it.value.isEmpty() }
+    }
     @Synchronized fun environment(context: Context): FutoonEnvironment {
         val scope = scope(context) ?: error("请从 Telegram 中打开富通管理")
         val store = store(scope)?.takeIf { it.isActive() } ?: error("Telegram 账号已退出，请重新打开")
@@ -55,10 +65,10 @@ object FutoonIntegration {
     }
     fun prepareEvidence(context: Context, tradeNo: String, merchantTradeNo: String, merchantId: String, amount: String, currency: String) {
         val scope = scope(context) ?: return
-        store(scope)?.takeIf { it.isActive() }?.prepareEvidence(tradeNo, merchantTradeNo, merchantId, amount, currency)
-        var current: Context = context
-        while (current is ContextWrapper && current !is Activity) current = current.baseContext
-        (current as? Activity)?.finish()
+        val target = store(scope)?.takeIf { it.isActive() } ?: return
+        target.prepareEvidence(tradeNo, merchantTradeNo, merchantId, amount, currency)
+        // Channel details can launch another native order page. Close that whole native stack.
+        activities[scope]?.mapNotNull { it.get() }?.toList()?.forEach { it.finish() }
     }
 }
 
@@ -80,11 +90,16 @@ open class EmbeddedAdminActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val owner = intent.getStringExtra(FutoonIntegration.EXTRA_SCOPE)
         if (owner != null && FutoonIntegration.store(owner)?.isActive() != true) finish()
+        if (!isFinishing) FutoonIntegration.track(this)
     }
     override fun onResume() {
         super.onResume()
         val owner = intent.getStringExtra(FutoonIntegration.EXTRA_SCOPE)
         if (owner != null && FutoonIntegration.store(owner)?.isActive() != true) finish()
+    }
+    override fun onDestroy() {
+        FutoonIntegration.untrack(this)
+        super.onDestroy()
     }
     override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
         if (intent.component?.className?.startsWith("com.futoonpay.admin.") == true) {

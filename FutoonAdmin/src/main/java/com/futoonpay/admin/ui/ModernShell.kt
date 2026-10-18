@@ -110,7 +110,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(16.dp))
-            Text("版本 ${BuildConfig.VERSION_NAME} · ${BuildConfig.APPLICATION_ID}", color = Muted, fontSize = 10.sp)
+            Text("版本 ${BuildConfig.VERSION_NAME} · ${LocalContext.current.packageName}", color = Muted, fontSize = 10.sp)
         }
     }
 }
@@ -324,7 +324,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                     Text("更换后需要重新登录", color = Muted, fontSize = 11.sp)
                 } }
                 item { SectionLabel("版本信息") }
-                item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", BuildConfig.APPLICATION_ID) } }
+                item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", LocalContext.current.packageName) } }
                 item { OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("退出登录", color = Danger) } }
             }
         }
