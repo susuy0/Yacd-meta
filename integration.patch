@@ -6367,25 +6367,24 @@ index cd393c4..8c3063b 100644
                  onlineContacts = new ArrayList<>(ContactsController.getInstance(currentAccount).contacts);
                  long selfId = UserConfig.getInstance(currentAccount).clientUserId;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
-index 5d4d97c..67cc056 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
-@@ -330,6 +330,14 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
+@@ -328,6 +328,14 @@
+     private OnTranslateListener onTranslateListener = null;
+     public void setOnTranslate(OnTranslateListener listener) {
          onTranslateListener = listener;
-     }
- 
++    }
++
 +    public interface OnFutoonQueryListener {
-+        void query(String selectedText);
++        void query(String selectedText, long messageId);
 +    }
 +    private OnFutoonQueryListener onFutoonQuery;
 +    public void setOnFutoonQuery(OnFutoonQueryListener listener) {
 +        onFutoonQuery = listener;
-+    }
-+
+     }
+ 
      public void setParentView(ViewGroup view) {
-         if (view instanceof RecyclerListView) {
-             parentRecyclerView = (RecyclerListView) view;
-@@ -1539,6 +1547,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
+@@ -1539,6 +1547,7 @@
      }
  
      private static final int TRANSLATE = 3;
@@ -6393,7 +6392,7 @@ index 5d4d97c..67cc056 100644
      private ActionMode.Callback createActionCallback() {
          final ActionMode.Callback callback = new ActionMode.Callback() {
              @Override
-@@ -1549,11 +1558,17 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
+@@ -1549,11 +1558,17 @@
                  menu.add(Menu.NONE, android.R.id.cut, 3, android.R.string.cut);
                  menu.add(Menu.NONE, android.R.id.paste, 4, android.R.string.paste);
                  menu.add(Menu.NONE, android.R.id.selectAll, 5, android.R.string.selectAll);
@@ -6411,7 +6410,7 @@ index 5d4d97c..67cc056 100644
                  MenuItem quoteItem = menu.findItem(R.id.menu_quote);
                  if (quoteItem != null) {
                      quoteItem.setVisible(canShowQuote());
-@@ -1623,7 +1638,15 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
+@@ -1623,7 +1638,16 @@
                      return true;
                  }
                  int itemId = item.getItemId();
@@ -6420,8 +6419,9 @@ index 5d4d97c..67cc056 100644
 +                    CharSequence selected = getSelectedText();
 +                    if (onFutoonQuery != null && canCopy() && selected != null) {
 +                        String text = selected.toString();
++                        long messageId = selectedView instanceof ChatMessageCell && ((ChatMessageCell) selectedView).getMessageObject() != null ? ((ChatMessageCell) selectedView).getMessageObject().getId() : 0;
 +                        clear();
-+                        onFutoonQuery.query(text);
++                        onFutoonQuery.query(text, messageId);
 +                    }
 +                    return true;
 +                } else if (itemId == android.R.id.copy) {
@@ -6536,18 +6536,19 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          }
          if (ChatObject.isForum(currentChat) && isTopic && getParentLayout() != null && getParentLayout().getFragmentStack() != null && chatMode == MODE_DEFAULT) {
              boolean hasMyForum = false;
-@@ -8757,6 +8809,10 @@
+@@ -8757,6 +8809,11 @@
              }
          });
  
-+        textSelectionHelper.setOnFutoonQuery(text -> {
++        textSelectionHelper.setOnFutoonQuery((text, messageId) -> {
 +            if (actionBar != null && actionBar.isActionModeShowed()) clearSelectionMode();
-+            openFutoonPanel(text);
++            bindFutoonContext();
++            if (futoonPanel != null) futoonPanel.recognizeSelected(text, messageId);
 +        });
          View overlay = textSelectionHelper.getOverlayView(context);
          if (overlay != null) {
              if (overlay.getParent() instanceof ViewGroup) {
-@@ -9022,6 +9078,10 @@
+@@ -9022,6 +9079,10 @@
          onBottomItemsVisibilityChanged();
          ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
          Timer.finish(t);
@@ -6558,7 +6559,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
  
          return fragmentView;
      }
-@@ -9091,6 +9151,7 @@
+@@ -9091,6 +9152,7 @@
          }
  
          windowInsetsStateHolder.setInsets(insets);
@@ -6566,7 +6567,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          
          if (messagesSearchListContainer != null) {
              messagesSearchListContainer.setPadding(insetsLeft, 0, insetsRight, 0);
-@@ -10373,6 +10434,9 @@
+@@ -10373,6 +10435,9 @@
          actionMode.setOnLayoutListener(actionBar::invalidate);
  
          if (currentEncryptedChat == null) {
@@ -6576,7 +6577,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              final boolean isSavedMessages = getDialogId() == getUserConfig().getClientUserId() && (chatMode == 0 || chatMode == MODE_SAVED);
              actionModeViews.add(actionMode.addItemWithWidth(save_to, R.drawable.msg_download, dp(48), LocaleController.getString(R.string.SaveToMusic)));
              actionModeViews.add(actionMode.addItemWithWidth(edit, R.drawable.msg_edit, dp(48), LocaleController.getString(R.string.Edit)));
-@@ -18409,7 +18473,7 @@
+@@ -18409,7 +18474,7 @@
                      TLRPC.UserFull userInfo = getCurrentUserInfo();
                      if (showAudioCallAsIcon) {
                          headerItem.hideSubItem(call);
@@ -6585,7 +6586,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                          headerItem.showSubItem(call, true);
                      }
                  }
-@@ -18571,6 +18635,13 @@
+@@ -18571,6 +18636,13 @@
                      int h = allHeight - AndroidUtilities.statusBarHeight - AndroidUtilities.navigationBarHeight;
                      int contentHeightSpec = View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY);
                      child.measure(contentWidthSpec, contentHeightSpec);
@@ -6599,7 +6600,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                  } else if (child == topicsTabs) {
                      int height = allHeight;
                      if (actionBar.getVisibility() == VISIBLE) {
-@@ -19867,6 +19938,7 @@
+@@ -19867,6 +19939,7 @@
              if (a == photoPathes.size() - 1 && caption != null) {
                  entry.caption = caption;
              }
@@ -6607,7 +6608,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              entries.add(entry);
          }
  
-@@ -20417,6 +20489,7 @@
+@@ -20417,6 +20490,7 @@
  
      @Override
      public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
@@ -6615,7 +6616,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          if (resultCode == Activity.RESULT_OK) {
              if (requestCode == 0 || requestCode == 2) {
                  createChatAttachView();
-@@ -24051,8 +24124,8 @@
+@@ -24051,8 +24125,8 @@
                      }
                  }
                  if (headerItem != null) {
@@ -6626,7 +6627,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                          if (showAudioCallAsIcon) {
                              if (audioCallIconItem != null) {
                                  View item = audioCallIconItem.createView();
-@@ -29796,7 +29869,7 @@
+@@ -29796,7 +29870,7 @@
          super.setInPreviewMode(value);
          if (currentUser != null && audioCallIconItem != null) {
              TLRPC.UserFull userFull = getMessagesController().getUserFull(currentUser.id);
@@ -6635,7 +6636,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
                  showAudioCallAsIcon = !inPreviewMode;
                  audioCallIconItem.setVisibility(View.VISIBLE);
              } else {
-@@ -29880,6 +29953,8 @@
+@@ -29880,6 +29954,8 @@
      @Override
      public void onResume() {
          super.onResume();
@@ -6644,7 +6645,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          checkShowBlur(false);
          activityResumeTime = System.currentTimeMillis();
          if (openImport && getSendMessagesHelper().getImportingHistory(dialog_id) != null) {
-@@ -30091,6 +30166,7 @@
+@@ -30091,6 +30167,7 @@
  
      @Override
      public void onPause() {
@@ -6652,7 +6653,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          super.onPause();
          scrolling = false;
          if (scrimPopupWindow != null) {
-@@ -31010,6 +31086,17 @@
+@@ -31010,6 +31087,17 @@
              final ArrayList<Integer> options = new ArrayList<>();
              View optionsView = null;
  
@@ -6670,7 +6671,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              if (AndroidUtilities.isAccessibilityScreenReaderEnabled() && message.messageOwner != null && message.messageOwner.from_id != null && message.messageOwner.from_id.user_id != getUserConfig().clientUserId && chatMode != MODE_SAVED) {
                  items.add(LocaleController.getString(R.string.OpenProfile));
                  options.add(OPTION_OPEN_PROFILE);
-@@ -33425,6 +33512,18 @@
+@@ -33425,6 +33513,18 @@
          }
          boolean preserveDim = false;
          switch (option) {
@@ -6689,7 +6690,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
              case OPTION_RETRY: {
                  final MessageObject object = selectedObject;
                  final MessageObject.GroupedMessages group = selectedObjectGroup;
-@@ -34734,6 +34833,7 @@
+@@ -34734,6 +34834,7 @@
  
      @Override
      public boolean onBackPressed(boolean invoked) {
@@ -6697,6 +6698,11 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMe
          final Bulletin bulletin = Bulletin.getVisibleBulletin();
          if (bulletin != null && bulletin.getLayout() instanceof Bulletin.LottieLayoutWithReactions) {
              if (invoked) {
+@@ -47483,3 +47584,4 @@
+         abstract void drawChatForegroundElements(Canvas canvas, @Nullable RectF position);
+     }
+ }
++
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 index a8f9973..c9f9a1e 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
@@ -7713,7 +7719,7 @@ index 55d530f..8913fb4 100644
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7183
++APP_VERSION_CODE=7184
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
@@ -7895,18 +7901,26 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,204 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
 +import android.content.*;
 +import android.graphics.Color;
++import android.graphics.Bitmap;
++import android.graphics.BitmapFactory;
 +import android.graphics.drawable.GradientDrawable;
 +import android.net.Uri;
++import android.os.Looper;
 +import android.view.*;
 +import android.widget.*;
 +import com.futoonpay.admin.NativePanelBridge;
 +import com.futoonpay.admin.NativePanelView;
++import com.google.mlkit.vision.common.InputImage;
++import com.google.mlkit.vision.text.TextRecognition;
++import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions;
++import com.google.zxing.*;
++import com.google.zxing.common.HybridBinarizer;
 +import org.json.*;
 +import org.telegram.messenger.*;
 +import org.telegram.messenger.futoon.*;
@@ -7918,6 +7932,7 @@ new file mode 100644
 +/** Telegram host for the fully native FUTOON Compose panel. No WebView or HTML is used. */
 +public final class FutoonPanel implements NotificationCenter.NotificationCenterDelegate {
 +    private static final int PICK_IMAGES=8042;
++    private static final int PICK_OCR=8043,EXPORT_FILE=8044;
 +    private static final ExecutorService WORK=Executors.newSingleThreadExecutor();
 +    private final ChatActivity host;
 +    private final int account;
@@ -7933,6 +7948,8 @@ new file mode 100644
 +    private FutoonBusinessApi business;
 +    private JSONObject context=new JSONObject();
 +    private String initialText="",activeOrder="";
++    private String exportText="";
++    private int pickerGeneration;
 +    private boolean expanded,destroyed,paused,keyboard,ballPositioned,choosing;
 +    private int lastBottomInset=-1,generation;
 +    private float downX,downY,startX,startY;
@@ -7986,6 +8003,7 @@ new file mode 100644
 +            public com.futoonpay.admin.PanelSession session(){return FutoonNativeBridge.session(account,store);}
 +            public void pickEvidenceFromChat(){AndroidUtilities.runOnUIThread(()->{collapse();toast("长按聊天图片，选择「作为富通凭证」");});}
 +            public String[] evidencePaths(){return photos.stream().map(File::getAbsolutePath).toArray(String[]::new);}
++            public android.graphics.Bitmap evidencePreview(String path){if(!valid()||!path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator))return null;return ImageLoader.loadBitmap(path,null,640,640,true);}
 +            public void removeEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index>=0&&index<photos.size()){photos.remove(index);syncDraft();}});}
 +            public void editEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index<0||index>=photos.size())return;File original=photos.get(index);int gen=generation;new FutoonImageEditor(host.getParentActivity(),original,file->{if(valid()&&gen==generation&&index<photos.size()&&photos.get(index).equals(original)){photos.set(index,file);syncDraft();}},()->{}).show();});}
 +            public boolean hasSession(){try{ensureClient();return api.hasSession();}catch(Exception ignored){return false;}}
@@ -7993,7 +8011,7 @@ new file mode 100644
 +            public byte[] captcha()throws Exception{synchronized(FutoonPanel.this){ensureClient();return api.captcha();}}
 +            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);store.username(username);return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
 +            public void logout()throws Exception{synchronized(FutoonPanel.this){ensureClient();api.logout();}}
-+            public String call(String operation,String params)throws Exception{if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");synchronized(FutoonPanel.this){api=null;ensureClient();return business.call(operation,new JSONObject(params)).toString();}}
++            public String call(String operation,String params)throws Exception{return nativeCall(operation,new JSONObject(params));}
 +            public void collapse(){AndroidUtilities.runOnUIThread(FutoonPanel.this::collapse);}
 +            public void copy(String text){AndroidUtilities.runOnUIThread(()->{((ClipboardManager)root.getContext().getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("富通",text));toast("已复制");});}
 +            public void selectEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->prepareEvidence(order,caption));}
@@ -8006,14 +8024,15 @@ new file mode 100644
 +        applyContext();FutoonStore.Draft saved=FutoonStore.draft(account);if(saved!=null&&saved.address.equals(store.address())){panel.adoptEvidence(saved.order.data.toString(),saved.caption);panel.updateEvidenceCount(photos.size());}if(!initialText.isEmpty()){panel.recognize(initialText);initialText="";}
 +    }
 +    private void ensureClient()throws Exception{String address=store.address();if(address.isEmpty())throw new FutoonApi.SessionExpired();if(api==null){api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));}}
-+    private void applyContext(){if(panel!=null)panel.updateContext(context.optString("label"),context.optString("tgid"),context.optString("source"));}
++    private void applyContext(){if(panel!=null)panel.updateChatContext(context.optString("label"),context.optString("tgid"),context.optString("source"),account+":"+dialogId+":"+topicId+":"+context.optString("tgid"),dialogId,topicId,context.optString("ticket"),context.optString("role"));}
 +
 +    public boolean isView(View view){return view==root;}
 +    public void onBottomInsetChanged(int inset){if(lastBottomInset==inset)return;lastBottomInset=inset;root.requestLayout();}
-+    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){applyContext();return;}dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source);}catch(Exception ignored){}applyContext();if(panel!=null)panel.updateEvidenceCount(0);}
-+    public void open(String text){if(destroyed)return;host.bindFutoonContext();ensurePanel();expanded=true;paused=false;ball.setVisibility(View.GONE);scrim.setVisibility(View.VISIBLE);panel.setVisibility(View.VISIBLE);panel.onShown();resize();root.bringToFront();if(text!=null&&!text.isEmpty()){List<FutoonQuery> found=FutoonQuery.extract(text);if(found.isEmpty())panel.recognize(text);else panel.recognizeCandidate(found.get(0).value,found.get(0).kind.name());}}
++    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){applyContext();return;}dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}applyContext();if(panel!=null)panel.updateEvidenceCount(0);}
++    public void open(String text){if(destroyed)return;host.bindFutoonContext();ensurePanel();expanded=true;paused=false;ball.setVisibility(View.GONE);scrim.setVisibility(View.VISIBLE);panel.setVisibility(View.VISIBLE);panel.onShown();resize();root.bringToFront();if(text!=null&&!text.isEmpty())panel.recognizeText(text,dialogId,topicId,sourceMessage,false);}
++    public void recognizeSelected(String text,long messageId){sourceMessage=Math.max(0,messageId);open(text);}
 +    public void recognizeMessage(MessageObject m){if(m==null||m.messageOwner==null)return;sourceMessage=m.getId();String text=m.messageOwner.message==null?"":m.messageOwner.message;if(m.replyMessageObject!=null&&m.replyMessageObject.messageOwner!=null&&m.replyMessageObject.messageOwner.message!=null)text+="\n\n被回复消息：\n"+m.replyMessageObject.messageOwner.message;open(text);}
-+    public void recognizeMessages(Collection<MessageObject> messages){StringBuilder all=new StringBuilder();for(MessageObject m:messages)if(m!=null&&m.messageOwner!=null&&m.messageOwner.message!=null)all.append(m.messageOwner.message).append('\n');open(all.toString());}
++    public void recognizeMessages(Collection<MessageObject> messages){StringBuilder all=new StringBuilder();sourceMessage=0;for(MessageObject m:messages)if(m!=null&&m.messageOwner!=null&&m.messageOwner.message!=null){if(sourceMessage==0)sourceMessage=m.getId();all.append(m.messageOwner.message).append('\n');}open(all.toString());}
 +    public void collapse(){if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);}
 +    private void resize(){if(panel==null)return;int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(420),true,keyboard);int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
@@ -8021,14 +8040,69 @@ new file mode 100644
 +    public void pause(){paused=true;if(panel!=null)panel.onHidden();}
 +    public void destroy(){if(destroyed)return;destroyed=true;generation++;NotificationCenter nc=NotificationCenter.getInstance(account);nc.removeObserver(this,NotificationCenter.fileLoaded);nc.removeObserver(this,NotificationCenter.fileLoadFailed);if(panel!=null){panel.close();panel=null;}if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);}
 +
-+    private void prepareEvidence(String raw,String caption){try{JSONObject order=new JSONObject(raw);String next=order.optString("trade_no");if(!activeOrder.isEmpty()&&!activeOrder.equals(next))photos.clear();activeOrder=next;FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),caption,dialogId);FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=sourceMessage;draft.sourceTopic=topicId;draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());if(panel!=null)panel.updateEvidenceCount(photos.size());}catch(Exception e){toast("订单凭证初始化失败："+e.getMessage());}}
-+    private void openGallery(){if(choosing){toast("已有图片选择正在进行");return;}choosing=true;Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);try{host.startActivityForResult(intent,PICK_IMAGES);}catch(Exception e){choosing=false;toast("无法打开图片选择器");}}
++    private void prepareEvidence(String raw,String caption){try{JSONObject order=new JSONObject(raw);String next=order.optString("trade_no");if(next.isEmpty())throw new IOException("缺少订单号");if(!activeOrder.isEmpty()&&!activeOrder.equals(next))photos.clear();activeOrder=next;JSONObject source=order.optJSONObject("_source");FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),caption,source==null?dialogId:source.optLong("dialog",dialogId));FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=source==null?sourceMessage:source.optLong("message");draft.sourceTopic=source==null?topicId:source.optLong("topic");syncDraft();}catch(Exception e){toast("订单凭证初始化失败："+e.getMessage());}}
++    private void openGallery(){openImagePicker(false);}
++    private void openImagePicker(boolean ocr){if(choosing){toast("已有图片选择正在进行");return;}choosing=true;pickerGeneration=generation;Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_ALLOW_MULTIPLE,!ocr);intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);try{host.startActivityForResult(intent,ocr?PICK_OCR:PICK_IMAGES);}catch(Exception e){choosing=false;toast("无法打开图片选择器");}}
 +    private void sendEvidence(String raw,String caption){try{prepareEvidence(raw,caption);if(photos.isEmpty())throw new IOException("请先选择凭证图片");ArrayList<String> paths=new ArrayList<>();for(File f:photos){if(!f.isFile())throw new IOException("凭证文件已失效");paths.add(f.getAbsolutePath());}if(!(host.getParentActivity() instanceof LaunchActivity))throw new IOException("无法打开发送预览");((LaunchActivity)host.getParentActivity()).shareFutoonEvidence(account,paths,caption,activeOrder);collapse();}catch(Exception e){toast(e.getMessage());}}
 +    public void addChatPhoto(MessageObject message){restoreDraftFiles();if(!canUsePhoto(account,message)){toast("这张图片受保护或不可用");return;}if(photos.size()>=10){toast("每次最多选择 10 张凭证");return;}File f=message.messageOwner.attachPath==null?null:new File(message.messageOwner.attachPath);if(f==null||!f.isFile())f=FileLoader.getInstance(account).getPathToMessage(message.messageOwner);if(f!=null&&f.isFile()){appendPhoto(f);return;}String name;if(message.getDocument()!=null){name=FileLoader.getAttachFileName(message.getDocument());downloading.put(name,message);FileLoader.getInstance(account).loadFile(message.getDocument(),message,FileLoader.PRIORITY_HIGH,0);}else{TLRPC.PhotoSize size=FileLoader.getClosestPhotoSizeWithSize(message.messageOwner.media.photo.sizes,AndroidUtilities.getPhotoSize());if(size==null){toast("图片不可用");return;}name=FileLoader.getAttachFileName(size);downloading.put(name,message);FileLoader.getInstance(account).loadFile(ImageLocation.getForPhoto(size,message.messageOwner.media.photo),message,"jpg",FileLoader.PRIORITY_HIGH,0);}toast("正在下载凭证图片");}
 +    private void appendPhoto(File source){if(!valid())return;if(source.length()>25*1024*1024){toast("请选择 25 MB 以内的图片");return;}if(source.getAbsolutePath().startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)){if(!photos.contains(source))photos.add(source);syncDraft();open("");return;}final int gen=generation;WORK.execute(()->{try{File dir=new File(root.getContext().getCacheDir(),"futoon-evidence");if(!dir.exists())dir.mkdirs();File copy=File.createTempFile("proof-",".jpg",dir);try(InputStream in=new FileInputStream(source);OutputStream out=new FileOutputStream(copy)){byte[] bytes=new byte[8192];int n;while((n=in.read(bytes))!=-1)out.write(bytes,0,n);}AndroidUtilities.runOnUIThread(()->{if(gen==generation)appendPhoto(copy);});}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("凭证缓存失败："+e.getMessage()));}});}
 +    private void restoreDraftFiles(){FutoonStore.Draft draft=FutoonStore.draft(account);if(draft==null||!draft.address.equals(store.address())||!activeOrder.isEmpty())return;activeOrder=draft.order.id();sourceMessage=draft.sourceMessage;for(String path:draft.imagePaths){File file=new File(path);if(file.isFile()&&path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)&&!photos.contains(file))photos.add(file);}}
-+    private void syncDraft(){FutoonStore.Draft draft=FutoonStore.draft(account);if(draft!=null&&draft.address.equals(store.address())){draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());}if(panel!=null)panel.updateEvidenceCount(photos.size());}
-+    public boolean activityResult(int requestCode,int resultCode,Intent data){if(requestCode!=PICK_IMAGES)return false;choosing=false;if(resultCode!=Activity.RESULT_OK||data==null)return true;ArrayList<Uri> uris=new ArrayList<>();if(data.getClipData()!=null)for(int i=0;i<data.getClipData().getItemCount()&&i<10;i++)uris.add(data.getClipData().getItemAt(i).getUri());else if(data.getData()!=null)uris.add(data.getData());final int gen=generation;WORK.execute(()->{ArrayList<File> files=new ArrayList<>();try{for(Uri uri:uris)files.add(copyImage(uri));AndroidUtilities.runOnUIThread(()->{if(gen!=generation)return;for(File file:files)if(photos.size()<10)photos.add(file);syncDraft();});}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("读取图片失败："+e.getMessage()));}});return true;}
++    private void syncDraft(){
++        FutoonStore.Draft draft=FutoonStore.draft(account);
++        if(draft!=null&&draft.address.equals(store.address())){draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());
++            final String backend=draft.address,trade=draft.order.id();final JSONArray paths=new JSONArray(draft.imagePaths);
++            WORK.execute(()->{try{synchronized(store){String saved=store.readLocal(backend);JSONObject local=saved.isEmpty()?new JSONObject():new JSONObject(saved);JSONObject proofs=local.optJSONObject("_nativeProofs");if(proofs==null)proofs=new JSONObject();proofs.put(trade,paths);local.put("_nativeProofs",proofs);store.writeLocal(backend,local.toString());}}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("凭证草稿保存失败："+e.getMessage()));}});
++        }
++        if(panel!=null)panel.updateEvidenceCount(photos.size());
++    }
++    private String nativeCall(String operation,JSONObject params)throws Exception{
++        if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");
++        if(operation.equals("recognize")){
++            JSONArray items=new JSONArray();for(FutoonQuery query:FutoonQuery.extract(params.optString("text")))items.put(new JSONObject().put("kind",query.kind.name()).put("value",query.value).put("label",FutoonQuery.label(query.kind)));return items.toString();
++        }
++        if(operation.equals("local.read")){synchronized(store){String saved=store.readLocal(store.address());JSONObject local=saved.isEmpty()?new JSONObject():new JSONObject(saved);local.remove("_nativeProofs");return local.toString();}}
++        if(operation.equals("local.write")){synchronized(store){String previous=store.readLocal(store.address());JSONObject old=previous.isEmpty()?new JSONObject():new JSONObject(previous);JSONObject proofs=old.optJSONObject("_nativeProofs");if(proofs!=null)params.put("_nativeProofs",proofs);store.writeLocal(store.address(),params.toString());return "{}";}}
++        if(operation.equals("ocr.gallery"))return onUi(()->{openImagePicker(true);return "{}";});
++        if(operation.equals("export"))return onUi(()->{exportText=params.optString("text");String name=params.optString("name","futoon.csv");if(!name.matches("[A-Za-z0-9_.-]{1,100}"))name="futoon.csv";host.startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/csv").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,name),EXPORT_FILE);return "{}";});
++        if(operation.equals("ui.source"))return onUi(()->{long message=params.optLong("message"),dialog=params.optLong("dialog");if(message<=0||dialog==0)throw new IOException("这笔订单没有可定位的原聊天消息");collapse();host.futoonJumpToSource(dialog,params.optLong("topic"),message);return "{}";});
++        if(operation.equals("evidence.draft"))return onUi(()->{JSONObject order=params.getJSONObject("order");prepareEvidence(order.toString(),params.optString("caption"));return "{}";});
++        if(operation.equals("evidence.restore")){
++            final JSONObject order=params.getJSONObject("order");final String trade=order.getString("trade_no"),caption=params.optString("caption");final int gen=generation;JSONArray paths;
++            synchronized(store){String saved=store.readLocal(store.address());JSONObject local=saved.isEmpty()?new JSONObject():new JSONObject(saved);JSONObject proofs=local.optJSONObject("_nativeProofs");paths=proofs==null?null:proofs.optJSONArray(trade);}
++            final ArrayList<File> restored=new ArrayList<>();String owned=root.getContext().getCacheDir().getCanonicalPath()+File.separator;
++            if(paths!=null)for(int i=0;i<paths.length()&&restored.size()<10;i++){File file=new File(paths.getString(i));if(file.isFile()&&file.getCanonicalPath().startsWith(owned))restored.add(file);}
++            return onUi(()->{if(gen!=generation||!valid())throw new IOException("会话已变化，请重新恢复草稿");photos.clear();photos.addAll(restored);activeOrder=trade;prepareEvidence(order.toString(),caption);ensurePanel();panel.adoptEvidence(order.toString(),caption);return new JSONObject().put("count",restored.size()).toString();});
++        }
++        synchronized(this){api=null;ensureClient();return business.call(operation,params).toString();}
++    }
++    private String onUi(Callable<String> action)throws Exception{
++        if(Looper.myLooper()==Looper.getMainLooper())return action.call();
++        FutureTask<String> task=new FutureTask<>(action);AndroidUtilities.runOnUIThread(task);
++        try{return task.get(15,TimeUnit.SECONDS);}catch(ExecutionException error){Throwable cause=error.getCause();if(cause instanceof Exception)throw (Exception)cause;throw error;}
++    }
++    private void readOcr(File file,int gen){
++        try{
++            com.google.mlkit.vision.text.TextRecognizer recognizer=TextRecognition.getClient(new ChineseTextRecognizerOptions.Builder().build());
++            recognizer.process(InputImage.fromFilePath(root.getContext(),Uri.fromFile(file))).addOnSuccessListener(text->{
++                String raw=text.getText();recognizer.close();
++                WORK.execute(()->{String qr=decodeQr(file),result=raw+(qr.isEmpty()?"":"\n二维码内容："+qr);file.delete();AndroidUtilities.runOnUIThread(()->{if(valid()&&gen==generation&&panel!=null)panel.recognizeText(result,dialogId,topicId,0,true);});});
++            }).addOnFailureListener(error->{recognizer.close();file.delete();if(valid()&&gen==generation&&panel!=null)panel.recognitionError("图片识别失败："+error.getMessage());});
++        }catch(Exception error){file.delete();if(panel!=null)panel.recognitionError("图片识别失败："+error.getMessage());}
++    }
++    private String decodeQr(File file){
++        Bitmap bitmap=null;try{bitmap=ImageLoader.loadBitmap(file.getPath(),null,1600,1600,true);if(bitmap==null)return "";int w=bitmap.getWidth(),h=bitmap.getHeight();int[] pixels=new int[w*h];bitmap.getPixels(pixels,0,w,0,0,w,h);return new MultiFormatReader().decode(new BinaryBitmap(new HybridBinarizer(new RGBLuminanceSource(w,h,pixels)))).getText();}catch(Exception ignored){return "";}finally{if(bitmap!=null)bitmap.recycle();}
++    }
++    public boolean activityResult(int requestCode,int resultCode,Intent data){
++        if(requestCode==EXPORT_FILE){
++            if(resultCode==Activity.RESULT_OK&&data!=null&&data.getData()!=null){final Uri uri=data.getData();final String text=exportText;WORK.execute(()->{try(OutputStream out=root.getContext().getContentResolver().openOutputStream(uri)){if(out==null)throw new IOException("无法写入文件");out.write(("\uFEFF"+text).getBytes(java.nio.charset.StandardCharsets.UTF_8));AndroidUtilities.runOnUIThread(()->toast("导出完成"));}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("导出失败："+e.getMessage()));}});}return true;
++        }
++        if(requestCode!=PICK_IMAGES&&requestCode!=PICK_OCR)return false;
++        choosing=false;if(resultCode!=Activity.RESULT_OK||data==null)return true;
++        if(pickerGeneration!=generation||!valid()){toast("会话已变化，请重新选择图片");return true;}
++        ArrayList<Uri> uris=new ArrayList<>();if(data.getClipData()!=null)for(int i=0;i<data.getClipData().getItemCount()&&i<10;i++)uris.add(data.getClipData().getItemAt(i).getUri());else if(data.getData()!=null)uris.add(data.getData());
++        final int gen=generation;final boolean ocr=requestCode==PICK_OCR;
++        WORK.execute(()->{ArrayList<File> files=new ArrayList<>();try{for(Uri uri:uris)files.add(copyImage(uri));AndroidUtilities.runOnUIThread(()->{if(gen!=generation||!valid())return;if(ocr){if(!files.isEmpty())readOcr(files.get(0),gen);}else{for(File file:files)if(photos.size()<10)photos.add(file);syncDraft();}});}catch(Exception e){AndroidUtilities.runOnUIThread(()->{toast("读取图片失败："+e.getMessage());if(ocr&&panel!=null)panel.recognitionError(e.getMessage());});}});return true;
++    }
 +    private File copyImage(Uri uri)throws Exception{File dir=new File(root.getContext().getCacheDir(),"futoon-evidence");if(!dir.exists()&&!dir.mkdirs())throw new IOException("无法创建缓存");File f=File.createTempFile("proof-",".jpg",dir);boolean ok=false;try(InputStream in=root.getContext().getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(f)){if(in==null)throw new IOException("图片不可读");byte[] buf=new byte[8192];int n,total=0;while((n=in.read(buf))!=-1){total+=n;if(total>25*1024*1024)throw new IOException("图片超过 25 MB");out.write(buf,0,n);}android.graphics.BitmapFactory.Options dimensions=new android.graphics.BitmapFactory.Options();dimensions.inJustDecodeBounds=true;android.graphics.BitmapFactory.decodeFile(f.getPath(),dimensions);if(dimensions.outWidth<=0||dimensions.outHeight<=0)throw new IOException("所选文件不是有效图片");ok=true;return f;}finally{if(!ok)f.delete();}}
 +    @Override public void didReceivedNotification(int event,int eventAccount,Object... args){if(!valid()||eventAccount!=account)return;if((event==NotificationCenter.fileLoaded||event==NotificationCenter.fileLoadFailed)&&args.length>0){MessageObject message=downloading.remove(String.valueOf(args[0]));if(message!=null){if(event==NotificationCenter.fileLoaded&&!paused)addChatPhoto(message);else toast(event==NotificationCenter.fileLoaded?"图片已下载，请重新点选添加凭证":"凭证图片下载失败");}}}
 +}

@@ -53,5 +53,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     testImplementation(composeBom)
     testImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    if (project.findProperty("futoonUiTesting") == "true") {
+        debugImplementation("androidx.compose.ui:ui-test-manifest")
+    }
 }

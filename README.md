@@ -11,7 +11,7 @@ FUTOON PAY 管理功能以 Android Jetpack Compose 原生组件嵌入 Telegram �
 - 动态表单、插件账户参数、支付方式绑定、轮询成员及设置子栏目使用原版控件、字段校验和提交流程。后台客户端、Repository、解析、监测和批量执行代码继续复用原版实现。
 - 群话题末尾 TGID 与私聊对方 TGID 可精确查询商户；订单识别使用原 Telegram 聊天上下文。
 - 图片凭证仍由用户选择 Telegram 收件人并进入发送预览，不自动发送。
-- 所有资金、状态和配置写操作先显示原生二次确认。
+- 资金、状态和配置写操作沿用原版表单校验及确认流程。
 
 提醒、盯单通知和独立工作台不在本次范围内；Telegram 原有消息通知及推送能力保留。
 
@@ -21,6 +21,10 @@ FUTOON PAY 管理功能以 Android Jetpack Compose 原生组件嵌入 Telegram �
 
 CI 会执行原业务单测、原生面板契约审计、Lint、Java 编译、ARM64 原生库及 APK 构建，并审计已移除的通话、录音和联系人组件。
 
-测试不会连接真实付款后台，不执行真实资金操作或 Telegram 消息发送。完整构建通过后仍需真机及实际后台联调。
+2026-10-18 构建通过：[GitHub Actions #39106641972](https://github.com/susuy0/Yacd-meta/actions/runs/39106641972)。APK 对应源码 `ddcc6c7a002534b2b47bafa1a6dfac3a13eb306e`。
+
+176 项业务及原生交互测试全部通过，另通过 45 项查询/HTTP、62 项身份/识别/契约和 45 项窗口布局检查。Lint 为 0 错误；Java、ARM64 原生库、APK 构建及已移除组件审计均通过。APK v2 签名、ZIP 完整性和 SHA-256 已复核，详细结果见 `BUILD.json`。
+
+此构建为 `development-no-fcm` 测试包，尚未配置 FCM。测试使用固定响应，不连接真实付款后台，不执行真实资金操作或 Telegram 消息发送；真机与实际后台联调尚未完成。
 
 GPL-2.0-or-later，随 Telegram 上游许可证。

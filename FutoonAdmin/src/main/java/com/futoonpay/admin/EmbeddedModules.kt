@@ -421,7 +421,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
         OutlinedTextField(query, { query = it }, placeholder = { Text("搜索可选项") }, singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
         val options = field.options.filter { query.isBlank() || it.label.contains(query, true) || it.value.contains(query, true) }
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 420.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             itemsIndexed(options, key = { index, it -> "${it.value}:$index" }) { _, option ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { if (confirmSelection) selected = option.value else { onValueChange(option.value); expanded = false } }
                     .background(if (option.value == selected) MaterialTheme.colorScheme.primaryContainer else Color.White, RoundedCornerShape(10.dp))

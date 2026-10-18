@@ -1015,7 +1015,7 @@ private fun PaymentTestDialog(
     }.getOrDefault(false)
     val qr = remember(result?.qrContent, paymentUrl) { com.futoonpay.admin.data.paymentQr(result?.qrContent?.ifBlank { paymentUrl }.orEmpty()) }
     com.futoonpay.admin.ui.PaySheet("原生测试支付", { if (!loading) onDismiss() }) {
-            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 520.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 520.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
                 item {
                 Text("${channel.name} · 通道 #${channel.id}", color = Muted, fontSize = 12.sp)
                 }

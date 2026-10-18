@@ -385,6 +385,10 @@ class AppViewModel(
             }
     }
 
+    fun setCurrentMerchant(merchant: MerchantSummary) {
+        _state.update { it.copy(merchants = listOf(merchant), merchantTotal = 1, merchantPage = 1, merchantSearch = MerchantSearchFilters(column = "uid", value = merchant.uid)) }
+    }
+
     fun loadMerchants(page: Int = 1, search: MerchantSearchFilters = _state.value.merchantSearch) = viewModelScope.launch {
         val generation = ++merchantsGeneration
         merchantFlowsGeneration += 1

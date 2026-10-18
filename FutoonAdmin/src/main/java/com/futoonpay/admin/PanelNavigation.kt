@@ -3,7 +3,7 @@ package com.futoonpay.admin
 import androidx.compose.runtime.*
 import java.util.UUID
 
-internal data class PanelRoute(val kind: String, val module: String = "", val channelId: String = "", val channelType: String = "", val merchantId: String = "", val id: String = UUID.randomUUID().toString())
+internal data class PanelRoute(val kind: String, val module: String = "", val channelId: String = "", val channelType: String = "", val merchantId: String = "", val id: String = UUID.randomUUID().toString(), val orderId: String = "")
 
 internal interface PanelNavigation {
     fun orders(channelId: String = "", merchantId: String = "")
@@ -24,12 +24,14 @@ internal val LocalPanelNavigation = staticCompositionLocalOf<PanelNavigation> { 
 } }
 
 internal class PanelNavigator : PanelNavigation {
-    private val roots = mapOf("orders" to PanelRoute("orders"), "settlements" to PanelRoute("settlements"), "more" to PanelRoute("more"))
+    private val roots = mapOf("recognition" to PanelRoute("recognition"), "orders" to PanelRoute("orders"), "merchants" to PanelRoute("merchants"), "settlements" to PanelRoute("settlements"), "more" to PanelRoute("more"))
     var tab by mutableStateOf("orders")
         private set
     private val stacks = mutableStateMapOf<String, List<PanelRoute>>()
     var lastQueryId: String = ""
     fun showOrdersForQuery() { tab = "orders"; stacks["orders"] = emptyList() }
+    fun showRecognition() { tab = "recognition"; stacks["recognition"] = emptyList() }
+    fun openOrder(tradeNo: String) = push(PanelRoute("orders", orderId = tradeNo))
     val current: PanelRoute get() = stacks[tab]?.lastOrNull() ?: roots.getValue(tab)
     fun select(tab: String) { require(tab in roots); this.tab = tab }
     fun pop(): Boolean { val stack = stacks[tab].orEmpty(); if (stack.isEmpty()) return false; stacks[tab] = stack.dropLast(1); return true }

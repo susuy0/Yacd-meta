@@ -2,6 +2,25 @@ package com.futoonpay.admin.data
 
 import org.json.JSONObject
 
+/** The original list mappers, shared with exact matches returned by the chat bridge. */
+internal fun JSONObject.toOrderSummary() = OrderSummary(
+    tradeNo = text("trade_no"), merchantTradeNo = text("out_trade_no"), merchantId = text("uid"),
+    domain = text("domain"), name = text("name"), amount = text("money"), paidAmount = text("realmoney"),
+    merchantIncome = text("getmoney"), paymentType = text("typeshowname"), channelId = text("channel"),
+    plugin = text("plugin"), createdAt = text("addtime"), completedAt = text("endtime"),
+    status = intValue("status"), settlementStatus = intValue("settle"),
+    currency = text("currency").ifBlank { text("currency_code") }.ifBlank { "CNY" }, merchantName = text("username"),
+)
+
+internal fun JSONObject.toMerchantSummary() = MerchantSummary(
+    uid = text("uid"), username = text("username"), groupName = text("groupname"), balance = text("money"),
+    frozenBalance = text("freeze_money"), telegramId = text("telegram_id"), website = text("url"),
+    createdAt = text("addtime"), status = intValue("status"), paymentStatus = intValue("pay"), settlementStatus = intValue("settle"),
+    account = text("account"), remark = text("username"), inviteCode = text("invite_code"),
+    recommenderId = text("recommender_id"), recommenderPercent = text("recommender_percent"),
+    balances = currencyAmounts("balances").ifEmpty { buildMap { put("CNY", text("money")); text("usdt_money").takeIf(String::isNotBlank)?.let { put("USDT", it) } } },
+)
+
 internal fun JSONObject.toOrderDetail(): OrderDetail {
     val row = optJSONObject("data") ?: this
     return OrderDetail(

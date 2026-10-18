@@ -176,7 +176,7 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
     }
     }
     if (advanced) PaySheet("完整搜索", { advanced = false }) {
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 480.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 480.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { ChoicePicker("订单状态", filters.status.toString(), listOf("-1" to "全部", "0" to "待支付", "1" to "已支付", "2" to "已退款", "3" to "已冻结")) { filters = filters.copy(status = it.toIntOrNull() ?: -1) } }
             item { ChoicePicker("搜索字段", filters.column, ORDER_SEARCH_COLUMNS) { filters = filters.copy(column = it) } }
             item { OutlinedTextField(filters.value, { filters = filters.copy(value = it) }, label = { Text("搜索内容") }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
@@ -477,7 +477,8 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         } }
                         item { DetailBlock("时间 · 通知", listOf("创建时间" to detail.createdAt, "支付时间" to detail.completedAt, "回调通知" to notifyLabel(detail))) }
                         item { DetailBlock("请求信息", listOf("商品信息" to detail.name, "支付账号" to detail.buyer, "网站域名" to detail.domain, "请求 IP" to detail.ip, "附加参数" to detail.parameter)) }
-                        item { OutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("图片凭证") } }
+                        item { OutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("选择付款凭证") } }
+                        item { com.futoonpay.admin.OrderWorkflowTools(detail) }
                         item { Text("其他操作", color = Muted, fontSize = 12.sp) }
                         items(actions.filterNot { it.action == "notify" || it.action == "refund" }) { action ->
                             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(action.label) }
@@ -740,7 +741,7 @@ private fun SettlementActionDialog(
     var account by rememberSaveable { mutableStateOf(pending.item.account) }
     var name by rememberSaveable { mutableStateOf("") }
     PaySheet(pending.label, onDismiss) {
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 460.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 460.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Text("结算 #${pending.item.id} · ${pending.item.displayAmount()}", color = Muted) }
             error?.let { item { Text(it, color = Danger, fontSize = 12.sp) } }
             if (pending.resultInput || pending.resultPreset.isNotBlank()) item {
@@ -840,7 +841,8 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
                 return@MerchantActionDialog
             }
             when (action.action) {
-                "togglePay" -> viewModel.setMerchantStatus(action.merchant.uid, "pay", !action.merchant.paymentEnabled)
+                                "toggleAccount" -> viewModel.setMerchantStatus(action.merchant.uid, "status", action.merchant.status != 1)
+                                "togglePay" -> viewModel.setMerchantStatus(action.merchant.uid, "pay", !action.merchant.paymentEnabled)
                 "toggleSettle" -> viewModel.setMerchantStatus(action.merchant.uid, "settle", !action.merchant.settlementEnabled)
                 "group" -> viewModel.setMerchantGroup(action.merchant.uid, gid, endTime)
             }
@@ -896,6 +898,7 @@ private fun MerchantCard(
                     IconButton(onClick = { expanded = true }, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.MoreVert, "商户操作") }
                     DropdownMenu(expanded, { expanded = false }) {
                         listOf(
+                            MerchantAction(if (merchant.status == 1) "封禁账号" else "解封账号", "toggleAccount", merchant),
                             MerchantAction(
                                 when (merchant.paymentStatus) { 2 -> "审核通过"; 1 -> "关闭支付"; else -> "开启支付" },
                                 "togglePay",

@@ -66,7 +66,12 @@ internal fun PayTabs(options: List<Pair<String, String>>, selected: String, onSe
 
 @Composable
 internal fun PayPills(options: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    val scroll = rememberLazyListState()
+    LaunchedEffect(selected) {
+        val index = options.indexOfFirst { it.first == selected }
+        if (index >= 0) scroll.scrollToItem(index)
+    }
+    LazyRow(state = scroll, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         items(options, key = { it.first }) { (value, label) ->
             Box(Modifier.height(44.dp).clickable { onSelect(value) }, contentAlignment = Alignment.Center) {
                 Surface(color = if (value == selected) GreenDark else Color.White, shape = RoundedCornerShape(16.dp), border = if (value == selected) null else BorderStroke(1.dp, Line)) {

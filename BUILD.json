@@ -1,9 +1,9 @@
 {
-  "version": "0.6.1 original Android UI embedded panel",
-  "versionCode": 71839,
+  "version": "0.7.0 native recognition and merchant workflows",
+  "versionCode": 71849,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "8dc7070cf45c31e4d38f2788423332c97d555624839b97aa0a41ebbe1b8974e4",
+  "patch_sha256": "92898c1390ee391e3bc5f2a1d055714b416d2f15d1cdf937aad081cf1c27dff0",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
   "standalone_admin_activities": 0,
   "original_data_files": 23,

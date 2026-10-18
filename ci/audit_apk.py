@@ -6,6 +6,7 @@ for component in ['org.telegram.messenger.voip.VoIPService','org.telegram.messen
     assert component not in manifest,component
 for screen in ['com.futoonpay.admin.MainActivity','com.futoonpay.admin.NativeModuleActivity','com.futoonpay.admin.DomainAuditActivity']:
     assert screen not in manifest, 'Standalone admin screen must not be packaged: '+screen
+assert '"androidx.activity.ComponentActivity"' not in manifest, 'Compose test activity must not be exported by the APK'
 permissions=subprocess.check_output([str(aapt),'dump','permissions',str(apk)],text=True)
 for name in ['RECORD_AUDIO','READ_CONTACTS','WRITE_CONTACTS']:
     assert 'android.permission.'+name not in permissions,name

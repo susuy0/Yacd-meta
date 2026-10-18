@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.Lifecycle
 import com.futoonpay.admin.data.*
 import com.futoonpay.admin.ui.theme.FutoonTheme
+import com.futoonpay.admin.ui.AppViewModel
+import com.futoonpay.admin.ui.AppUiState
+import com.futoonpay.admin.ui.OrdersScreen
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
@@ -31,8 +34,17 @@ class EmbeddedPanelTest {
     private val navigator = PanelNavigator()
     private fun screen(content: @Composable () -> Unit) { compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp).testTag("native-floating-panel")) { content() } } }; compose.waitForIdle() }
     private fun screenshot(name: String) {
-        val bitmap = compose.onNodeWithTag("native-floating-panel").captureToImage().asAndroidBitmap()
-        java.io.File("build/ui-screenshots/$name.png").apply { parentFile.mkdirs() }.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        val bounds = compose.onNodeWithTag("native-floating-panel").fetchSemanticsNode().boundsInRoot
+        compose.runOnUiThread {
+            val parent = compose.activity.findViewById<android.view.ViewGroup>(android.R.id.content)
+            val view = parent.getChildAt(0)
+            val bitmap = android.graphics.Bitmap.createBitmap(bounds.width.toInt(), bounds.height.toInt(), android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bitmap)
+            canvas.translate(-bounds.left, -bounds.top)
+            view.draw(canvas)
+            java.io.File("build/ui-screenshots/$name.png").apply { parentFile.mkdirs() }.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            bitmap.recycle()
+        }
     }
     private fun environment() = TestEnvironment(FutoonRepository(fixtureClient({ request ->
         when (request.url.queryParameter("act")) {
@@ -81,9 +93,27 @@ class EmbeddedPanelTest {
         assertTrue(navigator.pop()); assertEquals("orders", navigator.current.kind)
         assertFalse(navigator.pop())
     }
+    @Test fun pluginConfirmationStaysVisibleAtKeyboardSizedPanelHeight() {
+        compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(350.dp)) { PanelOverlayHost {
+            androidx.compose.foundation.layout.Column {
+                NativeFieldEditor(NativeField("plugin", "支付插件", "", "select", (1..20).map { NativeOption("plugin$it", "插件 $it") }), "") {}
+            }
+        } } } }
+        compose.onNodeWithText("请选择").performClick()
+        compose.onNodeWithText("插件 1").performClick()
+        compose.onNodeWithText("选择 插件 1").assertIsDisplayed()
+    }
+    @Test fun fullOrderSearchKeepsApplyActionVisibleInShortPanel() {
+        val model = AppViewModel(TestEnvironment(), loadOnStart = false)
+        compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(350.dp)) { PanelOverlayHost {
+            OrdersScreen(AppUiState(), model)
+        } } } }
+        compose.onNodeWithText("完整搜索").performClick()
+        compose.onNodeWithText("应用筛选").assertIsDisplayed()
+    }
 }
 
-internal class FixtureBridge : NativePanelBridge {
+internal open class FixtureBridge : NativePanelBridge {
     val sent = AtomicInteger()
     val closed = AtomicInteger()
     override fun address() = ""
@@ -98,13 +128,19 @@ internal class FixtureBridge : NativePanelBridge {
         override fun clearCookies() {}
     }
     override fun configure(address: String, username: String) { error("No live backend permitted in UI fixtures") }
-    override fun call(operation: String, params: String): String = error("Unexpected bridge operation: $operation")
+    override fun call(operation: String, params: String): String = when(operation) {
+        "local.read", "local.write" -> "{}"
+        "merchant.lookup" -> "{\"rows\":[]}"
+        "recognize" -> "[]"
+        else -> error("Unexpected bridge operation: $operation")
+    }
     override fun collapse() { closed.incrementAndGet() }
     override fun copy(text: String) {}
     override fun selectEvidence(order: String, caption: String) {}
     override fun pickEvidenceFromChat() {}
     override fun openGallery() {}
     override fun evidencePaths() = emptyArray<String>()
+    override fun evidencePreview(path: String): android.graphics.Bitmap? = null
     override fun editEvidence(index: Int) {}
     override fun removeEvidence(index: Int) {}
     override fun sendEvidence(order: String, caption: String) { sent.incrementAndGet() }
