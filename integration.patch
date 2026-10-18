@@ -8423,7 +8423,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,500 @@
+@@ -0,0 +1,501 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -8902,10 +8902,11 @@ new file mode 100644
 +        // Reuse Telegram's bounded decoder, including EXIF rotation and mirror handling.
 +        Bitmap bitmap=ImageLoader.loadBitmap(file.getPath(),null,640,640,true);
 +        if(bitmap==null)throw new IOException("图片预览不可用");
++        boolean alpha=bitmap.hasAlpha();
 +        byte[] bytes;
-+        try(ByteArrayOutputStream out=new ByteArrayOutputStream()){bitmap.compress(Bitmap.CompressFormat.JPEG,82,out);bytes=out.toByteArray();}
++        try(ByteArrayOutputStream out=new ByteArrayOutputStream()){bitmap.compress(alpha?Bitmap.CompressFormat.PNG:Bitmap.CompressFormat.JPEG,82,out);bytes=out.toByteArray();}
 +        finally{bitmap.recycle();}
-+        return new WebResourceResponse("image/jpeg",null,200,"OK",Collections.singletonMap("Cache-Control","private, max-age=600"),new ByteArrayInputStream(bytes));
++        return new WebResourceResponse(alpha?"image/png":"image/jpeg",null,200,"OK",Collections.singletonMap("Cache-Control","private, max-age=600"),new ByteArrayInputStream(bytes));
 +    }
 +    private String decodeQr(File file){
 +        Bitmap bitmap=null;
