@@ -1381,7 +1381,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.css b/TMessagesProj/src/
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.css
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,87 @@
 +html,body,#app{margin:0;width:100%;height:100%;min-height:0;overflow:hidden;background:transparent}
 +body{font-family:Roboto,"Noto Sans SC",system-ui,sans-serif!important}
 +.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;max-height:100%;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
@@ -1464,6 +1464,11 @@ new file mode 100644
 +@media(max-height:360px){.hd-top{min-height:36px}.panel button.panel-control{min-height:36px}.panel .hd{padding:2px 8px}.panel .actionbar{padding:4px 8px}.panel .actionbar .btn{min-height:40px;padding:6px}.panel .tab{min-height:36px;gap:0}.tabbar .ic{width:16px;height:16px}.merchant-empty{padding:14px 10px}}
 +
 +.selectable-row{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:8px}.row-select{width:20px!important;height:20px!important;min-height:20px!important;accent-color:var(--primary,#006344)}
++
++.panel .toolbar.compact{gap:4px;flex-wrap:nowrap}
++.panel .toolbar.compact .btn{min-width:0;min-height:32px;padding:6px 3px;font-size:12px;white-space:nowrap}
++.panel .compact-context .btn{min-height:28px;padding:4px 6px;font-size:12px}
++.page-metrics summary{cursor:pointer;font-size:12px;color:var(--text-2);padding:4px 0}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java b/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java
 deleted file mode 100644
 index 5482ff4..0000000
@@ -8751,7 +8756,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/m
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,507 @@
+@@ -0,0 +1,509 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8851,11 +8856,11 @@ new file mode 100644
 +function batchBar(kind){const count=selections[kind].size;return '<div class="toolbar">'+btn(count?'清空所选 '+count+' 项':'选择当前页','selection.toggle','btn-outline sm','data-kind="'+kind+'"')+(count?btn('批量操作','selection.prepare','btn-primary sm','data-kind="'+kind+'"'):'')+'</div>';}
 +function batchResultView(){const r=S.batchOutcome||{};return {body:'<h2 class="title">'+esc(r.title||'批量结果')+'</h2>'+(r.results||[]).map(x=>'<div class="card">'+kv(x.label||x.id,x.status)+note(x.message)+'</div>').join('')};}
 +function ordersView(){
-+ let body=queryBar()+'<div class="toolbar">'+btn('整段文字识别','recognize.open')+btn('截图识别','ocr.pick')+btn('完整筛选','order.filters')+(Object.keys(S.filters).length?btn('清空筛选','order.clearFilters'):'' )+'</div>'+(S.queryWarning?note(S.queryWarning,'warn'):'')+
++ let body=queryBar()+'<div class="toolbar compact">'+btn('整段文字识别','recognize.open')+btn('截图识别','ocr.pick')+btn('完整筛选','order.filters')+(Object.keys(S.filters).length?btn('清空筛选','order.clearFilters'):'' )+'</div>'+(S.queryWarning?note(S.queryWarning,'warn'):'')+
 + '<div class="tags">'+[['-1','全部'],['0','待支付'],['1','已支付'],['2','已退款'],['3','已冻结']].map(([s,t])=>'<button class="chip '+((S.filters.status||'-1')===s?'on':'')+'" data-act="order.statusFilter" data-value="'+s+'">'+t+'</button>').join('')+'</div>';
-+ if(S.filters.uid)body+=note('当前按商户 PID '+S.filters.uid+' 筛选')+btn('查看其他商户结果','order.clearMerchant','btn-text');
-+ if(S.orderMetrics)body+='<div class="card">'+kv('当前页订单 / 已支付',S.orderMetrics.count+' / '+S.orderMetrics.successful)+kv('当前页成功率',S.orderMetrics.rate==null?'未提供':S.orderMetrics.rate.toFixed(1)+'%')+Object.entries(S.orderMetrics.amounts||{}).map(([code,v])=>kv('当前页金额 '+code,v)).join('')+'</div>';
-+ if(S.orders.length)body+='<div class="rf between"><span class="t-cap c2">共 '+S.total+' 条 · 第 '+S.n+' 页</span>'+btn('导出当前结果','order.export','btn-text sm')+'</div>'+batchBar('orders')+S.orders.map((o,i)=>'<div class="selectable-row">'+selectionBox(o.trade_no,'orders')+orderCard(o,i)+'</div>').join('');
++ if(S.filters.uid)body+='<div class="rf between compact-context"><span class="t-cap c2">商户 PID '+esc(S.filters.uid)+'</span>'+btn('查看其他商户结果','order.clearMerchant','btn-text sm')+'</div>';
++ if(S.orderMetrics)body+='<details class="page-metrics"><summary>本页 '+S.orderMetrics.count+' 笔 · 已支付 '+S.orderMetrics.successful+' 笔</summary><div class="card">'+kv('当前页订单 / 已支付',S.orderMetrics.count+' / '+S.orderMetrics.successful)+kv('当前页成功率',S.orderMetrics.rate==null?'未提供':S.orderMetrics.rate.toFixed(1)+'%')+Object.entries(S.orderMetrics.amounts||{}).map(([code,v])=>kv('当前页金额 '+code,v)).join('')+'</div></details>';
++ if(S.orders.length)body+='<div class="rf between"><span class="t-cap c2">共 '+S.total+' 条 · 第 '+S.n+' 页</span>'+btn('导出当前结果','order.export','btn-text sm')+btn(selections.orders.size?'清空所选 '+selections.orders.size+' 项':'选择当前页','selection.toggle','btn-text sm','data-kind="orders"')+'</div>'+(selections.orders.size?btn('批量操作','selection.prepare','btn-primary sm','data-kind="orders"'):'')+S.orders.map((o,i)=>'<div class="selectable-row">'+selectionBox(o.trade_no,'orders')+orderCard(o,i)+'</div>').join('');
 + else body+='<div class="empty">'+icon('order')+'<p>查询结果会显示在这里</p></div>';
 + body+='<div class="toolbar">'+btn('最近查询','order.history')+btn('收藏订单','order.favorites')+btn('恢复凭证草稿','voucher.drafts')+'</div>';
 + return {body,actions:btn('上一页','order.prev')+btn('下一页','order.next')};
@@ -8934,6 +8939,8 @@ new file mode 100644
 +function recordsView(){
 + if(S.module==='channel_monitor')return monitorView();
 + const title=modules.find(x=>x[0]===S.module)?.[1]||'资金流水';
++ const documentOnly=!(S.tables||[]).some(t=>t.rows?.length)&&!S.records.length&&((S.docForms||[]).length||(S.sections||[]).length);
++ if(documentOnly)return {body:'<div class="rf between"><span class="title">'+esc(title)+'</span>'+btn('刷新','records.reload','btn-text sm')+'</div>'+documentTools()};
 + let body=documentTools()+(['channels','payment_types','rolls','proxies','channel_monitor','settlements'].includes(S.module)?batchBar('records'):'')+'<div class="rf between"><span class="title">'+esc(title)+'</span>'+btn('刷新','records.reload','btn-text sm')+'</div>'+
 + '<div class="rf g8"><input id="recordQuery" placeholder="筛选当前页 / 输入通道 ID" value="'+esc(S.recordQuery||'')+'">'+btn('筛选','records.search','btn-outline')+'</div>';
 + if(['channels','payment_types','rolls','proxies'].includes(S.module))body+=btn('新增配置','module.add','btn-primary block');
@@ -9263,7 +9270,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,234 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9333,6 +9340,10 @@ new file mode 100644
 + await page.getByRole('button',{name:'应用筛选',exact:true}).click();
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='orders.search'&&x.params.status==='1'&&x.params.uid==='20418'&&x.params.kind==='AUTO'));
 + assert(!await page.evaluate(()=>testRequests.some(x=>x.op==='orders.list'&&x.params.column==='trade_no')),'filters must not force AUTO to system order');
++ await page.locator('.body').evaluate(el=>el.scrollTop=0);
++ const firstResult=await page.locator('[data-act="order.open"]').first().boundingBox();
++ const resultBody=await page.locator('.body').boundingBox();
++ assert(firstResult.y+firstResult.height<=resultBody.y+resultBody.height+1,'first order must be fully visible at default panel size');
 + await page.screenshot({path:qa+'/orders-light.png'});
 + await page.locator('[data-act="order.open"]').click();await page.getByRole('button',{name:'选择凭证并发送'}).waitFor();
 + await page.screenshot({path:qa+'/detail-light.png'});
