@@ -153,5 +153,7 @@ internal class WorkflowFixtureBridge(private val handler: (String, JSONObject) -
     override fun pickEvidenceFromChat() { pickedChat++ }
     override fun openGallery() { pickedGallery++ }
     override fun evidencePaths() = files
+    override fun evidencePreview(path: String): android.graphics.Bitmap? = if (path !in files) null else android.graphics.Bitmap.createBitmap(80, 48, android.graphics.Bitmap.Config.ARGB_8888).apply { eraseColor(0xffdce4df.toInt()) }
+    override fun sendEvidence(order: String, caption: String) { selectedOrder = order; selectedCaption = caption; super.sendEvidence(order, caption) }
     companion object { const val order = """{"trade_no":"S1000001","out_trade_no":"M2000002","uid":"1011","money":"10.00","realmoney":"10.00","status":0,"channel":"12","addtime":"2026-10-18 15:50:00"}""" }
 }

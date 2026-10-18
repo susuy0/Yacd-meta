@@ -12,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.futoonpay.admin.data.*
@@ -70,21 +71,22 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     var column by rememberSaveable { mutableStateOf("telegram_id") }
     var value by rememberSaveable(chat.key) { mutableStateOf(chat.telegramId) }
     var expanded by rememberSaveable(chat.key, merchant?.uid) { mutableStateOf(!compact) }
-    PayCard {
+    PayCard(compact = compact) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("当前会话商户", Modifier.weight(1f), color = Muted, fontSize = 12.sp)
-            TextButton(onClick = workflows::refreshMerchant, enabled = !state.merchantLoading) { Text("重新识别") }
+            Text(if (compact && merchant != null) "PID ${merchant.uid} · ${merchant.username.ifBlank { "当前商户" }}" else "当前会话商户", Modifier.weight(1f), color = if (compact) Ink else Muted, fontSize = if (compact) 14.sp else 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TextButton(onClick = workflows::refreshMerchant, enabled = !state.merchantLoading) { Text(if (compact) "刷新" else "重新识别", fontSize = 12.sp) }
         }
         when {
             state.merchantLoading -> Row(verticalAlignment = Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Text(" 正在查询商户…") }
             merchant == null -> Text(state.merchantError ?: "当前会话未指定商户，可按 TGID 或 PID 手动查询", color = if (state.merchantError == null) Muted else Danger, fontSize = 12.sp)
             else -> {
-                Text("${merchant.username.ifBlank { "商户" }} · PID ${merchant.uid}", style = MaterialTheme.typography.titleMedium)
-                Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 11.sp)
-                if (chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 11.sp)
+                if (!compact) Text("${merchant.username.ifBlank { "商户" }} · PID ${merchant.uid}", style = MaterialTheme.typography.titleMedium)
+                Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 11.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
+                if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 11.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户") }
-                    OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "商户操作") }
+                    Button(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户", fontSize = if (compact) 12.sp else 14.sp) }
+                    OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "商户操作", fontSize = if (compact) 12.sp else 14.sp) }
+                    if (compact) TextButton(onClick = { manual = true }) { Text("切换", fontSize = 12.sp) }
                 }
                 if (expanded) {
                     merchant.balances.ifEmpty { mapOf("CNY" to merchant.balance) }.forEach { (currency, amount) -> DataRow("$currency 可用", amount) }
@@ -112,8 +114,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 }
             }
         }
-        Row {
-            TextButton(onClick = { manual = true }) { Text(if (merchant == null) "手动查询 TGID / PID" else "切换商户") }
+        if (!compact || merchant == null || state.manualMerchant) Row {
+            if (!compact || merchant == null) TextButton(onClick = { manual = true }) { Text(if (merchant == null) "手动查询 TGID / PID" else "切换商户") }
             if (state.manualMerchant) TextButton(onClick = workflows::lookupAutomatic) { Text("恢复自动识别") }
         }
         if (merchant != null && chat.dialog < 0 && chat.telegramId.isBlank()) TextButton(onClick = workflows::toggleGroupBinding, enabled = !state.localLoading) { Text(if (workflows.binding().isBlank()) "在本群记住此商户" else "解除本群商户绑定") }

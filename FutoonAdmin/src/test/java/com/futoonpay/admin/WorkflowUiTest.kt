@@ -67,6 +67,7 @@ class WorkflowUiTest {
         listOf("识别", "订单", "商户", "结算", "更多").forEach { compose.onNode(hasText(it) and hasClickAction()).assertIsDisplayed() }
         compose.onNode(hasText("识别") and hasClickAction()).performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("编辑商户").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("截图 OCR / 二维码").assertIsDisplayed()
         compose.onNodeWithText("编辑商户").assertIsDisplayed().performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("test@example.com").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("编辑商户 · UID 1011").assertIsDisplayed()
@@ -116,10 +117,12 @@ class WorkflowUiTest {
         compose.onNodeWithText("从聊天选图").performClick()
         assertEquals(1, bridge.pickedChat)
         compose.runOnUiThread { bridge.files = arrayOf("/fixture/payment.jpg"); revision++ }
+        compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("凭证 1").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("选择收件人并预览").assertIsEnabled()
         assertEquals(0, bridge.sent.get())
         compose.onNodeWithText("选择收件人并预览").performClick()
         assertEquals(1, bridge.sent.get())
+        assertTrue(bridge.selectedCaption.startsWith("请协助补单"))
         assertTrue(requests.none { it.url.queryParameter("act") == "fillorder" || it.url.queryParameter("act") == "setStatus" })
         assertTrue(bridge.calls.none { it.first == "order.action" })
         screenshot("25-receipt-supplement-manual-preview")
