@@ -43,6 +43,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
     private val controller = SavedStateRegistryController.create(this)
     private val compose = ComposeView(context)
     private var closed = false
+    private var panelHeight = 0
     override val lifecycle: Lifecycle get() = registry
     override val viewModelStore = ViewModelStore()
     override val savedStateRegistry get() = controller.savedStateRegistry
@@ -56,6 +57,11 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
+    fun setPanelHeight(pixels: Int) { panelHeight = pixels.coerceAtLeast(0); requestLayout() }
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val bounded = if (panelHeight > 0) MeasureSpec.makeMeasureSpec(if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) panelHeight else minOf(panelHeight, MeasureSpec.getSize(heightMeasureSpec)), MeasureSpec.EXACTLY) else heightMeasureSpec
+        super.onMeasure(widthMeasureSpec, bounded)
+    }
     fun onHidden() { if (!closed) registry.currentState = Lifecycle.State.CREATED }
     fun close() { if (closed) return; closed = true; registry.currentState = Lifecycle.State.DESTROYED; viewModelStore.clear(); compose.disposeComposition() }
 }

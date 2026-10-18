@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.futoonpay.admin.ui.theme.FutoonTheme
 import java.io.File
 import org.junit.*
@@ -99,6 +100,17 @@ class ChatToolsUiTest {
         compose.onNodeWithText("保存", useUnmergedTree = true).assertExists()
         compose.onNode(hasSetTextAction() and hasText("测试")).assertExists()
         assertEquals("", bridge.saved)
+    }
+    @Test fun actualSheetViewBoundsItsHeightAndOwnsItsLifecycle() {
+        var panel: ChatToolsView? = null
+        compose.setContent { AndroidView(factory = { context -> ChatToolsView(context, bridge, true).also { panel = it; it.setPanelHeight(350); it.onShown() } }, modifier = Modifier.fillMaxWidth()) }
+        compose.onNodeWithText("管理快速回复").assertIsDisplayed()
+        compose.runOnUiThread {
+            assertTrue(panel!!.measuredHeight in 1..350)
+            assertEquals(androidx.lifecycle.Lifecycle.State.RESUMED, panel!!.lifecycle.currentState)
+            panel!!.onHidden(); assertEquals(androidx.lifecycle.Lifecycle.State.CREATED, panel!!.lifecycle.currentState)
+            panel!!.onShown(); panel!!.close(); assertEquals(androidx.lifecycle.Lifecycle.State.DESTROYED, panel!!.lifecycle.currentState)
+        }
     }
 }
 internal class ChatToolsFixture : ChatToolsBridge {

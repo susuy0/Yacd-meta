@@ -6798,7 +6798,15 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8132,7 +8158,7 @@
+@@ -8125,14 +8151,14 @@
+             } else {
+                 color = getThemedColor(Theme.key_chat_messagePanelSend);
+             }
+-            boolean captionNearAttach = messageEditText != null && (!TextUtils.isEmpty(messageEditText.getCaption()) || messageEditText.isNearRightCaption(dp(DEFAULT_HEIGHT))) || LocaleController.isRTL;
++            boolean captionNearAttach = isFutoonComposer() && message.length() == 0 || messageEditText != null && (!TextUtils.isEmpty(messageEditText.getCaption()) || messageEditText.isNearRightCaption(dp(DEFAULT_HEIGHT))) || LocaleController.isRTL;
+ 
+             if (color != sendButtonBackgroundColor) {
+                 sendButtonBackgroundColor = color;
                  Theme.setSelectorDrawableColor(sendButton.getBackground(), Color.argb(24, Color.red(color), Color.green(color), Color.blue(color)), true);
              }
  
@@ -8546,7 +8554,7 @@ new file mode 100644
 +            public void originalSendOptions() { after[0] = originalSendOptions; close(); }
 +            public void close() { if (sheet[0] != null) sheet[0].dismiss(); }
 +        }, true);
-+        tools.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Math.min(AndroidUtilities.dp(560), (int) (AndroidUtilities.displaySize.y * .72f))));
++        tools.setPanelHeight(Math.min(AndroidUtilities.dp(560), (int) (AndroidUtilities.displaySize.y * .72f)));
 +        sheet[0] = new BottomSheet.Builder(parent.getParentActivity()).setCustomView(tools).create();
 +        sheet[0].setOnDismissListener(dialog -> {
 +            tools.close();
