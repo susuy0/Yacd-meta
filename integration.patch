@@ -7901,7 +7901,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMes
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,217 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -7941,6 +7941,7 @@ new file mode 100644
 +    private final View scrim;
 +    private final TextView ball;
 +    private final FutoonStore store;
++    private final FutoonDeliveryTracker deliveries;
 +    private final ArrayList<File> photos=new ArrayList<>();
 +    private final Map<String,MessageObject> downloading=new HashMap<>();
 +    private NativePanelView panel;
@@ -7965,7 +7966,7 @@ new file mode 100644
 +    }
 +
 +    public FutoonPanel(ChatActivity host,FrameLayout parent,int account) {
-+        this.host=host;this.account=account;owner=UserConfig.getInstance(account).getClientUserId();store=new FutoonStore(account);
++        this.host=host;this.account=account;owner=UserConfig.getInstance(account).getClientUserId();store=new FutoonStore(account);deliveries=FutoonDeliveryTracker.get(account);
 +        Context c=parent.getContext();
 +        root=new FrameLayout(c);root.setClipChildren(true);root.setClipToPadding(true);parent.addView(root,new FrameLayout.LayoutParams(-1,-1));
 +        scrim=new View(c);scrim.setBackgroundColor(0x5508140e);scrim.setVisibility(View.GONE);scrim.setOnClickListener(v->collapse());root.addView(scrim,new FrameLayout.LayoutParams(-1,-1));
@@ -8031,8 +8032,16 @@ new file mode 100644
 +    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){applyContext();return;}dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}applyContext();if(panel!=null)panel.updateEvidenceCount(0);}
 +    public void open(String text){if(destroyed)return;host.bindFutoonContext();ensurePanel();expanded=true;paused=false;ball.setVisibility(View.GONE);scrim.setVisibility(View.VISIBLE);panel.setVisibility(View.VISIBLE);panel.onShown();resize();root.bringToFront();if(text!=null&&!text.isEmpty())panel.recognizeText(text,dialogId,topicId,sourceMessage,false);}
 +    public void recognizeSelected(String text,long messageId){sourceMessage=Math.max(0,messageId);open(text);}
-+    public void recognizeMessage(MessageObject m){if(m==null||m.messageOwner==null)return;sourceMessage=m.getId();String text=m.messageOwner.message==null?"":m.messageOwner.message;if(m.replyMessageObject!=null&&m.replyMessageObject.messageOwner!=null&&m.replyMessageObject.messageOwner.message!=null)text+="\n\n被回复消息：\n"+m.replyMessageObject.messageOwner.message;open(text);}
-+    public void recognizeMessages(Collection<MessageObject> messages){StringBuilder all=new StringBuilder();sourceMessage=0;for(MessageObject m:messages)if(m!=null&&m.messageOwner!=null&&m.messageOwner.message!=null){if(sourceMessage==0)sourceMessage=m.getId();all.append(m.messageOwner.message).append('\n');}open(all.toString());}
++    public void recognizeMessage(MessageObject message){if(message==null||message.messageOwner==null)return;ArrayList<MessageObject> messages=new ArrayList<>();messages.add(message);if(message.replyMessageObject!=null)messages.add(message.replyMessageObject);recognizeMessages(messages);}
++    public void recognizeMessages(Collection<MessageObject> messages){
++        if(!valid())return;
++        host.bindFutoonContext();StringBuilder text=new StringBuilder();JSONObject pointers=new JSONObject();Set<String> ambiguous=new HashSet<>();sourceMessage=0;
++        for(MessageObject message:messages)if(message!=null&&message.messageOwner!=null&&message.messageOwner.message!=null){
++            String raw=message.messageOwner.message;text.append(raw).append('\n');
++            try{for(FutoonQuery item:FutoonQuery.extract(raw)){String key=item.kind.name()+":"+item.value;if(ambiguous.contains(key))continue;JSONObject previous=pointers.optJSONObject(key);if(previous!=null&&previous.optLong("message")!=message.getId()){pointers.remove(key);ambiguous.add(key);}else pointers.put(key,new JSONObject().put("dialog",dialogId).put("topic",topicId).put("message",message.getId()));}}catch(Exception ignored){}
++        }
++        open("");panel.recognizeMessageBatch(text.toString(),pointers.toString());
++    }
 +    public void collapse(){if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);}
 +    private void resize(){if(panel==null)return;int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(420),true,keyboard);int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
@@ -8057,11 +8066,13 @@ new file mode 100644
 +    }
 +    private String nativeCall(String operation,JSONObject params)throws Exception{
 +        if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");
++        final String backend=store.address();
 +        if(operation.equals("recognize")){
 +            JSONArray items=new JSONArray();for(FutoonQuery query:FutoonQuery.extract(params.optString("text")))items.put(new JSONObject().put("kind",query.kind.name()).put("value",query.value).put("label",FutoonQuery.label(query.kind)));return items.toString();
 +        }
-+        if(operation.equals("local.read")){synchronized(store){String saved=store.readLocal(store.address());JSONObject local=saved.isEmpty()?new JSONObject():new JSONObject(saved);local.remove("_nativeProofs");return local.toString();}}
-+        if(operation.equals("local.write")){synchronized(store){String previous=store.readLocal(store.address());JSONObject old=previous.isEmpty()?new JSONObject():new JSONObject(previous);JSONObject proofs=old.optJSONObject("_nativeProofs");if(proofs!=null)params.put("_nativeProofs",proofs);store.writeLocal(store.address(),params.toString());return "{}";}}
++        if(operation.equals("local.read")){synchronized(store){String saved=store.readLocal(backend);JSONObject local=saved.isEmpty()?new JSONObject():new JSONObject(saved);local.remove("_nativeProofs");return local.toString();}}
++        if(operation.equals("delivery.read"))return deliveries.read(backend).toString();
++        if(operation.equals("local.write")){synchronized(store){String previous=store.readLocal(backend);JSONObject old=previous.isEmpty()?new JSONObject():new JSONObject(previous);JSONObject proofs=old.optJSONObject("_nativeProofs");if(proofs!=null)params.put("_nativeProofs",proofs);store.writeLocal(backend,params.toString());return "{}";}}
 +        if(operation.equals("ocr.gallery"))return onUi(()->{openImagePicker(true);return "{}";});
 +        if(operation.equals("export"))return onUi(()->{exportText=params.optString("text");String name=params.optString("name","futoon.csv");if(!name.matches("[A-Za-z0-9_.-]{1,100}"))name="futoon.csv";host.startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/csv").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,name),EXPORT_FILE);return "{}";});
 +        if(operation.equals("ui.source"))return onUi(()->{long message=params.optLong("message"),dialog=params.optLong("dialog");if(message<=0||dialog==0)throw new IOException("这笔订单没有可定位的原聊天消息");collapse();host.futoonJumpToSource(dialog,params.optLong("topic"),message);return "{}";});
@@ -8076,8 +8087,10 @@ new file mode 100644
 +        synchronized(this){api=null;ensureClient();return business.call(operation,params).toString();}
 +    }
 +    private String onUi(Callable<String> action)throws Exception{
-+        if(Looper.myLooper()==Looper.getMainLooper())return action.call();
-+        FutureTask<String> task=new FutureTask<>(action);AndroidUtilities.runOnUIThread(task);
++        final int gen=generation;final String backend=store.address();
++        Callable<String> guarded=()->{if(!valid()||gen!=generation||!backend.equals(store.address()))throw new IOException("账号、后台或会话已变化，请重新操作");return action.call();};
++        if(Looper.myLooper()==Looper.getMainLooper())return guarded.call();
++        FutureTask<String> task=new FutureTask<>(guarded);AndroidUtilities.runOnUIThread(task);
 +        try{return task.get(15,TimeUnit.SECONDS);}catch(ExecutionException error){Throwable cause=error.getCause();if(cause instanceof Exception)throw (Exception)cause;throw error;}
 +    }
 +    private void readOcr(File file,int gen){

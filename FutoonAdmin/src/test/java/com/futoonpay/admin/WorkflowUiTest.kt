@@ -47,6 +47,7 @@ class WorkflowUiTest {
     })))
     private fun root(query: RecognizedQuery? = null) {
         val env = environment()
+        if (query != null) navigator.showRecognition()
         compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp).testTag("workflow-panel")) {
             EmbeddedPanelRoot(env, bridge, navigator, ChatScope("工单", "5824870757", "来自话题末尾 TGID", "-100:12627", -100, 12627, "12627", "游客"), query, revision)
         } } }
@@ -70,8 +71,14 @@ class WorkflowUiTest {
         compose.waitUntil(5000) { compose.onAllNodesWithText("test@example.com").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("编辑商户 · UID 1011").assertIsDisplayed()
         compose.onNodeWithText("test@example.com").performTextReplacement("new@example.com")
-        compose.onNodeWithText("保存资料").assertIsDisplayed().performClick()
-        compose.waitUntil(5000) { requests.any { it.url.queryParameter("act") == "editUser" } }
+        compose.onNodeWithText("保存资料").assertIsDisplayed().assertIsEnabled().performClick()
+        try { compose.waitUntil(5000) { requests.any { it.url.queryParameter("act") == "editUser" } } }
+        catch (error: Throwable) {
+            screenshot("failed-merchant-save")
+            println(compose.onRoot(useUnmergedTree = true).printToString())
+            println("Fixture requests: " + requests.map { it.url.toString() })
+            throw error
+        }
         assertEquals(1, requests.count { it.url.queryParameter("act") == "editUser" })
         assertEquals("1011", requests.first { it.url.queryParameter("act") == "editUser" }.url.queryParameter("uid"))
         compose.waitUntil(5000) { compose.onAllNodesWithText("编辑商户 · UID 1011").fetchSemanticsNodes().isEmpty() }

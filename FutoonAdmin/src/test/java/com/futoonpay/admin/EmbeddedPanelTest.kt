@@ -129,7 +129,7 @@ internal open class FixtureBridge : NativePanelBridge {
     }
     override fun configure(address: String, username: String) { error("No live backend permitted in UI fixtures") }
     override fun call(operation: String, params: String): String = when(operation) {
-        "local.read", "local.write" -> "{}"
+        "local.read", "local.write", "delivery.read" -> "{}"
         "merchant.lookup" -> "{\"rows\":[]}"
         "recognize" -> "[]"
         else -> error("Unexpected bridge operation: $operation")

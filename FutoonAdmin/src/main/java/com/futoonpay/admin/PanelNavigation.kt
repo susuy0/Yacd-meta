@@ -3,7 +3,7 @@ package com.futoonpay.admin
 import androidx.compose.runtime.*
 import java.util.UUID
 
-internal data class PanelRoute(val kind: String, val module: String = "", val channelId: String = "", val channelType: String = "", val merchantId: String = "", val id: String = UUID.randomUUID().toString(), val orderId: String = "")
+internal data class PanelRoute(val kind: String, val module: String = "", val channelId: String = "", val channelType: String = "", val merchantId: String = "", val id: String = UUID.randomUUID().toString(), val orderId: String = "", val queryColumn: String = "", val queryValue: String = "")
 
 internal interface PanelNavigation {
     fun orders(channelId: String = "", merchantId: String = "")

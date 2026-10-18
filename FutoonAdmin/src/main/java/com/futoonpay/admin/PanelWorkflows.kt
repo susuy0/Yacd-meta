@@ -23,9 +23,11 @@ internal data class QueryCandidate(
     val value: String, val kind: String = "AUTO", val selected: Boolean = true,
     val id: String = UUID.randomUUID().toString(), val phase: String = "queued",
     val orders: List<String> = emptyList(), val error: String = "", val total: Int = 0,
+    val source: MessageSource = MessageSource(),
+    val matchedKind: String = "",
 )
 internal data class WorkflowState(
-    val text: String = "", val ocr: Boolean = false, val candidates: List<QueryCandidate> = emptyList(),
+    val text: String = "", val ocr: Boolean = false, val candidates: List<QueryCandidate> = emptyList(), val queryKind: String = "AUTO",
     val extracting: Boolean = false, val running: Boolean = false, val error: String? = null,
     val group: String = "none", val localLoading: Boolean = true, val localRevision: Int = 0,
     val notice: String? = null,
@@ -46,6 +48,7 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
     private val backend = bridge.address()
     private var chat = ChatScope()
     private var source = MessageSource()
+    private var pointers = emptyMap<String, MessageSource>()
     private var queryGeneration = 0
     private var lookupGeneration = 0
     private var stop = false
@@ -83,8 +86,9 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
     fun clearError() { mutable.update { it.copy(error = null) } }
     fun notice(message: String) { mutable.update { it.copy(notice = message) } }
     fun consumeNotice() { mutable.update { it.copy(notice = null) } }
-    fun setText(text: String) { source = MessageSource(); mutable.update { it.copy(text = text.take(16384), error = null) } }
+    fun setText(text: String) { source = MessageSource(); pointers = emptyMap(); mutable.update { it.copy(text = text.take(16384), error = null) } }
     fun setGroup(group: String) { mutable.update { it.copy(group = group) } }
+    fun setKind(kind: String) { mutable.update { it.copy(queryKind = kind) } }
     fun editCandidate(id: String, value: String? = null, kind: String? = null, selected: Boolean? = null) {
         if (state.value.running) return
         mutable.update { s -> s.copy(candidates = s.candidates.map { if (it.id == id) it.copy(value = value?.take(128) ?: it.value, kind = kind ?: it.kind, selected = selected ?: it.selected, phase = if (value != null || kind != null) "queued" else it.phase, orders = if (value != null || kind != null) emptyList() else it.orders) else it }) }
@@ -93,19 +97,21 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
         if (query.id == receivedId) return
         if (query.error.isNotBlank()) { receivedId = query.id; mutable.update { it.copy(error = query.error) }; return }
         receivedId = query.id; queryGeneration++; stop = true
+        if (query.value.length > 16384) { mutable.update { it.copy(text = query.value.take(16384), candidates = emptyList(), running = false, extracting = false, error = "每次最多识别 16384 个字符，请缩小所选消息范围") }; return }
         source = query.source
-        mutable.update { it.copy(text = query.value, ocr = query.ocr, candidates = emptyList(), running = false, extracting = false, error = query.error.takeIf(String::isNotBlank)) }
+        pointers = query.pointers
+        mutable.update { it.copy(text = query.value, ocr = query.ocr, candidates = emptyList(), running = false, extracting = false, queryKind = query.kind, error = query.error.takeIf(String::isNotBlank)) }
         if (query.error.isBlank()) extract(query.kind)
     }
-    fun extract(kind: String = "AUTO") = viewModelScope.launch {
+    fun extract(kind: String = state.value.queryKind) = viewModelScope.launch {
         if (state.value.running || state.value.extracting) return@launch
         val generation = ++queryGeneration
         val input = state.value.text
-        mutable.update { it.copy(extracting = true, error = null) }
+        mutable.update { it.copy(extracting = true, queryKind = kind, error = null) }
         try {
             val rows = JSONArray(call("recognize", JSONObject().put("text", input))).objects()
             if (generation != queryGeneration) return@launch
-            val candidates = rows.map { QueryCandidate(it.optString("value"), if (kind == "AUTO") it.optString("kind", "AUTO") else kind) }.distinctBy { it.kind + ":" + it.value }
+            val candidates = rows.map { QueryCandidate(it.optString("value"), if (kind == "AUTO") it.optString("kind", "AUTO") else kind, source = pointers[it.optString("kind", "AUTO") + ":" + it.optString("value")] ?: source) }.distinctBy { it.kind + ":" + it.value }
             mutable.update { it.copy(candidates = candidates, extracting = false, error = if (candidates.isEmpty()) "没有提取到完整编号，请校对文字或手动输入" else null) }
         } catch (e: Throwable) { if (generation == queryGeneration) { mutable.update { it.copy(extracting = false) }; failure(e) } }
     }
@@ -124,8 +130,8 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
                 try {
                     val result = JSONObject(call("orders.search", JSONObject().put("text", candidate.value).put("kind", candidate.kind).put("page", 1)))
                     if (generation != queryGeneration) break
-                    val rows = result.optJSONArray("rows").objects().map { row -> row.put("_source", source.json()).also(::rememberOrder).toString() }
-                    updateCandidate(candidate.id) { it.copy(phase = if (rows.isEmpty()) "failed" else "ok", orders = rows, total = result.optInt("total", rows.size), error = if (rows.isEmpty()) "未找到精确匹配订单" else result.optString("warning")) }
+                    val rows = result.optJSONArray("rows").objects().map { row -> row.put("_source", candidate.source.json()).also(::rememberOrder).toString() }
+                    updateCandidate(candidate.id) { it.copy(phase = if (rows.isEmpty()) "failed" else "ok", orders = rows, total = result.optInt("total", rows.size), matchedKind = result.optString("kind", candidate.kind), error = if (rows.isEmpty()) "未找到精确匹配订单" else result.optString("warning")) }
                     history(candidate.value, candidate.kind)
                 } catch (e: Throwable) {
                     if (e is CancellationException) throw e
@@ -171,6 +177,27 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
         val pointer = MessageSource.from(draft.optJSONObject("sourceContext")).copy(message = draft.optLong("sourceMessage"))
         order.put("_source", pointer.json()); rememberOrder(order)
         runCatching { call("evidence.restore", JSONObject().put("order", order).put("caption", draft.optString("caption"))) }.onFailure(::failure)
+    }
+    fun refreshDeliveries() = viewModelScope.launch {
+        localReady.await()
+        runCatching {
+            val deliveries = JSONObject(call("delivery.read"))
+            var edited = false
+            deliveries.keys().asSequence().forEach { trade ->
+                val delivery = deliveries.getJSONObject(trade)
+                val item = case(trade)
+                val text = listOfNotNull(
+                    delivery.optInt("sent").takeIf { it > 0 }?.let { "Telegram 已确认 $it 张凭证" },
+                    delivery.optInt("failed").takeIf { it > 0 }?.let { "$it 张发送失败" },
+                    delivery.optInt("pending").takeIf { it > 0 }?.let { "$it 张发送中" },
+                ).joinToString("；")
+                if (item.optString("sendState") != text && text.isNotBlank()) {
+                    objectAt("cases").put(trade, item.put("sendState", text).put("target", delivery.optString("dialog")).put("message", delivery.optInt("message")))
+                    edited = true
+                }
+            }
+            if (edited) changed()
+        }.onFailure(::failure)
     }
     fun jumpToSource(order: JSONObject) = viewModelScope.launch {
         val pointer = MessageSource.from(order.optJSONObject("_source"))

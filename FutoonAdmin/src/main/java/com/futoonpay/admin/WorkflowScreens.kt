@@ -129,7 +129,6 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
 @Composable internal fun RecognitionScreen(workflows: PanelWorkflows, actions: CurrentMerchantActions, chat: ChatScope, navigator: PanelNavigator, bridge: NativePanelBridge) {
     val state by workflows.state.collectAsState()
     var page by rememberSaveable { mutableStateOf("recognize") }
-    var kind by rememberSaveable { mutableStateOf("AUTO") }
     var summary by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(state.text, state.ocr) { page = "recognize" }
     fun openOrder(row: JSONObject) { workflows.rememberOrder(row); navigator.openOrder(row.optString("trade_no")) }
@@ -141,7 +140,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             if (page == "recognize") {
                 item { CurrentMerchantCard(workflows, actions, chat, navigator, compact = true) }
                 item { OutlinedTextField(state.text, workflows::setText, label = { Text(if (state.ocr) "图片识别结果，请先校对" else "粘贴消息、订单号或商户 PID") }, modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4) }
-                item { PayPills(queryKinds, kind) { kind = it } }
+                item { PayPills(queryKinds, state.queryKind, workflows::setKind) }
                 item { Row {
                     TextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
                     if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 11.sp)
@@ -164,7 +163,10 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                         Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 11.sp)
                         if (candidate.error.isNotBlank()) Text(candidate.error, color = Warning, fontSize = 11.sp)
                         candidate.orders.forEach { raw -> val order = JSONObject(raw); OrderResultCard(order) { openOrder(order) } }
-                        if (candidate.total > candidate.orders.size) TextButton(onClick = { navigator.orders(merchantId = if (candidate.kind == "PID") candidate.value else "") }) { Text("查看全部结果") }
+                        if (candidate.total > candidate.orders.size) TextButton(onClick = {
+                            val column = when (candidate.matchedKind.ifBlank { candidate.kind }) { "PID" -> "uid"; "MERCHANT_ORDER" -> "out_trade_no"; "CHANNEL_ORDER" -> "api_trade_no"; else -> "trade_no" }
+                            navigator.push(PanelRoute("orders", queryColumn = column, queryValue = candidate.value))
+                        }) { Text("查看全部结果") }
                     } }
                     item { Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         TextButton(enabled = !state.running, onClick = { workflows.runQueries(onlyFailed = true) }) { Text("重试失败项") }
@@ -194,7 +196,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             }
         }
         if (page == "recognize") Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(enabled = !state.running && !state.extracting && state.text.isNotBlank(), onClick = { workflows.extract(kind) }, modifier = Modifier.weight(1f)) { Text(if (state.extracting) "提取中…" else "提取编号") }
+            OutlinedButton(enabled = !state.running && !state.extracting && state.text.isNotBlank(), onClick = { workflows.extract() }, modifier = Modifier.weight(1f)) { Text(if (state.extracting) "提取中…" else "提取编号") }
             if (state.running) Button(onClick = workflows::stopQueries, modifier = Modifier.weight(1f)) { Text("停止未执行项") }
             else Button(enabled = !state.extracting && state.candidates.any { it.selected }, onClick = { workflows.runQueries() }, modifier = Modifier.weight(1f)) { Text("查询所选") }
         }
@@ -220,6 +222,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     workflows.rememberOrder(row)
     var dialog by remember(detail.tradeNo) { mutableStateOf("") }
     PayCard {
+        val merchant = state.merchant?.let { JSONObject(it).optString("uid") }
+        if (merchant != null && merchant != detail.merchantId) Text("此订单属于 PID ${detail.merchantId}，与当前会话商户 PID $merchant 不同；请核对操作对象。", color = Warning, fontSize = 12.sp)
         Row {
             TextButton(enabled = !state.localLoading, onClick = { workflows.favorite(row) }) { Text(if (workflows.isFavorite(detail.tradeNo)) "取消收藏" else "收藏订单") }
             TextButton(onClick = { workflows.jumpToSource(row) }, enabled = MessageSource.from(row.optJSONObject("_source")).message > 0) { Text("回到原消息") }

@@ -33,6 +33,7 @@ import com.futoonpay.admin.data.*
 import com.futoonpay.admin.ui.*
 import com.futoonpay.admin.ui.theme.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.util.UUID
@@ -57,7 +58,7 @@ interface NativePanelBridge {
     fun sendEvidence(order: String, caption: String)
 }
 
-internal data class RecognizedQuery(val value: String, val kind: String, val id: String = UUID.randomUUID().toString(), val source: MessageSource = MessageSource(), val ocr: Boolean = false, val error: String = "")
+internal data class RecognizedQuery(val value: String, val kind: String, val id: String = UUID.randomUUID().toString(), val source: MessageSource = MessageSource(), val ocr: Boolean = false, val error: String = "", val pointers: Map<String, MessageSource> = emptyMap())
 internal data class ChatScope(val label: String = "当前会话", val telegramId: String = "", val source: String = "", val key: String = "", val dialog: Long = 0, val topic: Long = 0, val ticket: String = "", val role: String = "")
 
 /** Limit cached modules while retaining navigation and editable state across tab switches. */
@@ -107,6 +108,11 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }
     fun recognize(text: String?) { recognizeText(text.orEmpty(), chat.dialog, chat.topic, 0, false) }
     fun recognizeText(text: String, dialog: Long, topic: Long, message: Long, ocr: Boolean) { navigation.showRecognition(); query = RecognizedQuery(text, "AUTO", source = MessageSource(dialog, topic, message), ocr = ocr) }
+    fun recognizeMessageBatch(text: String, sources: String) {
+        val values = JSONObject(sources)
+        navigation.showRecognition()
+        query = RecognizedQuery(text, "AUTO", pointers = values.keys().asSequence().associateWith { MessageSource.from(values.optJSONObject(it)) })
+    }
     fun recognitionError(message: String) { navigation.showRecognition(); query = RecognizedQuery("", "AUTO", error = message) }
     fun recognizeCandidate(value: String?, kind: String?) { navigation.showRecognition(); query = RecognizedQuery(value.orEmpty(), kind.orEmpty()) }
     fun updateEvidenceCount(count: Int) { evidenceRevision++ }
@@ -133,6 +139,12 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     })
     val merchantActions = remember(contextModel) { CurrentMerchantActions(contextModel) }
     val workflowState by workflows.state.collectAsState()
+    val panelLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(workflows, panelLifecycle, state.authStage) {
+        if (state.authStage == AuthStage.AUTHENTICATED) panelLifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (isActive) { workflows.refreshDeliveries().join(); kotlinx.coroutines.delay(5000) }
+        }
+    }
     LaunchedEffect(chat, workflows, state.authStage) { if (state.authStage == AuthStage.AUTHENTICATED) workflows.updateChat(chat) }
     LaunchedEffect(query?.id, workflows) { query?.let(workflows::receive) }
     LaunchedEffect(workflowState.merchant) { workflowState.merchant?.let { contextModel.setCurrentMerchant(JSONObject(it).toMerchantSummary()) } }
@@ -218,7 +230,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     LaunchedEffect(route.id) {
         when (route.kind) {
             "orders" -> {
-                model.loadOrders(1, OrderSearchFilters(channelId = route.channelId, merchantId = route.merchantId, column = "trade_no", value = route.orderId))
+                model.loadOrders(1, OrderSearchFilters(channelId = route.channelId, merchantId = route.merchantId, column = route.queryColumn.ifBlank { "trade_no" }, value = route.queryValue.ifBlank { route.orderId }))
                 if (route.orderId.isNotBlank()) model.loadOrderDetail(route.orderId)
             }
             "settlements" -> model.loadSettlements(1, SettlementSearchFilters(merchantId = route.merchantId))
@@ -250,6 +262,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 
 @Composable private fun EvidenceScreen(order: JSONObject, bridge: NativePanelBridge, revision: Int, back: () -> Unit) {
     val workflows = LocalPanelWorkflows.current
+    val localState = workflows?.state?.collectAsState()?.value
     var caption by rememberSaveable(order.optString("trade_no")) { mutableStateOf(order.optString("_caption", evidenceCaption(order))) }
     var status by rememberSaveable(order.optString("trade_no")) { mutableStateOf(workflows?.case(order.optString("trade_no"))?.optString("status", "待处理") ?: "待处理") }
     LaunchedEffect(caption, status) { kotlinx.coroutines.delay(400); workflows?.saveDraft(order, caption, status) }
@@ -272,6 +285,13 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
             item { PayPills(listOf("待处理", "已发出", "等待回复", "已解决").map { it to it }, status) { status = it } }
             item { Text("发送对象由你下一步手动选择，商户 TGID 和支付通道不会决定收件人。", color = Muted, fontSize = 12.sp) }
             item { TextButton(onClick = { workflows?.saveDraft(order, caption, status) }) { Text("保存凭证草稿及处理状态") } }
+            if (localState != null && workflows != null) {
+                val record = workflows.case(order.optString("trade_no"))
+                if (record.optString("sendState").isNotBlank()) item { Text(record.optString("sendState"), color = GreenDark, fontSize = 12.sp) }
+                if (record.optString("note").isNotBlank()) item { Text("内部备注：${record.optString("note")}", color = Muted, fontSize = 12.sp) }
+                val log = record.optJSONArray("log")
+                if (log != null) items(log.length()) { index -> Text(log.optString(index), color = Muted, fontSize = 11.sp) }
+            }
         }
         Button(enabled = paths.isNotEmpty(), onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().padding(12.dp).height(48.dp)) { Text("选择收件人并预览") }
     }

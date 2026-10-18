@@ -114,6 +114,19 @@ class PanelWorkflowsTest {
         assertEquals("\"'  +SUM(A1)\"", PanelWorkflows.csvCell("  +SUM(A1)"))
         assertEquals("\"A\"\"B\"", PanelWorkflows.csvCell("A\"B"))
     }
+    @Test fun deliveryStatusComesFromTelegramAcknowledgementsWithoutSendingAgain() = runBlocking {
+        val bridge = WorkflowFixtureBridge { op, _ -> if (op == "delivery.read") """{"S1000001":{"sent":2,"failed":1,"pending":0,"dialog":"-100","message":88}}""" else null }
+        val vm = PanelWorkflows(bridge); ready(vm); vm.refreshDeliveries().join()
+        assertTrue(vm.case("S1000001").optString("sendState").contains("Telegram 已确认 2 张凭证"))
+        assertTrue(vm.case("S1000001").optString("sendState").contains("1 张发送失败"))
+        assertEquals(0, bridge.sent.get())
+    }
+    @Test fun batchCandidatesRememberTheirOwnMessages() = runBlocking {
+        val vm = PanelWorkflows(WorkflowFixtureBridge()); ready(vm)
+        vm.receive(RecognizedQuery("two", "AUTO", pointers = mapOf("SYSTEM_ORDER:S1000001" to MessageSource(-100, 1, 11), "MERCHANT_ORDER:M2000002" to MessageSource(-100, 1, 22))))
+        extracted(vm)
+        assertEquals(listOf(11L, 22L), vm.state.value.candidates.map { it.source.message })
+    }
 }
 
 internal class WorkflowFixtureBridge(private val handler: (String, JSONObject) -> String? = { _, _ -> null }) : FixtureBridge() {
