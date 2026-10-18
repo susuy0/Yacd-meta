@@ -8,9 +8,79 @@
   "standalone_admin_activities": 0,
   "original_data_files": 23,
   "validation": {
-    "business_adapter": "pending CI",
-    "panel_ui": "pending CI",
-    "full_build": "pending CI",
-    "device_backend": "not tested"
+    "business_adapter": "passed",
+    "native_business_tests": 123,
+    "native_test_failures": 0,
+    "native_test_errors": 0,
+    "native_test_skipped": 0,
+    "native_lint_errors": 0,
+    "native_lint_warnings": 18,
+    "panel_ui": "passed including default first-order visibility, form edits, route members, batching, settings sections and payment result display",
+    "core_checks": "passed",
+    "startup_colors": "passed including negative control",
+    "androidx_callbacks": "passed including negative control",
+    "full_build": "passed",
+    "device_backend": "not tested",
+    "real_financial_mutations": "not performed",
+    "java_compilation": "passed",
+    "native_compilation": "passed",
+    "removed_component_audit": "passed",
+    "apk_signature_and_checksum": "passed",
+    "futoon_assets": "5/5 match source",
+    "standalone_ui": "absent from manifest and mapping"
+  },
+  "build_commit": "c7dedb80a9450cc446b5c75eb81885e5949bbbd5",
+  "build_run": "https://github.com/susuy0/Yacd-meta/actions/runs/39093338920",
+  "original_more_entries": 20,
+  "data_reuse": {
+    "original_files": 23,
+    "unchanged_files": 22,
+    "adapted": [
+      "NativeDocumentParser.kt"
+    ]
+  },
+  "first_order_geometry": {
+    "viewport": {
+      "width": 390,
+      "height": 650
+    },
+    "first_order": {
+      "y": 383,
+      "height": 126
+    },
+    "content": {
+      "y": 87,
+      "height": 440
+    }
+  },
+  "apk": {
+    "bytes": 40033396,
+    "sha256": "f2c81dfb8a74a88fd0fe2f2466a0c940d4acc94bf1cafba5a6330f2ac8de9d76",
+    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
+    "v2_signature": "verified",
+    "zip_crc": "verified",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "futoon_assets": 5,
+    "native_core_bytes": 9893208,
+    "package": "com.futoonpay.vinechat.beta",
+    "versionCode": 71819,
+    "versionName": "13.0.2",
+    "minSdkVersion": 23,
+    "targetSdkVersion": 36,
+    "file": "VineChat-Futoon-v0.5.0-lite-arm64.apk",
+    "MiB": 38.18,
+    "standalone_admin_activities": 0
+  },
+  "artifact": {
+    "id": 12124206753,
+    "bytes": 56323304,
+    "sha256": "345407a1dde886a0b521b2e7bac8476f3525aab6b7a26fd0cbc5fc221a73dd64",
+    "mode": "development-no-fcm"
+  },
+  "mapping": {
+    "bytes": 189431942,
+    "file": "mapping.txt"
   }
 }
