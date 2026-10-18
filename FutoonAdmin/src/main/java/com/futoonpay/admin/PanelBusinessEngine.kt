@@ -39,7 +39,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "orders.metrics" -> {
                 val rows=repository.orders(page(p),orderFilters(p)).rows
                 val stats=repository.orderChannelStats(rows)
-                JSONObject().put("channels",JSONArray(stats.stats.values.map { s -> JSONObject().put("id",s.channelId).put("name",s.channelName).put("rate",s.fiveMinuteRate).put("source",s.source.label) }))
+                JSONObject().put("warning",stats.message).put("channels",JSONArray(stats.stats.values.map { s -> JSONObject().put("id",s.channelId).put("name",s.channelName).put("rate",s.fiveMinuteRate).put("thirtyMinutes",s.thirtyMinuteRate).put("oneHour",s.oneHourRate).put("oneDay",s.oneDayRate).put("source",s.source.label).put("note",s.note) }))
             }
             "order.detail" -> detailJson(repository.orderDetail(orderId(p.getString("id"))))
             "order.action" -> {
@@ -109,7 +109,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "domain.action" -> result(when(p.getString("action")){"add"->repository.addDomain(id(p.getString("uid")),p.getString("domain"));"delete"->repository.deleteDomain(id(p.getString("id")));else->{val status=p.getInt("status");require(status in 0..2);repository.setDomainStatus(id(p.getString("id")),status,p.optString("remark"))}})
             "blacklist.add" -> {require(p.getString("content").isNotBlank());result(repository.addBlacklist(p.getString("type"),p.getString("content"),p.optString("reason"),p.optString("days","0"),p.optString("remark")))}
             "blacklist.remove" -> result(repository.deleteBlacklist(id(p.getString("id"))))
-            "channel.test" -> {val r=repository.testPayment(id(p.getString("id")),p.optString("name","测试订单"),amount(p.getString("amount")));JSONObject().put("code",if(r.success)0 else -1).put("msg",r.message).put("trade_no",r.tradeNo).put("qrcode",r.qrContent)}
+            "channel.test" -> {val r=repository.testPayment(id(p.getString("id")),p.optString("name","测试订单"),amount(p.getString("amount")));JSONObject().put("code",if(r.success)0 else -1).put("msg",r.message).put("trade_no",r.tradeNo).put("qrcode",r.qrContent).put("qr_image",paymentQr(r.qrContent)?.let {bitmap->val bytes=java.io.ByteArrayOutputStream();bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,bytes);bitmap.recycle();"data:image/png;base64,"+android.util.Base64.encodeToString(bytes.toByteArray(),android.util.Base64.NO_WRAP)} ?: "")}
             "channel.stats" -> {val stats=repository.channelStatistics(listOf(id(p.getString("id"))));JSONObject().put("rows",JSONArray(stats.values.map {s->JSONObject().put("id",s.channelId).put("5分钟成功率",s.fiveMinuteRate).put("30分钟成功率",s.thirtyMinuteRate).put("1小时成功率",s.oneHourRate).put("24小时成功率",s.oneDayRate).put("来源",s.source.label)}))}
             "batch.options" -> {
                 val module=p.getString("module");val ids=p.getJSONArray("ids");require(ids.length() in 1..100)

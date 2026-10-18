@@ -1381,7 +1381,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.css b/TMessagesProj/src/
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.css
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,91 @@
 +html,body,#app{margin:0;width:100%;height:100%;min-height:0;overflow:hidden;background:transparent}
 +body{font-family:Roboto,"Noto Sans SC",system-ui,sans-serif!important}
 +.panel{position:absolute!important;inset:0!important;width:100%;height:100%!important;max-height:100%;border-radius:22px;overflow:hidden;display:flex;flex-direction:column}
@@ -1471,6 +1471,8 @@ new file mode 100644
 +.page-metrics summary{cursor:pointer;font-size:12px;color:var(--text-2);padding:4px 0}
 +
 +.panel #kind{min-height:36px;padding-block:6px;font-size:13px}.panel #query{min-height:42px;padding-block:8px}.panel button[data-act="order.search"]{min-height:42px;padding-block:8px}
++
++.payment-qr{display:block;max-width:100%;width:240px;height:auto;align-self:center;border-radius:10px;background:white}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java b/TMessagesProj/src/main/java/org/telegram/messenger/AuthenticatorService.java
 deleted file mode 100644
 index 5482ff4..0000000
@@ -8758,7 +8760,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/m
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,509 @@
+@@ -0,0 +1,514 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8861,12 +8863,14 @@ new file mode 100644
 + let body=queryBar()+'<div class="toolbar compact">'+btn('整段文字识别','recognize.open')+btn('截图识别','ocr.pick')+btn('完整筛选','order.filters')+(Object.keys(S.filters).length?btn('清空筛选','order.clearFilters'):'' )+'</div>'+(S.queryWarning?note(S.queryWarning,'warn'):'')+
 + '<div class="tags">'+[['-1','全部'],['0','待支付'],['1','已支付'],['2','已退款'],['3','已冻结']].map(([s,t])=>'<button class="chip '+((S.filters.status||'-1')===s?'on':'')+'" data-act="order.statusFilter" data-value="'+s+'">'+t+'</button>').join('')+'</div>';
 + if(S.filters.uid)body+='<div class="rf between compact-context"><span class="t-cap c2">商户 PID '+esc(S.filters.uid)+'</span>'+btn('查看其他商户结果','order.clearMerchant','btn-text sm')+'</div>';
-+ if(S.orderMetrics)body+='<details class="page-metrics"><summary>本页 '+S.orderMetrics.count+' 笔 · 已支付 '+S.orderMetrics.successful+' 笔</summary><div class="card">'+kv('当前页订单 / 已支付',S.orderMetrics.count+' / '+S.orderMetrics.successful)+kv('当前页成功率',S.orderMetrics.rate==null?'未提供':S.orderMetrics.rate.toFixed(1)+'%')+Object.entries(S.orderMetrics.amounts||{}).map(([code,v])=>kv('当前页金额 '+code,v)).join('')+'</div></details>';
++ if(S.orderMetrics)body+='<details class="page-metrics"><summary>本页 '+S.orderMetrics.count+' 笔 · 已支付 '+S.orderMetrics.successful+' 笔</summary><div class="card">'+kv('当前页订单 / 已支付',S.orderMetrics.count+' / '+S.orderMetrics.successful)+kv('当前页成功率',S.orderMetrics.rate==null?'未提供':S.orderMetrics.rate.toFixed(1)+'%')+Object.entries(S.orderMetrics.amounts||{}).map(([code,v])=>kv('当前页金额 '+code,v)).join('')+btn('查看通道成功率','order.channelRates','btn-text sm')+'</div></details>';
 + if(S.orders.length)body+='<div class="rf between"><span class="t-cap c2">共 '+S.total+' 条 · 第 '+S.n+' 页</span>'+btn('导出当前结果','order.export','btn-text sm')+btn(selections.orders.size?'清空所选 '+selections.orders.size+' 项':'选择当前页','selection.toggle','btn-text sm','data-kind="orders"')+'</div>'+(selections.orders.size?btn('批量操作','selection.prepare','btn-primary sm','data-kind="orders"'):'')+S.orders.map((o,i)=>'<div class="selectable-row">'+selectionBox(o.trade_no,'orders')+orderCard(o,i)+'</div>').join('');
 + else body+='<div class="empty">'+icon('order')+'<p>查询结果会显示在这里</p></div>';
 + body+='<div class="toolbar">'+btn('最近查询','order.history')+btn('收藏订单','order.favorites')+btn('恢复凭证草稿','voucher.drafts')+'</div>';
 + return {body,actions:btn('上一页','order.prev')+btn('下一页','order.next')};
 +}
++function paymentTestView(){const r=S.paymentTest||{};return {body:'<h2 class="title">测试支付订单</h2>'+note(r.msg||'后台已确认')+kv('订单号',r.trade_no,true)+(r.qr_image?'<img class="payment-qr" alt="测试订单支付二维码" src="'+esc(r.qr_image)+'">':'')+kv('支付内容',r.qrcode,true),actions:r.qrcode?btn('复制支付内容','payment.copy','btn-primary block'):''};}
++function channelRatesView(){const r=S.channelRates||{};return {body:'<h2 class="title">当前页通道成功率</h2>'+(r.warning?note(r.warning,'warn'):'')+(r.channels||[]).map(x=>'<div class="card">'+kv(x.name||'通道',x.id)+[['5分钟','rate'],['30分钟','thirtyMinutes'],['1小时','oneHour'],['24小时','oneDay']].map(([label,key])=>kv(label,x[key]==null?'未提供':x[key]+'%')).join('')+kv('来源',x.source)+(x.note?note(x.note):'')+'</div>').join('')};}
 +function detailView(){
 + const o=S.order;if(!o)return {body:note('请先查询并选择订单。')};
 + const mismatch=S.m&&String(S.m.uid)!==String(o.uid),favorite=(S.local.favorites||[]).some(x=>x.trade_no===o.trade_no);
@@ -9019,7 +9023,7 @@ new file mode 100644
 + const focused=same?document.activeElement:null,focusId=focused?.id,fieldName=focused?.dataset?.field;
 + const selection=focused&&/INPUT|TEXTAREA/.test(focused.tagName)&&typeof focused.selectionStart==='number'?[focused.selectionStart,focused.selectionEnd]:null;
 + let v;
-+ if(S.page==='login')v=loginView();else if(S.page==='detail')v=detailView();else if(S.page==='recognize'||S.page==='ocr')v=recognizeView(S.page==='ocr');else if(S.page==='form')v=formView();else if(S.page==='batchResult')v=batchResultView();else if(S.page==='records')v=recordsView();else if(S.page==='record')v=moduleDetailView();else if(['history','favorites','drafts'].includes(S.page))v=smallListView();else if(S.page==='stats')v=statsView();else v=({merchant:merchantView,orders:ordersView,voucher:voucherView,batch:batchView,more:moreView}[S.tab]||merchantView)();
++ if(S.page==='paymentTest')v=paymentTestView();else if(S.page==='channelRates')v=channelRatesView();else if(S.page==='login')v=loginView();else if(S.page==='detail')v=detailView();else if(S.page==='recognize'||S.page==='ocr')v=recognizeView(S.page==='ocr');else if(S.page==='form')v=formView();else if(S.page==='batchResult')v=batchResultView();else if(S.page==='records')v=recordsView();else if(S.page==='record')v=moduleDetailView();else if(['history','favorites','drafts'].includes(S.page))v=smallListView();else if(S.page==='stats')v=statsView();else v=({merchant:merchantView,orders:ordersView,voucher:voucherView,batch:batchView,more:moreView}[S.tab]||merchantView)();
 + const m=S.form?.merchant||S.m,ctx=S.form?.context||S.ctx;
 + const markup='<section class="panel"><header class="hd"><div class="hd-top">'+(S.page?'<button class="btn-icon" data-act="back" aria-label="返回">'+icon('back')+'</button>':'')+
 + '<div class="hd-chat">'+'<span class="clamp1">'+esc(ctx.label||'FUTOON')+'</span></div><button class="panel-control" data-act="resize" aria-label="切换大窗小窗">'+(S.large?'小窗':'展开')+'</button><button class="panel-control primary" data-act="collapse" aria-label="收起回聊天">回聊天</button></div>'+
@@ -9098,6 +9102,7 @@ new file mode 100644
 +  if(form.kind==='settlementStatus')v.status=Number(v.status);
 +  r=await call(ops[form.kind],{...p,...v},form.title,form.summary+'\n'+Object.entries(v).filter(([k])=>!/pwd|password/.test(k)).map(([k,x])=>(names[k]||k)+'：'+x).join('\n'));
 + }
++ if(form.kind==='channelTest'&&r){form.dirty=false;S.paymentTest=r;S.form=null;S.page='paymentTest';return;}
 + form.dirty=false;if(r?.partial){S.error=r.msg;return;}toast(r?.msg||'已完成');if(form.kind==='backendForm'&&p.returnModule){S.form=null;await records(p.returnModule,S.recordPage||1,S.recordQuery||'');return;}S.form=null;S.page=S.order&&['refund','apiRefund','orderStatus','notes'].includes(form.kind)?'detail':'';
 + if(['balance','group','switches'].includes(form.kind))await lookup('uid',p.uid,true);
 +}
@@ -9139,6 +9144,8 @@ new file mode 100644
 + if(a==='merchant.key'){const r=await call('merchant.resetKey',{uid:String(S.m.uid)},'重置商户密钥','商户 PID '+S.m.uid+'\n原密钥将失效，商户需同步更新配置。');toast(r.msg||'后台已确认重置');return;}
 + if(a==='merchant.flow'){show('records');await records('flow');return;}
 + if(a==='merchant.stats'){S.stats=await call('merchant.stats',{uid:String(S.m.uid)});setForm('商户统计',[f('text','后台统计',JSON.stringify(S.stats,null,2),'textarea')],'reply');return;}
++ if(a==='payment.copy'){await call('ui.copy',{text:S.paymentTest.qrcode});toast('已复制支付内容');return;}
++ if(a==='order.channelRates'){S.channelRates=await call('orders.metrics',{...S.filters,page:S.n});show('channelRates');return;}
 + if(a==='order.search'){S.q=read('query').trim();S.kind=read('kind')||'AUTO';await search();return;}
 + if(a==='order.filters'){setForm('订单完整筛选',[f('uid','商户 PID',S.filters.uid||''),f('channel','通道 ID',S.filters.channel||''),f('starttime','开始日期 YYYY-MM-DD',S.filters.starttime||''),f('endtime','结束日期 YYYY-MM-DD',S.filters.endtime||''),f('status','订单状态',S.filters.status||'-1','select',[{value:'-1',label:'全部'},...labels.map((t,i)=>({value:String(i),label:t}))]),f('column','其他搜索字段',S.filters.column||'','select',[{value:'',label:'不指定'},...['name','money','realmoney','getmoney','domain','buyer','ip'].map((v,i)=>({value:v,label:['商品名称','订单金额','实付金额','入账金额','网站域名','买家','IP'][i]}))]),f('value','字段值',S.filters.value||'')],'filters');return;}
 + if(a==='order.clearFilters'){S.filters={};S.queryWarning='';await search();return;}
@@ -9272,7 +9279,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,238 @@
+@@ -0,0 +1,247 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9310,6 +9317,7 @@ new file mode 100644
 +   if(r.op==='form.save')data={code:0,msg:'保存成功'};
 +   if(r.op==='batch.options')data={options:[{ticket:'batch-order-notify',title:'补发通知',warning:'核对后提交',targets:r.params.ids}]};
 +   if(r.op==='batch.run')data={title:'补发通知',results:[{id:'SYS20261017001',label:'SYS20261017001',status:'成功',message:'已处理'}]};
++   if(r.op==='channel.test')data={code:0,msg:'测试订单已创建',trade_no:'TEST10001',qrcode:'https://example.test/fixture-payment',qr_image:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='};
 +   if(r.op==='stats')data={count:100,paid:90,rows:[order]};
 +   if(r.op==='settlements.list'||r.op==='domains.list'||r.op==='blacklist.list')data={rows:[],total:0};
 +   setTimeout(()=>window.Futoon.result({id:r.id,ok:true,data}),r.op==='module.plugins'?200:10);
@@ -9505,6 +9513,14 @@ new file mode 100644
 + await page.waitForFunction(()=>Futoon.debugState().page==='batchResult'&&!Futoon.debugState().busy);
 + assert(await page.evaluate(()=>testRequests.some(x=>x.op==='batch.run'&&x.params.ticket==='batch-order-notify'&&x.summary.includes('SYS20261017001'))),'batch forwards issued ticket and reviewable targets');
 + assert.equal(await page.evaluate(()=>testRequests.filter(x=>x.op==='native.open').length),0,'no standalone Activity launch');
++ await page.locator('[data-act="tab.more"]').click();
++ await page.locator('[data-act="module.open"][data-module="channels"]').click();
++ await page.locator('[data-act="module.row"]').click();
++ await page.getByRole('button',{name:'测试支付',exact:true}).click();
++ await page.getByRole('button',{name:'核对并提交',exact:true}).click();
++ await page.locator('img.payment-qr').waitFor();
++ assert.equal(await page.getByText('TEST10001',{exact:true}).count(),1,'test payment keeps original QR and order result in panel');
++ await page.screenshot({path:qa+'/payment-fused.png'});
 + const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
 + assert(!overflow,'panel should fit viewport');assert.deepEqual(errors,[]);
 + fs.writeFileSync(qa+'/result.json',JSON.stringify({passed:true,errors,requestCount:await page.evaluate(()=>testRequests.length),checks:['TGID lookup','balance direction and exact amount','order search and detail','receipt selection preview not sent','OCR review without mutations','batch query','channel list','dark theme','viewport overflow','route edit and save','monitor window metrics','editing focus retained','small screen and keyboard layout']},null,2));
