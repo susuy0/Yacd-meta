@@ -108,6 +108,7 @@ class ChatToolsUiTest {
         compose.runOnUiThread {
             assertTrue(panel!!.measuredHeight in 1..350)
             assertEquals(androidx.lifecycle.Lifecycle.State.RESUMED, panel!!.lifecycle.currentState)
+            panel!!.handleBack(); assertEquals(1, bridge.closed)
             panel!!.onHidden(); assertEquals(androidx.lifecycle.Lifecycle.State.CREATED, panel!!.lifecycle.currentState)
             panel!!.onShown(); panel!!.close(); assertEquals(androidx.lifecycle.Lifecycle.State.DESTROYED, panel!!.lifecycle.currentState)
         }
@@ -118,10 +119,11 @@ internal class ChatToolsFixture : ChatToolsBridge {
     var fail = false
     var inserted = ""
     var writes = 0
+    var closed = 0
     override fun load() = saved
     override fun save(json: String) { if (fail) error("fixture save failure"); saved = json; writes++ }
     override fun selectReply(text: String) { inserted = text }
     override fun manage() {}
     override fun originalSendOptions() {}
-    override fun close() {}
+    override fun close() { closed++ }
 }

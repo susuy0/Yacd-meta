@@ -8484,7 +8484,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActiv
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +package org.telegram.ui;
 +
 +import android.content.Context;
@@ -8520,6 +8520,7 @@ new file mode 100644
 +        fragmentView = tools; return fragmentView;
 +    }
 +    @Override public void onResume() { super.onResume(); if (tools != null) tools.onShown(); }
++    @Override public boolean onBackPressed() { if (tools != null) { tools.handleBack(); return false; } return true; }
 +    @Override public void onPause() { if (tools != null) tools.onHidden(); super.onPause(); }
 +    @Override public void onFragmentDestroy() { if (tools != null) { tools.close(); tools = null; } super.onFragmentDestroy(); }
 +}

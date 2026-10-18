@@ -60,6 +60,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
+    fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun setPanelHeight(pixels: Int) { panelHeight = pixels.coerceAtLeast(0); requestLayout() }
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val bounded = if (panelHeight > 0) MeasureSpec.makeMeasureSpec(if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) panelHeight else minOf(panelHeight, MeasureSpec.getSize(heightMeasureSpec)), MeasureSpec.EXACTLY) else heightMeasureSpec
