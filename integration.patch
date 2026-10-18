@@ -9342,7 +9342,7 @@ new file mode 100644
 + await page.getByRole('button',{name:'应用筛选',exact:true}).click();
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='orders.search'&&x.params.status==='1'&&x.params.uid==='20418'&&x.params.kind==='AUTO'));
 + assert(!await page.evaluate(()=>testRequests.some(x=>x.op==='orders.list'&&x.params.column==='trade_no')),'filters must not force AUTO to system order');
-+ await page.waitForFunction(()=>!Futoon.debugState().busy&&!Futoon.debugState().form);
++ await page.waitForFunction(()=>!Futoon.debugState().busy&&Futoon.debugState().page==='');
 + await page.locator('[data-act="order.open"]').first().waitFor();
 + await page.locator('.body').evaluate(el=>el.scrollTop=0);
 + const firstResult=await page.locator('[data-act="order.open"]').first().boundingBox();
