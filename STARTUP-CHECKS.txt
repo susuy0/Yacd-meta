@@ -1,17 +1,19 @@
-VineChat FUTOON v0.7.0 startup verification
+短信 / Futoon chat v0.7.1 startup verification
 
-Current source: 05256ea37418942da8c5a105d8eb0b8fa2ee6d65
-Current CI run: 39112840793
+Current source: 40c4e5ffb5940895494167768945e1ba4b17bdb7
+Current CI run: 39118289614
 
-The original null-tab color-refresh fix remains in the current patch.
-The actual source-body JVM regression and its negative control passed again:
-removing the guard reproduces the reported NullPointerException. The separate
-AndroidX leave-hint compatibility regression and its negative control passed.
-Full Telegram host Java compilation also passed for this source.
+The sparse Lite-tab startup color regression and original-crash negative control
+passed again. AndroidX leave-hint callback compatibility and its negative control
+passed. The actual send-state conditions and native chat settings/quick-reply
+host sources were also compiled and executed with the pinned host API contract.
 
-This is source/JVM verification, not a logged-in Android 17 device launch.
-Current full build passed. APK versionCode 71849, unchanged signing certificate,
-APK v2 signature/content digest and ZIP CRC are verified; evidence is in BUILD.json.
+Full host Java and native/APK builds passed. APK versionCode 71859, application
+label 短信, unchanged signing certificate, v2 signed content digest, checksums
+and ZIP CRC are verified. Final R8 mapping is retained in the build artifact.
+
+This is source/JVM/Robolectric and binary verification, not a logged-in Android 17
+device launch. Complete build evidence is recorded in BUILD.json.
 
 Historical incident analysis and verification of the original v0.3.1 fix:
 

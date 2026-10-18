@@ -1,61 +1,65 @@
-VineChat FUTOON v0.7.0 native floating panel
+短信 / Futoon chat v0.7.1 native chat tools
 
-Source: 05256ea37418942da8c5a105d8eb0b8fa2ee6d65
-CI run: 39112840793
+Source: 40c4e5ffb5940895494167768945e1ba4b17bdb7
+CI run: 39118289614
 
-Integration:
-- Five independent native tabs: recognition, orders, merchants, settlements, More.
-- Original FUTOON PAY Android 1.3.4 business forms and validation remain embedded
-  inside the floating panel. No business WebView, HTML assets, or standalone
-  admin Activity is used.
-- Original v0.5 candidate extraction, exact search, message origins, history,
-  favorites, drafts, group binding and merchant lookup are adapted to Compose.
-- A uniquely recognized merchant opens the original native editor directly.
-  Tests verify the submitted UID, manual/automatic lookup and duplicate TGIDs.
-- Receipt assistance preserves order information and lets the user select
-  photos, edit the caption and manually choose recipients in Telegram preview.
-  The supplement template means payment-evidence assistance; it never invokes
-  fillorder or changes payment status. Tests assert the image and caption
-  payload and prohibit these backend mutations.
-- Receipt thumbnails are decoded off the UI thread with bounded dimensions.
-  They are not recycled while Compose display lists can still reference them.
-- History selection supersedes an in-flight query without retaining its running
-  state or allowing an old response to replace the new results.
+Requested behavior:
+- Restore the ordinary chat send button after voice-recording UI removal.
+  Empty input retains the long-press quick-reply entry; a short empty tap does
+  not send. Typed messages, forwarding, slow mode and the attachment entry use
+  Telegram's existing send and permission logic.
+- Ordinary Telegram user profiles show the full numeric Telegram ID, even
+  without a public username or visible phone. Tapping the row copies the ID.
+- Telegram Settings includes FutoonPay settings, with chat tags and quick replies.
+- Local tags match whole positive TGIDs and appear next to conversation names
+  in the dialog list and chat header. Recognized work-order topics reuse the
+  existing final-field TGID parser. Tags reserve width before long names are
+  shortened and refresh after preferences are saved.
+- Quick replies are managed as Tab -> category -> titled text, with create,
+  edit, delete and destructive-parent confirmation. Duplicate display names
+  retain independent identities. Preferences are scoped to the logged-in
+  Telegram user and are independent of the payment backend.
+- Long-press send opens a bounded native picker. Selecting text inserts into
+  the current selection/cursor, keeps the draft editable and never sends.
+  Dialog, topic, account and input lifetime are checked before insertion.
+  The original Telegram send-options menu remains reachable.
+- Launcher/application name is 短信; the home title is Futoon chat.
+- All v0.7 native recognition, original merchant editor, receipt assistance,
+  original orders/settlements/More and removed call/record/contact components
+  remain in place. Receipt assistance still uses manually selected Telegram
+  recipients and preview; it does not call fillorder.
 
-Validation completed:
-- 193 native business and Compose/Robolectric tests; zero failed, skipped, errors.
-- Android Lint: zero errors/fatal issues; 27 warnings remain in ported code.
-- 132 Java query/HTTP/identity/monitor/editor contract checks.
-- 45 native geometry checks, including IME, landscape and short windows.
-- Startup null-tab regression and AndroidX callback compatibility, including
-  negative controls that reproduce the original failures.
-- 25 native UI screenshots. The recognition page has its direct merchant edit,
-  query types, OCR entry and fixed footer visible at a 390x650 dp panel size.
-  The 350 dp keyboard-sized panel retains query actions. Receipt preview draws
-  a real fixture bitmap and includes system/merchant/channel order IDs, PID and
-  amount with the editable supplement caption.
-- Existing order, settlement, monitor, route/payment editor, merchant profile,
-  balance and batch regressions are retained.
-- Native panel pause/reopen/destroy lifecycle and independent navigation stacks.
-- Legacy local JSON, per-message origins, stale responses, failed retry, queued
-  cancellation, actual delivery-ack parsing and CSV escaping.
+Validation:
+- 206 native business, Compose/Robolectric and rendering tests: zero failed,
+  errors or skipped.
+- Lint: zero errors/fatal issues, 28 warnings. The added ViewConstructor warning
+  is for a programmatically created view that requires a host bridge.
+- 132 query/identity/monitor/editor contract checks and 45 geometry checks.
+- Production send-state conditions execute with a negative control that
+  reproduces the missing button. Empty/typed/hidden/zero-alpha states, stable
+  animation behavior and original non-Lite composer behavior are covered.
+- Tag tests include exact/large IDs, invalid/overflow IDs, persistence, long
+  Chinese/RTL names, reserved width and actual bitmap rendering.
+- UI tests cover tag CRUD, nested reply creation, picker switching and draft
+  payload, save failure, a 350 dp editor, bounded sheet measurement and native
+  view pause/reopen/destroy lifecycle.
+- 28 screenshots; new settings and quick-reply screenshots visually reviewed.
+- Startup/AndroidX regression checks and their original negative controls pass.
 
-Full Android build and component audit: passed.
-Host Java compilation: 2m38s. Native/R8/APK: 9m46s.
-APK: 40,996,544 bytes; ARM64; versionCode 71849; minSdk 23 / targetSdk 36.
-SHA-256: 8307844cb1059a7aca764df181b7b7bed161bfe20030cff9adafb95d01f0b5d9
-APK v2 signature/content digest, ZIP CRC, artifact digest and checksums verified.
+Full host Java/native/APK build and final binary checks: passed.
+Host Java: 2m1s. Native/R8/APK: 7m33s.
+APK: SMS-Futoon-v0.7.1-arm64.apk, 41,019,829 bytes, ARM64, versionCode 71859.
+Application label: 短信. Package: com.futoonpay.vinechat.beta.
+SHA-256: 12e8d42fbc9a6814dac75170e24e4403c3e6e1d153baf487222a6a08430848b0
 Signer SHA-256: a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab
-Signing identity is unchanged from prior builds. Business web assets and standalone
-admin Activities are absent. Call/contact services, contact/audio-record permissions
-and call/record native exports are absent; voice playback decoder exports remain.
-Final R8 mapping retains recognition, current-merchant actions, receipt workflow,
-original orders/settlements/More and all original native admin module entry points.
-Mapping and removed-Java reports are retained in the build artifact.
+APK v2 signature, signed content digest, ZIP CRC, artifact digest and checksums
+verified. Signing identity is unchanged. No standalone admin Activities or
+business web assets are packaged. R8 mapping retains all original native
+business screens plus chat settings, tag rendering, quick-reply bridge and
+the Telegram profile ID row. Removed-component/native-export audit passed.
 
 Limits:
-Fixtures do not connect to a live payment backend or send Telegram messages.
-OCR/QR/gallery, Telegram recipient selection and actual network delivery require
-real-device verification. Robolectric SDK 35 and source/JVM geometry tests do not
-replace Android 17 instrumentation or an FPS/memory benchmark. FCM is not
-configured; this remains a development-no-fcm test build.
+No logged-in phone or live payment backend was used. Real Android 17 startup,
+system keyboard behavior, actual Telegram delivery and FCM require device
+verification. This is a development-no-fcm test package; no FPS benchmark was
+performed. Fixtures do not send Telegram messages or change real funds.

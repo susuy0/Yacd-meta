@@ -32,7 +32,7 @@ Telegram 主设置新增「FutoonPay 设置」，包含会话 Tag 和快速回�
 
 上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71859`，ARM64，minSdk 23 / targetSdk 36。
 
-本轮源码 `05256ea37418942da8c5a105d8eb0b8fa2ee6d65` 的 [CI 构建 39112840793](https://github.com/susuy0/Yacd-meta/actions/runs/39112840793) 已通过：193 项原生测试、132 项业务契约、45 项几何检查；Lint 0 错误 / 27 警告，生成 25 张回归截图。完整宿主 Java、原生库、R8、APK 和已移除组件审计全部通过。最终 APK 40,996,544 字节，沿用原签名，v2 签名与哈希均已核验。
+本轮源码 `40c4e5ffb5940895494167768945e1ba4b17bdb7` 的 [CI 构建 39118289614](https://github.com/susuy0/Yacd-meta/actions/runs/39118289614) 已通过：206 项原生测试、132 项业务契约、45 项几何检查及发送键/宿主桥接回归；Lint 0 错误 / 28 警告，生成 28 张回归截图。完整宿主 Java、原生库、R8、APK 和已移除组件审计全部通过。最终 APK 41,019,829 字节，版本代码 71859，应用名称「短信」，沿用原签名，v2 签名与哈希均已核验。
 
 逐项范围见 `NATIVE-PORT-CHECKLIST.md`，最终构建证据见 `BUILD.json`。CI 包含原业务测试、完整原生交互回归、Lint、宿主 Java、原生库、APK 和已移除组件审计。
 
