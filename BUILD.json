@@ -3,7 +3,7 @@
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
   "files": 60,
-  "patch_sha256": "fedca84c2447a244b6cb74e29730477ae96fe42fc4b29830397bc3ab16d7ce27",
+  "patch_sha256": "42b42d49395701f7ce4e158ef1551e540fc81b4862c626c2d4e722b2f34c7a2c",
   "validation": {
     "core_checks": "pending CI",
     "panel_ui": "pending CI",
@@ -40,3 +40,4 @@
   },
   "versionCode": 71799
 }
+

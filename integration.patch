@@ -1527,7 +1527,7 @@ diff --git a/TMessagesProj/src/main/assets/futoon/panel.js b/TMessagesProj/src/m
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/assets/futoon/panel.js
-@@ -0,0 +1,454 @@
+@@ -0,0 +1,464 @@
 +/* Runtime UI derived from the supplied FUTOON design. No production mock data. */
 +(()=>{'use strict';
 +const $=id=>document.getElementById(id), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1550,7 +1550,9 @@ new file mode 100644
 +  window.FutoonNative.post(S.cfg.nonce,JSON.stringify({id,op,params,label,summary}));
 + });
 +}
-+function toast(text){$('toast').textContent=text;$('toast').style.display='block';clearTimeout(S.toastTimer);S.toastTimer=setTimeout(()=>$('toast').style.display='none',3200);}
++function positionToast(){const action=document.querySelector('.actionbar'),tabs=document.querySelector('.tabbar');$('toast').style.bottom=((action?.offsetHeight||0)+(tabs?.offsetHeight||0)+12)+'px';}
++function hideToast(){clearTimeout(S.toastTimer);$('toast').style.display='none';}
++function toast(text){$('toast').textContent=text;$('toast').style.display='block';positionToast();clearTimeout(S.toastTimer);S.toastTimer=setTimeout(hideToast,3200);}
 +function save(){if(!S.initialized)return;call('local.write',S.local).catch(()=>{});}
 +function draft(){
 + if(!S.order)return;S.local.drafts[S.order.trade_no]={order:S.order,caption:S.caption,sourceMessage:S.sourceMessage,sourceContext:S.sourceContext||S.ctx,proofs:S.photos,updated:Date.now()};
@@ -1562,7 +1564,7 @@ new file mode 100644
 +function deliveryRow(r){const id=r.draft;if(!id)return;const c=S.local.cases[id]||{};c.sendState=[r.sent?'Telegram 已确认 '+r.sent+' 张凭证':'',r.failed?r.failed+' 张发送失败':'',r.pending?r.pending+' 张发送中':''].filter(Boolean).join('；')||'等待发送结果';c.target=r.dialog;c.message=r.message;S.local.cases[id]=c;}
 +async function refreshDeliveries(){try{const rows=await call('delivery.read');Object.values(rows||{}).forEach(deliveryRow);render();}catch(ignored){}}
 +function contextLookup(){if(S.ctx.tgid)return lookup();const pid=S.local.groups?.[S.ctx.key];if(pid)return lookup('uid',pid,true);return Promise.resolve();}
-+function show(page='',data){S.error='';S.stack.push({page:S.page,form:S.form,record:S.record,scroll:document.querySelector('.body')?.scrollTop||0});S.page=page;if(data)S.record=data;render();}
++function show(page='',data){hideToast();S.error='';S.stack.push({page:S.page,form:S.form,record:S.record,scroll:document.querySelector('.body')?.scrollTop||0});S.page=page;if(data)S.record=data;render();}
 +function back(){
 + const active=document.activeElement;if(active&&/INPUT|TEXTAREA|SELECT/.test(active.tagName))active.blur();
 + if(S.modal){S.modal='';S.nextTab=null;S.nextBack=false;render();return;}
@@ -1587,7 +1589,7 @@ new file mode 100644
 +}
 +function setContext(ctx){
 + if(S.ctx.key===ctx.key){S.ctx=ctx;render();return;}
-+ S.rev++;S.ctx=ctx;S.m=null;S.lookup=ctx.tgid?'loading':'none';S.manual=false;S.orders=[];S.n=1;S.error='';
++ hideToast();S.rev++;S.ctx=ctx;S.m=null;S.lookup=ctx.tgid?'loading':'none';S.manual=false;S.orders=[];S.n=1;S.error='';
 + if(S.form?.dirty){S.pendingReset=true;S.modal='context';}
 + else{S.tab='merchant';S.page='';S.stack=[];S.form=null;S.order=null;S.photos=[];S.caption='';}
 + render();
@@ -1776,6 +1778,7 @@ new file mode 100644
 + $('app').innerHTML=markup;lastMarkup=markup;renderedView=view;S.restoreScroll=null;const body=document.querySelector('.body');if(body)body.scrollTop=scroll;
 + const target=focusId?$(focusId):fieldName?document.querySelector('[data-field="'+CSS.escape(fieldName)+'"]'):null;
 + if(target){target.focus({preventScroll:true});if(selection)try{target.setSelectionRange(...selection);}catch(ignored){}}
++ positionToast();
 +}
 +function read(id){return $(id)?.value||'';}
 +function setForm(title,fields,kind,params={},summary=''){
@@ -1844,7 +1847,7 @@ new file mode 100644
 + if(a==='monitor.window'){S.monitorWindow=el.dataset.window;return;}
 + if(a==='monitor.edit'){const r=await call('module.editor',{module:'channels',id:String(S.record.id),editor:'detail'});setForm('编辑通道配置',r.fields,'backendForm',{ticket:r.ticket},'通道 ID '+S.record.id);return;}
 + if(a==='route.add'){const form=S.form;if(!form?.params?.route)return;const i=form.fields.filter(x=>x.name.endsWith('[channel]')).length;if(i>=100)throw new Error('最多 100 条路由');for(const x of [f('list['+i+'][channel]','路由 '+(i+1)+' · 通道','','select',form.params.routeOptions||[]),f('list['+i+'][weight]','权重','1','number')]){form.fields.push(x);form.values[x.name]=x.value;}form.dirty=true;return;}
-+ if(a.startsWith('tab.')){if(hasUnsavedChanges()){S.nextTab=a.slice(4);S.modal='discard';render();return;}S.tab=a.slice(4);S.page='';S.form=null;S.stack=[];S.error='';render();return;}
++ if(a.startsWith('tab.')){if(hasUnsavedChanges()){S.nextTab=a.slice(4);S.modal='discard';render();return;}hideToast();S.tab=a.slice(4);S.page='';S.form=null;S.stack=[];S.error='';render();return;}
 + if(a==='collapse'){draft();S.visible=false;await call('ui.collapse');return;}
 + if(a==='resize'){S.large=!S.large;await call('ui.resize',{large:S.large});render();return;}
 + if(a==='back'){back();return;}
@@ -1853,7 +1856,7 @@ new file mode 100644
 + if(a==='login.open'){show('login');return;}
 + if(a==='login.captcha'){const address=read('address').trim();if(!address)throw new Error('请填写完整 HTTPS 后台目录');S.cfg.address=address;S.cfg.username=read('username');const r=await call('session.captcha',{address,username:S.cfg.username});S.captcha=r.image;S.login={password:S.login?.password||'',captcha:''};if(S.backendAddress!==address){S.backendAddress=address;S.rev++;S.active=false;S.m=null;S.order=null;S.orders=[];S.photos=[];S.local={...emptyLocal(),...await call('local.read')};}return;}
 + if(a==='login.submit'){const username=read('username'),password=read('password'),captcha=read('captcha');if(!username||!password||!captcha)throw new Error('请填写账号、密码和验证码');await call('session.login',{username,password,captcha});S.active=true;S.login={};S.page='';S.cfg.username=username;S.local={...emptyLocal(),...await call('local.read')};await contextLookup();return;}
-+ if(a==='login.logout'){await call('session.logout');S.rev++;S.active=false;S.m=null;S.order=null;S.orders=[];S.photos=[];S.local=emptyLocal();S.login={};S.page='login';return;}
++ if(a==='login.logout'){S.login={};await call('session.logout');S.rev++;S.active=false;S.m=null;S.order=null;S.orders=[];S.photos=[];S.local=emptyLocal();S.page='login';return;}
 + if(a==='merchant.manual'){setForm('手动查询商户',[f('column','查询类型','telegram_id','select',[{value:'telegram_id',label:'Telegram 用户 ID'},{value:'uid',label:'商户 PID'}]),f('value','TGID 或 PID',S.ctx.tgid||'')],'manual');return;}
 + if(a==='merchant.refresh'){await lookup(S.manual?'uid':'telegram_id',S.manual?S.m?.uid:S.ctx.tgid,S.manual);return;}
 + if(a==='merchant.restore'){S.m=null;S.manual=false;await lookup('telegram_id',S.ctx.tgid,false);return;}
@@ -1960,6 +1963,13 @@ new file mode 100644
 + const id=e.target.id,operation=id==='query'?'order.search':id==='recordQuery'?'records.search':id==='captcha'?'login.submit':e.target.dataset.field==='value'&&S.form?.kind==='manual'?'form.submit':'';
 + if(operation){e.preventDefault();run(()=>action(operation,e.target));}
 +});
++window.addEventListener('resize',()=>requestAnimationFrame(()=>{
++ positionToast();const el=document.activeElement,body=document.querySelector('.body');
++ if(el&&body?.contains(el)&&/INPUT|TEXTAREA|SELECT/.test(el.tagName)){
++  const r=el.getBoundingClientRect(),b=body.getBoundingClientRect();
++  if(r.top<b.top||r.bottom>b.bottom)el.scrollIntoView({block:'nearest',inline:'nearest'});
++ }
++}));
 +window.Futoon={
 + async init(config){
 +  S.cfg=config;S.visible=config.visible!==false;S.large=config.large!==false;document.body.dataset.theme=config.dark?'dark':'light';S.ctx=config.context||{};render();
@@ -9627,7 +9637,7 @@ diff --git a/Tools/futoon/PanelUiTest.cjs b/Tools/futoon/PanelUiTest.cjs
 new file mode 100644
 --- /dev/null
 +++ b/Tools/futoon/PanelUiTest.cjs
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,193 @@
 +const fs=require('fs'),path=require('path'),assert=require('assert');
 +const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 +const root=path.resolve(__dirname,'../..'),assets=root+'/TMessagesProj/src/main/assets/futoon',qa=root+'/build/futoon-ui-qa';
@@ -9678,6 +9688,8 @@ new file mode 100644
 + await page.screenshot({path:qa+'/balance-light.png'});
 + await page.getByRole('button',{name:'核对并提交',exact:true}).click();
 + await page.waitForFunction(()=>testRequests.some(x=>x.op==='merchant.balance'));
++ await page.waitForFunction(()=>!Futoon.debugState().busy&&!Futoon.debugState().form);
++ assert(await page.evaluate(()=>document.querySelector('#toast').getBoundingClientRect().bottom<=document.querySelector('.actionbar').getBoundingClientRect().top-8),'Operation notice must not cover footer actions');
 + const balance=await page.evaluate(()=>testRequests.find(x=>x.op==='merchant.balance'));
 + assert.equal(balance.params.direction,'add');assert.equal(balance.params.amount,'100.00');assert.equal(balance.params.uid,'20418');
 + await page.locator('[data-act="tab.orders"]').click();
@@ -9725,6 +9737,7 @@ new file mode 100644
 + await page.locator('[data-field="list[1][weight]"]').fill('1');
 + await page.getByRole('button',{name:'核对并提交',exact:true}).click();
 + await page.waitForFunction(()=>testRequests.some(r=>r.op==='form.save')&&!Futoon.debugState().busy&&!Futoon.debugState().form);
++ await page.waitForFunction(()=>{const toast=document.querySelector('#toast').getBoundingClientRect(),action=document.querySelector('.actionbar');return !action||toast.bottom<=action.getBoundingClientRect().top-8;});
 + const route=await page.evaluate(()=>testRequests.find(r=>r.op==='form.save'));
 + assert.equal(route.params.ticket,'edit88');assert.equal(route.params.values['list[0][weight]'],'3');assert.equal(route.params.values['list[1][channel]'],'22');
 + await page.locator('[data-act="tab.more"]').click();
@@ -9759,6 +9772,7 @@ new file mode 100644
 + // Reproduce the ordinary-group and manual-lookup states shown in the device screenshots.
 + await page.evaluate(()=>{document.body.dataset.theme='light';Futoon.context({key:'ordinary-group',dialog:'-100100',label:'id1014 1021 1024富通-顶尖',source:'未识别商户'});});
 + await page.waitForFunction(()=>!Futoon.debugState().m&&!Futoon.debugState().busy);
++ assert.equal(await page.locator('#toast').isVisible(),false,'Old operation notices must not follow a new chat');
 + async function checkLayout(label){
 +  const layout=await page.evaluate(()=>{const rect=e=>e?.getBoundingClientRect(),body=document.querySelector('.body'),a=rect(document.querySelector('.actionbar')),t=rect(document.querySelector('.tabbar'));return {overflow:document.documentElement.scrollWidth>innerWidth,body:body?.clientHeight,actions:!a||a.top>=0&&a.bottom<=innerHeight+1,tabs:t.top>=0&&t.bottom<=innerHeight+1,hugeButtons:[...document.querySelectorAll('.btn')].filter(x=>rect(x).height>96).map(x=>({text:x.textContent,height:rect(x).height}))};});
 +  assert(!layout.overflow&&layout.body>0&&layout.actions&&layout.tabs&&!layout.hugeButtons.length,JSON.stringify({label,layout}));
@@ -9793,6 +9807,7 @@ new file mode 100644
 + await page.locator('[data-act="tab.more"]').click();
 + await page.locator('[data-act="module.open"][data-module="login"]').click();
 + await page.getByRole('button',{name:'退出富通登录',exact:true}).click();
++ await page.waitForFunction(()=>!Futoon.debugState().active&&!Futoon.debugState().busy);
 + await page.locator('#address').fill('https://example.test/admin/');
 + await page.locator('#username').fill('qa-user');await page.locator('#password').fill('fixture-password');
 + await page.getByRole('button',{name:'加载验证码',exact:true}).click();
