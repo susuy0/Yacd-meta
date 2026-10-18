@@ -62,8 +62,22 @@ class MerchantOpeningUiTest {
         compose.onNodeWithTag("merchant-opening-list").performScrollToNode(hasText("备注 / 结算账号姓名 *"))
         compose.onNodeWithText("备注 / 结算账号姓名 *").performTextInput("@fixture(业务)")
     }
+    private fun awaitDraft(model: MerchantOpeningViewModel) {
+        try {
+            // A semantics observation advances Robolectric's paused main loop after IO resumes.
+            // Waiting only on an AtomicReference leaves the continuation queued forever.
+            compose.waitUntil(10000) {
+                compose.onAllNodesWithText("文案已填入输入框，请校对后手动发送。").fetchSemanticsNodes().isNotEmpty() && inserted.get().isNotBlank()
+            }
+        } catch (error: Throwable) {
+            println("Opening phase=${model.state.value.stage}, error=${model.state.value.error}, creates=${creates.get()}, settle=${permission.get()}")
+            println(compose.onRoot(useUnmergedTree = true).printToString())
+            screenshot("failed-opening-draft")
+            throw error
+        }
+    }
     @Test fun d0SelectionControlsReviewPostAndAutomaticallyPreparedDraft() {
-        root()
+        val model = root()
         compose.onNodeWithText("下一步 · 核对开户").assertIsNotEnabled()
         remark()
         compose.onNodeWithTag("merchant-opening-list").performScrollToNode(hasText("D1 · 不开启结算"))
@@ -73,19 +87,20 @@ class MerchantOpeningUiTest {
         screenshot("29-merchant-opening-d0-form")
         compose.onNodeWithText("下一步 · 核对开户").performClick()
         compose.onNodeWithText("确认开户").assertIsDisplayed()
+        compose.onNodeWithText("请核对本次开户信息").assertIsDisplayed()
         screenshot("30-merchant-opening-confirmation")
         assertEquals(0, creates.get()); assertEquals("", inserted.get())
         compose.onNodeWithText("确认开户").performClick()
-        compose.waitUntil(10000) { inserted.get().isNotBlank() }
+        awaitDraft(model)
         assertEquals("1", permission.get()); assertEquals(1, creates.get()); assertTrue(inserted.get().contains("结算周期: D0"))
         compose.onNodeWithText("🏡 开户成功").assertExists()
         screenshot("31-merchant-opening-result")
     }
     @Test fun d1DefaultPostsSettlementDisabledAndDraftIsNotSent() {
-        root(); remark()
+        val model = root(); remark()
         compose.onNodeWithText("下一步 · 核对开户").performClick()
         compose.onNodeWithText("确认开户").performClick()
-        compose.waitUntil(10000) { inserted.get().isNotBlank() }
+        awaitDraft(model)
         assertEquals("0", permission.get()); assertTrue(inserted.get().contains("结算周期: D1")); assertEquals(1, creates.get())
     }
     @Test fun compactKeyboardSizedFormKeepsReviewAndConfirmationButtonsVisible() {

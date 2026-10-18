@@ -77,7 +77,7 @@ class FutoonRepository(
             merchantOpeningResult(api.jsonPost(MERCHANT_OPENING_ACTION, MERCHANT_OPENING_PAGE, fields, once = true))
         } catch (error: kotlinx.coroutines.CancellationException) { throw error }
         catch (_: PermissionDeniedException) { MerchantOpeningResult(OpeningOutcome.REJECTED, message = "没有开户权限，请核对后台权限") }
-        catch (_: Exception) { MerchantOpeningResult(OpeningOutcome.UNCERTAIN, message = "请求已提交，但未收到明确结果。请先查询商户，勿重复开户") }
+        catch (_: Exception) { MerchantOpeningResult(OpeningOutcome.UNCERTAIN, message = "未收到明确的开户结果。请先查询商户，勿重复开户") }
     }
 
     internal suspend fun merchantBinding(uid: String): String {

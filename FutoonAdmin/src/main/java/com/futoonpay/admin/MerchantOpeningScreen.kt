@@ -3,6 +3,7 @@ package com.futoonpay.admin
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -115,6 +116,8 @@ internal class MerchantOpeningViewModel(
     model: MerchantOpeningViewModel, currentChat: ChatScope, onBack: () -> Unit, onMerchant: (String) -> Unit,
 ) {
     val state by model.state.collectAsState()
+    val listState = rememberLazyListState()
+    LaunchedEffect(state.stage) { listState.scrollToItem(0) }
     val sameChat = currentChat.key == model.chat.key && currentChat.dialog == model.chat.dialog && currentChat.topic == model.chat.topic
     val busy = state.stage == OpeningStage.SUBMITTING || state.linkLoading || state.inserting
     BackHandler { if (!busy) { if (state.stage == OpeningStage.REVIEW) model.backToForm() else onBack() } }
@@ -134,7 +137,7 @@ internal class MerchantOpeningViewModel(
             }
         }
     }) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize().testTag("merchant-opening-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(Modifier.padding(padding).fillMaxSize().testTag("merchant-opening-list"), state = listState, contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { PayCard {
                 Text("会话：${model.chat.label}", color = Ink)
                 if (model.chat.telegramId.isNotBlank()) Text("Telegram ID：${model.chat.telegramId}", color = Muted, fontSize = 12.sp)
