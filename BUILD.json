@@ -1,122 +1,18 @@
 {
-  "version": "0.7.2 embedded lifecycle fix",
-  "versionCode": 71869,
-  "app_name": "短信",
-  "home_title": "Futoon chat",
-  "source_commit": "777af7b18045085f3163461d579a9ed552ec213b",
-  "ci_run": 39120443973,
-  "ci_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39120443973",
+  "version": "0.7.3 quick replies and media fix",
+  "versionCode": 71879,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
+  "patch_sha256": "9955b854c6dc5eb98a99bb71f50e718a34d7f8e6c8d33c1b4a769beebc928c01",
   "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
-  "original_source_version": "FUTOON PAY Android 1.3.4",
-  "workflow_source_version": "VineChat FUTOON v0.5",
-  "retained_original_files": {
-    "total": 41,
-    "production": 21,
-    "tests": 20
-  },
   "standalone_admin_activities": 0,
-  "push_mode": "development-no-fcm",
+  "original_data_files": 23,
   "validation": {
-    "tests": 213,
-    "failures": 0,
-    "errors": 0,
-    "skipped": 0,
-    "lint_errors": 0,
-    "lint_warnings": 28,
-    "screenshots": 28,
-    "report_artifact_id": 12133694201,
-    "report_zip_sha256": "13c9f80898f66a34eaed617e3cf52f3544299d9f53b4bd121cfbc6e548c007df",
-    "core_contract_checks": 132,
-    "geometry_checks": 45,
-    "send_button_regression": "passed with original missing-button negative control",
-    "quick_reply_host_bridge": "passed: actual native show/dismiss bridge, editable draft, no duplicate insertion, account/lifecycle guards, settings and original options",
-    "startup_regression": "passed including original-crash negative control",
-    "androidx_callback_regression": "passed including negative control",
-    "host_java": "passed",
-    "full_build": "success",
-    "real_device_backend": "not tested",
-    "live_telegram_send": "not tested",
-    "performance_benchmark": "not measured",
-    "settings_host_regression": "passed: actual native settings source compiled, lifecycle forwarding and pinned predictive-back API",
-    "removed_components_audit": "passed",
-    "native_entry_points": [
-      "OrdersScreen",
-      "SettlementsScreen",
-      "ModernManage",
-      "MerchantProfileScreen",
-      "RecognitionScreen",
-      "CurrentMerchantCard",
-      "EvidenceScreen",
-      "OrderWorkflowTools",
-      "PaymentAdminRoot",
-      "NativeModuleRoot",
-      "DomainAuditRoot",
-      "ChatToolsScreen"
-    ],
-    "ownerless_window_regression": {
-      "status": "passed",
-      "tests": [
-        "businessPanelAttachesAndDrawsInOwnerlessActivityWithoutSending",
-        "settingsAttachAndDrawInPlainTelegramStyleActivity",
-        "dismissedBeforeFirstTraversalNeverAttachesDestroyedComposeContent",
-        "detachedPanelGetsWorkingCompositionWhenReattached",
-        "originalSubtreeOwnerAloneStillReproducesReportedCrash",
-        "closingOnePanelDoesNotDestroyAnotherPanelsComposition",
-        "quickRepliesAttachAndDrawInsideOwnerlessDialogAndDisposeIdempotently"
-      ],
-      "host": "plain android.app.Activity and android.app.Dialog, no Compose test rule",
-      "original_crash_negative_control": "passed"
-    },
-    "chat_native_entry_points": [
-      "chat_tag_renderer",
-      "quick_reply_host_bridge",
-      "profile_tgid_row"
-    ],
-    "lifecycle_binding": {
-      "chat_tools_attach": "66:69:void onAttachedToWindow():65 -> onAttachedToWindow",
-      "business_panel_attach": "66:69:void onAttachedToWindow():111 -> onAttachedToWindow",
-      "explicit_composition_attach": "66:69:void com.futoonpay.admin.PanelComposition.attach():22:22 -> onAttachedToWindow",
-      "explicit_composition_close": "38:40:void com.futoonpay.admin.PanelComposition.close():32:32 -> i"
-    },
-    "android17_device": "fixed build not tested on physical device; crash verified by deobfuscated mapping and actual ownerless-window regressions"
+    "status": "pending CI",
+    "expected_native_tests": 218,
+    "premeasurement_regression": "pending",
+    "media_entry_regression": "pending"
   },
-  "patch_sha256": "c98987ea7c531ebe773a65043b7ba3d16b207018361f402584f330fbe2047277",
-  "crash_fix": {
-    "affected_versionCode": 71859,
-    "r8_map_id": "ce8a4ace259c7c9d63bb7557e900816d973acca9507b0b5c3552760a7e121436",
-    "deobfuscated_container": "org.telegram.ui.ActionBar.BottomSheet$1",
-    "cause": "Compose resolves its default window recomposer on the ownerless content root above the nested lifecycle-owned panel.",
-    "fix": "Bind an explicit lifecycle-aware parent composition before child attachment in ChatToolsView and NativePanelView. Cancel on detach/destroy and remove permanently closed Compose children before late traversals."
-  },
-  "apk": {
-    "file_name": "SMS-Futoon-v0.7.2-arm64.apk",
-    "bytes": 41018680,
-    "sha256": "b743f7741c6390468a6f5d11adaee6f8bd2b290d81eb018208f2828fadd8e581",
-    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
-    "v2_signature": "verified",
-    "zip_crc": "verified",
-    "abis": [
-      "arm64-v8a"
-    ],
-    "futoon_assets": 0,
-    "native_core_bytes": 9893208,
-    "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71869,
-    "versionName": "13.0.2",
-    "minSdkVersion": 23,
-    "targetSdkVersion": 36,
-    "application_label": "短信"
-  },
-  "artifact": {
-    "id": 12134114218,
-    "zip_sha256": "914f8f50d539e7cc8da31ce6d5f8706c841964fb6af31ebb8b0d5e43cd304bb6",
-    "mapping_sha256": "2c98d2c596a3320ada89ce750da156cc48976652b679902eb25c5ac262ee806c",
-    "removed_java_sha256": "bfe82a0c5cd05952fb79c782b60ffb96864804c9ae7ec6691228c84e191904e0"
-  },
-  "build_timings": {
-    "host_java": "2m37s",
-    "native_r8_apk": "9m43s"
-  }
+  "app_name": "短信",
+  "home_title": "Futoon chat"
 }

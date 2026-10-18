@@ -73,6 +73,83 @@ class OwnerlessWindowRegressionTest {
 
     private fun compose(view: FrameLayout) = view.getChildAt(0) as ComposeView
 
+    private fun premeasure(root: View) {
+        root.measure(View.MeasureSpec.makeMeasureSpec(780, View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(1600, View.MeasureSpec.AT_MOST))
+    }
+
+    @Test fun bindingOnlyOnAttachReproducesTelegramSheetsPremeasurementFailure() {
+        val owner = object : LifecycleOwner {
+            val registry = LifecycleRegistry(this)
+            override val lifecycle get() = registry
+        }
+        owner.registry.currentState = Lifecycle.State.CREATED
+        val view = ComposeView(activity).apply { setContent { Text("old premeasurement path") } }
+        val legacy = object : FrameLayout(activity) {
+            override fun onAttachedToWindow() {
+                super.onAttachedToWindow()
+                PanelComposition(view, owner.lifecycle).prepare()
+            }
+        }.apply { setViewTreeLifecycleOwner(owner); addView(view) }
+        cleanup += { view.disposeComposition(); owner.registry.currentState = Lifecycle.State.DESTROYED }
+        assertFalse(legacy.isAttachedToWindow)
+        val failure = assertThrows(IllegalStateException::class.java) { premeasure(content(legacy)) }
+        assertTrue(failure.message.orEmpty(), failure.message.orEmpty().contains("not attached to a window"))
+    }
+
+    @Test fun quickRepliesSurvivePremeasurementBeforeShowingTheDialog() {
+        val panel = ChatToolsView(activity, ChatToolsFixture(), true).apply { setPanelHeight(560) }
+        cleanup += panel::close
+        val root = content(panel)
+        premeasure(root)
+        assertFalse(panel.isAttachedToWindow)
+        assertEquals(560, panel.measuredHeight)
+        assertTrue(compose(panel).hasComposition)
+        // BottomSheet.show() also measures synchronously after Dialog.show(), before traversal.
+        dialog(root).show(); premeasure(root)
+        panel.onShown(); render(root)
+        assertTrue(compose(panel).hasComposition)
+        assertEquals(Lifecycle.State.RESUMED, panel.lifecycle.currentState)
+    }
+
+    @Test fun settingsSurviveMeasuringBeforeTheFragmentViewIsAttached() {
+        val panel = ChatToolsView(activity, ChatToolsFixture(), false)
+        cleanup += panel::close
+        val root = content(panel)
+        premeasure(root)
+        assertTrue(compose(panel).hasComposition)
+        activity.setContentView(root)
+        panel.onShown(); render(root)
+        assertTrue(panel.isAttachedToWindow)
+        assertTrue(compose(panel).hasComposition)
+    }
+
+    @Test fun businessPanelSurvivesMeasuringBeforeTheHostIsAttached() {
+        val bridge = FixtureBridge()
+        val panel = NativePanelView(activity, bridge)
+        cleanup += panel::close
+        val root = content(panel)
+        premeasure(root)
+        assertTrue(compose(panel).hasComposition)
+        activity.setContentView(root)
+        panel.onShown(); render(root)
+        assertTrue(panel.isAttachedToWindow)
+        assertEquals(0, bridge.sent.get())
+    }
+
+    @Test fun closingAPremeasuredPickerBeforeWindowAttachmentDisposesItsComposition() {
+        val panel = ChatToolsView(activity, ChatToolsFixture(), true)
+        cleanup += panel::close
+        val root = content(panel)
+        premeasure(root)
+        val child = compose(panel)
+        assertTrue(child.hasComposition)
+        panel.close(); panel.close()
+        assertFalse(child.hasComposition)
+        dialog(root).show(); render(root)
+        assertEquals(0, panel.childCount)
+        assertEquals(Lifecycle.State.DESTROYED, panel.lifecycle.currentState)
+    }
+
     @Test fun originalSubtreeOwnerAloneStillReproducesReportedCrash() {
         val owner = object : LifecycleOwner {
             val registry = LifecycleRegistry(this)

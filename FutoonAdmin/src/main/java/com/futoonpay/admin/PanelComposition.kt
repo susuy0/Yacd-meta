@@ -13,10 +13,12 @@ import androidx.lifecycle.Lifecycle
 internal class PanelComposition(private val view: ComposeView, private val lifecycle: Lifecycle) {
     private var recomposer: Recomposer? = null
 
-    // Called by the panel before its Compose child is attached. Owners on the panel alone
-    // cannot satisfy Compose's default lookup on the *window content root* above the panel.
-    fun attach() {
+    // BottomSheet.show() measures its container synchronously before the first window
+    // traversal. Prepare before BOTH measurement and attachment, without replacing a live
+    // recomposer between those calls. Subtree owners cannot supply a window recomposer.
+    fun prepare() {
         if (view.findViewTreeCompositionContext() != null) return
+        if (recomposer?.currentState?.value?.let { it > Recomposer.State.ShuttingDown } == true) return
         recomposer?.cancel()
         recomposer = view.createLifecycleAwareWindowRecomposer(lifecycle = lifecycle)
         view.setParentCompositionContext(recomposer)

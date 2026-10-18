@@ -108,7 +108,11 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     }
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (!closed) composition.attach()
+        if (!closed) composition.prepare()
+    }
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (!closed) composition.prepare()
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
     fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }

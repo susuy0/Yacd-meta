@@ -62,12 +62,13 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
     }
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (!closed) composition.attach()
+        if (!closed) composition.prepare()
     }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun setPanelHeight(pixels: Int) { panelHeight = pixels.coerceAtLeast(0); requestLayout() }
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (!closed) composition.prepare()
         val bounded = if (panelHeight > 0) MeasureSpec.makeMeasureSpec(if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.UNSPECIFIED) panelHeight else minOf(panelHeight, MeasureSpec.getSize(heightMeasureSpec)), MeasureSpec.EXACTLY) else heightMeasureSpec
         super.onMeasure(widthMeasureSpec, bounded)
     }
