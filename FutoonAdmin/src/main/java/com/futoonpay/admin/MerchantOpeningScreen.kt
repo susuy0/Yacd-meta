@@ -158,10 +158,9 @@ internal class MerchantOpeningViewModel(
                     listOf("填写资料", "核对", "结果").forEachIndexed { index, label -> Text("${if (index < step) "✓" else "${index + 1}"} $label", color = if (index == step) GreenDark else Muted, fontSize = 13.sp) }
                 }
             }
-            item { PayCard {
-                Text("会话：${model.chat.label}", color = Ink)
-                if (model.chat.telegramId.isNotBlank()) Text("Telegram ID：${model.chat.telegramId}", color = Muted, fontSize = 12.sp)
-                Text("商户通过 Bot 链接自行绑定 Telegram。开户成功后文案填入本会话，由你修改并发送。", color = Muted, fontSize = 12.sp)
+            item { Column(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("开户会话：${model.chat.label}" + if (model.chat.telegramId.isNotBlank()) " · TG ${model.chat.telegramId}" else "", color = Ink, fontSize = 13.sp)
+                Text("商户通过 Bot 自行绑定；文案只填入本会话，由你校对后手动发送。", color = Muted, fontSize = 12.sp)
             } }
             if (!sameChat) item { Text("当前会话已变化，请返回原会话处理开户结果。", color = Danger) }
             if (state.loading || busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }

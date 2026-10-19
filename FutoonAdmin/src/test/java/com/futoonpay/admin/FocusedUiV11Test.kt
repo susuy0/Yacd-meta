@@ -15,6 +15,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.futoonpay.admin.ui.theme.*
+import com.futoonpay.admin.data.*
 import java.io.File
 import org.junit.*
 import org.junit.Assert.*
@@ -94,4 +95,20 @@ class FocusedUiV11Test {
         compose.onNode(hasSetTextAction() and hasText("新的文案\n尚未保存")).assertExists()
         assertEquals(0, bridge.writes)
     }
+    @Test fun nativeMoreRowActionRequiresConfirmationAndExecutesOnce() {
+        val mutations = java.util.concurrent.atomic.AtomicInteger()
+        val html = """<table><thead><tr><th>ID</th><th>名称</th><th>操作</th></tr></thead><tbody><tr><td>7</td><td>示例公告</td><td><a href="gonggao.php?act=delete&id=7">删除</a></td></tr></tbody></table>"""
+        val repository = FutoonRepository(fixtureClient({ request -> if (request.url.queryParameter("act") == "delete") { mutations.incrementAndGet(); 200 to "{\"code\":0}" } else 200 to html }))
+        val model = NativeModuleViewModel(repository, ModuleCatalog.find("announcements"))
+        compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp).testTag("focused-ui")) { PanelOverlayHost { NativeModuleRoot(model, {}) } } } }
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("删除") and hasClickAction()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("删除") and hasClickAction()).performClick()
+        assertEquals(0, mutations.get())
+        compose.onNodeWithText("目标：7 · 示例公告").assertExists()
+        screenshot("36-native-more-row-confirmation")
+        compose.onNode(hasText("确认删除") and hasClickAction()).performClick()
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("删除") and hasClickAction()).fetchSemanticsNodes().isNotEmpty() && mutations.get() == 1 && !model.state.value.loading }
+        assertEquals(1, mutations.get())
+    }
+
 }

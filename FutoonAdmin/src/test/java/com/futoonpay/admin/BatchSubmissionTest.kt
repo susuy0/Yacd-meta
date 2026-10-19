@@ -3,6 +3,7 @@ package com.futoonpay.admin
 import android.app.Application
 import com.futoonpay.admin.data.*
 import com.futoonpay.admin.ui.AppViewModel
+import com.futoonpay.admin.ui.OrderCommand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -70,4 +71,16 @@ class BatchSubmissionTest {
         runBlocking { withTimeout(5000) { while (vm.state.value.batch!!.running) delay(10) } }
         assertFalse(vm.state.value.loading); assertEquals(BatchOutcomeStatus.FAILED, vm.state.value.batch!!.results.single().status)
     }
+    @Test fun unknownSingleRefundCannotBeSubmittedAgainBeforeVerification() {
+        val calls = AtomicInteger(); val complete = CountDownLatch(1)
+        val vm = vm { calls.incrementAndGet(); throw IOException("response lost") }
+        val command = OrderCommand("refund", "S1000001", amount = "5")
+        vm.runOrderAction(command) { assertTrue(it.uncertain); complete.countDown() }
+        assertTrue(complete.await(5, TimeUnit.SECONDS)); assertEquals(1, calls.get())
+        val blocked = CountDownLatch(1)
+        vm.runOrderAction(command) { assertTrue(it.uncertain); blocked.countDown() }
+        assertTrue(blocked.await(5, TimeUnit.SECONDS)); assertEquals(1, calls.get())
+        assertTrue("S1000001" in vm.state.value.uncertainOrders)
+    }
+
 }

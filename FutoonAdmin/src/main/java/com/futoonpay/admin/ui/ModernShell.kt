@@ -112,7 +112,6 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
             Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 12.sp)
         }
     }
-    }
 }
 
 @Composable
