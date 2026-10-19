@@ -8926,18 +8926,67 @@ index cd393c4dde1656c3f001d3015d079c33707077ed..8c3063b5e6a7065e37a655179bc1677a
                  onlineContacts = new ArrayList<>(ContactsController.getInstance(currentAccount).contacts);
                  long selfId = UserConfig.getInstance(currentAccount).clientUserId;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Adapters/MentionsAdapter.java b/TMessagesProj/src/main/java/org/telegram/ui/Adapters/MentionsAdapter.java
-index 1b75c7d97f2ad65753608fcc2ef081a07a9b7cf2..c1d5fe6e368a8685c2aa845b75f7c6931132eb1e 100644
+index 1b75c7d97f2ad65753608fcc2ef081a07a9b7cf2..2999c812deb728a3d6bd2e5a2aa80182084c2536 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Adapters/MentionsAdapter.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Adapters/MentionsAdapter.java
-@@ -793,7 +793,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
-             return;
-         }
-         if (Build.VERSION.SDK_INT >= 23 && parentFragment.getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+@@ -578,34 +578,11 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
+                 }
+             }
+             if (foundContextBot.bot_inline_geo) {
+-                SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+-                boolean allowGeo = preferences.getBoolean("inlinegeo_" + foundContextBot.id, false);
+-                if (!allowGeo && parentFragment != null && parentFragment.getParentActivity() != null) {
+-                    final TLRPC.User foundContextBotFinal = foundContextBot;
+-                    AlertDialog.Builder builder = new AlertDialog.Builder(parentFragment.getParentActivity());
+-                    builder.setTitle(LocaleController.getString(R.string.ShareYouLocationTitle));
+-                    builder.setMessage(LocaleController.getString(R.string.ShareYouLocationInline));
+-                    final boolean[] buttonClicked = new boolean[1];
+-                    builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialogInterface, i) -> {
+-                        buttonClicked[0] = true;
+-                        if (foundContextBotFinal != null) {
+-                            SharedPreferences preferences1 = MessagesController.getNotificationsSettings(currentAccount);
+-                            preferences1.edit().putBoolean("inlinegeo_" + foundContextBotFinal.id, true).commit();
+-                            checkLocationPermissionsOrStart();
+-                        }
+-                    });
+-                    builder.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialog, which) -> {
+-                        buttonClicked[0] = true;
+-                        onLocationUnavailable();
+-                    });
+-                    parentFragment.showDialog(builder.create(), dialog -> {
+-                        if (!buttonClicked[0]) {
+-                            onLocationUnavailable();
+-                        }
+-                    });
+-                } else {
+-                    checkLocationPermissionsOrStart();
+-                }
++                // Preserve inline search using its normal location-unavailable sentinel.
++                // No bot consent or Android location request is offered.
++                lastKnownLocation = new Location("unavailable");
++                lastKnownLocation.setLatitude(-1000);
++                lastKnownLocation.setLongitude(-1000);
+             }
+         } else {
+             foundContextBot = null;
+@@ -789,16 +766,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
+     }
+ 
+     private void checkLocationPermissionsOrStart() {
+-        if (parentFragment == null || parentFragment.getParentActivity() == null) {
+-            return;
+-        }
+-        if (Build.VERSION.SDK_INT >= 23 && parentFragment.getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 -            parentFragment.getParentActivity().requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
-+            org.telegram.ui.Components.FutoonPermissionRequests.request(parentFragment.getParentActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 2);
-             return;
-         }
-         if (foundContextBot != null && foundContextBot.bot_inline_geo) {
+-            return;
+-        }
+-        if (foundContextBot != null && foundContextBot.bot_inline_geo) {
+-            locationProvider.start();
+-        }
++        onLocationUnavailable();
+     }
+ 
+     public void setSearchingMentions(boolean value) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java
 index ea48a1b9f3e50dea2114d5eacdc5aeb674287780..6eb7f3e641268204079ef869668c28153b506bd8 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java
@@ -11736,10 +11785,98 @@ index f22821a55e9b36b0f0e1b9bb40eeb18162d09bb2..55b7a5b0eae9217741fef39523c2061f
                          permissions,
                          requsetPermissionsPointer
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LocationActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LocationActivity.java
-index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e28adf7a6 100644
+index 06d99117e2b47b6deec41a7f5583dfb114ad4660..5325bff10134ba39c5e42af6338f22e374b1f16e 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/LocationActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/LocationActivity.java
-@@ -2100,7 +2100,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -611,7 +611,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+                     otherItem = menu.addItem(0, R.drawable.ic_ab_other, getResourceProvider());
+                     otherItem.addSubItem(open_in, R.drawable.msg_openin, getString(R.string.OpenInExternalApp));
+                     if (!getLocationController().isSharingLocation(dialogId) && isSharingAllowed) {
+-                        otherItem.addSubItem(share_live_location, R.drawable.msg_location, getString(R.string.SendLiveLocationMenu));
++                        // Live location sharing removed.
+                     }
+                     otherItem.setContentDescription(getString(R.string.AccDescrMoreOptions));
+                 }
+@@ -793,6 +793,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+         locationButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_location_actionActiveIcon), PorterDuff.Mode.MULTIPLY));
+         locationButton.setTag(Theme.key_location_actionActiveIcon);
+         locationButton.setContentDescription(getString(R.string.AccDescrMyLocation));
++        locationButton.setVisibility(View.GONE);
+         FrameLayout.LayoutParams layoutParams1 = LayoutHelper.createFrame(40, 40, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 12, 12);
+         layoutParams1.bottomMargin += layoutParams.height - padding.top;
+         mapViewClip.addView(locationButton, layoutParams1);
+@@ -1785,69 +1786,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+     }
+ 
+     private void openShareLiveLocation(boolean expand, int proximityRadius) {
+-        if (delegate == null || disablePermissionCheck() || getParentActivity() == null || myLocation == null || !checkGpsEnabled()) {
+-            return;
+-        }
+-        if (checkBackgroundPermission && Build.VERSION.SDK_INT >= 29) {
+-            Activity activity = getParentActivity();
+-            if (activity != null) {
+-                askWithRadius = proximityRadius;
+-                checkBackgroundPermission = false;
+-                SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+-                int lastTime = preferences.getInt("backgroundloc", 0);
+-                if (Math.abs(System.currentTimeMillis() / 1000 - lastTime) > 24 * 60 * 60 && activity.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+-                    preferences.edit().putInt("backgroundloc", (int) (System.currentTimeMillis() / 1000)).commit();
+-                    AlertsCreator.createBackgroundLocationPermissionDialog(activity, getMessagesController().getUser(getUserConfig().getClientUserId()), () -> openShareLiveLocation(expand, askWithRadius), null).show();
+-                    return;
+-                }
+-            }
+-        }
+-        TLRPC.User user;
+-        if (DialogObject.isUserDialog(dialogId)) {
+-            user = getMessagesController().getUser(dialogId);
+-        } else {
+-            user = null;
+-        }
+-        showDialog(AlertsCreator.createLocationUpdateDialog(getParentActivity(), expand, user, param -> {
+-            if (expand) {
+-                LocationController.SharingLocationInfo info = getLocationController().getSharingLocationInfo(dialogId);
+-                if (info != null) {
+-                    TLRPC.TL_messages_editMessage req = new TLRPC.TL_messages_editMessage();
+-                    req.peer = getMessagesController().getInputPeer(info.did);
+-                    req.id = info.mid;
+-                    req.flags |= 16384;
+-                    req.media = new TLRPC.TL_inputMediaGeoLive();
+-                    req.media.stopped = false;
+-                    req.media.geo_point = new TLRPC.TL_inputGeoPoint();
+-                    Location lastKnownLocation = LocationController.getInstance(currentAccount).getLastKnownLocation();
+-                    req.media.geo_point.lat = AndroidUtilities.fixLocationCoord(lastKnownLocation.getLatitude());
+-                    req.media.geo_point._long = AndroidUtilities.fixLocationCoord(lastKnownLocation.getLongitude());
+-                    req.media.geo_point.accuracy_radius = (int) lastKnownLocation.getAccuracy();
+-                    if (req.media.geo_point.accuracy_radius != 0) {
+-                        req.media.geo_point.flags |= 1;
+-                    }
+-                    if (info.lastSentProximityMeters != info.proximityMeters) {
+-                        req.media.proximity_notification_radius = info.proximityMeters;
+-                        req.media.flags |= 8;
+-                    }
+-                    req.media.heading = LocationController.getHeading(lastKnownLocation);
+-                    req.media.flags |= 4;
+-                    req.media.period = info.period = param == 0x7FFFFFFF ? 0x7FFFFFFF : info.period + param;
+-                    info.stopTime = param == 0x7FFFFFFF ? Integer.MAX_VALUE : info.stopTime + param;
+-                    req.media.flags |= 2;
+-                    if (info.messageObject != null && info.messageObject.messageOwner != null && info.messageObject.messageOwner.media != null) {
+-                        info.messageObject.messageOwner.media.period = info.period;
+-//                        ArrayList<TLRPC.Message> messages = new ArrayList<>();
+-//                        messages.add(info.messageObject.messageOwner);
+-                        getMessagesStorage().replaceMessageIfExists(info.messageObject.messageOwner, null, null, true);
+-                    }
+-                    getConnectionsManager().sendRequest(req, null);
+-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liveLocationsChanged);
+-                }
+-                return;
+-            }
+-            shareLiveLocation(user, param, proximityRadius);
+-        }, null));
++        // Read-only map viewer: live sharing and background-location prompts removed.
+     }
+ 
+     private void shareLiveLocation(TLRPC.User user, int period, int radius) {
+@@ -2100,7 +2039,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
          }
  
          try {
@@ -11748,7 +11885,7 @@ index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e
          } catch (Exception e) {
              FileLog.e(e, false);
          }
-@@ -2186,35 +2186,6 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -2186,35 +2125,6 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
      }
  
      private boolean checkGpsEnabled() {
@@ -11784,7 +11921,39 @@ index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e
          return true;
      }
  
-@@ -2481,16 +2452,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -2250,30 +2160,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+     }
+ 
+     private void showPermissionAlert(boolean byButton) {
+-        if (getParentActivity() == null) {
+-            return;
+-        }
+-        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+-        builder.setTopAnimation(R.raw.permission_request_location, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, getThemedColor(Theme.key_dialogTopBackground));
+-        if (byButton) {
+-            builder.setMessage(AndroidUtilities.replaceTags(getString(R.string.PermissionNoLocationNavigation)));
+-        } else {
+-            builder.setMessage(AndroidUtilities.replaceTags(getString(R.string.PermissionNoLocationFriends)));
+-        }
+-        builder.setNegativeButton(getString(R.string.PermissionOpenSettings), (dialog, which) -> {
+-            if (getParentActivity() == null) {
+-                return;
+-            }
+-            try {
+-                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+-                intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
+-                getParentActivity().startActivity(intent);
+-            } catch (Exception e) {
+-                FileLog.e(e);
+-            }
+-        });
+-        builder.setPositiveButton(getString(R.string.OK), null);
+-        showDialog(builder.create());
++        // No device-location permission is used by this client.
+     }
+ 
+     @Override
+@@ -2481,16 +2368,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
  
      @SuppressLint("MissingPermission")
      private Location getLastLocation() {
@@ -11802,7 +11971,16 @@ index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e
      }
  
      private void positionMarker(Location location) {
-@@ -2778,7 +2740,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -2595,7 +2473,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+                 }
+                 addUserMarker(message);
+                 if (proximityButton.getVisibility() != View.GONE && MessageObject.getFromChatId(message) != getUserConfig().getClientUserId()) {
+-                    proximityButton.setVisibility(View.VISIBLE);
++                    proximityButton.setVisibility(View.GONE);
+                     proximityAnimationInProgress = true;
+                     proximityButton.animate().alpha(1.0f).scaleX(1.0f).scaleY(1.0f).setDuration(180).setListener(new AnimatorListenerAdapter() {
+                         @Override
+@@ -2778,7 +2656,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
              }
              if (map != null) {
                  try {
@@ -11811,7 +11989,7 @@ index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e
                  } catch (Exception e) {
                      FileLog.e(e);
                  }
-@@ -2984,7 +2946,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -2984,7 +2862,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
          onResumeCalled = true;
          if (map != null) {
              try {
@@ -11820,7 +11998,7 @@ index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e
              } catch (Exception e) {
                  FileLog.e(e);
              }
-@@ -2997,7 +2959,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -2997,7 +2875,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
              if (activity != null) {
                  checkPermission = false;
                  if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -11829,7 +12007,7 @@ index 06d99117e2b47b6deec41a7f5583dfb114ad4660..3d9be7ca93279bbc121d222f0b504d6e
                  }
              }
          }
-@@ -3008,7 +2970,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
+@@ -3008,7 +2886,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
      }
  
      protected boolean disablePermissionCheck() {

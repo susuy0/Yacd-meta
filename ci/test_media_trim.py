@@ -152,3 +152,12 @@ main=ET.parse(root/'TMessagesProj/src/main/AndroidManifest.xml').getroot()
 for node in main.findall('./application/service')+main.findall('./application/receiver'):
  assert node.get('{'+namespace['android']+'}name') not in {'.LocationSharingService','.StopLiveLocationReceiver'}
 print('PASS: live-location Android service and stop receiver are not registered')
+
+mentions=(src/'org/telegram/ui/Adapters/MentionsAdapter.java').read_text()
+assert 'ShareYouLocationInline' not in mentions
+assert 'new Location("unavailable")' in mentions and 'lastKnownLocation.setLatitude(-1000)' in mentions
+map_view=(src/'org/telegram/ui/LocationActivity.java').read_text()
+assert 'addSubItem(share_live_location,' not in map_view
+assert 'locationButton.setVisibility(View.GONE)' in map_view
+assert 'R.string.PermissionNoLocationNavigation' not in map_view
+print('PASS: inline geo bots fall back without consent prompts; received map viewer has no location-sharing or GPS controls')
