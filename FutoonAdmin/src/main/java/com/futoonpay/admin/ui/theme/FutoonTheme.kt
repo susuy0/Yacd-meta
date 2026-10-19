@@ -75,6 +75,6 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
         MaterialTheme(colorScheme = colors,
             typography = Typography(bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
             shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(16.dp)),
-            content = content)
+            content = { CompositionLocalProvider(LocalContentColor provides colors.onSurface) { content() } })
     }
 }

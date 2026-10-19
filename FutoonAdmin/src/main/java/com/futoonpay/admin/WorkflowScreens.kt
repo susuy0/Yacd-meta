@@ -71,6 +71,19 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     var column by rememberSaveable { mutableStateOf("telegram_id") }
     var value by rememberSaveable(chat.key) { mutableStateOf(chat.telegramId) }
     var expanded by rememberSaveable(chat.key, merchant?.uid) { mutableStateOf(!compact) }
+    if (compact && merchant != null) {
+        PayCard(compact = true) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("PID ${merchant.uid} · ${merchant.username.ifBlank { "当前商户" }}", Modifier.weight(1f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                TextButton(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户", fontSize = 13.sp) }
+                IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "当前商户更多操作") }
+            }
+        }
+        if (expanded) PaySheet("当前会话商户", { expanded = false }) {
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp)) { item { CurrentMerchantCard(workflows, actions, chat, navigator) } }
+        }
+        return
+    }
     PayCard(compact = compact) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(if (compact && merchant != null) "PID ${merchant.uid} · ${merchant.username.ifBlank { "当前商户" }}" else "当前会话商户", Modifier.weight(1f), color = if (compact) Ink else Muted, fontSize = if (compact) 14.sp else 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -153,11 +166,11 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             if (page == "recognize") {
                 item { CurrentMerchantCard(workflows, actions, chat, navigator, compact = true) }
                 item { OutlinedTextField(state.text, workflows::setText, label = { Text(if (state.ocr) "图片识别结果，请先校对" else "粘贴消息、订单号或商户 PID") }, modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4) }
-                item { PayPills(queryKinds, state.queryKind, workflows::setKind) }
                 item { Row {
                     TextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
                     if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 12.sp)
                 } }
+                item { PayPills(queryKinds, state.queryKind, workflows::setKind) }
                 if (Regex("[＊*…●•]{2,}").containsMatchIn(state.text)) item { Text("发现遮挡编号，请补全；不会用编号片段匹配订单。", color = Warning, fontSize = 12.sp) }
                 if (state.candidates.isNotEmpty()) {
                     item {

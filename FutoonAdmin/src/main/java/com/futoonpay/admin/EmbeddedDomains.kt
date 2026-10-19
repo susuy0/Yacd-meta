@@ -254,8 +254,8 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             reviewError?.let { Text(it, color = Danger, fontSize = 12.sp) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 fun submitReview(status: Int) { reviewLoading = true; reviewError = null; viewModel.setStatus(row.id, status, remark) { response -> reviewLoading = false; if (response.success) selectedDomain = null else reviewError = response.message } }
-                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { submitReview(2) }, modifier = Modifier.weight(1f).height(48.dp), enabled = !reviewLoading && row.status != 2) { Text("拒绝", color = Danger) }
-                Button(shape = RoundedCornerShape(10.dp), onClick = { submitReview(1) }, modifier = Modifier.weight(1f).height(48.dp), enabled = !reviewLoading && row.status != 1) { Text(if (reviewLoading) "提交中…" else "通过审核") }
+                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { submitReview(2) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 2) { Text("拒绝", color = Danger) }
+                Button(shape = RoundedCornerShape(10.dp), onClick = { submitReview(1) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 1) { Text(if (reviewLoading) "提交中…" else "通过审核") }
             }
         }
     } }

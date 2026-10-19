@@ -6774,7 +6774,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4777,7 +4781,48 @@
+@@ -4777,7 +4781,45 @@
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
@@ -6806,12 +6806,9 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
 +            final long owner = UserConfig.getInstance(currentAccount).getClientUserId();
 +            boolean shown = org.telegram.ui.FutoonQuickReplies.show(parentFragment, currentAccount, text -> {
 +                if (dialog_id != targetDialog || parentFragment == null || parentFragment.getTopicId() != targetTopic || editingMessageObject != null || getWindowToken() == null || UserConfig.getInstance(currentAccount).getClientUserId() != owner || messageEditText == null) return;
-+                android.text.Editable draft = messageEditText.getText();
-+                int start = Math.max(0, messageEditText.getSelectionStart());
-+                int end = Math.max(start, messageEditText.getSelectionEnd());
-+                draft.replace(Math.min(start, draft.length()), Math.min(end, draft.length()), text);
-+                messageEditText.setSelection(Math.min(start + text.length(), draft.length()));
-+                messageEditText.requestFocus(); openKeyboard(); checkSendButton(true);
++                if (!insertFutoonDraft(text, targetDialog, targetTopic)) {
++                    android.widget.Toast.makeText(getContext(), "文案未填入，请检查会话或输入框总字数（最多 4096 字）", android.widget.Toast.LENGTH_LONG).show();
++                }
 +            }, () -> onTelegramSendLongClick(view));
 +            if (!shown) android.widget.Toast.makeText(getContext(), "一键回复暂时无法打开，请稍后重试", android.widget.Toast.LENGTH_SHORT).show();
 +            return true;
@@ -6823,7 +6820,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -8114,7 +8159,7 @@
+@@ -8114,7 +8156,7 @@
                      }
                  }
              }
@@ -6832,7 +6829,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivity
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8170,14 @@
+@@ -8125,14 +8167,14 @@
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }

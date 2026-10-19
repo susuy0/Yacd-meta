@@ -57,7 +57,10 @@ class MerchantBalanceSubmissionTest {
         val vm = model { calls.incrementAndGet(); throw IOException("connection reset") }
         vm.rechargeMerchant("1011", "add", "5") { result = it; complete.countDown() }
         assertTrue(complete.await(5, TimeUnit.SECONDS)); assertFalse(result!!.success)
-        assertEquals("connection reset", result!!.message)
+        assertTrue(result!!.message.contains("待核对")); assertTrue(result!!.uncertain)
+        val second = CountDownLatch(1)
+        vm.rechargeMerchant("1011", "add", "5") { assertTrue(it.uncertain); second.countDown() }
+        assertTrue(second.await(5, TimeUnit.SECONDS)); assertEquals(1, calls.get())
         assertFalse(vm.state.value.merchantBalanceUpdating); assertFalse(vm.state.value.refreshing); assertEquals(1, calls.get())
     }
 }

@@ -70,7 +70,8 @@ with tempfile.TemporaryDirectory(prefix='futoon-chat-tools-') as folder:
     print('PASS: removing the fix reproduces the missing send button')
 
 callback=method('private boolean onSendLongClick(View view)')
-assert 'draft.replace(' in callback and 'sendMessage(' not in callback
+assert 'insertFutoonDraft(text, targetDialog, targetTopic)' in callback and 'sendMessage(' not in callback
+assert 'draft.replace(' in method('public boolean insertFutoonDraft(')
 assert 'targetDialog' in callback and 'targetTopic' in callback and 'getClientUserId() != owner' in callback
 profile=(base/'ui/ProfileActivity.java').read_text()
 assert 'detailCell.setTextAndValue(Long.toString(userId), "Telegram ID", false)' in profile

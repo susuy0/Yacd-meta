@@ -51,17 +51,18 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
     val address = runCatching { composeBackendAddress(origin, path) }.getOrNull()
     val connected = state.endpointReady && address == state.adminUrl
     val busy = state.loginLoading || state.captchaLoading
-    LazyColumn(Modifier.fillMaxSize().background(Mist).imePadding(),
-        contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().background(Mist).imePadding()) {
+    LazyColumn(Modifier.weight(1f).fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(44.dp).background(GreenDark, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(44.dp).background(Green, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                     Text("F", color = ButtonText, fontWeight = FontWeight.Bold, fontSize = 25.sp)
                 }
                 Column { Text("FUTOON PAY", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("管理端", color = Muted, fontSize = 12.sp) }
             }
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(16.dp))
             Text("登录后台", fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
             Text("先填写官网地址和后台路径，再输入账号密码", color = Muted, fontSize = 13.sp)
@@ -101,15 +102,16 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
             }
         }
         (error ?: state.message)?.let { item { Text(it, color = Danger, fontSize = 13.sp) } }
-        item {
+    }
+        Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Button(shape = RoundedCornerShape(10.dp), onClick = { onLogin(username, password, captcha) },
                 enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = ButtonText, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
             }
-            Spacer(Modifier.height(16.dp))
             Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 12.sp)
         }
+    }
     }
 }
 
@@ -195,8 +197,8 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
     BackHandler { if (edit) edit = false else onBack() }
     Scaffold(containerColor = Mist, topBar = { PayTopBar(if (edit) "更换后台地址" else "设置", { if (edit) edit = false else onBack() }) }, bottomBar = {
         if (edit) Surface(color = CardColor) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).height(48.dp)) { Text("保存并重新登录") }
+            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            Button(shape = RoundedCornerShape(10.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
         } }
     }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -221,7 +223,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                 } }
                 item { SectionLabel("版本信息") }
                 item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", "com.futoonpay.vinechat.beta") } }
-                item { OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("退出登录", color = Danger) } }
+                item { OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
             }
         }
     }

@@ -491,8 +491,8 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                     }
                     if (detail.status == 1 || detail.status == 2 || detail.status == 3) Row(
                         Modifier.fillMaxWidth().background(CardColor).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        actions.firstOrNull { it.action == "notify" }?.let { action -> OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("重新通知") } }
-                        actions.firstOrNull { it.action == "refund" }?.let { action -> Button(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("退款") } }
+                        actions.firstOrNull { it.action == "notify" }?.let { action -> OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("重新通知") } }
+                        actions.firstOrNull { it.action == "refund" }?.let { action -> Button(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("退款") } }
                     }
                 }
             }
@@ -608,10 +608,10 @@ private fun OrderActionDialog(
                 if (pending.amountRequired && !validRefundAmount(amount, pending.order.amount)) Text("请输入不超过订单金额的正数，最多两位小数", color = Danger, fontSize = 12.sp)
                 error?.let { Text(it, color = Danger, fontSize = 12.sp) }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
+                    OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
                     Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, paymentPassword, remark) },
                         enabled = !loading && (!pending.amountRequired || validRefundAmount(amount, pending.order.amount)) && (!pending.passwordRequired || paymentPassword.isNotBlank()),
-                        modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对订单" else if (error != null) "重试" else "确认") }
+                        modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对订单" else if (error != null) "重试" else "确认") }
                 }
             }
     }
@@ -699,7 +699,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
                 }
                 StatusPill(settlementStatusLabel(item.status), settlementStatusColor(item.status))
                 Box {
-                    IconButton(onClick = { expanded = true }, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.MoreVert, "结算操作") }
+                    IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "结算操作") }
                     DropdownMenu(expanded, { expanded = false }) {
                         settlementActions(item).forEach { action ->
                             DropdownMenuItem(text = { Text(action.label) }, onClick = { expanded = false; onAction(action) })
@@ -769,8 +769,8 @@ private fun SettlementActionDialog(
             }
         }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null) "重试" else "确认") }
+            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null) "重试" else "确认") }
         }
     }
 }
@@ -904,7 +904,7 @@ private fun MerchantCard(
                 }
                 StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
                 Box {
-                    IconButton(onClick = { expanded = true }, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.MoreVert, "商户操作") }
+                    IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "商户操作") }
                     DropdownMenu(expanded, { expanded = false }) {
                         listOf(
                             MerchantAction(if (merchant.status == 1) "封禁账号" else "解封账号", "toggleAccount", merchant),
@@ -1189,7 +1189,7 @@ internal fun MerchantActionDialog(
         },
         confirmButton = {
             Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null),
-                colors = ButtonDefaults.buttonColors(containerColor = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT) Danger else GreenDark)) {
+                colors = ButtonDefaults.buttonColors(containerColor = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT) Danger else Green)) {
                 Text(if (busy) "提交中…" else if (uncertain) "重新读取商户" else when (operation) {
                     com.futoonpay.admin.data.MerchantBalanceOperation.ADD -> "确认增加"
                     com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT -> "确认扣除"
@@ -1267,7 +1267,7 @@ internal fun MoreScreen(onLogout: () -> Unit) {
             }
         }
         item {
-            OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(10.dp)) {
+            OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(10.dp)) {
                 Text("退出登录", color = Danger)
             }
         }

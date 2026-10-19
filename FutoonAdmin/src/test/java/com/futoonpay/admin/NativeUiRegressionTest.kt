@@ -147,7 +147,8 @@ class NativeUiRegressionTest {
         screenshot("09-route-editor")
         compose.onNodeWithText("添加通道").performScrollTo().performClick()
         compose.onAllNodesWithText("成员通道").assertCountEquals(2)
-        compose.onNodeWithText("轮询路由可视化").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("payment-editor-list").performScrollToNode(hasText("轮询路由可视化"))
+        compose.onNodeWithText("轮询路由可视化").assertIsDisplayed()
         screenshot("10-route-visualization")
     }
     @Test fun pluginSelectionCanBeCancelledWithoutChangingConfiguration() {

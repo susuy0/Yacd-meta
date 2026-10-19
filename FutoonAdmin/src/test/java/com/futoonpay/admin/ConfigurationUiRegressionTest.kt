@@ -92,6 +92,8 @@ class ConfigurationUiRegressionTest {
         compose.onNodeWithText("保存资料").assertIsEnabled()
         screenshot("15-merchant-profile")
         compose.onNodeWithText("保存资料").performClick()
+        assertEquals(0, saves)
+        compose.onNodeWithText("确认保存").performClick()
         assertEquals(1, saves)
         assertTrue(state.merchantEditor!!.fields.first { it.name == "money" }.readOnly)
     }

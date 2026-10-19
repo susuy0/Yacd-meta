@@ -86,6 +86,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -693,7 +694,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
         bottomBar = {
             if (state.spec.supportsAdd) Surface(color = CardColor) {
                 Button(shape = RoundedCornerShape(10.dp), onClick = viewModel::openAdd, enabled = !state.loading,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(48.dp)) {
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(min = 48.dp)) {
                     Text("新建" + state.spec.title)
                 }
             }
@@ -1054,8 +1055,8 @@ private fun PaymentTestDialog(
                 }
             }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).height(48.dp)) { Text("关闭") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).height(48.dp)) {
+            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("关闭") }
+            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) {
                 if (loading) CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp) else Text(if (uncertain) "在订单中核对" else "创建测试订单")
             }
         }
@@ -1512,18 +1513,18 @@ internal fun PaymentEditorScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Surface(color = CardColor) { Row(Modifier.fillMaxWidth().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onBack, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
+                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onBack, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
                 Button(shape = RoundedCornerShape(10.dp), onClick = {
                     val submitted = values.filter { (name, value) -> val field = form.fields.first { it.name == name }; !field.readOnly && (!field.sensitive || value.isNotBlank()) }
                     onSubmit(form, submitted)
-                }, enabled = !loading && !missingRequired && !uncertain, modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "处理中…" else "保存") }
+                }, enabled = !loading && !missingRequired && !uncertain, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "处理中…" else "保存") }
             } }
         },
         topBar = {
             PayTopBar(form.title, onBack, actions = { if (loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp) })
         },
     ) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.padding(padding).fillMaxSize().testTag("payment-editor-list"), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (uncertain) item { PayCard { Text("保存结果待核对", color = Warning); Text("请取消返回列表并刷新核对后台状态，避免重复创建或修改。", color = Muted, fontSize = 13.sp) } }
             if (isRollRoute) {
                 if (!form.action.contains("saveRollInfo")) {

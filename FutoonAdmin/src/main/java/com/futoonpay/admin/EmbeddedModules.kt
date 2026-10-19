@@ -125,28 +125,35 @@ internal class NativeModuleViewModel(
     private val firstPath = (definition.source as? ModuleSource.Documents)?.pages?.firstOrNull()?.path.orEmpty()
     private val _state = MutableStateFlow(NativeModuleState(definition = definition, selectedPath = firstPath))
     val state = _state.asStateFlow()
+    private var loadGeneration = 0
     private var feedbackAfterLoad: String? = null
     private val documentHistory = mutableListOf<Pair<String, NativeDocument>>()
 
     init { load() }
 
     fun load(page: Int = _state.value.page, query: String = _state.value.query, path: String = _state.value.selectedPath) = viewModelScope.launch {
+        val generation = ++loadGeneration
         _state.update { it.copy(loading = true, page = page, query = query, selectedPath = path, message = null) }
         runCatching {
             when (val source = _state.value.definition.source) {
                 is ModuleSource.Ajax -> {
                     val filters = if (query.isBlank()) emptyMap() else mapOf("column" to source.searchField, "value" to query.trim())
                     val result = repository.genericPage(source.endpoint, source.referer, source.idField, source.fields, page, filters)
+                    if (generation != loadGeneration) return@runCatching
                     val feedback = feedbackAfterLoad.also { feedbackAfterLoad = null }
                     _state.update { it.copy(loading = false, total = result.total, rows = result.rows, document = null, message = feedback) }
                 }
                 is ModuleSource.Documents -> {
                     val document = repository.nativeDocument(path.ifBlank { source.pages.first().path })
+                    if (generation != loadGeneration) return@runCatching
                     val feedback = feedbackAfterLoad.also { feedbackAfterLoad = null }
                     _state.update { it.copy(loading = false, document = document, rows = emptyList(), message = feedback, writeUncertain = false) }
                 }
             }
-        }.onFailure { error -> _state.update { it.copy(loading = false, message = error.message ?: "加载失败") } }
+        }.onFailure { error ->
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            if (generation == loadGeneration) _state.update { it.copy(loading = false, message = error.message ?: "加载失败") }
+        }
     }
 
     fun submit(form: NativeForm, values: Map<String, String>) = runAction(form.method.equals("GET", true)) {
@@ -163,6 +170,7 @@ internal class NativeModuleViewModel(
     }
     fun popDocument(): Boolean {
         val previous = documentHistory.removeLastOrNull() ?: return false
+        loadGeneration++
         _state.update { it.copy(selectedPath = previous.first, document = previous.second, documentDepth = documentHistory.size, message = null) }
         return true
     }
@@ -288,7 +296,7 @@ private fun GenericRowCard(row: GenericRow, source: ModuleSource.Ajax, onDelete:
         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(row.values.values.firstOrNull { it.isNotBlank() } ?: "#${row.id}", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (source.referer == "blacklist.php") IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                if (source.referer == "blacklist.php") IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Default.DeleteOutline, "移除", tint = Danger)
                 }
             }
@@ -475,7 +483,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
             if (options.isEmpty()) item { Text("没有匹配的选项", color = Muted, modifier = Modifier.padding(16.dp)) }
         }
         if (confirmSelection) Button(shape = RoundedCornerShape(10.dp), onClick = { onValueChange(selected); expanded = false },
-            enabled = field.options.any { it.value == selected }, modifier = Modifier.fillMaxWidth().padding(16.dp).height(48.dp)) {
+            enabled = field.options.any { it.value == selected }, modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(min = 48.dp)) {
             Text(field.options.firstOrNull { it.value == selected }?.label?.let { "选择 $it" } ?: "选择插件")
         }
     }

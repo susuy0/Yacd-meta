@@ -77,7 +77,7 @@ internal fun PayPills(options: List<Pair<String, String>>, selected: String, onS
     LazyRow(state = scroll, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         items(options, key = { it.first }) { (value, label) ->
             Box(Modifier.heightIn(min = 48.dp).clickable { onSelect(value) }, contentAlignment = Alignment.Center) {
-                Surface(color = if (value == selected) GreenDark else CardColor, shape = RoundedCornerShape(16.dp), border = if (value == selected) null else BorderStroke(1.dp, Line)) {
+                Surface(color = if (value == selected) Green else CardColor, shape = RoundedCornerShape(16.dp), border = if (value == selected) null else BorderStroke(1.dp, Line)) {
                     Text(label, color = if (value == selected) ButtonText else Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
                 }
             }
