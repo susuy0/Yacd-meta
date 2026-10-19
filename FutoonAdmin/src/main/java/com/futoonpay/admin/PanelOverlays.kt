@@ -3,7 +3,8 @@ package com.futoonpay.admin
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,7 +14,7 @@ import androidx.compose.ui.window.DialogProperties
 import java.util.UUID
 
 internal data class PanelOverlay(val dismiss: () -> Unit, val content: @Composable () -> Unit)
-internal class PanelOverlayStore { val items = mutableStateMapOf<String, PanelOverlay>() }
+internal class PanelOverlayStore { val items = mutableStateMapOf<String, PanelOverlay>(); val order = mutableStateListOf<String>() }
 private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null }
 
 @Composable internal fun PanelOverlayHost(content: @Composable () -> Unit) {
@@ -21,10 +22,10 @@ private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null 
     CompositionLocalProvider(LocalOverlays provides store) {
         Box(Modifier.fillMaxSize()) {
             content()
-            store.items.entries.toList().forEach { (id, entry) -> key(id) {
+            store.order.toList().mapNotNull { id -> store.items[id]?.let { id to it } }.forEach { (id, entry) -> key(id) {
                 BackHandler { entry.dismiss() }
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { entry.dismiss() }, contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxSize().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}) { CompositionLocalProvider(com.futoonpay.admin.ui.LocalPayPanelChrome provides null) { entry.content() } }
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)).pointerInput(id) { detectTapGestures(onTap = { entry.dismiss() }) }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxSize().pointerInput(id) { detectTapGestures(onTap = {}) }) { CompositionLocalProvider(com.futoonpay.admin.ui.LocalPayPanelChrome provides null) { entry.content() } }
                 }
             } }
         }
@@ -40,6 +41,7 @@ private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null 
     val dismiss by rememberUpdatedState(onDismissRequest)
     DisposableEffect(store, id) {
         store.items[id] = PanelOverlay({ dismiss() }, { body() })
-        onDispose { store.items.remove(id) }
+        store.order.add(id)
+        onDispose { store.order.remove(id); store.items.remove(id) }
     }
 }

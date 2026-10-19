@@ -8092,7 +8092,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoade
      @SuppressLint("StaticFieldLeak")
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000..62ca8ad
+index 0000000..1f200e8
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 @@ -0,0 +1,227 @@
@@ -8199,7 +8199,7 @@ index 0000000..62ca8ad
 +            public com.futoonpay.admin.PanelSession session(){return FutoonNativeBridge.session(account,store);}
 +            public void pickEvidenceFromChat(){AndroidUtilities.runOnUIThread(()->{collapse();toast("长按聊天图片，选择「作为富通凭证」");});}
 +            public String[] evidencePaths(){return photos.stream().map(File::getAbsolutePath).toArray(String[]::new);}
-+            public android.graphics.Bitmap evidencePreview(String path){if(!valid()||!path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator))return null;return ImageLoader.loadBitmap(path,null,640,640,true);}
++            public android.graphics.Bitmap evidencePreview(String path){if(!valid()||!path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator))return null;return ImageLoader.loadBitmap(path,null,320,320,true);}
 +            public void removeEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index>=0&&index<photos.size()){photos.remove(index);syncDraft();}});}
 +            public void editEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index<0||index>=photos.size())return;File original=photos.get(index);int gen=generation;new FutoonImageEditor(host.getParentActivity(),original,file->{if(valid()&&gen==generation&&index<photos.size()&&photos.get(index).equals(original)){photos.set(index,file);syncDraft();}},()->{}).show();});}
 +            public boolean hasSession(){try{ensureClient();return api.hasSession();}catch(Exception ignored){return false;}}

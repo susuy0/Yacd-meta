@@ -345,7 +345,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
             if (paths.isEmpty()) item { PayCard { Text("还没有付款凭证"); Text("可从相册、文件或聊天中选择图片。", color = Muted, fontSize = 13.sp) } }
             paths.chunked(3).forEachIndexed { rowIndex, images -> item(key = "images-$rowIndex") {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    images.forEachIndexed { column, path -> EvidenceTile(path, rowIndex * 3 + column, revision, bridge, Modifier.weight(1f)) }
+                    images.forEachIndexed { column, path -> key(path, rowIndex * 3 + column) { EvidenceTile(path, rowIndex * 3 + column, revision, bridge, Modifier.weight(1f)) } }
                     repeat(3 - images.size) { Spacer(Modifier.weight(1f)) }
                 }
             } }
@@ -390,6 +390,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 @Composable private fun EvidenceTile(path: String, index: Int, revision: Int, bridge: NativePanelBridge, modifier: Modifier) {
     var menu by remember(path) { mutableStateOf(false) }
     val preview by produceState<Pair<Boolean, android.graphics.Bitmap?>>(false to null, path, revision) {
+        value = false to null
         value = true to withContext(Dispatchers.IO) { runCatching { bridge.evidencePreview(path) }.getOrNull() }
     }
     Surface(modifier, color = CardColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) {
