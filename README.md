@@ -1,6 +1,8 @@
-# 短信 / Futoon chat v0.8.0
+# 短信 / Futoon chat v0.8.1
 
 Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / 商户 / 结算 / 更多」五个独立 Tab。
+
+v0.8.1 新增悬浮窗与外观自定义、相册图片入口、状态恢复、业务回复模板及按群自动化；设置顶栏复用 Telegram 原生组件，移除订单与凭证中的内部备注入口。设置入口、默认值和运行范围见 [EXTENSIONS-v0.8.1.md](EXTENSIONS-v0.8.1.md)。
 
 ## 聊天工具
 
@@ -38,7 +40,7 @@ FutoonPay 设置 → 开户文案支持整段编辑与恢复默认。变量为 `
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71909`，ARM64，minSdk 23 / targetSdk 36。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71919`，ARM64，minSdk 23 / targetSdk 36。
 
 v0.8.0 按定制区域 UI v1.1 移植一键回复、FutoonPay 设置及悬浮窗。Telegram 原版页面、原发送/媒体入口和会话 Tag 渲染保持现有行为。界面继续使用原生 Android View 与 Compose，不嵌入设计稿 HTML。
 

@@ -109,9 +109,13 @@ class PanelWorkflowsTest {
         withTimeout(5000) { vm.state.first { it.merchant != null } }
         assertEquals("2022", JSONObject(vm.state.value.merchant!!).optString("uid"))
         assertEquals(1, vm.array("history").size); assertTrue(vm.isFavorite("S0")); assertEquals("凭证", vm.drafts().single().optString("caption"))
-        vm.saveNote("S0", "已核对")
-        withTimeout(5000) { while (!JSONObject(bridge.saved).optJSONObject("cases").let { it?.has("S0") == true }) yield() }
-        assertEquals("keep", JSONObject(bridge.saved).optString("futureKey"))
+        vm.favorite(JSONObject().put("trade_no", "S1"))
+        withTimeout(5000) { while (JSONObject(bridge.saved).optJSONArray("favorites")?.length() != 2) yield() }
+        val persisted = JSONObject(bridge.saved)
+        assertEquals("keep", persisted.optString("futureKey"))
+        assertEquals("凭证", persisted.getJSONObject("drafts").getJSONObject("S0").getString("caption"))
+        assertEquals("S0", persisted.getJSONArray("history").getJSONObject(0).getString("text"))
+        assertEquals("2022", persisted.getJSONObject("groups").getString("0:-100:0:"))
     }
     @Test fun receiptDraftAndSupplementTemplateDoNotMutateOrderStatus() = runBlocking {
         val bridge = WorkflowFixtureBridge(); val vm = PanelWorkflows(bridge); ready(vm)

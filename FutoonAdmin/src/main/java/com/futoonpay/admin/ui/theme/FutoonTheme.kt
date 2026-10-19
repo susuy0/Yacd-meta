@@ -65,6 +65,7 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
         base.copy(primary = palette.accent, onPrimary = readableButtonText(palette.accent, palette.buttonText),
             primaryContainer = lerp(palette.surface, palette.accent, if (palette.dark) .20f else .10f), onPrimaryContainer = palette.text,
             secondary = palette.accent, onSecondary = readableButtonText(palette.accent, palette.buttonText),
+            secondaryContainer = lerp(palette.surface, palette.accent, if (palette.dark) .22f else .12f), onSecondaryContainer = palette.text,
             background = palette.background, onBackground = palette.text, surface = palette.surface, onSurface = palette.text,
             surfaceVariant = palette.background, onSurfaceVariant = palette.secondaryText,
             surfaceContainer = palette.surface, surfaceContainerLow = palette.surface, surfaceContainerHigh = palette.surface,

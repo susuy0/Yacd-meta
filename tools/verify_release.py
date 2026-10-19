@@ -124,7 +124,7 @@ with zipfile.ZipFile(path) as z:
     dex = b''.join(z.read(n) for n in z.namelist() if n.endswith('.dex'))
     operations = ['chat.tools.read','ui.draft','local.read','local.write','delivery.read','orders.search','order.detail','merchant.lookup','merchant.balance','merchant.profile','form.save','evidence.draft','evidence.restore','ui.source','ocr.gallery','channel.test','module.editor']
     for operation in operations: assert operation.encode() + b'\0' in dex, operation
-    for descriptor in ['Lorg/telegram/ui/FutoonThemeBridge;', 'Lorg/telegram/ui/FutoonQuickReplies;', 'Lorg/telegram/ui/FutoonChatSettingsActivity;']:
+    for descriptor in ['Lorg/telegram/ui/FutoonThemeBridge;', 'Lorg/telegram/ui/FutoonQuickReplies;', 'Lorg/telegram/ui/FutoonChatSettingsActivity;', 'Lorg/telegram/ui/FutoonSettingsHostActions;', 'Lorg/telegram/messenger/futoon/FutoonAutomation;']:
         assert descriptor.encode() + b'\0' in dex, descriptor
     fixed_pattern = b'\\{([^{}\\n]+)\\}'
     old_pattern = b'\\{([^{}\\n]+)}'

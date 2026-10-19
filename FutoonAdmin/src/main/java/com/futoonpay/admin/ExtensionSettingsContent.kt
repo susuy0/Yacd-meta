@@ -197,7 +197,7 @@ import java.util.UUID
         OutlinedTextField(dialog, { dialog = it }, label = { Text("客户端群 ID（选择群组自动填写）") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(topic, { topic = it }, label = { Text("话题 ID；0 表示全部话题") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(sender, { sender = it }, label = { Text("指定机器人／发送者 Telegram ID") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(keyword, { keyword = it }, label = { Text("消息包含文字") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(keyword, { keyword = it }, label = { Text("消息包含文字（点击按钮时可留空）") }, modifier = Modifier.fillMaxWidth())
         Row { FilterChip(action == "click", { action = "click" }, label = { Text("点击机器人按钮") }); Spacer(Modifier.width(8.dp)); FilterChip(action == "draft", { action = "draft" }, label = { Text("生成回复草稿") }) }
         if (action == "click") OutlinedTextField(button, { button = it }, label = { Text("按钮完整文字，精确匹配") }, modifier = Modifier.fillMaxWidth())
         else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth()); Text("可用 {消息文字}、{群名称}、{发送者ID}；已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
