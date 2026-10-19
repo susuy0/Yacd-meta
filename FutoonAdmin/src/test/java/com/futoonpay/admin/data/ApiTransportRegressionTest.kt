@@ -115,6 +115,8 @@ class ApiTransportRegressionTest {
         assertTrue(edit.documentPath().contains("a+%26+b"))
         assertFalse(NativeAction("删除", "ajax.php?act=delete&id=1", destructive = true).opensNativeDocument())
         assertFalse(NativeAction("配置", "ajax.php?act=setChannel&id=1").opensNativeDocument())
+        assertFalse(NativeAction("新增", "ajax.php?act=addReceiver").opensNativeDocument())
+        assertTrue(NativeAction("新增", "receiver.php?my=add").opensNativeDocument())
     }
 
     @Test fun testPaymentUsesOneShotBodyAndKeepsTheExactFormFields() = runBlocking {

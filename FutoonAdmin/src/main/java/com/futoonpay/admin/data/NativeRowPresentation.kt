@@ -21,7 +21,7 @@ internal fun nativeActionTarget(document: NativeDocument?, action: NativeAction)
 /** Only explicit editor/detail links are navigation; mutations still require confirmation. */
 internal fun NativeAction.opensNativeDocument(): Boolean = method.equals("GET", true) && !destructive &&
     listOf("编辑", "配置", "查看", "详情", "新增", "添加").any(label::contains) &&
-    !listOf("save", "set", "del", "delete", "remove", "reset", "update", "check", "detect").any {
+    !listOf("add", "save", "set", "del", "delete", "remove", "reset", "update", "check", "detect").any {
         endpoint.substringAfter("act=", "").substringBefore('&').startsWith(it, true)
     }
 
