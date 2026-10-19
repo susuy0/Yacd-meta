@@ -1,5 +1,5 @@
 diff --git a/TMessagesProj/build.gradle b/TMessagesProj/build.gradle
-index 70c567de20a4fd80c4f9cb240f8cacb9d2cf2315..81b60bf69112340c452f4bdecdb4069aa4001b59 100644
+index 70c567de20a4fd80c4f9cb240f8cacb9d2cf2315..6f4f4e71c1a78278083c2091b86105d6a93335ae 100644
 --- a/TMessagesProj/build.gradle
 +++ b/TMessagesProj/build.gradle
 @@ -42,6 +42,9 @@ configurations.all {
@@ -12,7 +12,15 @@ index 70c567de20a4fd80c4f9cb240f8cacb9d2cf2315..81b60bf69112340c452f4bdecdb4069a
      implementation 'androidx.core:core:1.16.0'
      implementation 'androidx.palette:palette:1.0.0'
      implementation 'androidx.exifinterface:exifinterface:1.3.6'
-@@ -115,9 +118,13 @@ android {
+@@ -69,7 +72,6 @@ dependencies {
+     implementation 'com.google.android.gms:play-services-auth:20.4.0'
+     implementation 'com.google.android.gms:play-services-vision:20.1.3'
+     implementation 'com.google.android.gms:play-services-wearable:18.0.0'
+-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+     implementation 'com.google.android.gms:play-services-wallet:19.1.0'
+     implementation 'com.googlecode.mp4parser:isoparser:1.0.6'
+     implementation 'com.stripe:stripe-android:2.0.2'
+@@ -115,9 +117,13 @@ android {
      ndkVersion "27.2.12479018"
  
  
@@ -29,7 +37,7 @@ index 70c567de20a4fd80c4f9cb240f8cacb9d2cf2315..81b60bf69112340c452f4bdecdb4069a
          }
      }
  
-@@ -138,6 +145,14 @@ android {
+@@ -138,6 +144,14 @@ android {
          minSdkVersion 23
          targetSdkVersion 36
  
@@ -44,7 +52,7 @@ index 70c567de20a4fd80c4f9cb240f8cacb9d2cf2315..81b60bf69112340c452f4bdecdb4069a
          vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
  
          multiDexEnabled true
-@@ -245,7 +260,14 @@ def getProps(String propName) {
+@@ -245,7 +259,14 @@ def getProps(String propName) {
          return "";
      }
  }
@@ -1580,6 +1588,201 @@ index 7e04087901edaadf98feb2029ebf53a6cbf676ab..2d582a366b620a8281532db9a2fc3c9b
                  return;
              }
              start();
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/GoogleLocationProvider.java b/TMessagesProj/src/main/java/org/telegram/messenger/GoogleLocationProvider.java
+index 237f27e55048474d815f1e09b39d7e3e05c8f42b..356195b0bf1caedae5a74c54d3193133dcad56fe 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/GoogleLocationProvider.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/GoogleLocationProvider.java
+@@ -1,171 +1,30 @@
+ package org.telegram.messenger;
+ 
+-import android.annotation.SuppressLint;
+ import android.content.Context;
+ import android.location.Location;
+-import android.os.Bundle;
+-import android.os.Looper;
+-
+-import androidx.annotation.NonNull;
+-import androidx.annotation.Nullable;
+ import androidx.core.util.Consumer;
+ 
+-import com.google.android.gms.common.api.ApiException;
+-import com.google.android.gms.common.api.GoogleApiClient;
+-import com.google.android.gms.location.FusedLocationProviderClient;
+-import com.google.android.gms.location.LocationCallback;
+-import com.google.android.gms.location.LocationRequest;
+-import com.google.android.gms.location.LocationResult;
+-import com.google.android.gms.location.LocationServices;
+-import com.google.android.gms.location.LocationSettingsRequest;
+-import com.google.android.gms.location.LocationSettingsStatusCodes;
+-import com.google.android.gms.location.SettingsClient;
+-
+-@SuppressLint("MissingPermission")
++/** API compatibility only; Google fused-location client is not included in this app. */
+ public class GoogleLocationProvider implements ILocationServiceProvider {
+-    private FusedLocationProviderClient locationProviderClient;
+-    private SettingsClient settingsClient;
+-
+-    @Override
+-    public void init(Context context) {
+-        locationProviderClient = LocationServices.getFusedLocationProviderClient(context);
+-        settingsClient = LocationServices.getSettingsClient(context);
+-    }
+-
+-    @Override
+-    public ILocationRequest onCreateLocationRequest() {
+-        return new GoogleLocationRequest(LocationRequest.create());
+-    }
+-
+-    @Override
+-    public void getLastLocation(Consumer<Location> callback) {
+-        locationProviderClient.getLastLocation().addOnCompleteListener(task -> {
+-            if (task.getException() != null) {
+-                return;
+-            }
+-            callback.accept(task.getResult());
+-        });
+-    }
+-
+-    @Override
+-    public void requestLocationUpdates(ILocationRequest request, ILocationListener locationListener) {
+-        locationProviderClient.requestLocationUpdates(((GoogleLocationRequest) request).request, new LocationCallback() {
+-            @Override
+-            public void onLocationResult(@NonNull LocationResult locationResult) {
+-                locationListener.onLocationChanged(locationResult.getLastLocation());
+-            }
+-        }, Looper.getMainLooper());
+-    }
+-
+-    @Override
+-    public void removeLocationUpdates(ILocationListener locationListener) {
+-        locationProviderClient.removeLocationUpdates(new LocationCallback() {
+-            @Override
+-            public void onLocationResult(@NonNull LocationResult locationResult) {
+-                locationListener.onLocationChanged(locationResult.getLastLocation());
+-            }
+-        });
+-    }
+-
+-    @Override
++    public void init(Context context) {}
++    public boolean checkServices() { return false; }
++    public void getLastLocation(Consumer<Location> callback) { if (callback != null) callback.accept(null); }
++    public void requestLocationUpdates(ILocationRequest request, ILocationListener listener) {}
++    public void removeLocationUpdates(ILocationListener listener) {}
+     public void checkLocationSettings(ILocationRequest request, Consumer<Integer> callback) {
+-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(((GoogleLocationRequest) request).request);
+-
+-        settingsClient.checkLocationSettings(builder.build()).addOnCompleteListener(task -> {
+-            try {
+-                task.getResult(ApiException.class);
+-                callback.accept(STATUS_SUCCESS);
+-            } catch (ApiException exception) {
+-                switch (exception.getStatusCode()) {
+-                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+-                        callback.accept(STATUS_RESOLUTION_REQUIRED);
+-                        break;
+-                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+-                        callback.accept(STATUS_SETTINGS_CHANGE_UNAVAILABLE);
+-                        break;
+-                }
+-            }
+-        });
++        if (callback != null) callback.accept(STATUS_SETTINGS_CHANGE_UNAVAILABLE);
+     }
+-
+-    @Override
+-    public IMapApiClient onCreateLocationServicesAPI(Context context, IAPIConnectionCallbacks connectionCallbacks, IAPIOnConnectionFailedListener failedListener) {
+-        return new GoogleApiClientImpl(new GoogleApiClient.Builder(ApplicationLoader.applicationContext)
+-                .addApi(LocationServices.API)
+-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+-                    @Override
+-                    public void onConnected(@Nullable Bundle bundle) {
+-                        connectionCallbacks.onConnected(bundle);
+-                    }
+-
+-                    @Override
+-                    public void onConnectionSuspended(int i) {
+-                        connectionCallbacks.onConnectionSuspended(i);
+-                    }
+-                })
+-                .addOnConnectionFailedListener(connectionResult -> failedListener.onConnectionFailed())
+-                .build());
+-    }
+-
+-    @Override
+-    public boolean checkServices() {
+-        return PushListenerController.GooglePushListenerServiceProvider.INSTANCE.hasServices();
+-    }
+-
+-    public final static class GoogleLocationRequest implements ILocationRequest {
+-        private LocationRequest request;
+-
+-        private GoogleLocationRequest(LocationRequest request) {
+-            this.request = request;
+-        }
+-
+-        @Override
+-        public void setPriority(int priority) {
+-            int outPriority;
+-            switch (priority) {
+-                default:
+-                case PRIORITY_HIGH_ACCURACY:
+-                    outPriority = LocationRequest.PRIORITY_HIGH_ACCURACY;
+-                    break;
+-                case PRIORITY_BALANCED_POWER_ACCURACY:
+-                    outPriority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+-                    break;
+-                case PRIORITY_LOW_POWER:
+-                    outPriority = LocationRequest.PRIORITY_LOW_POWER;
+-                    break;
+-                case PRIORITY_NO_POWER:
+-                    outPriority = LocationRequest.PRIORITY_NO_POWER;
+-                    break;
+-            }
+-            request.setPriority(outPriority);
+-        }
+-
+-        @Override
+-        public void setInterval(long interval) {
+-            request.setInterval(interval);
+-        }
+-
+-        @Override
+-        public void setFastestInterval(long interval) {
+-            request.setFastestInterval(interval);
+-        }
+-    }
+-
+-    public final static class GoogleApiClientImpl implements IMapApiClient {
+-        private GoogleApiClient apiClient;
+-
+-        private GoogleApiClientImpl(GoogleApiClient apiClient) {
+-            this.apiClient = apiClient;
+-        }
+-
+-        @Override
+-        public void connect() {
+-            apiClient.connect();
+-        }
+-
+-        @Override
+-        public void disconnect() {
+-            apiClient.disconnect();
+-        }
++    public ILocationRequest onCreateLocationRequest() {
++        return new ILocationRequest() {
++            public void setPriority(int priority) {}
++            public void setInterval(long interval) {}
++            public void setFastestInterval(long interval) {}
++        };
++    }
++    public IMapApiClient onCreateLocationServicesAPI(Context context, IAPIConnectionCallbacks callbacks, IAPIOnConnectionFailedListener failed) {
++        return new IMapApiClient() {
++            public void connect() { if (failed != null) failed.onConnectionFailed(); }
++            public void disconnect() {}
++        };
+     }
+ }
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/LiteMode.java b/TMessagesProj/src/main/java/org/telegram/messenger/LiteMode.java
 index 6c37252d4ec051e7209756126e334b2e9424f783..96491c15cd8a885a921a36ff0b1332a2d118827c 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/LiteMode.java
@@ -6831,10 +7034,10 @@ index 0000000000000000000000000000000000000000..515477a25b2554b801a2b59e87a9bcb1
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonMediaPolicy.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonMediaPolicy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..71199fe9e903f2b7226814787ea2029ad5230d7c
+index 0000000000000000000000000000000000000000..5815e82b3b610987e9f87c81328049ffdcbbba67
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonMediaPolicy.java
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,45 @@
 +package org.telegram.messenger.futoon;
 +
 +import java.util.ArrayList;
@@ -6867,8 +7070,10 @@ index 0000000000000000000000000000000000000000..71199fe9e903f2b7226814787ea2029a
 +    }
 +    /** Preserve original indices and treat missing/cancelled results as denied. */
 +    public static int[] restore(String[] original, String[] returned, int[] grants) {
++        if (original == null) return new int[0];
 +        int[] result = new int[original.length];
 +        Arrays.fill(result, -1);
++        if (returned == null || grants == null) return result;
 +        for (int i = 0; i < original.length; i++) {
 +            if (blocked(original[i])) continue;
 +            for (int k = 0; k < returned.length && k < grants.length; k++) {
@@ -8666,7 +8871,7 @@ index 43e12722519a0159a18ebf74b245934cfcb51a38..61d4f182f4af1480badbc97d207791f6
          if (!checkPermissionsResult(requestCode, permissions, grantResults)) return;
  
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/CameraScanActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/CameraScanActivity.java
-index 4e91bfd3457ff17f058d401f0cd4e6bdfa5356b7..63fc7e3966325f0e0b4edd73df68b61b438cb7dc 100644
+index 4e91bfd3457ff17f058d401f0cd4e6bdfa5356b7..4e1575019cb5da541ef366deb64f6c0b392105dc 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/CameraScanActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/CameraScanActivity.java
 @@ -149,7 +149,7 @@ public class CameraScanActivity extends BaseFragment {
@@ -8687,7 +8892,17 @@ index 4e91bfd3457ff17f058d401f0cd4e6bdfa5356b7..63fc7e3966325f0e0b4edd73df68b61b
                  actionBarLayout[0].addFragmentToStack(fragment);
                  actionBarLayout[0].showLastFragment();
                  actionBarLayout[0].getView().setPadding(backgroundPaddingLeft, 0, backgroundPaddingLeft, 0);
-@@ -677,12 +677,12 @@ public class CameraScanActivity extends BaseFragment {
+@@ -613,7 +613,8 @@ public class CameraScanActivity extends BaseFragment {
+             recognizedMrzView.setTypeface(Typeface.MONOSPACE);
+         } else {
+             if (needGalleryButton) {
+-                //titleTextView.setText(LocaleController.getString(R.string.WalletScanCode));
++                titleTextView.setText(LocaleController.getString(R.string.QrCode));
++                descriptionText.setText(LocaleController.getString(R.string.ChooseFromGallery));
+             } else {
+                 if (currentType == TYPE_QR || currentType == TYPE_QR_WEB_BOT) {
+                     titleTextView.setText(LocaleController.getString(R.string.AuthAnotherClientScan));
+@@ -677,12 +678,12 @@ public class CameraScanActivity extends BaseFragment {
                      final Activity activity = getParentActivity();
                      if (Build.VERSION.SDK_INT >= 33) {
                          if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
@@ -8702,6 +8917,32 @@ index 4e91bfd3457ff17f058d401f0cd4e6bdfa5356b7..63fc7e3966325f0e0b4edd73df68b61b
                              return;
                          }
                      }
+@@ -732,6 +733,7 @@ public class CameraScanActivity extends BaseFragment {
+             flashButton.setImageResource(R.drawable.qr_flashlight);
+             flashButton.setBackgroundDrawable(Theme.createCircleDrawable(dp(60), 0x22ffffff));
+             viewGroup.addView(flashButton);
++            flashButton.setVisibility(View.GONE);
+             flashButton.setOnClickListener(currentImage -> {
+                 if (cameraView == null) {
+                     return;
+@@ -1373,14 +1375,9 @@ public class CameraScanActivity extends BaseFragment {
+                 onNoQrFound();
+                 return null;
+             }
+-            if (needGalleryButton) {
+-                Uri uri = Uri.parse(text);
+-                String path = uri.getPath().replace("/", "");
+-            } else {
+-                if (currentType == TYPE_QR_LOGIN && !text.startsWith("tg://login?token=")) {
+-                    onNoQrFound();
+-                    return null;
+-                }
++            if (currentType == TYPE_QR_LOGIN && !text.startsWith("tg://login?token=")) {
++                onNoQrFound();
++                return null;
+             }
+             QrResult qrResult = new QrResult();
+             if (bounds != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 index 0fae7fdda99102496683e4c1cf866df7cf156a93..a7371e110e6b8310a2c36b92a8e481ac7abb1ef6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
@@ -10069,7 +10310,7 @@ index 2e1c5a2ced3dfde1598c1f5b5ee641aea9cba369..782b1580521e0e17fb6deb03fa095c10
              }
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/PermissionRequest.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/PermissionRequest.java
-index 73439a9bfbe77f339272eafcf7c5011483f91e61..941c4eaddab8aa0fcc1949033b77248253925dc4 100644
+index 73439a9bfbe77f339272eafcf7c5011483f91e61..8ff0380538949b16edc40cea83f715f1e65bc35b 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/PermissionRequest.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/PermissionRequest.java
 @@ -36,6 +36,13 @@ public class PermissionRequest {
@@ -10153,6 +10394,14 @@ index 73439a9bfbe77f339272eafcf7c5011483f91e61..941c4eaddab8aa0fcc1949033b772482
          Activity _activity = LaunchActivity.instance;
          if (_activity == null) _activity = AndroidUtilities.findActivity(ApplicationLoader.applicationContext);
          if (_activity == null) return false;
+@@ -226,6 +240,7 @@ public class PermissionRequest {
+     }
+ 
+     public static void showPermissionSettings(String permission) {
++        if (org.telegram.messenger.futoon.FutoonMediaPolicy.blocked(permission)) return;
+         Activity _activity = LaunchActivity.instance;
+         if (_activity == null) _activity = AndroidUtilities.findActivity(ApplicationLoader.applicationContext);
+         if (_activity == null) return;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
 index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef845c59ac6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
@@ -12166,22 +12415,21 @@ index 1ef9cd7871ed44313c691f2e1ac06dc101c08f38..a79cc8168a5773b2b6f3b7b4b0681127
              return;
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/StoryRecorder.java b/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/StoryRecorder.java
-index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00158fa76f 100644
+index eaad23e7446ab1e6ecf4d6565de598f34338bb09..a98e273aeda51619801f7b0bb1c90ceb8cff62f2 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/StoryRecorder.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/StoryRecorder.java
-@@ -2410,7 +2410,10 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -966,6 +966,10 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
  
-             @Override
-             protected void onCaptionLimitUpdate(boolean overLimit) {
--                previewButtons.setShareEnabled(!videoError && !overLimit && (!MessagesController.getInstance(currentAccount).getStoriesController().hasStoryLimit(getCount()) || (outputEntry != null && outputEntry.isEdit)));
-+                previewButtons.setButtonVisible(PreviewButtons.BUTTON_PAINT, outputEntry == null || !outputEntry.hasVideo());
-+            previewButtons.setButtonVisible(PreviewButtons.BUTTON_TEXT, outputEntry == null || !outputEntry.hasVideo());
-+            previewButtons.setButtonVisible(PreviewButtons.BUTTON_STICKER, outputEntry == null || !outputEntry.hasVideo());
-+            previewButtons.setShareEnabled(!videoError && !overLimit && (!MessagesController.getInstance(currentAccount).getStoriesController().hasStoryLimit(getCount()) || (outputEntry != null && outputEntry.isEdit)));
-             }
- 
-             @Override
-@@ -2600,7 +2603,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+     private void onOpenDone() {
+         isShown = true;
++        if (currentPage == PAGE_CAMERA && outputEntry == null) {
++            requestCameraPermission(false);
++            if (requestGalleryPermission()) animateGalleryListView(true);
++        }
+         wasSend = false;
+         if (openType == 1) {
+             previewContainer.setAlpha(1f);
+@@ -2600,7 +2604,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
              }
          });
          previewView.setVideoTimelineView(timelineView);
@@ -12190,7 +12438,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          timelineView.setAlpha(0f);
          timelineView.setMaxCount(1);
          videoTimelineContainerView = new FrameLayout(context);
-@@ -2616,7 +2619,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -2616,7 +2620,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
  
          coverTimelineView = new TimelineView(context, containerView, previewContainer, resourcesProvider, blurManager);
          coverTimelineView.setCover();
@@ -12199,7 +12447,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          coverTimelineView.setAlpha(0f);
          captionContainer.addView(coverTimelineView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, TimelineView.heightDp(), Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, 0, 0, 0, 6));
  
-@@ -3095,7 +3098,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -3095,7 +3099,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
          flashViews.add(collageHintTextView);
  
          coverButton = new ButtonWithCounterView(context, resourcesProvider).setRound();
@@ -12208,7 +12456,32 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          coverButton.setAlpha(0f);
          coverButton.setText(LocaleController.getString(R.string.StoryCoverSave), false);
          coverButton.setOnClickListener(v -> {
-@@ -5125,12 +5128,12 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -4359,7 +4363,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+         zoomControlAnimation = new AnimatorSet();
+         zoomControlAnimation.setDuration(180);
+         if (show) {
+-            zoomControlView.setVisibility(View.VISIBLE);
++            zoomControlView.setVisibility(View.GONE);
+         }
+         zoomControlAnimation.playTogether(ObjectAnimator.ofFloat(zoomControlView, View.ALPHA, show ? 1.0f : 0.0f));
+         zoomControlAnimation.addListener(new AnimatorListenerAdapter() {
+@@ -5053,12 +5057,12 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+     private void onNavigateStart(int fromPage, int toPage) {
+         if (toPage == PAGE_CAMERA) {
+             requestCameraPermission(false);
+-            recordControl.setVisibility(View.VISIBLE);
++            recordControl.setVisibility(View.GONE);
+             if (recordControl != null) {
+                 recordControl.stopRecordingLoading(false);
+             }
+-            modeSwitcherView.setVisibility(View.VISIBLE);
+-            zoomControlView.setVisibility(View.VISIBLE);
++            modeSwitcherView.setVisibility(View.GONE);
++            zoomControlView.setVisibility(View.GONE);
+             zoomControlView.setAlpha(0);
+             videoTimerView.setDuration(0, true);
+ 
+@@ -5125,12 +5129,12 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
          }
          if (toPage == PAGE_COVER || fromPage == PAGE_COVER) {
              titleTextView.setVisibility(View.VISIBLE);
@@ -12223,7 +12496,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          }
          if (toPage == PAGE_COVER) {
              titleTextView.setText(getString(R.string.RecorderEditCover));
-@@ -5140,8 +5143,8 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -5140,8 +5144,8 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
              final boolean isBot = outputEntry != null && outputEntry.botId != 0;
              final boolean isEdit = outputEntry != null && outputEntry.isEdit;
              previewButtons.setShareText(getString(isEdit ? R.string.Done : isBot ? R.string.UploadBotPreview : R.string.Next), !isBot);
@@ -12234,7 +12507,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
  //            privacySelector.set(outputEntry, false);
              if (!previewAlreadySet) {
                  if (outputEntry != null && outputEntry.isRepostMessage) {
-@@ -5182,12 +5185,15 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -5182,12 +5186,15 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                      captionEdit.clear();
                  }
              }
@@ -12253,7 +12526,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
              titleTextView.setVisibility(View.VISIBLE);
              titleTextView.setTranslationX(0);
              if (outputEntry != null && outputEntry.botId != 0) {
-@@ -5297,10 +5303,10 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -5297,10 +5304,10 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
              setAwakeLock(false);
          }
          if (fromPage == PAGE_COVER) {
@@ -12266,7 +12539,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          }
          if (fromPage == PAGE_PREVIEW) {
              previewButtons.setVisibility(View.GONE);
-@@ -5313,7 +5319,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -5313,7 +5320,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
              }
  //            privacySelector.setVisibility(View.GONE);
              previewView.setVisibility(toPage == PAGE_COVER ? View.VISIBLE : View.GONE);
@@ -12275,7 +12548,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
              if (toPage != PAGE_COVER) {
                  destroyPhotoPaintView();
                  destroyPhotoFilterView();
-@@ -5381,6 +5387,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -5381,6 +5388,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
          switchToEditMode(editMode, false, animated);
      }
      public void switchToEditMode(int editMode, boolean force, boolean animated) {
@@ -12283,7 +12556,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          if (currentEditMode == editMode && !force) {
              return;
          }
-@@ -5785,12 +5792,12 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -5785,12 +5793,12 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                  }
                  if (Build.VERSION.SDK_INT >= 33) {
                      if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -12298,7 +12571,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
                      audioGrantedCallback = granted;
                      return false;
                  }
-@@ -6035,7 +6042,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -6035,7 +6043,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                  muteButton.setVisibility(View.GONE);
                  playButton.setVisibility(View.VISIBLE);
              }
@@ -12307,7 +12580,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
          }
          if (toMode == EDIT_MODE_PAINT && paintView != null) {
              paintView.setVisibility(View.VISIBLE);
-@@ -6098,7 +6105,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -6098,7 +6106,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                  themeButton.setVisibility(toMode == EDIT_MODE_TIMELINE ? View.VISIBLE : View.GONE);
              }
  //            privacySelector.setVisibility(View.GONE);
@@ -12316,7 +12589,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
              titleTextView.setVisibility(View.GONE);
          }
          previewView.setAllowCropping(toMode == EDIT_MODE_NONE);
-@@ -6880,97 +6887,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -6880,97 +6888,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
  
      @SuppressLint("ClickableViewAccessibility")
      private void createCameraView() {
@@ -12415,7 +12688,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
      }
  
      private int frontfaceFlashMode = -1;
-@@ -7178,49 +7095,8 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -7178,49 +7096,8 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
      private boolean requestedCameraPermission;
  
      private void requestCameraPermission(boolean force) {
@@ -12467,7 +12740,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
      }
  
      private boolean requestGalleryPermission() {
-@@ -7228,16 +7104,15 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -7228,16 +7105,15 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
              boolean noGalleryPermission = false;
              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                  noGalleryPermission = (
@@ -12487,7 +12760,7 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
                  }
              }
              return !noGalleryPermission;
-@@ -7246,14 +7121,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -7246,14 +7122,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
      }
  
      private boolean requestAudioPermission() {
@@ -12503,14 +12776,11 @@ index eaad23e7446ab1e6ecf4d6565de598f34338bb09..c1c09e582e0ec31446207eebe1f70b00
      }
  
      public static void onResume() {
-@@ -7418,7 +7286,10 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
+@@ -7418,7 +7287,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
              }
          } else if (id == NotificationCenter.storiesLimitUpdate) {
              if (currentPage == PAGE_PREVIEW) {
 -                previewButtons.setShareEnabled(!videoError && !captionEdit.isCaptionOverLimit() && (!MessagesController.getInstance(currentAccount).getStoriesController().hasStoryLimit(getCount()) || (outputEntry != null && (outputEntry.isEdit || outputEntry.botId != 0))));
-+                previewButtons.setButtonVisible(PreviewButtons.BUTTON_PAINT, outputEntry == null || !outputEntry.hasVideo());
-+            previewButtons.setButtonVisible(PreviewButtons.BUTTON_TEXT, outputEntry == null || !outputEntry.hasVideo());
-+            previewButtons.setButtonVisible(PreviewButtons.BUTTON_STICKER, outputEntry == null || !outputEntry.hasVideo());
 +            previewButtons.setShareEnabled(!videoError && !captionEdit.isCaptionOverLimit() && (!MessagesController.getInstance(currentAccount).getStoriesController().hasStoryLimit(getCount()) || (outputEntry != null && (outputEntry.isEdit || outputEntry.botId != 0))));
              } else if (currentPage == PAGE_CAMERA) {
                  StoriesController.StoryLimit storyLimit = MessagesController.getInstance(currentAccount).getStoriesController().checkStoryLimit();
@@ -12973,7 +13243,7 @@ index f9996f328aaede29b9f01f72643339ed8efeeab5..06a1fb6d71dc329136df65c7938ef4ac
  
      public JSONObject checkObject() {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/web/BotWebViewContainer.java b/TMessagesProj/src/main/java/org/telegram/ui/web/BotWebViewContainer.java
-index faf9d7fc0276e9911f358906039adb188f51826d..a6ad2bd8e19b9ac8246cb12629ec92d405bc5612 100644
+index faf9d7fc0276e9911f358906039adb188f51826d..06f1f23fd44cb1e88961188be87ea8c38a10a804 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/web/BotWebViewContainer.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/web/BotWebViewContainer.java
 @@ -706,6 +706,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
@@ -12993,15 +13263,93 @@ index faf9d7fc0276e9911f358906039adb188f51826d..a6ad2bd8e19b9ac8246cb12629ec92d4
                  }
              }
          }
-@@ -1667,7 +1668,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
-                                 }
-                             }
-                         }, NotificationCenter.onRequestPermissionResultReceived);
--                        parentActivity.requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_QR_CAMERA_PERMISSION);
-+                        org.telegram.ui.Components.FutoonPermissionRequests.request(parentActivity, new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_QR_CAMERA_PERMISSION);
-                         return;
-                     }
+@@ -1646,30 +1647,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
+                     lastQrText = jsonObject.optString("text");
+                     hasQRPending = true;
  
+-                    if (Build.VERSION.SDK_INT >= 23 && parentActivity.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+-                        NotificationCenter.getGlobalInstance().addObserver(new NotificationCenter.NotificationCenterDelegate() {
+-                            @Override
+-                            public void didReceivedNotification(int id, int account, Object... args) {
+-                                if (id == NotificationCenter.onRequestPermissionResultReceived) {
+-                                    int requestCode = (int) args[0];
+-                                    // String[] permissions = (String[]) args[1];
+-                                    int[] grantResults = (int[]) args[2];
+ 
+-                                    if (requestCode == REQUEST_CODE_QR_CAMERA_PERMISSION) {
+-                                        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onRequestPermissionResultReceived);
+-
+-                                        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+-                                            openQrScanActivity();
+-                                        } else {
+-                                            notifyEvent(requestContext, "scan_qr_popup_closed", new JSONObject());
+-                                        }
+-                                    }
+-                                }
+-                            }
+-                        }, NotificationCenter.onRequestPermissionResultReceived);
+-                        parentActivity.requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_QR_CAMERA_PERMISSION);
+-                        return;
+-                    }
+ 
+                     openQrScanActivity();
+                 } catch (JSONException e) {
+@@ -4762,39 +4740,8 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
+ 
+                 @Override
+                 public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+-                    if (botWebViewContainer == null || botWebViewContainer.parentActivity == null) {
+-                        d("onGeolocationPermissionsShowPrompt: no container");
+-                        callback.invoke(origin, false, false);
+-                        return;
+-                    }
+-                    d("onGeolocationPermissionsShowPrompt " + origin);
+-                    final String name = bot ? UserObject.getUserName(botWebViewContainer.botUser) : AndroidUtilities.getHostAuthority(getUrl());
+-                    lastPermissionsDialog = AlertsCreator.createWebViewPermissionsRequestDialog(
+-                        botWebViewContainer.parentActivity,
+-                        botWebViewContainer.resourcesProvider,
+-                        new String[] {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+-                        R.raw.permission_request_location,
+-                        formatString(bot ? R.string.BotWebViewRequestGeolocationPermission : R.string.WebViewRequestGeolocationPermission, name),
+-                        formatString(bot ? R.string.BotWebViewRequestGeolocationPermissionWithHint : R.string.WebViewRequestGeolocationPermissionWithHint, name),
+-                        allow -> {
+-                            if (lastPermissionsDialog != null) {
+-                                lastPermissionsDialog = null;
+-
+-                                if (allow) {
+-                                    botWebViewContainer.runWithPermissions(new String[] {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, allowSystem -> {
+-                                        callback.invoke(origin, allowSystem, false);
+-                                        if (allowSystem) {
+-                                            botWebViewContainer.hasUserPermissions = true;
+-                                        }
+-                                    });
+-                                } else {
+-                                    callback.invoke(origin, false, false);
+-                                }
+-                            }
+-                        }
+-                    );
+-                    lastPermissionsDialog.show();
+-                }
++                    callback.invoke(origin, false, false);
++    }
+ 
+                 @Override
+                 public void onGeolocationPermissionsHidePrompt() {
+@@ -4809,6 +4756,13 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
+ 
+                 @Override
+                 public void onPermissionRequest(PermissionRequest request) {
++                    for (String resource : request.getResources()) {
++                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource) || PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) {
++                            request.deny();
++                            return;
++                        }
++                    }
++
+                     if (lastPermissionsDialog != null){
+                         lastPermissionsDialog.dismiss();
+                         lastPermissionsDialog = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/utils/camera/roundvideo/RoundVideoCameraController.java b/TMessagesProj/src/main/java/org/telegram/utils/camera/roundvideo/RoundVideoCameraController.java
 index 7aa47aa7e89abedb8328f3a9f91e3e16c4f80ef8..21c01b3976e0f932af92aca996d5613f774ba7c1 100644
 --- a/TMessagesProj/src/main/java/org/telegram/utils/camera/roundvideo/RoundVideoCameraController.java

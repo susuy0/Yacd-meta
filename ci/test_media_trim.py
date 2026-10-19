@@ -56,6 +56,8 @@ public class TrimTest {
   equal(FutoonPermissionRequests.restore(b,4,new String[]{notify},new int[]{0}).grants,new int[]{0,-1});
   FutoonPermissionRequests.request(a,new String[]{image,camera},5);
   equal(FutoonPermissionRequests.restore(a,5,new String[0],new int[0]).grants,new int[]{-1,-1});
+  equal(FutoonMediaPolicy.restore(new String[]{image,camera},null,null),new int[]{-1,-1});
+  equal(FutoonMediaPolicy.restore(new String[]{image,audio},new String[]{image,audio},new int[]{0}),new int[]{0,-1});
   FutoonPermissionRequests.request(a,new String[0],6);AndroidUtilities.flush();
   check(a.requests==2,"Never issue an empty OS request");
   check(!FutoonMediaPolicy.CAMERA_CAPTURE&&!FutoonMediaPolicy.LOCATION_SHARING&&!FutoonMediaPolicy.VIDEO_EDITING,"Product capabilities");
@@ -96,3 +98,15 @@ panel=(src/'org/telegram/ui/FutoonPanel.java').read_text()
 assert 'sendEvidence' in panel
 assert 'ACTION_OPEN_DOCUMENT' in panel or 'ACTION_GET_CONTENT' in panel
 print('PASS: all manifest variants, external capture removal, hardware stubs, image editor and evidence selection boundaries')
+
+web=(src/'org/telegram/ui/web/BotWebViewContainer.java').read_text()
+assert 'callback.invoke(origin, false, false);' in web
+assert 'PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)' in web
+assert 'PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)' in web
+provider=(src/'org/telegram/messenger/GoogleLocationProvider.java').read_text()
+assert 'com.google.android.gms.location' not in provider
+assert 'play-services-location:' not in (root/'TMessagesProj/build.gradle').read_text()
+scan=(src/'org/telegram/ui/CameraScanActivity.java').read_text()
+assert 'Uri uri = Uri.parse(text);' not in scan, 'Gallery QR must accept plain text without dereferencing a null URI path'
+assert 'currentType == TYPE_QR_LOGIN && !text.startsWith("tg://login?token=")' in scan
+print('PASS: no Mini App capture prompt, no fused-location SDK, gallery QR login validation retained')
