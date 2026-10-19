@@ -1,8 +1,8 @@
 短信 / Futoon chat v0.8.0 定制区域 UI v1.1
-验证源代码：da97a994c5f6da91f51252e1661fccbc20cbbd16
-GitHub Actions：39201132037
+验证源代码：a22fbd817ed06558960d99cda0428887d1b4d86b
+GitHub Actions：39203102774
 
-253 tests, 0 failures, 0 errors, 0 skipped
+255 tests, 0 failures, 0 errors, 0 skipped
 Android Lint: 0 errors, 28 warnings
 36 synthetic-fixture screenshots
 
@@ -21,6 +21,11 @@ Android Lint: 0 errors, 28 warnings
 - 写入结果不明阻止直接重试，明确拒绝保留显式重试
 - 付款凭证多图、说明、处理状态、手动对象与预览
 - 开户 D0 / D1 权限映射、核对、分步结果和草稿
+- 测试支付单次请求、不跟随重定向、不自动重试；表单字段契约
+
+完整 Android 编译 / 打包与 APK 组件 / 原生引擎审计通过。
+APK v2 签名、内容摘要、ZIP CRC、版本 / 包名 / 标签、CI 校验值验证通过。
+与上一版本签名一致，可覆盖升级；具体摘要见 BUILD.json。
 
 这是 Robolectric SDK 35 与可控传输测试，未执行真实资金写入或 Telegram 发送。
 Android 17 设备、系统键盘与真实后台仍需实机联调。

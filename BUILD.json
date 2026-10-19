@@ -6,18 +6,40 @@
   "patch_sha256": "5f9c7580c04e8a09830d2a551f79731754bf6a4041013c572234651abf91db32",
   "source_baseline": "8dcfae372bbf0474e32a0f9698769d9b62bdcc02",
   "validation": {
-    "status": "pending final CI after one-shot test-payment guard",
-    "device_backend": "No real device, live creation, key reset or Telegram send test",
-    "previous_native_tests": {
-      "source": "da97a994c5f6da91f51252e1661fccbc20cbbd16",
-      "tests": 253,
+    "status": "passed",
+    "workflow_run": 39203102774,
+    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39203102774",
+    "jobs": {
+      "panel-ui": 117900074193,
+      "core-checks": 117900074300,
+      "native-admin": 117900074406,
+      "android": 117901082987
+    },
+    "job_conclusions": "all success",
+    "native_tests": {
+      "tests": 255,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
       "screenshots": 36,
       "lint_errors": 0,
       "lint_warnings": 28
-    }
+    },
+    "regex": {
+      "android_icu_patterns": 107,
+      "opening_variable_cases": 5,
+      "original_invalid_pattern_negative_control": "passed"
+    },
+    "core_checks": [
+      "startup lifecycle guards",
+      "quick reply draft and send/media entrypoints",
+      "Telegram identity matching",
+      "HTTP and write contracts",
+      "floating panel geometry"
+    ],
+    "apk_component_native_engine_audit": "passed",
+    "test_environment": "Robolectric SDK 35 and controlled synthetic transport",
+    "device_backend": "Android 17 device, system keyboard and live backend not tested; no live account creation, financial write, key reset or Telegram send performed"
   },
   "features": {
     "original_telegram_ui": "preserved",
@@ -37,5 +59,42 @@
     "source_commit": "417550df9327d78677d154cc603ffc9c45519046",
     "apk_sha256": "b09b45ea6a74040c88de281b625f47a3b6642fca446fc46c563f4e95272f5c87",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
+  },
+  "source_commit": "a22fbd817ed06558960d99cda0428887d1b4d86b",
+  "source_tree": "f035a73c1669bc66a83b40cef5ae3c0f2dc59715",
+  "apk": {
+    "filename": "SMS-Futoon-v0.8.0-arm64.apk",
+    "bytes": 41087814,
+    "sha256": "2db829f3194e8eb690db84d013344194f24c4336b092b5ba5cb1999fd5ce3cfe",
+    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
+    "v2_signature": "verified",
+    "zip_crc": "verified",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "futoon_assets": 0,
+    "native_core_bytes": 9893208,
+    "native_operation_markers": 17,
+    "package": "com.futoonpay.vinechat.beta",
+    "versionCode": 71909,
+    "versionName": "13.0.2",
+    "minSdkVersion": 23,
+    "targetSdkVersion": 36,
+    "application_label": "短信",
+    "same_signer_as_previous_release": true,
+    "push_mode": "development-no-fcm (existing build mode; push delivery not tested)",
+    "ci_sha256sums": "APK and R8 mapping verified"
+  },
+  "artifacts": {
+    "apk": {
+      "id": 12165038362,
+      "name": "VineChat-Futoon-v0.8.0-native-development-no-fcm",
+      "zip_sha256": "b5fa4523c051ef73c84964c6597fc28c053702ec7dddb5dc8ed715ebd0a10db2"
+    },
+    "native_reports": {
+      "id": 12163849219,
+      "name": "Futoon-v0.8.0-native-business-checks",
+      "zip_sha256": "7dd54a6c002d354857e6da043a6954c6bb4f691256326fce36a00667a02f57c0"
+    }
   }
 }
