@@ -112,11 +112,11 @@ with zipfile.ZipFile(path) as z:
     assert z.testzip() is None
     identity = manifest(z.read('AndroidManifest.xml'))
     assert identity['package'] == 'com.futoonpay.vinechat.beta'
-    assert identity['versionCode'] == 71929, identity
+    assert identity['versionCode'] == 71939, identity
     assert identity['application_label'] == '短信', identity
     assert identity['minSdkVersion'] == 23 and identity['targetSdkVersion'] == 36
     assert not identity.get('native_activities'), 'Standalone business activities must not return'
-    for permission in ['android.permission.RECORD_AUDIO', 'android.permission.READ_CONTACTS', 'android.permission.WRITE_CONTACTS']:
+    for permission in ['android.permission.RECORD_AUDIO', 'android.permission.READ_CONTACTS', 'android.permission.WRITE_CONTACTS', 'android.permission.CAMERA', 'android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_BACKGROUND_LOCATION', 'android.permission.ACCESS_MEDIA_LOCATION', 'android.permission.READ_MEDIA_VIDEO', 'android.permission.FOREGROUND_SERVICE_CAMERA', 'android.permission.FOREGROUND_SERVICE_MICROPHONE', 'android.permission.FOREGROUND_SERVICE_LOCATION']:
         assert permission not in identity.get('permissions', []), permission
     abis = sorted({n.split('/')[1] for n in z.namelist() if n.startswith('lib/') and n.endswith('.so')})
     assert abis == ['arm64-v8a'], abis
