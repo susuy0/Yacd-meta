@@ -24,6 +24,7 @@ data class FutoonPalette(
     val divider: Color = Color(0xFFE1E5E9),
     val error: Color = Color(0xFFCF3434),
     val success: Color = Color(0xFF26844B),
+    val fontScale: Float = 1f,
 ) {
     companion object {
         @JvmStatic fun parse(json: String): FutoonPalette {
@@ -33,7 +34,7 @@ data class FutoonPalette(
             return FutoonPalette(value.optBoolean("dark"), color("surface", fallback.surface), color("background", fallback.background),
                 color("text", fallback.text), color("secondaryText", fallback.secondaryText), color("accent", fallback.accent),
                 color("accentText", fallback.accentText), color("buttonText", fallback.buttonText), color("divider", fallback.divider),
-                color("error", fallback.error), color("success", fallback.success))
+                color("error", fallback.error), color("success", fallback.success), value.optDouble("fontScale", 1.0).toFloat().coerceIn(.8f, 1.5f))
         }
     }
 }
@@ -71,7 +72,8 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
     }
     val accentContrast = (maxOf(palette.surface.luminance(), palette.accentText.luminance()) + .05f) / (minOf(palette.surface.luminance(), palette.accentText.luminance()) + .05f)
     val safePalette = if (accentContrast < 4.5f) palette.copy(accentText = palette.text) else palette
-    CompositionLocalProvider(LocalFutoonPalette provides safePalette) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    CompositionLocalProvider(LocalFutoonPalette provides safePalette, androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * palette.fontScale)) {
         MaterialTheme(colorScheme = colors,
             typography = Typography(bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
             shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(16.dp)),

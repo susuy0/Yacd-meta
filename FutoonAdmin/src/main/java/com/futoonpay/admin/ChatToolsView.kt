@@ -65,6 +65,15 @@ interface ChatToolsNavigationBridge : ChatToolsBridge {
     fun manageAt(tab: String, category: String)
 }
 
+interface ChatToolsHostBridge : ChatToolsNavigationBridge {
+    fun settingsTitle(title: String)
+    fun pickEntryImage()
+    fun pickAutomationGroup()
+    fun selectedGroup(): String
+    fun automationLog(): String
+    fun resetEntryPosition()
+}
+
 /** Telegram fragment/sheet owns this view explicitly, just like the native business panel. */
 class ChatToolsView @JvmOverloads constructor(context: Context, private val bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home") : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
     private val registry = LifecycleRegistry(this)
@@ -74,6 +83,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
     private var closed = false
     private var panelHeight = 0
     private var palette by mutableStateOf(FutoonPalette())
+    private var revision by mutableIntStateOf(0)
     override val lifecycle: Lifecycle get() = registry
     override val viewModelStore = ViewModelStore()
     override val savedStateRegistry get() = controller.savedStateRegistry
@@ -84,7 +94,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         compose.id = android.view.View.generateViewId()
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent { CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) { FutoonTheme(palette) {
-            Box(if (picker) Modifier.fillMaxSize().background(Mist) else Modifier.fillMaxSize().background(Mist).statusBarsPadding().navigationBarsPadding()) { PanelOverlayHost { ChatToolsScreen(bridge, picker, initialPage) } }
+            Box(if (picker || bridge is ChatToolsHostBridge) Modifier.fillMaxSize().background(Mist).navigationBarsPadding() else Modifier.fillMaxSize().background(Mist).statusBarsPadding().navigationBarsPadding()) { PanelOverlayHost { ChatToolsScreen(bridge, picker, initialPage, revision) } }
         } } }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
@@ -94,6 +104,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
     }
     fun setThemeColors(json: String) { if (!closed) { palette = FutoonPalette.parse(json); setBackgroundColor(palette.surface.toArgb()) } }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
+    fun reloadSettings() { revision++ }
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun setPanelHeight(pixels: Int) { panelHeight = pixels.coerceAtLeast(0); requestLayout() }
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -108,7 +119,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
 internal const val QUICK_REPLY_LIMIT = 4096
 private data class ChatEditor(val kind: String, val id: String = "", val first: String = "", val second: String = "")
 
-@Composable internal fun ChatToolsScreen(bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home") {
+@Composable internal fun ChatToolsScreen(bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home", hostRevision: Int = 0) {
     val navigation = bridge as? ChatToolsNavigationBridge
     var config by remember { mutableStateOf<ChatToolsConfig?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -123,7 +134,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     var preview by remember { mutableStateOf<QuickReply?>(null) }
     var notice by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(refresh) {
+    LaunchedEffect(refresh, hostRevision) {
         loading = true; error = null
         try {
             val loaded = withContext(Dispatchers.IO) { ChatToolsConfig.parse(bridge.load()) }
@@ -166,6 +177,8 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     }
     BackHandler(enabled = !picker || preview != null) { back() }
     val currentPreview = preview
+    val pageTitle = when (page) { "tags" -> "会话 Tag"; "replies", "categories", "replyList" -> "一键回复"; "opening" -> "开户文案"; "panel" -> "悬浮窗自定义"; "appearance" -> "外观"; "businessReplies" -> "业务回复模板"; "automation" -> "群自动化"; else -> "FutoonPay 设置" }
+    LaunchedEffect(pageTitle) { (bridge as? ChatToolsHostBridge)?.settingsTitle(pageTitle) }
     if (picker) {
         if (currentPreview != null) {
             Column(Modifier.fillMaxSize().background(CardColor)) {
@@ -230,7 +243,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             }
         }
     } else Column(Modifier.fillMaxSize().background(Mist)) {
-        PayTopBar(when (page) { "tags" -> "会话 Tag"; "replies", "categories", "replyList" -> "一键回复"; "opening" -> "开户文案"; else -> "FutoonPay 设置" }, ::back)
+        if (bridge !is ChatToolsHostBridge) PayTopBar(pageTitle, ::back)
         if (loading || saving) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (editor == null && deletion == null) error?.let { Text(it, color = Danger, modifier = Modifier.padding(12.dp), fontSize = 13.sp); TextButton(shape = RoundedCornerShape(10.dp), onClick = { refresh++ }) { Text("重新读取设置") } }
         if (editor == null) notice?.let { Text(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), color = Muted, fontSize = 12.sp) }
@@ -240,7 +253,9 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             TextButton(shape = RoundedCornerShape(10.dp), onClick = { page = "categories" }, modifier = Modifier.weight(1f)) { Text(tab?.title ?: "Tab 已删除", maxLines = 1, overflow = TextOverflow.Ellipsis) }
             if (page == "replyList") Text(category?.title.orEmpty(), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("chat-tools-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (data != null && page in setOf("panel", "appearance", "businessReplies", "automation")) {
+            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, error, Modifier.weight(1f)) { next, done -> save(data.copy(extensions = next), done) }
+        } else LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("chat-tools-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (page == "home") {
                 item { SectionLabel("本机自定义配置") }
                 item { PayCard {
@@ -256,6 +271,10 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                     }
                 }
                 item { Text("Telegram 账号管理使用原版设置；付款后台连接、退出登录在悬浮窗「更多 › 后台设置」中操作。", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(4.dp)) }
+                item { ChatSettingRow("悬浮窗自定义", "高度、入口图片、Tab 顺序与状态记忆", Icons.Outlined.Tune, !loading && !saving) { page = "panel" } }
+                item { ChatSettingRow("外观", "主题、字号、圆角、透明度与遮罩", Icons.Outlined.Palette, !loading && !saving) { page = "appearance" } }
+                item { ChatSettingRow("业务回复模板", "${data?.extensions?.templates?.size ?: 0} 个模板 · 订单与商户变量", Icons.Outlined.Description, !loading && !saving) { page = "businessReplies" } }
+                item { ChatSettingRow("群自动化", "按群开启 · 消息条件与机器人按钮", Icons.Outlined.SmartToy, !loading && !saving) { page = "automation" } }
             } else if (data != null && page == "tags") {
                 item { Text("按 Telegram ID 匹配，显示在聊天列表和聊天页顶部。工单话题使用末尾完整 TGID。", color = Muted, fontSize = 13.sp) }
                 item { TextButton(shape = RoundedCornerShape(10.dp), enabled = !saving, onClick = { editor = ChatEditor("tag") }) { Icon(Icons.Outlined.Add, null); Text("新增 Tag") } }

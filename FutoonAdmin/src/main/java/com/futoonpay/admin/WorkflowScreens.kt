@@ -23,6 +23,7 @@ import org.json.JSONObject
 import java.time.LocalDate
 
 internal class CurrentMerchantActions(val model: AppViewModel) {
+    var contextKey: String? = null
     var pending by mutableStateOf<MerchantAction?>(null)
     var detail by mutableStateOf<MerchantSummary?>(null)
     var days by mutableIntStateOf(7)
@@ -36,7 +37,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     val model = actions.model
     val state by model.state.collectAsState()
     val scope = rememberCoroutineScope()
-    LaunchedEffect(chat.key, chat.telegramId) { actions.pending = null; actions.detail = null; model.closeMerchantEditor() }
+    LaunchedEffect(chat.key, chat.telegramId) { if (actions.contextKey != chat.key) { actions.contextKey = chat.key; actions.pending = null; actions.detail = null; model.closeMerchantEditor() } }
     LaunchedEffect(state.message) { state.message?.let { workflows.notice(it); workflows.refreshMerchant(); model.consumeMessage() } }
     if (state.merchantEditorUid.isNotBlank()) MerchantProfileDialog(state, model::closeMerchantEditor, model::editMerchantField, model::saveMerchantEditor, { model.openMerchantEditor(state.merchantEditorUid) })
     actions.pending?.let { action ->
@@ -71,6 +72,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     var column by rememberSaveable { mutableStateOf("telegram_id") }
     var value by rememberSaveable(chat.key) { mutableStateOf(chat.telegramId) }
     var expanded by rememberSaveable(chat.key, merchant?.uid) { mutableStateOf(!compact) }
+    var merchantReply by rememberSaveable(chat.key, merchant?.uid) { mutableStateOf(false) }
+    if (merchantReply && merchant != null) BusinessReplyComposer(workflows, null, merchant, { merchantReply = false })
     if (compact && merchant != null) {
         PayCard(compact = true) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -130,6 +133,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                         TextButton(onClick = { navigator.domains(merchant.uid) }) { Text("域名审核") }
                     }
                     Row {
+                        TextButton(onClick = { merchantReply = true }) { Text("生成商户回复") }
                         TextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "flow", merchantId = merchant.uid)) }) { Text("资金流水") }
                         TextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "stats", merchantId = merchant.uid)) }) { Text("商户统计") }
                     }
@@ -255,13 +259,10 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         }
         Row {
             TextButton(onClick = { dialog = "reply" }) { Text("生成回复草稿") }
-            TextButton(enabled = !state.localLoading, onClick = { dialog = "note" }) { Text("内部备注与处理记录") }
         }
     }
     if (dialog.isNotBlank()) {
-        val note = dialog == "note"
-        val initial = if (note) workflows.case(detail.tradeNo).optString("note") else evidenceCaption(row) + "\n当前状态：${orderStatusLabel(detail.status)}"
-        EditableWorkflowText(if (note) "内部备注" else "回复原聊天草稿", initial, { dialog = "" }) { value -> if (note) workflows.saveNote(detail.tradeNo, value) else copy(value) }
+        BusinessReplyComposer(workflows, detail, state.merchant?.let { JSONObject(it).toMerchantSummary() }?.takeIf { it.uid == detail.merchantId }, { dialog = "" })
     }
 }
 
@@ -272,9 +273,9 @@ internal val LocalWorkflowCopy = staticCompositionLocalOf<(String) -> Unit> { {}
     var value by rememberSaveable(title, initial) { mutableStateOf(initial) }
     PaySheet(title, onClose) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val limit = if (title == "内部备注") 4000 else 8000
+            val limit = 8000
             OutlinedTextField(value, { value = it }, modifier = Modifier.fillMaxWidth().weight(1f), label = { Text("可编辑内容") }, isError = value.length > limit, supportingText = { Text("${value.length} / $limit") })
-            Button(enabled = value.length <= limit, onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(if (title == "内部备注") "保存备注" else "复制草稿") }
+            Button(enabled = value.length <= limit, onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text("复制草稿") }
         }
     }
 }

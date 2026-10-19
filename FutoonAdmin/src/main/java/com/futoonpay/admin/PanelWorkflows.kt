@@ -85,6 +85,14 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
     fun binding(): String = local.optJSONObject("groups")?.optString(chat.key).orEmpty()
     fun clearError() { mutable.update { it.copy(error = null) } }
     fun notice(message: String) { mutable.update { it.copy(notice = message) } }
+    fun replyTarget(): ChatScope = chat
+    suspend fun replySettings(): ChatToolsConfig = ChatToolsConfig.parse(call("chat.tools.read"))
+    suspend fun insertReply(text: String, target: ChatScope) {
+        require(text.isNotBlank() && text.length <= 4096) { "草稿内容应为 1～4096 个字符" }
+        check(target.key == chat.key && target.dialog == chat.dialog && target.topic == chat.topic) { "会话已变化，请重新生成草稿" }
+        val result = JSONObject(call("ui.draft", JSONObject().put("text", text).put("context", target.key).put("dialog", target.dialog.toString()).put("topic", target.topic.toString())))
+        check(result.optBoolean("inserted")) { "当前输入框不可用，请返回原会话重试" }
+    }
     fun consumeNotice() { mutable.update { it.copy(notice = null) } }
     fun setText(text: String) { source = MessageSource(); pointers = emptyMap(); mutable.update { it.copy(text = text.take(16384), error = null) } }
     fun setGroup(group: String) { mutable.update { it.copy(group = group) } }

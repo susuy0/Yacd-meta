@@ -2,6 +2,8 @@ package com.futoonpay.admin
 
 import androidx.compose.runtime.*
 import java.util.UUID
+import org.json.JSONObject
+import org.json.JSONArray
 
 internal data class PanelRoute(val kind: String, val module: String = "", val channelId: String = "", val channelType: String = "", val merchantId: String = "", val id: String = UUID.randomUUID().toString(), val orderId: String = "", val queryColumn: String = "", val queryValue: String = "")
 
@@ -35,6 +37,26 @@ internal class PanelNavigator : PanelNavigation {
     fun merchantOpening() = push(PanelRoute("merchant_opening"))
     val current: PanelRoute get() = stacks[tab]?.lastOrNull() ?: roots.getValue(tab)
     fun select(tab: String) { require(tab in roots); this.tab = tab }
+    fun snapshot(): String = JSONObject().put("tab", tab).put("stacks", JSONObject().also { result ->
+        stacks.forEach { (key, routes) -> result.put(key, JSONArray(routes.takeLast(16).filterNot { it.kind == "merchant_opening" }.map { route ->
+            JSONObject().put("kind", route.kind).put("module", route.module).put("channelId", route.channelId).put("channelType", route.channelType).put("merchantId", route.merchantId)
+                .put("id", route.id).put("orderId", route.orderId).put("queryColumn", route.queryColumn).put("queryValue", route.queryValue)
+        })) }
+    }).toString()
+    fun restore(raw: String) {
+        if (raw.isBlank() || raw.length > 100000) return
+        runCatching {
+            val json = JSONObject(raw)
+            val selected = json.optString("tab"); if (selected in roots) tab = selected
+            val saved = json.optJSONObject("stacks") ?: return@runCatching
+            roots.keys.forEach { key -> val rows = saved.optJSONArray(key) ?: return@forEach
+                stacks[key] = (0 until minOf(rows.length(), 16)).mapNotNull { i -> val row = rows.getJSONObject(i); val kind = row.optString("kind")
+                    if (kind !in setOf("recognition", "orders", "merchants", "settlements", "more", "module", "domains", "settings", "evidence", "merchant_records")) null
+                    else PanelRoute(kind, row.optString("module"), row.optString("channelId"), row.optString("channelType"), row.optString("merchantId"), row.optString("id").ifBlank { UUID.randomUUID().toString() }, row.optString("orderId"), row.optString("queryColumn"), row.optString("queryValue"))
+                }
+            }
+        }
+    }
     val canPop: Boolean get() = stacks[tab].orEmpty().isNotEmpty()
     fun pop(): Boolean { val stack = stacks[tab].orEmpty(); if (stack.isEmpty()) return false; stacks[tab] = stack.dropLast(1); return true }
     fun push(route: PanelRoute) { stacks[tab] = stacks[tab].orEmpty() + route }

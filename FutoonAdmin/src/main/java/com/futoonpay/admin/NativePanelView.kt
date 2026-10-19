@@ -78,19 +78,21 @@ internal class PanelRouteModels {
 }
 
 /** Owns lifecycle, state, back handling and original Android UI inside the Telegram panel. */
-class NativePanelView(context: Context, private val bridge: NativePanelBridge) : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
+class NativePanelView @JvmOverloads constructor(context: Context, private val bridge: NativePanelBridge, private val conversationScope: String = "") : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
     private val registry = LifecycleRegistry(this)
     private val stateController = SavedStateRegistryController.create(this)
     override val lifecycle: Lifecycle get() = registry
-    override val viewModelStore = ViewModelStore()
+    private var options by mutableStateOf(runCatching { ChatToolsConfig.parse((bridge as? NativePanelOptionsBridge)?.settingsJson().orEmpty()).extensions }.getOrDefault(ExtensionOptions()))
+    private val memory = PanelMemories.acquire(if (conversationScope.isBlank()) "" else "${bridge.accountScope()}|${bridge.address()}|$conversationScope", bridge, options)
+    override val viewModelStore get() = memory.store
     override val savedStateRegistry get() = stateController.savedStateRegistry
     override val onBackPressedDispatcher = OnBackPressedDispatcher { bridge.collapse() }
     private val compose = ComposeView(context)
     private val composition = PanelComposition(compose, registry)
-    private val environment = EmbeddedEnvironment(bridge)
-    private val navigation = PanelNavigator()
+    private val environment = memory.environment
+    private val navigation = memory.navigator
     private var chat by mutableStateOf(ChatScope())
-    private var query by mutableStateOf<RecognizedQuery?>(null)
+    private var query by mutableStateOf(memory.query)
     private var evidenceRevision by mutableStateOf(0)
     private var closed = false
     private var palette by mutableStateOf(FutoonPalette())
@@ -100,16 +102,16 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 
     init {
         stateController.performAttach()
-        stateController.performRestore(null)
+        stateController.performRestore(memory.saved)
         registry.currentState = Lifecycle.State.CREATED
         setViewTreeLifecycleOwner(this)
         setViewTreeViewModelStoreOwner(this)
         setViewTreeSavedStateRegistryOwner(this)
-        compose.id = android.view.View.generateViewId()
+        compose.id = 0x00f07001
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent {
             CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) {
-                FutoonTheme(palette) { EmbeddedPanelRoot(environment, bridge, navigation, chat, query, evidenceRevision, fullscreen, keyboardVisible) { fullscreenHandler?.run() } }
+                FutoonTheme(palette) { EmbeddedPanelRoot(environment, bridge, navigation, chat, query, evidenceRevision, fullscreen, keyboardVisible, options, memory) { fullscreenHandler?.run() } }
             }
         }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -125,6 +127,9 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     fun setThemeColors(json: String) { if (!closed) { palette = FutoonPalette.parse(json); (background as? android.graphics.drawable.GradientDrawable)?.setColor(palette.surface.toArgb()) ?: setBackgroundColor(palette.surface.toArgb()) } }
     fun setFullscreenHandler(callback: Runnable) { fullscreenHandler = callback }
     fun setWindowState(full: Boolean, keyboard: Boolean) { fullscreen = full; keyboardVisible = keyboard }
+    fun setOptions(json: String) { options = ChatToolsConfig.parse(json).extensions }
+    fun navigationState(): String = navigation.snapshot()
+    fun restoreNavigationState(json: String) { if (options.panel.remember && !memory.hasLiveState) navigation.restore(json) }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
     fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }
     fun recognize(text: String?) { recognizeText(text.orEmpty(), chat.dialog, chat.topic, 0, false) }
@@ -142,23 +147,28 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
     fun onHidden() { if (!closed) registry.currentState = Lifecycle.State.CREATED }
-    fun close() { if (closed) return; closed = true; registry.currentState = Lifecycle.State.DESTROYED; viewModelStore.clear(); composition.close() }
+    fun close() {
+        if (closed) return
+        if (options.panel.remember) { val bundle = android.os.Bundle(); runCatching { stateController.performSave(bundle) }.onSuccess { memory.saved = bundle }; memory.query = query }
+        closed = true; registry.currentState = Lifecycle.State.DESTROYED; composition.close()
+        PanelMemories.release(memory, options.panel.remember)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, fullscreen: Boolean = false, keyboard: Boolean = false, onFullscreen: () -> Unit = {}) {
+@Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, fullscreen: Boolean = false, keyboard: Boolean = false, options: ExtensionOptions = ExtensionOptions(), memory: PanelMemory? = null, onFullscreen: () -> Unit = {}) {
     val auth: AppViewModel = viewModel(key = "session", factory = AppViewModel.Factory(environment, initialAccountName = bridge.username().ifBlank { "管理员" }))
     val state by auth.state.collectAsState()
     val sessionKey = state.adminUrl + ":" + state.accountName + ":" + bridge.accountScope()
-    val sessionOwner = remember(sessionKey) { object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() } }
-    DisposableEffect(sessionOwner) { onDispose { sessionOwner.viewModelStore.clear() } }
+    val sessionOwner = remember(sessionKey) { memory?.sessionModels?.owner(sessionKey) ?: object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() } }
+    DisposableEffect(sessionOwner) { onDispose { if (memory == null) sessionOwner.viewModelStore.clear() } }
     val workflows: PanelWorkflows = viewModel(viewModelStoreOwner = sessionOwner, key = "workflows:$sessionKey", factory = object : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = PanelWorkflows(bridge) as T
+        @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = PanelWorkflows(memory?.bridge ?: bridge) as T
     })
     val contextModel: AppViewModel = viewModel(viewModelStoreOwner = sessionOwner, key = "context-merchant:$sessionKey", factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(environment, loadOnStart = false) as T
     })
-    val merchantActions = remember(contextModel) { CurrentMerchantActions(contextModel) }
+    val merchantActions = remember(contextModel) { memory?.merchantActions?.getOrPut(sessionKey) { CurrentMerchantActions(contextModel) } ?: CurrentMerchantActions(contextModel) }
     val workflowState by workflows.state.collectAsState()
     val panelLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(workflows, panelLifecycle, state.authStage) {
@@ -172,8 +182,8 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(workflowState.notice) { workflowState.notice?.let { snackbar.showSnackbar(it); workflows.consumeNotice() } }
     LaunchedEffect(workflowState.error) { workflowState.error?.let { snackbar.showSnackbar(it) } }
-    val models = remember(state.adminUrl, state.accountName, bridge.accountScope()) { PanelRouteModels() }
-    DisposableEffect(models) { onDispose { models.clear() } }
+    val models = remember(state.adminUrl, state.accountName, bridge.accountScope()) { memory?.routeModels ?: PanelRouteModels() }
+    DisposableEffect(models) { onDispose { if (memory == null) models.clear() } }
     val holder = rememberSaveableStateHolder()
     val navigation = remember(navigator, bridge, workflows) { object : PanelNavigation by navigator {
         override fun evidence(order: OrderSummary) {
@@ -209,7 +219,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                                         IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                                         IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
                                     }, context = { PanelContextStrip(chat, workflowState, keyboard || compact) })
-                                    CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions) }
+                                    CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
                                 }
                             }
                         }
@@ -218,7 +228,8 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                 if (state.authStage == AuthStage.AUTHENTICATED) {
                     HorizontalDivider(color = Line)
                     Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).background(CardColor)) {
-                        listOf(Triple("recognition", "识别", Icons.Default.DocumentScanner), Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("merchants", "商户", Icons.Default.Storefront), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView)).forEach { (id, title, icon) ->
+                        val tabs = listOf(Triple("recognition", "识别", Icons.Default.DocumentScanner), Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("merchants", "商户", Icons.Default.Storefront), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView))
+                        tabs.sortedBy { options.panel.tabOrder.indexOf(it.first) }.forEach { (id, title, icon) ->
                             val active = navigator.tab == id
                             Column(Modifier.weight(1f).heightIn(min = 52.dp).clickable { navigator.select(id) }.padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)) {
                                 Icon(icon, title, Modifier.size(20.dp), tint = if (active) GreenDark else Muted)
@@ -234,7 +245,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     }
 }
 
-@Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, evidenceRevision: Int, snackbar: SnackbarHostState, models: PanelRouteModels, workflows: PanelWorkflows, merchantActions: CurrentMerchantActions) {
+@Composable private fun EmbeddedRoute(route: PanelRoute, environment: PanelEnvironment, auth: AppViewModel, navigator: PanelNavigator, bridge: NativePanelBridge, chat: ChatScope, evidenceRevision: Int, snackbar: SnackbarHostState, models: PanelRouteModels, workflows: PanelWorkflows, merchantActions: CurrentMerchantActions, memory: PanelMemory?) {
     val back = { if (!navigator.pop()) bridge.collapse() }
     val authState by auth.state.collectAsState()
     val modelKey = environment.adminBaseUrl + ":" + authState.accountName + ":" + route.id
@@ -242,12 +253,13 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     if (route.kind == "recognition") { RecognitionScreen(workflows, merchantActions, chat, navigator, bridge); return }
     if (route.kind == "merchant_records") { MerchantRecordsScreen(route, workflows, back); return }
     if (route.kind == "merchant_opening") {
+        val actionBridge = memory?.bridge ?: bridge
         val address = environment.adminBaseUrl
         val account = bridge.accountScope()
         suspend fun callOpening(operation: String, params: String = "{}"): String = withContext(Dispatchers.IO) {
-            check(bridge.address() == address && bridge.accountScope() == account) { "账号或后台已变化，请重新打开开户" }
-            val result = bridge.call(operation, params)
-            check(bridge.address() == address && bridge.accountScope() == account) { "账号或后台已变化，请重新打开开户" }
+            check(actionBridge.address() == address && actionBridge.accountScope() == account) { "账号或后台已变化，请重新打开开户" }
+            val result = actionBridge.call(operation, params)
+            check(actionBridge.address() == address && actionBridge.accountScope() == account) { "账号或后台已变化，请重新打开开户" }
             result
         }
         val opening: MerchantOpeningViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = object : ViewModelProvider.Factory {
@@ -293,6 +305,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     var merchantTab by rememberSaveable(route.id) { mutableStateOf(if (route.merchantId.isBlank()) "context" else "all") }
     var lookupError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(route.id) {
+        if (memory != null && !memory.initializedRoutes.add(route.id)) return@LaunchedEffect
         when (route.kind) {
             "orders" -> {
                 model.loadOrders(1, OrderSearchFilters(channelId = route.channelId, merchantId = route.merchantId, column = route.queryColumn.ifBlank { "trade_no" }, value = route.queryValue.ifBlank { route.orderId }))
@@ -358,7 +371,6 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
             if (localState != null && workflows != null) {
                 val record = workflows.case(order.optString("trade_no"))
                 if (record.optString("sendState").isNotBlank()) item { Text(record.optString("sendState"), color = GreenDark, fontSize = 12.sp) }
-                if (record.optString("note").isNotBlank()) item { Text("内部备注：${record.optString("note")}", color = Muted, fontSize = 12.sp) }
                 val log = record.optJSONArray("log")
                 if (log != null) items(log.length()) { index -> Text(log.optString(index), color = Muted, fontSize = 12.sp) }
             }
