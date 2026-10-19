@@ -212,7 +212,7 @@ index 049c7b7a563af2cb4ccb626be15faf7deb36e7a1..248d15dc4fcbade9a3ff50911dbe9072
 +-keep,allowoptimization class org.telegram.messenger.futoon.** { *; }
 +-keep,allowoptimization class org.telegram.ui.Futoon** { *; }
 diff --git a/TMessagesProj/src/main/AndroidManifest.xml b/TMessagesProj/src/main/AndroidManifest.xml
-index 63c819b26b3ac191c77b516257c021c90d37f3ba..a76f4b06587186e936462b61654c76294cc21e62 100644
+index 63c819b26b3ac191c77b516257c021c90d37f3ba..755f411f779385d4be7ae1d519e28ba99afbf9c4 100644
 --- a/TMessagesProj/src/main/AndroidManifest.xml
 +++ b/TMessagesProj/src/main/AndroidManifest.xml
 @@ -14,11 +14,20 @@
@@ -399,7 +399,15 @@ index 63c819b26b3ac191c77b516257c021c90d37f3ba..a76f4b06587186e936462b61654c7629
  
          <receiver android:name=".AppStartReceiver" android:enabled="true" android:exported="false">
              <intent-filter>
-@@ -603,7 +547,7 @@
+@@ -591,7 +535,6 @@
+             </intent-filter>
+         </service>
+ 
+-        <receiver android:name=".StopLiveLocationReceiver" android:enabled="true"/>
+ 
+         <receiver android:name=".PopupReplyReceiver" android:enabled="true"/>
+ 
+@@ -603,7 +546,7 @@
  
          <receiver android:name=".NotificationDismissReceiver" android:exported="false"/>
  
@@ -408,7 +416,7 @@ index 63c819b26b3ac191c77b516257c021c90d37f3ba..a76f4b06587186e936462b61654c7629
  
          <receiver android:name=".ShortcutResultReceiver" android:exported="false"/>
  
-@@ -623,10 +567,7 @@
+@@ -623,10 +566,7 @@
              android:exported="false"
              android:grantUriPermissions="true"/>
  
@@ -2742,7 +2750,7 @@ index 070c19c9893eb68e137247dff5bc0bb5ef834f92..cd426c6bb05e1fbac68e74cca8dfd5ad
          void onLocationAddressAvailable(String address, String displayAddress, TLRPC.TL_messageMediaVenue city, TLRPC.TL_messageMediaVenue street, Location location);
      }
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/MediaController.java b/TMessagesProj/src/main/java/org/telegram/messenger/MediaController.java
-index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3f7fe5c7c 100644
+index 85c8e84cd768adaa54653afda9c30a18497ed03e..da7eec33d1b3210781ff2bab663c20a52f1691a9 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/MediaController.java
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/MediaController.java
 @@ -136,15 +136,12 @@ import java.util.concurrent.CountDownLatch;
@@ -2871,7 +2879,39 @@ index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3
  
      private float audioVolume;
      private ValueAnimator audioVolumeAnimator;
-@@ -1403,29 +1310,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+@@ -1289,14 +1196,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+             Cursor cursor = null;
+             try {
+                 final Context context = ApplicationLoader.applicationContext;
+-                if (
+-                    Build.VERSION.SDK_INT >= 33 && (
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+-                    ) ||
+-                    context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+-                ) {
++                if (org.telegram.messenger.futoon.FutoonMediaPolicy.canReadImageLibrary(Build.VERSION.SDK_INT, context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
+                     cursor = MediaStore.Images.Media.query(context.getContentResolver(), MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new String[]{"COUNT(_id)"}, null, null, null);
+                     if (cursor != null) {
+                         if (cursor.moveToNext()) {
+@@ -1313,14 +1213,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+             }
+             try {
+                 final Context context = ApplicationLoader.applicationContext;
+-                if (
+-                    Build.VERSION.SDK_INT >= 33 && (
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+-                    ) ||
+-                    context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+-                ) {
++                if (org.telegram.messenger.futoon.FutoonMediaPolicy.canReadVideoLibrary(Build.VERSION.SDK_INT, context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
+                     cursor = MediaStore.Images.Media.query(context.getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI, new String[]{"COUNT(_id)"}, null, null, null);
+                     if (cursor != null) {
+                         if (cursor.moveToNext()) {
+@@ -1403,29 +1296,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
      }
  
      public MediaController() {
@@ -2901,7 +2941,22 @@ index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3
          Utilities.globalQueue.postRunnable(() -> {
              try {
                  currentPlaybackSpeed = MessagesController.getGlobalMainSettings().getFloat("playbackSpeed", 1.0f);
-@@ -1996,7 +1880,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+@@ -1525,12 +1395,12 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+             FileLog.e(e);
+         }
+         try {
+-            contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, new GalleryObserverExternal());
++            if (Build.VERSION.SDK_INT < 33) contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, new GalleryObserverExternal());
+         } catch (Exception e) {
+             FileLog.e(e);
+         }
+         try {
+-            contentResolver.registerContentObserver(MediaStore.Video.Media.INTERNAL_CONTENT_URI, true, new GalleryObserverInternal());
++            if (Build.VERSION.SDK_INT < 33) contentResolver.registerContentObserver(MediaStore.Video.Media.INTERNAL_CONTENT_URI, true, new GalleryObserverInternal());
+         } catch (Exception e) {
+             FileLog.e(e);
+         }
+@@ -1996,7 +1866,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
      }
  
      protected boolean isRecordingAudio() {
@@ -2910,7 +2965,7 @@ index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3
      }
  
      private boolean isNearToSensor(float value) {
-@@ -2319,12 +2203,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+@@ -2319,12 +2189,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
      }
  
      public void startRecordingIfFromSpeaker() {
@@ -2924,7 +2979,7 @@ index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3
      }
  
      private void startAudioAgain(boolean paused) {
-@@ -4446,374 +4325,35 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+@@ -4446,374 +4311,35 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
      }
  
      public void requestRecordAudioFocus(boolean request) {
@@ -3306,7 +3361,7 @@ index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3
      }
  
      public void generateWaveform(MessageObject messageObject) {
-@@ -4857,153 +4397,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+@@ -4857,153 +4383,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
      }
  
      public void cleanRecording(boolean delete) {
@@ -3463,6 +3518,40 @@ index 85c8e84cd768adaa54653afda9c30a18497ed03e..580d35f9a3ce17940b18037fd6988af3
      }
  
      private static class MediaLoader implements NotificationCenter.NotificationCenterDelegate {
+@@ -6123,15 +5511,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+             Cursor cursor = null;
+             try {
+                 final Context context = ApplicationLoader.applicationContext;
+-                if (
+-                    Build.VERSION.SDK_INT < 23 ||
+-                    Build.VERSION.SDK_INT < 33 && context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ||
+-                    Build.VERSION.SDK_INT >= 33 && (
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+-                    )
+-                ) {
++                if (org.telegram.messenger.futoon.FutoonMediaPolicy.canReadImageLibrary(Build.VERSION.SDK_INT, context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
+                     cursor = MediaStore.Images.Media.query(context.getContentResolver(), MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projectionPhotos, null, null, (Build.VERSION.SDK_INT > 28 ? MediaStore.Images.Media.DATE_MODIFIED : MediaStore.Images.Media.DATE_TAKEN) + " DESC");
+                     if (cursor != null) {
+                         int imageIdColumn = cursor.getColumnIndex(MediaStore.Images.Media._ID);
+@@ -6219,15 +5599,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
+             try {
+ 
+                 final Context context = ApplicationLoader.applicationContext;
+-                if (
+-                    Build.VERSION.SDK_INT < 23 ||
+-                    Build.VERSION.SDK_INT < 33 && context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ||
+-                    Build.VERSION.SDK_INT >= 33 && (
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED ||
+-                        context.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+-                    )
+-                ) {
++                if (org.telegram.messenger.futoon.FutoonMediaPolicy.canReadVideoLibrary(Build.VERSION.SDK_INT, context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)) {
+                     cursor = MediaStore.Images.Media.query(ApplicationLoader.applicationContext.getContentResolver(), MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projectionVideo, null, null, (Build.VERSION.SDK_INT > 28 ? MediaStore.Video.Media.DATE_MODIFIED : MediaStore.Video.Media.DATE_TAKEN) + " DESC");
+                     if (cursor != null) {
+                         int imageIdColumn = cursor.getColumnIndex(MediaStore.Video.Media._ID);
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java b/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java
 index 93bc81cb8867e43d11cac8ddac31988463e26a03..49b046a11629b8f852f339767186c16b0ccf391c 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/MessagesController.java
@@ -7034,10 +7123,10 @@ index 0000000000000000000000000000000000000000..515477a25b2554b801a2b59e87a9bcb1
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonMediaPolicy.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonMediaPolicy.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5815e82b3b610987e9f87c81328049ffdcbbba67
+index 0000000000000000000000000000000000000000..02cf9eedd29e151e4083c1a1539e5c02cdd2a28a
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonMediaPolicy.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,51 @@
 +package org.telegram.messenger.futoon;
 +
 +import java.util.ArrayList;
@@ -7067,6 +7156,12 @@ index 0000000000000000000000000000000000000000..5815e82b3b610987e9f87c81328049ff
 +        ArrayList<String> allowed = new ArrayList<>();
 +        if (permissions != null) for (String permission : permissions) if (!blocked(permission)) allowed.add(permission);
 +        return allowed.toArray(new String[0]);
++    }
++    public static boolean canReadImageLibrary(int sdk, boolean imagesGranted, boolean storageGranted) {
++        return sdk < 23 || (sdk < 33 ? storageGranted : imagesGranted);
++    }
++    public static boolean canReadVideoLibrary(int sdk, boolean storageGranted) {
++        return sdk < 23 || sdk < 33 && storageGranted;
 +    }
 +    /** Preserve original indices and treat missing/cancelled results as denied. */
 +    public static int[] restore(String[] original, String[] returned, int[] grants) {
@@ -9697,7 +9792,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8a
              SendMessagesHelper.getInstance(currentAccount).sendCallback(true, messageObject, button, parentFragment);
          } else if (buttonTypeSwitchInline != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
-index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..16bc33c8e3eb5d8f16185f4e3c448ccd2ae270cc 100644
+index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..61b96ab65d4cfd88eadc4bea358bc31bcacdb032 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
 @@ -2809,11 +2809,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
@@ -9774,17 +9869,18 @@ index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..16bc33c8e3eb5d8f16185f4e3c448ccd
              if (locationLayout == null) {
                  layouts[5] = locationLayout = new ChatAttachAlertLocationLayout(this, getContext(), resourcesProvider, !isPollAttach && !isLocationPicker && !restrictEphemeralMessageTypes);
                  if (locationActivityDelegate != null) {
-@@ -6470,8 +6472,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
+@@ -6469,9 +6471,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
+ 
      private static boolean checkPhotoAndCameraPermission(Context context) {
          if (Build.VERSION.SDK_INT >= 33) {
-             return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
+-            return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
 -                && ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
 -                && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
-+                ;
++            return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
          } else if (Build.VERSION.SDK_INT >= 23) {
              return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
          }
-@@ -6481,8 +6482,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
+@@ -6481,8 +6481,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
  
      private static boolean checkPhotoAndDocumentsPermission(Context context) {
          if (Build.VERSION.SDK_INT >= 33) {
@@ -9794,7 +9890,7 @@ index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..16bc33c8e3eb5d8f16185f4e3c448ccd
          } else if (Build.VERSION.SDK_INT >= 23) {
              return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
          }
-@@ -6755,7 +6755,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
+@@ -6755,7 +6754,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                      musicButton = buttonsCount++;
                  }
                  if (pollAllowedLayouts == 0 || BitwiseUtils.hasFlag(pollAllowedLayouts, 1 << LAYOUT_TYPE_LOCATION)) {
@@ -9803,7 +9899,7 @@ index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..16bc33c8e3eb5d8f16185f4e3c448ccd
                  }
                  if (pollAllowedLayouts == 0 || BitwiseUtils.hasFlag(pollAllowedLayouts, 1 << LAYOUT_TYPE_LINK)) {
                      linksButton = buttonsCount++;
-@@ -6793,7 +6793,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
+@@ -6793,7 +6792,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                  }
  
                  if (plainTextEnabled) {
@@ -9851,11 +9947,15 @@ index 678575ecf87e18ce190d54f190a6550bb79a52bf..ac905c1dbfbdf9658b593e9a13284270
                  }
              }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlertPhotoLayout.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlertPhotoLayout.java
-index 5b6f2ba2a5658dc944dde8b3aa75a90256a500bf..18904cda7750890628a99bfb9d9754c602113e1d 100644
+index 5b6f2ba2a5658dc944dde8b3aa75a90256a500bf..ece9f7c8c5225ec4aa39088fbfb5f79822cfdf17 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlertPhotoLayout.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlertPhotoLayout.java
-@@ -732,7 +732,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
-     public ChatAttachAlertPhotoLayout(ChatAttachAlert alert, Context context, boolean forceDarkTheme, boolean needCamera, Theme.ResourcesProvider resourcesProvider) {
+@@ -729,10 +729,10 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
+         return arrayList;
+     }
+ 
+-    public ChatAttachAlertPhotoLayout(ChatAttachAlert alert, Context context, boolean forceDarkTheme, boolean needCamera, Theme.ResourcesProvider resourcesProvider) {
++    public ChatAttachAlertPhotoLayout(ChatAttachAlert alert, Context context, boolean forceDarkTheme, boolean ignoredNeedCamera, Theme.ResourcesProvider resourcesProvider) {
          super(alert, context, resourcesProvider);
          this.forceDarkTheme = forceDarkTheme;
 -        this.needCamera = needCamera;
@@ -10103,7 +10203,124 @@ index 5b6f2ba2a5658dc944dde8b3aa75a90256a500bf..18904cda7750890628a99bfb9d9754c6
      }
  
      public void loadGalleryPhotos() {
-@@ -3198,8 +3038,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
+@@ -2571,115 +2411,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
+     }
+ 
+     public void showCamera() {
+-        if (parentAlert.paused || !mediaEnabled || !CameraView.isCameraAllowed()) {
+-            return;
+-        }
+-        if (cameraView == null) {
+-            final boolean lazy = !LiteMode.isEnabled(LiteMode.FLAGS_CHAT);
+-            cameraView = new CameraViewInternal(getContext(), isCameraFrontfaceBeforeEnteringEditMode != null ? isCameraFrontfaceBeforeEnteringEditMode : parentAlert.openWithFrontFaceCamera, lazy);
+-            //if (lazy) {
+-            //    cameraView.setThumbDrawable(cameraViewItemDecoration.placeholderDrawable);
+-            //}
+-            cameraView.setRecordFile(AndroidUtilities.generateVideoPath(parentAlert.baseFragment instanceof ChatActivity && ((ChatActivity) parentAlert.baseFragment).isSecretChat()));
+-            cameraView.setFocusable(true);
+-            cameraView.setFpsLimit(30);
+-            cameraView.setOutlineProvider(new ViewOutlineProvider() {
+-                @Override
+-                public void getOutline(View view, Outline outline) {
+-                    int maxY = (int) Math.min(parentAlert.getCommentTextViewTop() - (parentAlert.mentionContainer != null ? parentAlert.mentionContainer.clipBottom() + dp(RADIUS) : 0) + currentPanTranslationY + parentAlert.getContainerView().getTranslationY() - cameraView.getTranslationY(), view.getMeasuredHeight());
+-                    if (cameraOpened) {
+-                        maxY = view.getMeasuredHeight();
+-                    } else if (cameraAnimationInProgress) {
+-                        maxY = AndroidUtilities.lerp(maxY, view.getMeasuredHeight(), cameraOpenProgress);
+-                    }
+-                    if (cameraAnimationInProgress) {
+-                        AndroidUtilities.rectTmp.set(animationClipLeft + cameraViewOffsetX * (1f - cameraOpenProgress), animationClipTop + cameraViewOffsetY * (1f - cameraOpenProgress), animationClipRight, animationClipBottom);
+-                        outline.setRect((int) AndroidUtilities.rectTmp.left, (int) AndroidUtilities.rectTmp.top, (int) AndroidUtilities.rectTmp.right, Math.min(maxY, (int) AndroidUtilities.rectTmp.bottom));
+-                    } else if (!cameraAnimationInProgress && !cameraOpened) {
+-                        int rad = dp(RADIUS);
+-                        outline.setRoundRect((int) cameraViewOffsetX, (int) cameraViewOffsetY, view.getMeasuredWidth() + rad, Math.min(maxY, view.getMeasuredHeight()) + rad, rad);
+-                    } else {
+-                        outline.setRect(0, 0, view.getMeasuredWidth(), Math.min(maxY, view.getMeasuredHeight()));
+-                    }
+-                }
+-            });
+-            cameraView.setClipToOutline(true);
+-            cameraView.setContentDescription(LocaleController.getString(R.string.AccDescrInstantCamera));
+-            parentAlert.getContainer().addView(cameraView, 1, new FrameLayout.LayoutParams(itemSize, itemSize));
+-            cameraView.setDelegate(new CameraView.CameraViewDelegate() {
+-                @Override
+-                public void onCameraInit() {
+-                    String current = cameraView.getCameraSession().getCurrentFlashMode();
+-                    String next = cameraView.getCameraSession().getNextFlashMode();
+-                    if (current == null || next == null) return;
+-                    if (current.equals(next)) {
+-                        for (int a = 0; a < 2; a++) {
+-                            flashModeButton[a].setVisibility(View.INVISIBLE);
+-                            flashModeButton[a].setAlpha(0.0f);
+-                            flashModeButton[a].setTranslationY(0.0f);
+-                        }
+-                    } else {
+-                        setCameraFlashModeIcon(flashModeButton[0], cameraView.getCameraSession().getCurrentFlashMode());
+-                        for (int a = 0; a < 2; a++) {
+-                            flashModeButton[a].setVisibility(a == 0 ? View.VISIBLE : View.INVISIBLE);
+-                            flashModeButton[a].setAlpha(a == 0 && cameraOpened ? 1.0f : 0.0f);
+-                            flashModeButton[a].setTranslationY(0.0f);
+-                        }
+-                    }
+-                    switchCameraButton.setImageResource(cameraView.isFrontface() ? R.drawable.camera_revert1 : R.drawable.camera_revert2);
+-                    switchCameraButton.setVisibility(cameraView.hasFrontFaceCamera() ? View.VISIBLE : View.INVISIBLE);
+-                    if (!cameraOpened) {
+-                        cameraInitAnimation = new AnimatorSet();
+-                        cameraInitAnimation.playTogether(
+-                            ObjectAnimator.ofFloat(cameraView, View.ALPHA, 0.0f, 1.0f)
+-                        );
+-                        cameraInitAnimation.setDuration(180);
+-                        cameraInitAnimation.addListener(new AnimatorListenerAdapter() {
+-                            @Override
+-                            public void onAnimationEnd(Animator animation) {
+-                                if (animation.equals(cameraInitAnimation)) {
+-                                    canSaveCameraPreview = true;
+-                                    cameraInitAnimation = null;
+-                                }
+-                            }
+-
+-                            @Override
+-                            public void onAnimationCancel(Animator animation) {
+-                                cameraInitAnimation = null;
+-                            }
+-                        });
+-                        cameraInitAnimation.start();
+-                    }
+-                    if (afterCameraInitRunnable != null) {
+-                        afterCameraInitRunnable.run();
+-                    }
+-                }
+-            });
+-
+-            cameraView.setAlpha(mediaEnabled ? 1.0f : 0.2f);
+-            cameraView.setEnabled(mediaEnabled);
+-            if (isHidden) {
+-                cameraView.setVisibility(GONE);
+-
+-            }
+-            if (cameraOpened) {
+-
+-            } else {
+-                checkCameraViewPosition();
+-            }
+-            if (gridView != null) {
+-                gridView.invalidate();
+-            }
+-            invalidate();
+-        }
+-        if (zoomControlView != null) {
+-            zoomControlView.setZoom(0.0f, false);
+-            cameraZoom = 0.0f;
+-        }
+-        if (!cameraOpened) {
+-            cameraView.setTranslationX(cameraViewLocation[0]);
+-            // cameraView.setTranslationY(cameraViewLocation[1] + currentPanTranslationY);
+-        }
++        // Camera surface and capture controls are not created.
+     }
+ 
+     public void hideCamera(boolean async) {
+@@ -3198,8 +2930,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
          return Build.VERSION.SDK_INT >= 23 && (
              activity == null ||
                  Build.VERSION.SDK_INT >= 33 && (

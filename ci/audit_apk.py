@@ -2,7 +2,7 @@ import os, pathlib, subprocess, sys, tempfile, zipfile
 apk=pathlib.Path(sys.argv[1]);sdk=pathlib.Path(os.environ['ANDROID_HOME'])
 aapt=sdk/'build-tools/36.0.0/aapt'
 manifest=subprocess.check_output([str(aapt),'dump','xmltree',str(apk),'AndroidManifest.xml'],text=True)
-for component in ['org.telegram.messenger.voip.VoIPService','org.telegram.messenger.voip.TelegramConnectionService','org.telegram.messenger.ContactsSyncAdapterService','org.telegram.messenger.AuthenticatorService','org.telegram.ui.VoIPPermissionActivity','org.telegram.ui.VoIPFeedbackActivity','org.telegram.messenger.LocationSharingService']:
+for component in ['org.telegram.messenger.voip.VoIPService','org.telegram.messenger.voip.TelegramConnectionService','org.telegram.messenger.ContactsSyncAdapterService','org.telegram.messenger.AuthenticatorService','org.telegram.ui.VoIPPermissionActivity','org.telegram.ui.VoIPFeedbackActivity','org.telegram.messenger.LocationSharingService','org.telegram.messenger.StopLiveLocationReceiver']:
     assert component not in manifest,component
 for screen in ['com.futoonpay.admin.MainActivity','com.futoonpay.admin.NativeModuleActivity','com.futoonpay.admin.DomainAuditActivity']:
     assert screen not in manifest, 'Standalone admin screen must not be packaged: '+screen

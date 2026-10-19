@@ -61,9 +61,39 @@ public class TrimTest {
   FutoonPermissionRequests.request(a,new String[0],6);AndroidUtilities.flush();
   check(a.requests==2,"Never issue an empty OS request");
   check(!FutoonMediaPolicy.CAMERA_CAPTURE&&!FutoonMediaPolicy.LOCATION_SHARING&&!FutoonMediaPolicy.VIDEO_EDITING,"Product capabilities");
+
+  for(int sdk:new int[]{23,28,32,33,34,36}) for(boolean images:new boolean[]{false,true}) for(boolean legacyGrant:new boolean[]{false,true}) {
+   check(FutoonMediaPolicy.canReadImageLibrary(sdk,images,legacyGrant)==(sdk<33?legacyGrant:images),"Image library access: "+sdk);
+   check(FutoonMediaPolicy.canReadVideoLibrary(sdk,legacyGrant)==(sdk<33&&legacyGrant),"Never scan unauthorized video library: "+sdk);
+  }
   System.out.println("PASS: "+checks+" production permission dispatch checks");
  }
 }'''}
+# Compile the actual constructor parameter name and grid-routing expressions.
+# Using the former shadowing parameter reproduces the first-photo regression.
+grid=(src/'org/telegram/ui/Components/ChatAttachAlertPhotoLayout.java').read_text()
+parameter=re.search(r'public ChatAttachAlertPhotoLayout\([^\n]+boolean (\w+), Theme.ResourcesProvider',grid).group(1)
+route=re.search(r'if \((position != 0 \|\| !needCamera[^\n]+)\) \{',grid).group(1)
+offset=re.search(r'if \(selectedAlbumEntry == galleryAlbumEntry && needCamera\) \{\s*position--;\s*\}',grid).group()
+stubs['GalleryRoutingTest.java']="""public class GalleryRoutingTest {
+ static class Fixed {
+  final boolean needCamera=false;Object galleryAlbumEntry=new Object(), selectedAlbumEntry=galleryAlbumEntry;
+  int click(int position,boolean PARAMETER){if(ROUTE){OFFSET return position;}return -99;}
+ }
+ static class Old {
+  final boolean needCamera=false;Object galleryAlbumEntry=new Object(), selectedAlbumEntry=galleryAlbumEntry;
+  int click(int position,boolean needCamera){if(ROUTE){OFFSET return position;}return -99;}
+ }
+ public static void main(String[] args){
+  Fixed fixed=new Fixed();Old old=new Old();
+  for(boolean formerCameraSetting:new boolean[]{true,false})for(int position:new int[]{0,1,7}){
+   if(fixed.click(position,formerCameraSetting)!=position)throw new AssertionError("Gallery photo index changed: "+position);
+  }
+  if(old.click(0,true)!=-99||old.click(1,true)!=0)throw new AssertionError("Negative control must reproduce the old shadowed camera routing");
+  System.out.println("PASS: first/subsequent gallery photos keep their own indices; old camera-offset negative control reproduced");
+ }
+}""".replace('PARAMETER',parameter).replace('ROUTE',route).replace('OFFSET',offset)
+
 with tempfile.TemporaryDirectory() as temporary:
  work=Path(temporary);files=[]
  for relative in production:
@@ -73,6 +103,7 @@ with tempfile.TemporaryDirectory() as temporary:
  compiler=['java','-jar',os.environ['ECJ_JAR'],'-17'] if os.environ.get('ECJ_JAR') else ['javac','-encoding','UTF-8']
  subprocess.run(compiler+['-d',str(work)]+files,check=True)
  subprocess.run(['java','-cp',str(work),'TrimTest'],check=True)
+ subprocess.run(['java','-cp',str(work),'GalleryRoutingTest'],check=True)
 namespace={'android':'http://schemas.android.com/apk/res/android','tools':'http://schemas.android.com/tools'}
 blocked={'CAMERA','RECORD_AUDIO','ACCESS_FINE_LOCATION','ACCESS_COARSE_LOCATION','ACCESS_BACKGROUND_LOCATION','ACCESS_MEDIA_LOCATION','READ_MEDIA_VIDEO','FOREGROUND_SERVICE_CAMERA','FOREGROUND_SERVICE_MICROPHONE','FOREGROUND_SERVICE_LOCATION'}
 for manifest in [root/'TMessagesProj/src/main/AndroidManifest.xml',*(root/'TMessagesProj/config').rglob('AndroidManifest*.xml')]:
@@ -110,3 +141,14 @@ scan=(src/'org/telegram/ui/CameraScanActivity.java').read_text()
 assert 'Uri uri = Uri.parse(text);' not in scan, 'Gallery QR must accept plain text without dereferencing a null URI path'
 assert 'currentType == TYPE_QR_LOGIN && !text.startsWith("tg://login?token=")' in scan
 print('PASS: no Mini App capture prompt, no fused-location SDK, gallery QR login validation retained')
+
+media=(src/'org/telegram/messenger/MediaController.java').read_text()
+assert media.count('FutoonMediaPolicy.canReadImageLibrary(')==2
+assert media.count('FutoonMediaPolicy.canReadVideoLibrary(')==2
+assert 'Manifest.permission.READ_MEDIA_VIDEO' not in media
+print('PASS: real media count/load queries honor image-only grants and avoid the removed video library')
+
+main=ET.parse(root/'TMessagesProj/src/main/AndroidManifest.xml').getroot()
+for node in main.findall('./application/service')+main.findall('./application/receiver'):
+ assert node.get('{'+namespace['android']+'}name') not in {'.LocationSharingService','.StopLiveLocationReceiver'}
+print('PASS: live-location Android service and stop receiver are not registered')
