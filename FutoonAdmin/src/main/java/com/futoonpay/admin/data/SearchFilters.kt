@@ -89,3 +89,10 @@ internal fun domainAuditStatusLabel(status: Int): String = when (status) {
     0 -> "待审核"
     else -> "状态 $status"
 }
+
+internal fun merchantAccountStatusLabel(status: Int): String = when (status) {
+    0 -> "已封禁"
+    1 -> "正常"
+    2 -> "未审核"
+    else -> "状态 $status"
+}

@@ -40,7 +40,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     LaunchedEffect(state.message) { state.message?.let { workflows.notice(it); workflows.refreshMerchant(); model.consumeMessage() } }
     if (state.merchantEditorUid.isNotBlank()) MerchantProfileDialog(state, model::closeMerchantEditor, model::editMerchantField, model::saveMerchantEditor, { model.openMerchantEditor(state.merchantEditorUid) })
     actions.pending?.let { action ->
-        MerchantActionDialog(action, { actions.pending = null }, state.refreshing || state.merchantBalanceUpdating, actions.balanceError) { amount, group, end ->
+        MerchantActionDialog(action, { actions.pending = null }, state.refreshing || state.merchantBalanceUpdating, actions.balanceError, uncertain = action.merchant.uid in state.uncertainBalances, onVerify = { actions.pending = null; workflows.refreshMerchant(); model.loadMerchants(1, MerchantSearchFilters(column = "uid", value = action.merchant.uid)) }) { amount, group, end ->
             if (action.action in listOf("add", "reduce")) model.rechargeMerchant(action.merchant.uid, action.action, amount) { result ->
                 if (result.success) { actions.pending = null; workflows.refreshMerchant() } else actions.balanceError = result.message
             } else scope.launch {
@@ -78,11 +78,20 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         }
         when {
             state.merchantLoading -> Row(verticalAlignment = Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Text(" 正在查询商户…") }
+            state.merchantCandidates.isNotEmpty() -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("同一 Telegram ID 对应 ${state.merchantCandidates.size} 个商户，请选择本次操作对象。", color = Warning, fontSize = 13.sp)
+                state.merchantCandidates.forEach { candidate ->
+                    val row = JSONObject(candidate).toMerchantSummary()
+                    OutlinedButton(onClick = { workflows.chooseMerchant(row.uid) }, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.fillMaxWidth()) { Text("${row.username.ifBlank { "商户" }} · PID ${row.uid}"); Text("TGID ${row.telegramId.ifBlank { "未绑定" }}", fontSize = 12.sp) }
+                    }
+                }
+            }
             merchant == null -> Text(state.merchantError ?: "当前会话未指定商户，可按 TGID 或 PID 手动查询", color = if (state.merchantError == null) Muted else Danger, fontSize = 12.sp)
             else -> {
                 if (!compact) Text("${merchant.username.ifBlank { "商户" }} · PID ${merchant.uid}", style = MaterialTheme.typography.titleMedium)
-                Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 11.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
-                if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 11.sp)
+                Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 12.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
+                if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户", fontSize = if (compact) 12.sp else 14.sp) }
                     OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "商户操作", fontSize = if (compact) 12.sp else 14.sp) }
@@ -92,9 +101,9 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                     merchant.balances.ifEmpty { mapOf("CNY" to merchant.balance) }.forEach { (currency, amount) -> DataRow("$currency 可用", amount) }
                     DataRow("冻结余额", merchant.frozenBalance)
                     DataRow("用户组", merchant.groupName)
-                    DataRow("账号 / 支付 / 结算", "${if (merchant.status == 1) "正常" else "封禁"} / ${merchantPaymentStatusLabel(merchant.paymentStatus)} / ${if (merchant.settlementEnabled) "开启" else "关闭"}")
+                    DataRow("账号 / 支付 / 结算", "${merchantAccountStatusLabel(merchant.status)} / ${merchantPaymentStatusLabel(merchant.paymentStatus)} / ${if (merchant.settlementEnabled) "开启" else "关闭"}")
                     listOf(
-                        listOf("增加余额" to "add", "扣除余额" to "reduce"),
+                        listOf("增加 CNY 余额" to "add", "扣除 CNY 余额" to "reduce"),
                         listOf((if (merchant.status == 1) "封禁账号" else "解封账号") to "toggleAccount", (if (merchant.paymentEnabled) "关闭支付" else "开启支付") to "togglePay"),
                         listOf((if (merchant.settlementEnabled) "关闭结算" else "开启结算") to "toggleSettle", "修改用户组" to "group"),
                     ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> OutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
@@ -147,7 +156,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 item { PayPills(queryKinds, state.queryKind, workflows::setKind) }
                 item { Row {
                     TextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
-                    if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 11.sp)
+                    if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 12.sp)
                 } }
                 if (Regex("[＊*…●•]{2,}").containsMatchIn(state.text)) item { Text("发现遮挡编号，请补全；不会用编号片段匹配订单。", color = Warning, fontSize = 12.sp) }
                 if (state.candidates.isNotEmpty()) {
@@ -164,8 +173,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                             OutlinedTextField(candidate.value, { workflows.editCandidate(candidate.id, value = it) }, modifier = Modifier.weight(1f), singleLine = true, enabled = !state.running, label = { Text(queryKindLabel(candidate.kind)) })
                         }
                         PayPills(queryKinds, candidate.kind) { workflows.editCandidate(candidate.id, kind = it) }
-                        Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 11.sp)
-                        if (candidate.error.isNotBlank()) Text(candidate.error, color = Warning, fontSize = 11.sp)
+                        Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 12.sp)
+                        if (candidate.error.isNotBlank()) Text(candidate.error, color = Warning, fontSize = 12.sp)
                         candidate.orders.forEach { raw -> val order = JSONObject(raw); OrderResultCard(order) { openOrder(order) } }
                         if (candidate.total > candidate.orders.size) TextButton(onClick = {
                             val column = when (candidate.matchedKind.ifBlank { candidate.kind }) { "PID" -> "uid"; "MERCHANT_ORDER" -> "out_trade_no"; "CHANNEL_ORDER" -> "api_trade_no"; else -> "trade_no" }
@@ -213,7 +222,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(4.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(order.optString("trade_no"), color = GreenDark)
             Text("PID ${order.optString("uid")} · ${order.optString("currency", "CNY")} ${order.optString("money")} · ${orderStatusLabel(order.optInt("status"))}", fontSize = 12.sp)
-            Text("查看订单与选择付款凭证 ›", color = Muted, fontSize = 11.sp)
+            Text("查看订单与选择付款凭证 ›", color = Muted, fontSize = 12.sp)
         }
     }
 }
@@ -250,8 +259,9 @@ internal val LocalWorkflowCopy = staticCompositionLocalOf<(String) -> Unit> { {}
     var value by rememberSaveable(title, initial) { mutableStateOf(initial) }
     PaySheet(title, onClose) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(value, { value = it.take(8000) }, modifier = Modifier.fillMaxWidth().weight(1f), label = { Text("可编辑内容") })
-            Button(onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(if (title == "内部备注") "保存备注" else "复制草稿") }
+            val limit = if (title == "内部备注") 4000 else 8000
+            OutlinedTextField(value, { value = it }, modifier = Modifier.fillMaxWidth().weight(1f), label = { Text("可编辑内容") }, isError = value.length > limit, supportingText = { Text("${value.length} / $limit") })
+            Button(enabled = value.length <= limit, onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text(if (title == "内部备注") "保存备注" else "复制草稿") }
         }
     }
 }

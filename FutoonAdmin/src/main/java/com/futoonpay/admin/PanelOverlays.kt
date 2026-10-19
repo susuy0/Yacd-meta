@@ -24,7 +24,7 @@ private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null 
             store.items.entries.toList().forEach { (id, entry) -> key(id) {
                 BackHandler { entry.dismiss() }
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { entry.dismiss() }, contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxSize().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}) { entry.content() }
+                    Box(Modifier.fillMaxSize().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}) { CompositionLocalProvider(com.futoonpay.admin.ui.LocalPayPanelChrome provides null) { entry.content() } }
                 }
             } }
         }

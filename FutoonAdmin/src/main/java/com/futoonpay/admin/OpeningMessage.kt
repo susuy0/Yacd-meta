@@ -49,7 +49,7 @@ private val openingPlaceholderPattern = Regex("\\{([^{}\\n]+)\\}")
 internal fun validateOpeningTemplate(template: String) {
     require(template.isNotBlank() && template.length <= 4096) { "开户文案不能为空，最多 4096 个字符" }
     val unknown = openingPlaceholderPattern.findAll(template).map { it.groupValues[1] }.filter { it !in openingPlaceholders }.toList()
-    require(unknown.isEmpty()) { "未知变量：${unknown.joinToString()}" }
+    require(unknown.isEmpty()) { "未知变量：${unknown.joinToString()}" + if (unknown.any { name -> name.any(Char::isWhitespace) }) "；变量名不能包含空格" else "" }
 }
 
 internal fun openingMessage(template: String, uid: String, key: String, values: Map<String, String>, binding: String): String {
@@ -61,3 +61,8 @@ internal fun openingMessage(template: String, uid: String, key: String, values: 
         require(it.length <= 4096) { "生成后的开户文案超过 4096 个字符，请缩短模板" }
     }
 }
+
+internal data class OpeningVariable(val name: String, val start: Int, val end: Int) {
+    val known: Boolean get() = name in openingPlaceholders
+}
+internal fun openingVariables(text: String): List<OpeningVariable> = openingPlaceholderPattern.findAll(text).map { OpeningVariable(it.groupValues[1], it.range.first, it.range.last + 1) }.toList()

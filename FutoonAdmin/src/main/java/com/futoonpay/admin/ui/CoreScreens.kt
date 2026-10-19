@@ -1,5 +1,7 @@
 package com.futoonpay.admin.ui
 
+import com.futoonpay.admin.ui.theme.CardColor
+import com.futoonpay.admin.ui.theme.ButtonText
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -101,6 +103,7 @@ import com.futoonpay.admin.data.OrderSearchFilters
 import com.futoonpay.admin.data.SettlementSearchFilters
 import com.futoonpay.admin.data.SettlementSummary
 import com.futoonpay.admin.data.SETTLEMENT_CHECKED_RESULT
+import com.futoonpay.admin.data.merchantAccountStatusLabel
 import com.futoonpay.admin.data.merchantPaymentStatusLabel
 import com.futoonpay.admin.data.orderSettlementStatusLabel
 import com.futoonpay.admin.data.orderStatusLabel
@@ -161,10 +164,10 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("共 ${state.orderTotal} 笔 · 服务器查询", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                Text(if (state.orderChannelStatsLoading) "成功率更新中…" else "30秒自动刷新", color = Muted, fontSize = 10.sp)
+                Text(if (state.orderChannelStatsLoading) "成功率更新中…" else "30秒自动刷新", color = Muted, fontSize = 12.sp)
             }
         }
-        state.orderChannelStatsMessage?.let { item { Text(it, color = Warning, fontSize = 11.sp) } }
+        state.orderChannelStatsMessage?.let { item { Text(it, color = Warning, fontSize = 12.sp) } }
         item { ListFeedback(state.ordersLoading && state.orders.isEmpty(), state.ordersError, !state.ordersLoading && state.orders.isEmpty(), { viewModel.loadOrders(state.orderPage) }) }
         itemsIndexed(state.orders, key = { index, item -> "${item.tradeNo}:$index" }) { _, order ->
             SelectableRecord(selection, order.tradeNo, order.tradeNo) {
@@ -194,7 +197,7 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
                 Button(shape = RoundedCornerShape(10.dp), onClick = { viewModel.loadOrders(1, filters); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
             }
     }
-    pending?.let { action -> OrderActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }) { amount, password, remark ->
+    pending?.let { action -> OrderActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.order.tradeNo in state.uncertainOrders, onVerify = { pending = null; actionError = null; viewModel.loadOrderDetail(action.order.tradeNo) }) { amount, password, remark ->
         actionLoading = true; actionError = null
         viewModel.runOrderAction(OrderCommand(action.action, action.order.tradeNo, action.status, amount, password, remark)) { result ->
             actionLoading = false
@@ -224,7 +227,7 @@ private fun CurrentOrderMetrics(orders: List<OrderSummary>, page: Int) {
     val rate = if (orders.isEmpty()) null else successful * 100.0 / orders.size
     androidx.compose.material3.Surface(color = com.futoonpay.admin.ui.theme.GreenTint, shape = RoundedCornerShape(12.dp)) { Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("当前页 · 第 $page 页 (${orders.size} 条)", color = Muted, fontSize = 11.sp)
+            Text("当前页 · 第 $page 页 (${orders.size} 条)", color = Muted, fontSize = 12.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { Text("订单 ${orders.size}", fontSize = 13.sp); Text("成功 $successful", fontSize = 13.sp) }
@@ -236,7 +239,7 @@ private fun CurrentOrderMetrics(orders: List<OrderSummary>, page: Int) {
 
 @Composable
 private fun MetricText(label: String, value: String, modifier: Modifier) {
-    Column(modifier) { Text(label, color = Muted, fontSize = 11.sp); Text(value, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+    Column(modifier) { Text(label, color = Muted, fontSize = 12.sp); Text(value, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
 }
 
 @Composable
@@ -249,14 +252,14 @@ private fun OrderCard(order: OrderSummary, channelStat: OrderChannelStat?, chann
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
             StatusPill(orderStatusLabel(order.status), orderStatusColor(order.status))
         }
-        if (order.merchantTradeNo.isNotBlank()) Text("商户单 ${order.merchantTradeNo}", color = Muted, fontSize = 11.sp)
+        if (order.merchantTradeNo.isNotBlank()) Text("商户单 ${order.merchantTradeNo}", color = Muted, fontSize = 12.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${order.merchantName} UID ${order.merchantId}".trim(), color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
             Text(displayOrderAmount(order.amount, order.currency), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(order.paymentType, color = Muted, fontSize = 11.sp)
-            Text(order.createdAt, color = Muted, fontSize = 10.sp)
+            Text(order.paymentType, color = Muted, fontSize = 12.sp)
+            Text(order.createdAt, color = Muted, fontSize = 12.sp)
         }
         if (order.channelId.isNotBlank()) {
             Spacer(Modifier.height(6.dp))
@@ -265,7 +268,7 @@ private fun OrderCard(order: OrderSummary, channelStat: OrderChannelStat?, chann
                 Text("${channelStat?.channelName?.ifBlank { "通道" } ?: "通道"} #${order.channelId}",
                     Modifier.weight(1f), color = Ink, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Box(Modifier.heightIn(min = 44.dp).clickable(onClick = onChannelStat).padding(start = 8.dp), contentAlignment = Alignment.Center) {
-                androidx.compose.material3.Surface(shape = RoundedCornerShape(13.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), color = Color.White) {
+                androidx.compose.material3.Surface(shape = RoundedCornerShape(13.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), color = CardColor) {
                 Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(when { channelStat?.fiveMinuteRate != null -> formatRate(channelStat.fiveMinuteRate); channelLoading -> "更新中…"; else -> "暂无样本" },
                         color = Ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -275,7 +278,7 @@ private fun OrderCard(order: OrderSummary, channelStat: OrderChannelStat?, chann
                         channelStat.countsOfficial -> "${channelStat.successful}/${channelStat.total} · 近5分钟"
                         else -> "近5分钟 · 官方成功率"
                     },
-                        color = Muted, fontSize = 10.sp)
+                        color = Muted, fontSize = 12.sp)
                 } } }
             }
         }
@@ -300,7 +303,7 @@ private fun ChannelRateCard(stat: OrderChannelStat?, loading: Boolean, onClick: 
                         rate != null -> "近5分钟成功率 · ${formatRate(rate)}"
                         else -> "近5分钟成功率 · 暂无样本"
                     },
-                    color = if (rate == null) Muted else rateColor(rate), fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
+                    color = if (rate == null) Muted else rateColor(rate), fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
                 )
                 Text(
                     when {
@@ -308,10 +311,10 @@ private fun ChannelRateCard(stat: OrderChannelStat?, loading: Boolean, onClick: 
                         stat.source == ChannelRateSource.OFFICIAL -> "官网监测 · 成功 ${stat.successful}/${stat.total} · 处理中 ${stat.processing}"
                         else -> "当前页降级样本 · 成功 ${stat.successful}/${stat.total} · 处理中 ${stat.processing}"
                     },
-                    color = Muted, fontSize = 9.sp,
+                    color = Muted, fontSize = 12.sp,
                 )
             }
-            Text("详情", color = GreenDark, fontSize = 10.sp)
+            Text("详情", color = GreenDark, fontSize = 12.sp)
         }
     }
 }
@@ -339,16 +342,16 @@ private fun ChannelHealthDialog(
                     verticalArrangement = Arrangement.spacedBy(11.dp),
                 ) {
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
                             Column(Modifier.padding(17.dp)) {
                                 Text(
                                     if (stat?.source == ChannelRateSource.OFFICIAL) "近5分钟 · 全通道统计" else "近5分钟 · 当前页样本",
                                     color = Muted, fontSize = 12.sp,
                                 )
                                 Text(rate?.let(::formatRate) ?: "暂无样本", color = GreenDark, fontSize = 32.sp, fontWeight = FontWeight.SemiBold)
-                                Text(stat?.note ?: "官网暂未返回该通道数据", color = Muted, fontSize = 11.sp)
+                                Text(stat?.note ?: "官网暂未返回该通道数据", color = Muted, fontSize = 12.sp)
                                 Spacer(Modifier.height(13.dp))
-                                Text(if (stat?.countsOfficial == true) "全通道订单数量" else "以下数量为当前页近5分钟样本", color = Muted, fontSize = 11.sp)
+                                Text(if (stat?.countsOfficial == true) "全通道订单数量" else "以下数量为当前页近5分钟样本", color = Muted, fontSize = 12.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                                     HealthHeroMetric("成功", stat?.successful, Modifier.weight(1f))
                                     HealthHeroMetric("总订单", stat?.total, Modifier.weight(1f))
@@ -366,31 +369,31 @@ private fun ChannelHealthDialog(
                         }
                     }
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("当前页样本 · 每分钟趋势", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 Spacer(Modifier.height(10.dp))
                                 MerchantSparkline(stat?.minuteBuckets?.reversed()?.map(Int::toDouble).orEmpty(), Modifier.fillMaxWidth().height(105.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    listOf("-4m", "-3m", "-2m", "-1m", "现在").forEach { Text(it, color = Muted, fontSize = 9.sp) }
+                                    listOf("-4m", "-3m", "-2m", "-1m", "现在").forEach { Text(it, color = Muted, fontSize = 12.sp) }
                                 }
                             }
                         }
                     }
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("最近订单与状态明细", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 Spacer(Modifier.height(7.dp))
                                 if (stat?.recentOrders.isNullOrEmpty()) {
-                                    Text("当前页最近5分钟没有该通道订单。", color = Muted, fontSize = 11.sp)
+                                    Text("当前页最近5分钟没有该通道订单。", color = Muted, fontSize = 12.sp)
                                 } else stat?.recentOrders.orEmpty().forEachIndexed { index, order ->
                                     Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Column(Modifier.weight(1f)) {
-                                            Text(order.tradeNo, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            Text(order.createdAt, color = Muted, fontSize = 9.sp)
+                                            Text(order.tradeNo, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(order.createdAt, color = Muted, fontSize = 12.sp)
                                         }
-                                        Text(money(order.amount), fontWeight = FontWeight.Medium, fontSize = 11.sp)
+                                        Text(money(order.amount), fontWeight = FontWeight.Medium, fontSize = 12.sp)
                                         Spacer(Modifier.width(7.dp))
                                         StatusPill(orderStatusLabel(order.status), orderStatusColor(order.status))
                                     }
@@ -400,7 +403,7 @@ private fun ChannelHealthDialog(
                         }
                     }
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -487,7 +490,7 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         }
                     }
                     if (detail.status == 1 || detail.status == 2 || detail.status == 3) Row(
-                        Modifier.fillMaxWidth().background(Color.White).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Modifier.fillMaxWidth().background(CardColor).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         actions.firstOrNull { it.action == "notify" }?.let { action -> OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("重新通知") } }
                         actions.firstOrNull { it.action == "refund" }?.let { action -> Button(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("退款") } }
                     }
@@ -510,21 +513,21 @@ private fun notifyLabel(detail: OrderDetail) = when {
 
 @Composable
 private fun TimelineStep(title: String, subtitle: String, complete: Boolean, modifier: Modifier, failed: Boolean = false) {
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(10.dp)) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(if (failed) Danger else if (complete) GreenDark else Line))
             Spacer(Modifier.height(8.dp))
-            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1)
-            Text(subtitle, color = Muted, fontSize = 9.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
+            Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun CompactMetric(label: String, value: String, modifier: Modifier, valueColor: Color = Ink) {
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(11.dp)) {
-            Text(label, color = Muted, fontSize = 10.sp)
+            Text(label, color = Muted, fontSize = 12.sp)
             Text(value, color = valueColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
@@ -532,13 +535,13 @@ private fun CompactMetric(label: String, value: String, modifier: Modifier, valu
 
 @Composable
 private fun DetailBlock(title: String, rows: List<Pair<String, String>>) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(14.dp)) {
             Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             Spacer(Modifier.height(8.dp))
             rows.forEachIndexed { index, (label, value) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Text(label, color = Muted, fontSize = 11.sp, modifier = Modifier.width(92.dp))
+                    Text(label, color = Muted, fontSize = 12.sp, modifier = Modifier.width(92.dp))
                     SelectionContainer(Modifier.weight(1f)) { Text(value.ifBlank { "—" }, color = Ink, fontSize = 13.sp) }
                 }
                 if (index < rows.lastIndex) HorizontalDivider(color = Line)
@@ -582,6 +585,8 @@ private fun OrderActionDialog(
     loading: Boolean,
     error: String?,
     onDismiss: () -> Unit,
+    uncertain: Boolean = false,
+    onVerify: () -> Unit = {},
     onConfirm: (String, String, String) -> Unit,
 ) {
     var amount by rememberSaveable { mutableStateOf(pending.order.amount) }
@@ -604,9 +609,9 @@ private fun OrderActionDialog(
                 error?.let { Text(it, color = Danger, fontSize = 12.sp) }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
-                    Button(shape = RoundedCornerShape(10.dp), onClick = { onConfirm(amount, paymentPassword, remark) },
+                    Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, paymentPassword, remark) },
                         enabled = !loading && (!pending.amountRequired || validRefundAmount(amount, pending.order.amount)) && (!pending.passwordRequired || paymentPassword.isNotBlank()),
-                        modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "提交中…" else if (error != null) "重试" else "确认") }
+                        modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对订单" else if (error != null) "重试" else "确认") }
                 }
             }
     }
@@ -660,7 +665,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
             items(settlementActions(row)) { action -> OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
         }
     } }
-    pending?.let { action -> SettlementActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }) { result, type, account, name ->
+    pending?.let { action -> SettlementActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.item.id in state.uncertainSettlements, onVerify = { pending = null; actionError = null; viewModel.loadSettlements(state.settlementPage) }) { result, type, account, name ->
         actionLoading = true; actionError = null
         viewModel.runSettlementAction(SettlementCommand(action.action, action.item.id, result, type, account, name, action.item.merchantId, action.item.usdtRate, action.item.usdtAmount, status = action.status)) { response ->
             actionLoading = false
@@ -685,7 +690,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
     val context = LocalContext.current
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail), colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail), colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -708,7 +713,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
             if (item.usdtAmount.isNotBlank()) Text("${item.usdtAmount} USDT  ·  汇率 ${item.usdtRate}", color = GreenDark, fontSize = 13.sp)
             Spacer(Modifier.height(9.dp))
             Text("${item.chain.ifBlank { item.payType }}  ·  ${maskAccount(item.account)}", color = Muted, fontSize = 12.sp)
-            Text("申请 ${item.createdAt}", color = Muted, fontSize = 11.sp)
+            Text("申请 ${item.createdAt}", color = Muted, fontSize = 12.sp)
             if (item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
             if (item.merchantId.isNotBlank()) {
                 TextButton(onClick = {
@@ -736,6 +741,8 @@ private fun SettlementActionDialog(
     loading: Boolean,
     error: String?,
     onDismiss: () -> Unit,
+    uncertain: Boolean = false,
+    onVerify: () -> Unit = {},
     onConfirm: (String, String, String, String) -> Unit,
 ) {
     var result by rememberSaveable { mutableStateOf(pending.resultPreset.ifBlank { if (pending.resultInput) pending.item.result else pending.status?.toString() ?: pending.item.result }) }
@@ -763,7 +770,7 @@ private fun SettlementActionDialog(
         }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "提交中…" else if (error != null) "重试" else "确认") }
+            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null) "重试" else "确认") }
         }
     }
 }
@@ -794,7 +801,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
             TextButton(onClick = { advanced = true }) { Text("完整搜索") }
         } }
         if (state.merchantSearch.value.isNotBlank() || state.merchantSearch.groupId.isNotBlank() || state.merchantSearch.status != "0") item {
-            Text("已筛选：${state.merchantSearch.value} · 用户组 ${state.merchantSearch.groupId.ifBlank { "全部" }} · ${MERCHANT_STATUSES.firstOrNull { it.first == state.merchantSearch.status }?.second ?: state.merchantSearch.status}", color = GreenDark, fontSize = 11.sp)
+            Text("已筛选：${state.merchantSearch.value} · 用户组 ${state.merchantSearch.groupId.ifBlank { "全部" }} · ${MERCHANT_STATUSES.firstOrNull { it.first == state.merchantSearch.status }?.second ?: state.merchantSearch.status}", color = GreenDark, fontSize = 12.sp)
         }
         item { ListFeedback(state.merchantsLoading && state.merchants.isEmpty(), state.merchantsError, !state.merchantsLoading && state.merchants.isEmpty(), { viewModel.loadMerchants(state.merchantPage) }) }
         item { MerchantMetrics(state) }
@@ -803,7 +810,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("${state.merchantTotal} 个商户", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                    Text(if (state.merchantFlowLoading) "正在统计7日流水" else "余额、权限与7日流水", color = Muted, fontSize = 11.sp)
+                    Text(if (state.merchantFlowLoading) "正在统计7日流水" else "余额、权限与7日流水", color = Muted, fontSize = 12.sp)
                 }
                 TextButton(onClick = { viewModel.loadMerchantFlows() }, enabled = !state.merchantFlowLoading) { Text("刷新流水") }
             }
@@ -834,7 +841,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
         }
     }
     pending?.let { action ->
-        MerchantActionDialog(action, { pending = null }, state.merchantBalanceUpdating, balanceError) { amount, gid, endTime ->
+        MerchantActionDialog(action, { pending = null }, state.merchantBalanceUpdating, balanceError, uncertain = action.merchant.uid in state.uncertainBalances, onVerify = { pending = null; viewModel.loadMerchants(1, MerchantSearchFilters(column = "uid", value = action.merchant.uid)) }) { amount, gid, endTime ->
             if (action.action in listOf("add", "reduce")) {
                 balanceError = null
                 viewModel.rechargeMerchant(action.merchant.uid, action.action, amount) { result ->
@@ -882,7 +889,7 @@ private fun MerchantCard(
     var expanded by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardColor),
         border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp),
     ) {
         Column(Modifier.padding(14.dp)) {
@@ -895,7 +902,7 @@ private fun MerchantCard(
                     Text(merchant.username.ifBlank { "商户 ${merchant.uid}" }, fontWeight = FontWeight.SemiBold)
                     Text("UID ${merchant.uid} · ${merchant.groupName}", color = Muted, fontSize = 12.sp)
                 }
-                StatusPill(if (merchant.status == 1) "正常" else "封禁", if (merchant.status == 1) GreenDark else Danger)
+                StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
                 Box {
                     IconButton(onClick = { expanded = true }, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.MoreVert, "商户操作") }
                     DropdownMenu(expanded, { expanded = false }) {
@@ -907,8 +914,8 @@ private fun MerchantCard(
                                 merchant,
                             ),
                             MerchantAction(if (merchant.settlementEnabled) "关闭结算" else "开启结算", "toggleSettle", merchant),
-                            MerchantAction("增加余额", "add", merchant),
-                            MerchantAction("扣除余额", "reduce", merchant),
+                            MerchantAction("增加 CNY 余额", "add", merchant),
+                            MerchantAction("扣除 CNY 余额", "reduce", merchant),
                             MerchantAction("修改用户组", "group", merchant),
                             MerchantAction("重置密钥", "resetKey", merchant),
                         ).forEach { action ->
@@ -919,8 +926,8 @@ private fun MerchantCard(
             }
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                LabelValue("余额", "¥${merchant.balance}")
-                LabelValue("冻结", "¥${merchant.frozenBalance.ifBlank { "0" }}")
+                LabelValue("CNY 余额", money(merchant.balance))
+                LabelValue("CNY 冻结", money(merchant.frozenBalance))
                 LabelValue("支付", merchantPaymentStatusLabel(merchant.paymentStatus))
                 LabelValue("结算", if (merchant.settlementEnabled) "正常" else "关闭")
             }
@@ -928,7 +935,7 @@ private fun MerchantCard(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f))) {
                 Column(Modifier.padding(horizontal = 11.dp, vertical = 9.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("近7日流水", color = Muted, fontSize = 11.sp)
+                        Text("近7日流水", color = Muted, fontSize = 12.sp)
                         Text(
                             when { flow != null -> money(flow.total); flowLoading -> "统计中…"; else -> "暂无统计" },
                             color = GreenDark, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
@@ -968,7 +975,7 @@ private fun MerchantMetrics(state: AppUiState) {
     val frozen = state.merchants.sumOf { currencyValue(it.frozenBalance) }
     val flow = state.merchants.sumOf { state.merchantFlows[it.uid]?.total ?: 0.0 }
     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        CompactMetric("本页余额", money(balance), Modifier.weight(1f), GreenDark)
+        CompactMetric("本页 CNY 余额", money(balance), Modifier.weight(1f), GreenDark)
         CompactMetric("冻结资金", money(frozen), Modifier.weight(1f), if (frozen > 0) Danger else Ink)
         CompactMetric("7日流水", if (state.merchantFlowLoading && state.merchantFlows.isEmpty()) "统计中…" else money(flow), Modifier.weight(1f), GreenDark)
     }
@@ -978,11 +985,13 @@ private fun MerchantMetrics(state: AppUiState) {
 private fun MerchantSparkline(values: List<Double>, modifier: Modifier = Modifier) {
     if (values.isEmpty()) { Box(modifier, contentAlignment = Alignment.Center) { Text("暂无统计", color = Muted, fontSize = 12.sp) }; return }
     val points = values.map { if (it.isFinite()) it.coerceAtLeast(0.0) else 0.0 }
+    val accent = GreenDark
+    val fill = Green
     Canvas(modifier) {
         val max = points.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
         if (points.size == 1) {
             val y = size.height - (points.single() / max * (size.height * .82f)).toFloat() - size.height * .08f
-            drawCircle(GreenDark, radius = 3.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width / 2, y))
+            drawCircle(accent, radius = 3.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width / 2, y))
             return@Canvas
         }
         val step = if (points.size <= 1) size.width else size.width / (points.size - 1)
@@ -1002,12 +1011,12 @@ private fun MerchantSparkline(values: List<Double>, modifier: Modifier = Modifie
         }
         area.lineTo(size.width, size.height)
         area.close()
-        drawPath(area, Green.copy(alpha = .14f))
-        drawPath(line, GreenDark, style = Stroke(width = 2.dp.toPx()))
+        drawPath(area, fill.copy(alpha = .14f))
+        drawPath(line, accent, style = Stroke(width = 2.dp.toPx()))
         points.forEachIndexed { index, value ->
             val x = index * step
             val y = size.height - (value / max * (size.height * .82f)).toFloat() - size.height * .08f
-            drawCircle(GreenDark, radius = 2.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y))
+            drawCircle(accent, radius = 2.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y))
         }
     }
 }
@@ -1041,7 +1050,7 @@ internal fun MerchantDetailDialog(
                 item { PayCard {
                     DataRow("商户", "${merchant.username} · UID ${merchant.uid}"); DataRow("用户组", merchant.groupName)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusPill(if (merchant.status == 1) "正常" else "封禁", if (merchant.status == 1) GreenDark else Danger)
+                        StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
                         StatusPill(merchantPaymentStatusLabel(merchant.paymentStatus), if (merchant.paymentEnabled) GreenDark else Danger)
                         StatusPill(if (merchant.settlementEnabled) "结算正常" else "结算关闭", if (merchant.settlementEnabled) GreenDark else Danger)
                     }
@@ -1053,7 +1062,7 @@ internal fun MerchantDetailDialog(
                 item { PayTabs((listOf("CNY") + amounts.keys).distinct().map { it to it }, currency) { currency = it } }
                 error?.let { item { Text(it, color = Danger); TextButton(onClick = { onDays(days) }) { Text("重试") } } }
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                         Column(Modifier.padding(14.dp)) {
                             Text("${if (days == 1) "今日" else "近${days}天"}流水趋势 · $currency", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                             Spacer(Modifier.height(12.dp))
@@ -1066,8 +1075,8 @@ internal fun MerchantDetailDialog(
                                         Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f)).padding(8.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
-                                        Text(point.date.takeLast(5), color = Muted, fontSize = 9.sp)
-                                        Text("%.2f".format(Locale.US, point.total), fontWeight = FontWeight.Medium, fontSize = 10.sp)
+                                        Text(point.date.takeLast(5), color = Muted, fontSize = 12.sp)
+                                        Text("%.2f".format(Locale.US, point.total), fontWeight = FontWeight.Medium, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -1097,7 +1106,7 @@ internal fun MerchantDetailDialog(
                     )
                 }
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                         Column(Modifier.padding(14.dp)) {
                             Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -1129,9 +1138,9 @@ internal fun MerchantDetailDialog(
 
 @Composable
 private fun FlowHeroMetric(label: String, value: Double, modifier: Modifier) {
-    Column(modifier.clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = .09f)).padding(9.dp)) {
-        Text(label, color = Color.White.copy(alpha = .65f), fontSize = 9.sp)
-        Text(money(value), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1)
+    Column(modifier.clip(RoundedCornerShape(9.dp)).background(ButtonText.copy(alpha = .09f)).padding(9.dp)) {
+        Text(label, color = ButtonText.copy(alpha = .80f), fontSize = 12.sp)
+        Text(money(value), color = ButtonText, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -1141,6 +1150,8 @@ internal fun MerchantActionDialog(
     onDismiss: () -> Unit,
     busy: Boolean = false,
     error: String? = null,
+    uncertain: Boolean = false,
+    onVerify: () -> Unit = {},
     onConfirm: (String, String, String) -> Unit,
 ) {
     var amount by rememberSaveable(pending.merchant.uid, pending.action) { mutableStateOf("") }
@@ -1155,7 +1166,7 @@ internal fun MerchantActionDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("商户 UID ${pending.merchant.uid}", color = Muted)
                 if (isBalance) {
-                    Text("当前余额 ¥${pending.merchant.balance}", color = Muted)
+                    Text("当前 CNY 余额 ${pending.merchant.balance.ifBlank { "—" }}", color = Muted)
                     OutlinedTextField(
                     amount, { amount = it }, label = { Text("金额（正数）") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
@@ -1177,9 +1188,9 @@ internal fun MerchantActionDialog(
             }
         },
         confirmButton = {
-            Button(shape = RoundedCornerShape(10.dp), onClick = { onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null),
+            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null),
                 colors = ButtonDefaults.buttonColors(containerColor = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT) Danger else GreenDark)) {
-                Text(if (busy) "提交中…" else when (operation) {
+                Text(if (busy) "提交中…" else if (uncertain) "重新读取商户" else when (operation) {
                     com.futoonpay.admin.data.MerchantBalanceOperation.ADD -> "确认增加"
                     com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT -> "确认扣除"
                     else -> "确认"
@@ -1243,7 +1254,7 @@ internal fun MoreScreen(onLogout: () -> Unit) {
                             navigation.module(entry.id)
                         }
                     },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = CardColor),
                     border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp),
                 ) {
                     Row(Modifier.padding(horizontal = 15.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1298,7 +1309,7 @@ private fun ChoicePicker(label: String, value: String, options: List<Pair<String
     Box {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(label, color = Muted, fontSize = 11.sp)
+                Text(label, color = Muted, fontSize = 12.sp)
                 Text(options.firstOrNull { it.first == value }?.second ?: value.ifBlank { "请选择" }, color = Ink)
             }
         }
@@ -1343,14 +1354,14 @@ private fun PaginationBar(page: Int, total: Int, currentSize: Int, onPage: (Int)
 private fun ResultHeader(title: String, subtitle: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
         Text(title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-        Text(subtitle, color = Muted, fontSize = 11.sp)
+        Text(subtitle, color = Muted, fontSize = 12.sp)
     }
 }
 
 @Composable
 private fun LabelValue(label: String, value: String) {
     Column {
-        Text(label, color = Muted, fontSize = 11.sp)
+        Text(label, color = Muted, fontSize = 12.sp)
         Text(value, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -1368,13 +1379,16 @@ private fun EmptyState(text: String) {
     Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) { Text(text, color = Muted) }
 }
 
+@Composable
 private fun orderStatusColor(status: Int) = when (status) { 1 -> GreenDark; 2, 3 -> Danger; else -> Warning }
+@Composable
 private fun settlementStatusColor(status: Int) = when (status) { 1 -> GreenDark; 3 -> Danger; else -> Warning }
 private fun maskAccount(value: String) = if (value.length <= 12) value else value.take(5) + "••••" + value.takeLast(5)
 private fun currencyValue(value: String): Double = value.replace(",", "").replace(Regex("[^0-9.-]"), "").toDoubleOrNull() ?: 0.0
 private fun money(value: Double): String = "¥" + String.format(Locale.US, "%.2f", value)
 private fun money(value: String): String = value.takeIf(String::isNotBlank)?.let { money(currencyValue(it)) } ?: "—"
 private fun formatRate(value: Double): String = String.format(Locale.US, "%.1f%%", value)
+@Composable
 private fun rateColor(value: Double?): Color = when {
     value == null -> Muted
     value < 70.0 -> Danger

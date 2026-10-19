@@ -70,10 +70,12 @@ class WorkflowUiTest {
         compose.onNodeWithText("截图 OCR / 二维码").assertIsDisplayed()
         compose.onNodeWithText("编辑商户").assertIsDisplayed().performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("test@example.com").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("编辑商户 · UID 1011").assertIsDisplayed()
+        compose.onNodeWithText("编辑商户 · PID 1011").assertIsDisplayed()
         compose.onNodeWithText("test@example.com").performTextReplacement("new@example.com")
         compose.onNodeWithText("保存资料").assertIsDisplayed().assertIsEnabled().performClick()
-        try { compose.waitUntil(5000) { compose.onAllNodesWithText("编辑商户 · UID 1011").fetchSemanticsNodes().isEmpty() } }
+        assertEquals(0, requests.count { it.url.queryParameter("act") == "editUser" })
+        compose.onNodeWithText("确认保存").performClick()
+        try { compose.waitUntil(5000) { compose.onAllNodesWithText("编辑商户 · PID 1011").fetchSemanticsNodes().isEmpty() } }
         catch (error: Throwable) {
             screenshot("failed-merchant-save")
             println(compose.onRoot(useUnmergedTree = true).printToString())
@@ -111,8 +113,8 @@ class WorkflowUiTest {
         assertTrue(bridge.selectedCaption.contains("C3000003"))
         assertEquals(0, bridge.sent.get())
         compose.onNodeWithText("选择收件人并预览").assertIsNotEnabled()
-        compose.onNodeWithTag("receipt-list").performScrollToNode(hasText("补单"))
-        compose.onNodeWithText("补单").performClick()
+        compose.onNodeWithTag("receipt-list").performScrollToNode(hasText("补单协助"))
+        compose.onNodeWithText("补单协助").performClick()
         compose.onNodeWithTag("receipt-list").performScrollToNode(hasText("从聊天选图"))
         compose.onNodeWithText("从聊天选图").performClick()
         assertEquals(1, bridge.pickedChat)

@@ -91,7 +91,7 @@ internal fun BatchDialog(progress: BatchProgress?, onConfirm: () -> Unit, onClos
                 Text("已选 ${request.commands.size} 条 · 可执行 ${request.commands.count { it.skipReason.isBlank() }} 条")
                 Text(request.warning, color = Warning, fontSize = 12.sp)
                 LazyColumn(Modifier.heightIn(max = 300.dp)) { items(request.commands, key = { it.id }) { command ->
-                    Column(Modifier.padding(vertical = 7.dp)) { Text(command.label, fontSize = 13.sp); if (command.skipReason.isNotBlank()) Text("将跳过：${command.skipReason}", color = Muted, fontSize = 11.sp) }
+                    Column(Modifier.padding(vertical = 7.dp)) { Text(command.label, fontSize = 13.sp); if (command.skipReason.isNotBlank()) Text("将跳过：${command.skipReason}", color = Muted, fontSize = 12.sp) }
                 } }
             } else {
                 val success = progress.results.count { it.status == BatchOutcomeStatus.SUCCESS }
@@ -127,7 +127,7 @@ private fun KeyResult(uid: String, key: String) {
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var visible by remember(uid, key) { mutableStateOf(false) }
     var copied by remember(uid, key) { mutableStateOf(false) }
-    Text(if (visible) key else "••••••••••••••••••••••••••••••••", fontSize = 11.sp)
+    Text(if (visible) key else "••••••••••••••••••••••••••••••••", fontSize = 12.sp)
     Row {
         TextButton(onClick = { visible = !visible }) { Text(if (visible) "隐藏密钥" else "查看密钥", fontSize = 12.sp) }
         TextButton(onClick = {

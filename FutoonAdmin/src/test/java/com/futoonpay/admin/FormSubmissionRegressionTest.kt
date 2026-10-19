@@ -104,4 +104,16 @@ class FormSubmissionRegressionTest {
         compose.waitUntil(5000) { !vm.state.value.loading }
         assertEquals(1, calls.get()); assertEquals(0, accounts.get()); assertNotNull(vm.state.value.editor)
     }
+    @Test fun lostSaveResponseRequiresFreshReadBeforeAnotherMutation() {
+        val calls = AtomicInteger()
+        val vm = model { request ->
+            if (request.url.queryParameter("act") == "savePayType") { calls.incrementAndGet(); throw java.io.IOException("response lost") }
+            200 to "<html></html>"
+        }
+        compose.runOnUiThread { vm.openAdd(); vm.updateEditorField("showname", "微信"); val editor = vm.state.value.editor!!; vm.submit(editor, editor.fields.associate { it.name to it.value }) }
+        compose.waitUntil(5000) { !vm.state.value.loading && vm.state.value.writeUncertain }
+        compose.runOnUiThread { val editor = vm.state.value.editor!!; vm.submit(editor, editor.fields.associate { it.name to it.value }) }
+        assertEquals(1, calls.get()); assertNotNull(vm.state.value.editor)
+    }
+
 }

@@ -29,7 +29,7 @@ class ChatToolsUiTest {
     private val bridge = ChatToolsFixture()
     private fun root(picker: Boolean = false, short: Boolean = false) {
         compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(if (short) 350.dp else 650.dp).testTag("chat-tools-panel")) { PanelOverlayHost { ChatToolsScreen(bridge, picker) } } } }
-        compose.waitUntil(5000) { compose.onAllNodesWithText(if (picker) "查单" else "新增 Tag").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5000) { compose.onAllNodesWithText(if (picker) "查单" else "会话 Tag").fetchSemanticsNodes().isNotEmpty() }
     }
     private fun screenshot(name: String) {
         val bounds = compose.onNodeWithTag("chat-tools-panel").fetchSemanticsNode().boundsInRoot
@@ -42,23 +42,23 @@ class ChatToolsUiTest {
     }
     private fun save() { compose.onNodeWithText("保存", useUnmergedTree = true).performClick(); compose.waitUntil(5000) { compose.onAllNodesWithTag("chat-tools-editor").fetchSemanticsNodes().isEmpty() } }
     @Test fun settingsAddsEditsAndDeletesAnExactTgidTag() {
-        root()
+        root(); compose.onNodeWithText("会话 Tag").performClick()
         compose.onNodeWithText("新增 Tag").performClick()
         compose.onNode(hasSetTextAction() and hasText("Tag 内容")).performTextInput("商户")
         compose.onNode(hasSetTextAction() and hasText("生效 Telegram ID", substring = true)).performTextInput("5824870757")
         save(); assertEquals("商户", ChatToolsConfig.parse(bridge.saved).tagFor("5824870757"))
-        compose.onNodeWithText("编辑 Tag").performClick()
+        compose.onNodeWithContentDescription("商户更多操作").performClick(); compose.onNodeWithText("编辑 Tag").performClick()
         compose.onNode(hasSetTextAction() and hasText("Tag 内容")).performTextReplacement("VIP")
         save(); assertEquals("VIP", ChatToolsConfig.parse(bridge.saved).tagFor("5824870757"))
         screenshot("26-futoon-chat-tag-settings")
-        compose.onNodeWithText("删除 Tag").performClick()
+        compose.onNodeWithContentDescription("VIP更多操作").performClick(); compose.onNodeWithText("删除 Tag").performClick()
         compose.onAllNodesWithText("确认删除").onLast().performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("暂无自定义 Tag").fetchSemanticsNodes().isNotEmpty() }
         assertEquals("", ChatToolsConfig.parse(bridge.saved).tagFor("5824870757"))
     }
     @Test fun settingsCreatesTabCategoryAndEditableReplyWithoutSending() {
         root()
-        compose.onNodeWithText("快速回复").performClick(); compose.onNodeWithText("新增 Tab").performClick()
+        compose.onNodeWithText("一键回复").performClick(); compose.onNodeWithText("新增 Tab").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("查单"); save()
         compose.onNodeWithText("新增分类").performClick(); compose.onNode(hasSetTextAction()).performTextInput("付款凭证"); save()
         compose.onNodeWithText("新增文案").performClick()
@@ -89,12 +89,12 @@ class ChatToolsUiTest {
         compose.onNodeWithText("售后").performClick(); compose.onNodeWithText("退款").assertIsDisplayed()
         compose.onNodeWithText("核实").performClick()
         assertEquals("请提供退款订单号", bridge.inserted); assertEquals(0, bridge.writes)
-        compose.onNodeWithText("管理快速回复").assertIsDisplayed()
+        compose.onNodeWithText("管理").assertIsDisplayed()
         compose.onNodeWithText("原发送选项").assertIsDisplayed()
         screenshot("28-futoon-long-press-quick-replies")
     }
     @Test fun keyboardSizedEditorKeepsSaveVisibleAndRejectsBadIds() {
-        root(short = true); compose.onNodeWithText("新增 Tag").performClick()
+        root(short = true); compose.onNodeWithText("会话 Tag").performClick(); compose.onNodeWithText("新增 Tag").performClick()
         compose.onNode(hasSetTextAction() and hasText("Tag 内容")).performTextInput("测试")
         compose.onNode(hasSetTextAction() and hasText("生效 Telegram ID", substring = true)).performTextInput("0")
         compose.onNodeWithText("保存", useUnmergedTree = true).assertIsDisplayed().performClick()
@@ -103,7 +103,7 @@ class ChatToolsUiTest {
     }
     @Test fun failedSaveKeepsFormAndExistingConfiguration() {
         bridge.fail = true
-        root(); compose.onNodeWithText("新增 Tag").performClick()
+        root(); compose.onNodeWithText("会话 Tag").performClick(); compose.onNodeWithText("新增 Tag").performClick()
         compose.onNode(hasSetTextAction() and hasText("Tag 内容")).performTextInput("测试")
         compose.onNode(hasSetTextAction() and hasText("生效 Telegram ID", substring = true)).performTextInput("5824870757")
         compose.onNodeWithText("保存", useUnmergedTree = true).performClick()
@@ -115,7 +115,7 @@ class ChatToolsUiTest {
     @Test fun actualSheetViewBoundsItsHeightAndOwnsItsLifecycle() {
         var panel: ChatToolsView? = null
         compose.setContent { AndroidView(factory = { context -> ChatToolsView(context, bridge, true).also { panel = it; it.setPanelHeight(350); it.onShown() } }, modifier = Modifier.fillMaxWidth()) }
-        compose.onNodeWithText("管理快速回复").assertIsDisplayed()
+        compose.onNodeWithText("管理").assertIsDisplayed()
         compose.runOnUiThread {
             assertTrue(panel!!.measuredHeight in 1..350)
             assertEquals(androidx.lifecycle.Lifecycle.State.RESUMED, panel!!.lifecycle.currentState)

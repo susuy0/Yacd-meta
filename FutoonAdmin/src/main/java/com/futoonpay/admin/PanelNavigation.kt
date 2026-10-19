@@ -35,6 +35,7 @@ internal class PanelNavigator : PanelNavigation {
     fun merchantOpening() = push(PanelRoute("merchant_opening"))
     val current: PanelRoute get() = stacks[tab]?.lastOrNull() ?: roots.getValue(tab)
     fun select(tab: String) { require(tab in roots); this.tab = tab }
+    val canPop: Boolean get() = stacks[tab].orEmpty().isNotEmpty()
     fun pop(): Boolean { val stack = stacks[tab].orEmpty(); if (stack.isEmpty()) return false; stacks[tab] = stack.dropLast(1); return true }
     fun push(route: PanelRoute) { stacks[tab] = stacks[tab].orEmpty() + route }
     override fun orders(channelId: String, merchantId: String) = push(PanelRoute("orders", channelId = channelId, merchantId = merchantId))

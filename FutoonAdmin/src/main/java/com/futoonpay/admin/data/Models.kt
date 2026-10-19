@@ -190,6 +190,7 @@ data class ApiResult(
     val message: String,
     val recordId: String = "",
     val partial: Boolean = false,
+    val uncertain: Boolean = false,
 )
 
 data class GenericRow(

@@ -1,69 +1,31 @@
 {
-  "version": "0.7.5 Android ICU opening template fix",
-  "versionCode": 71899,
+  "version": "0.8.0 custom native UI v1.1",
+  "versionCode": 71909,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "e451d651f2965f2083f8cf0ded2bf69801dcc4b8d21339089801cfc473971696",
-  "source_archive_sha256": "17e630ee9c6a13bd8cb245c1d3afae7f8301840bf3d958ae604292437cf2da67",
-  "standalone_admin_activities": 0,
-  "original_data_files": 24,
+  "patch_sha256": "cfa51ce0668fa95208fa238bb463af136420be63ab7ce9381fb10c57efc42ffb",
+  "source_baseline": "8dcfae372bbf0474e32a0f9698769d9b62bdcc02",
   "validation": {
-    "business_adapter": "243 tests passed; 0 failures/errors/skips; Lint 0 errors / 28 warnings",
-    "android_regex": "ICU4C 74: 106 source expressions and 5 variable cases passed; exact original defect rejected (66305)",
-    "panel_ui": "32 fixture screenshots; 12 real Java composer behavior checks and wrong-conversation negative control passed",
-    "full_build": "success: host Java, native libraries, R8, APK and removed-component audit; APK v2 signature, checksum, CRC, fixed regex presence/original absence, 17 entry points and 6 lifecycle hooks verified",
-    "device_backend": "No real device or live account-creation/binding/send test"
+    "status": "pending CI",
+    "device_backend": "No real device, live creation, key reset or Telegram send test"
   },
-  "source_commit": "417550df9327d78677d154cc603ffc9c45519046",
   "features": {
-    "native_merchant_opening": true,
-    "settlement_mode": {
-      "D0": {
-        "settle": "1"
-      },
-      "D1": {
-        "settle": "0"
-      },
-      "default": "D1"
-    },
-    "opening_template_in_chat_settings": true,
-    "draft_insertion_only": true,
-    "creation_auto_retry": false,
-    "shared_icu_compatible_placeholder_pattern": true
+    "original_telegram_ui": "preserved",
+    "native_ui_only": true,
+    "scoped_telegram_theme": true,
+    "quick_reply_preview_and_management_return": true,
+    "settings_three_entries": true,
+    "evidence_grid": true,
+    "grouped_opening": true,
+    "merchant_multi_match_choice": true,
+    "merchant_edit_review": true,
+    "write_result_verification": true
   },
-  "ci": {
-    "run_id": 39129367590,
-    "source_commit": "417550df9327d78677d154cc603ffc9c45519046",
-    "native_job": 117681177940,
-    "core_job": 117681178107,
-    "android_job": 117682018896,
-    "reports_artifact": 12137970331,
-    "reports_zip_sha256": "dc646f33c175563d77f5e09eddecf665e067af9fd87ba082b4c5f23fecaac344",
-    "apk_artifact": 12137807752,
-    "apk_zip_sha256": "f798acf57857181c7e416cb1456891599719a41d65838823f73b6a010d25680b",
-    "result": "all jobs succeeded"
-  },
-  "apk": {
-    "file": "SMS-Futoon-v0.7.5-arm64.apk",
-    "bytes": 41038417,
-    "sha256": "b09b45ea6a74040c88de281b625f47a3b6642fca446fc46c563f4e95272f5c87",
-    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
-    "v2_signature": "verified",
-    "zip_crc": "verified",
-    "abis": [
-      "arm64-v8a"
-    ],
-    "futoon_assets": 0,
-    "native_core_bytes": 9893208,
-    "package": "com.futoonpay.vinechat.beta",
+  "previous_release": {
+    "version": "0.7.5",
     "versionCode": 71899,
-    "versionName": "13.0.2",
-    "minSdkVersion": 23,
-    "targetSdkVersion": 36,
-    "application_label": "短信",
-    "fixed_regex_present": true,
-    "original_regex_absent": true,
-    "standalone_admin_activities": 0,
-    "push_mode": "development-no-fcm"
+    "source_commit": "417550df9327d78677d154cc603ffc9c45519046",
+    "apk_sha256": "b09b45ea6a74040c88de281b625f47a3b6642fca446fc46c563f4e95272f5c87",
+    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
   }
 }

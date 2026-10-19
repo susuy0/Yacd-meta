@@ -54,6 +54,7 @@ internal fun merchantOpeningSubmission(original: NativeForm, fresh: NativeForm):
         }
         require(!field.required || value.isNotBlank()) { "${field.label}不能为空" }
         if (field.type == "select") require(field.options.any { it.value == value }) { "${field.label}选项已变化，请重新选择" }
+        require(value.length <= 4096) { "${field.label}最多 4096 个字符" }
         require(!value.contains('\u0000')) { "${field.label}包含无效字符" }
         field.name to value
     }.also { settlementCycle(it.getValue("settle")) }

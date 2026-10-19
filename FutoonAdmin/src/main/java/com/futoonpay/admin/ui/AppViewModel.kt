@@ -31,6 +31,9 @@ enum class AuthStage { CHECKING, LOGIN, AUTHENTICATED }
 enum class MainTab(val title: String) { DASHBOARD("概览"), ORDERS("订单"), SETTLEMENTS("结算"), MERCHANTS("商户"), MORE("管理") }
 
 data class AppUiState(
+    val uncertainOrders: Set<String> = emptySet(),
+    val uncertainSettlements: Set<String> = emptySet(),
+    val uncertainBalances: Set<String> = emptySet(),
     val batch: BatchProgress? = null,
     val authStage: AuthStage = AuthStage.CHECKING,
     val adminUrl: String = "",
@@ -76,6 +79,8 @@ data class AppUiState(
     val merchantBalanceUpdating: Boolean = false,
     val merchantEditorUid: String = "",
     val merchantEditor: com.futoonpay.admin.data.NativeForm? = null,
+    val merchantEditorOriginal: com.futoonpay.admin.data.NativeForm? = null,
+    val merchantEditorUncertain: Boolean = false,
     val merchantEditorLoading: Boolean = false,
     val merchantEditorSaving: Boolean = false,
     val merchantEditorError: String? = null,
@@ -107,8 +112,9 @@ class AppViewModel(
     private val application: FutoonApplication,
     private val repositoryOverride: FutoonRepository? = null,
     loadOnStart: Boolean = true,
+    initialAccountName: String = "管理员",
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AppUiState())
+    private val _state = MutableStateFlow(AppUiState(accountName = initialAccountName))
     val state: StateFlow<AppUiState> = _state.asStateFlow()
     private val repository: FutoonRepository get() = repositoryOverride ?: application.repository
     private var orderChannelStatsGeneration = 0L
@@ -161,12 +167,18 @@ class AppViewModel(
     fun openMerchantEditor(uid: String) = viewModelScope.launch {
         if (_state.value.merchantEditorSaving) return@launch
         val generation = ++merchantEditorGeneration
+        val previous = _state.value.merchantEditor.takeIf { _state.value.merchantEditorUid == uid && _state.value.merchantEditorUncertain }
         originalMerchantEditor = null
-        _state.update { it.copy(merchantEditorUid = uid, merchantEditor = null, merchantEditorLoading = true, merchantEditorError = null) }
+        _state.update { it.copy(merchantEditorUid = uid, merchantEditor = previous, merchantEditorLoading = true, merchantEditorError = null) }
         runCatching { repository.merchantProfile(uid) }.onSuccess { form ->
             if (generation != merchantEditorGeneration) return@onSuccess
             originalMerchantEditor = form
-            _state.update { it.copy(merchantEditor = form, merchantEditorLoading = false) }
+            val draft = previous?.fields?.associate { it.name to it.value }.orEmpty()
+            val restored = if (previous == null) form else form.copy(fields = form.fields.map { field ->
+                if (field.readOnly || field.type == "hidden" || draft[field.name] == null) field else field.copy(value = draft.getValue(field.name))
+            })
+            _state.update { it.copy(merchantEditor = restored, merchantEditorOriginal = form, merchantEditorLoading = false, merchantEditorUncertain = false,
+                merchantEditorError = if (previous == null) null else "已重新读取后台资料。请对照当前值与本次填写内容，核对后再决定是否保存。") }
         }.onFailure { error ->
             if (generation == merchantEditorGeneration) _state.update { it.copy(merchantEditorLoading = false, merchantEditorError = error.userMessage()) }
             handleFailure(error)
@@ -182,11 +194,11 @@ class AppViewModel(
         if (_state.value.merchantEditorSaving) return
         merchantEditorGeneration++
         originalMerchantEditor = null
-        _state.update { it.copy(merchantEditorUid = "", merchantEditor = null, merchantEditorLoading = false, merchantEditorError = null) }
+        _state.update { it.copy(merchantEditorUid = "", merchantEditor = null, merchantEditorOriginal = null, merchantEditorUncertain = false, merchantEditorLoading = false, merchantEditorError = null) }
     }
 
     fun saveMerchantEditor() = viewModelScope.launch {
-        if (_state.value.merchantEditorSaving) return@launch
+        if (_state.value.merchantEditorSaving || _state.value.merchantEditorUncertain) return@launch
         val original = originalMerchantEditor ?: return@launch
         val snapshot = _state.value
         val values = snapshot.merchantEditor?.fields?.associate { it.name to it.value } ?: return@launch
@@ -199,7 +211,8 @@ class AppViewModel(
                 loadMerchants(snapshot.merchantPage, snapshot.merchantSearch)
             }
         }.onFailure { error ->
-            _state.update { it.copy(merchantEditorSaving = false, merchantEditorError = error.userMessage()) }
+            val uncertain = error !is IllegalArgumentException && error !is SessionExpiredException && error !is com.futoonpay.admin.data.PermissionDeniedException
+            _state.update { it.copy(merchantEditorSaving = false, merchantEditorUncertain = uncertain, merchantEditorError = if (uncertain) "保存结果待核对。请重新读取资料并对比，不要重复提交。" else error.userMessage()) }
             handleFailure(error)
         }
     }
@@ -210,7 +223,7 @@ class AppViewModel(
             application.sessionExpired.collect { expired ->
                 if (expired) {
                     batchJob?.cancel()
-                    _state.update { AppUiState(authStage = AuthStage.LOGIN, adminUrl = it.adminUrl, endpointReady = it.endpointReady, message = "登录已过期，请重新登录") }
+                    _state.update { it.copy(authStage = AuthStage.LOGIN, refreshing = false, loginLoading = false, message = "付款后台登录已过期，请重新登录；任务已保留") }
                     if (loadOnStart) refreshCaptcha()
                 }
             }
@@ -311,7 +324,7 @@ class AppViewModel(
                 if (generation != ordersGeneration) return@onSuccess
                 _state.update {
                     it.copy(
-                        refreshing = false, ordersLoading = false, ordersError = null, orders = result.rows, orderTotal = result.total, orderPage = page,
+                        refreshing = false, ordersLoading = false, ordersError = null, orders = result.rows, uncertainOrders = it.uncertainOrders - result.rows.map { row -> row.tradeNo }.toSet(), orderTotal = result.total, orderPage = page,
                         orderChannelStats = emptyMap(), orderChannelStatsMessage = null,
                     )
                 }
@@ -361,7 +374,7 @@ class AppViewModel(
             it.copy(orderDetailTradeNo = tradeNo, orderDetail = null, orderDetailLoading = true, message = null)
         }
         runCatching { repository.orderDetail(tradeNo) }
-            .onSuccess { detail -> _state.update { it.copy(orderDetail = detail, orderDetailLoading = false) } }
+            .onSuccess { detail -> _state.update { it.copy(orderDetail = detail, uncertainOrders = it.uncertainOrders - tradeNo, orderDetailLoading = false) } }
             .onFailure { error ->
                 _state.update { it.copy(orderDetailLoading = false, message = error.userMessage()) }
             }
@@ -377,7 +390,7 @@ class AppViewModel(
         runCatching { repository.settlements(page, search.toRequest()) }
             .onSuccess { result ->
                 if (generation != settlementsGeneration) return@onSuccess
-                _state.update { it.copy(refreshing = false, settlementsLoading = false, settlementsError = null, settlements = result.rows, settlementTotal = result.total, settlementPage = page) }
+                _state.update { it.copy(refreshing = false, settlementsLoading = false, settlementsError = null, settlements = result.rows, uncertainSettlements = it.uncertainSettlements - result.rows.map { row -> row.id }.toSet(), settlementTotal = result.total, settlementPage = page) }
             }
             .onFailure { error ->
                 if (generation != settlementsGeneration) return@onFailure
@@ -398,7 +411,7 @@ class AppViewModel(
                 if (generation != merchantsGeneration) return@onSuccess
                 _state.update {
                     it.copy(
-                        refreshing = false, merchantsLoading = false, merchantsError = null, merchants = result.rows, merchantTotal = result.total,
+                        refreshing = false, merchantsLoading = false, merchantsError = null, merchants = result.rows, uncertainBalances = it.uncertainBalances - result.rows.map { row -> row.uid }.toSet(), merchantTotal = result.total,
                         merchantPage = page, merchantFlows = emptyMap(), merchantFlowError = null,
                     )
                 }
@@ -438,6 +451,7 @@ class AppViewModel(
     }
 
     fun runOrderAction(command: OrderCommand, onComplete: (com.futoonpay.admin.data.ApiResult) -> Unit = {}) = viewModelScope.launch {
+        if (command.tradeNo in _state.value.uncertainOrders) { onComplete(ApiResult(false, "订单操作结果待核对，请先刷新订单详情。", uncertain = true)); return@launch }
         if (_state.value.refreshing) { onComplete(com.futoonpay.admin.data.ApiResult(false, "请等待当前操作完成")); return@launch }
         _state.update { it.copy(refreshing = true, message = null) }
         runCatching {
@@ -453,10 +467,15 @@ class AppViewModel(
                 if (result.success) loadOrders(_state.value.orderPage)
                 onComplete(result)
             }
-            .onFailure { handleFailure(it); onComplete(com.futoonpay.admin.data.ApiResult(false, it.userMessage())) }
+            .onFailure { error ->
+                handleFailure(error)
+                _state.update { it.copy(uncertainOrders = it.uncertainOrders + command.tradeNo) }
+                onComplete(ApiResult(false, "订单操作结果待核对，请刷新并核对订单，勿重复提交。", uncertain = true))
+            }
     }
 
     fun runSettlementAction(command: SettlementCommand, onComplete: (com.futoonpay.admin.data.ApiResult) -> Unit = {}) = viewModelScope.launch {
+        if (command.id in _state.value.uncertainSettlements) { onComplete(ApiResult(false, "结算操作结果待核对，请先重新读取。", uncertain = true)); return@launch }
         if (_state.value.refreshing) { onComplete(com.futoonpay.admin.data.ApiResult(false, "请等待当前操作完成")); return@launch }
         _state.update { it.copy(refreshing = true, message = null) }
         runCatching {
@@ -482,7 +501,11 @@ class AppViewModel(
             _state.update { it.copy(refreshing = false, message = result.message) }
             if (result.success) loadSettlements(_state.value.settlementPage)
             onComplete(result)
-        }.onFailure { handleFailure(it); onComplete(com.futoonpay.admin.data.ApiResult(false, it.userMessage())) }
+        }.onFailure { error ->
+            handleFailure(error)
+            _state.update { it.copy(uncertainSettlements = it.uncertainSettlements + command.id) }
+            onComplete(ApiResult(false, "结算操作结果待核对，请刷新核对后再处理。", uncertain = true))
+        }
     }
 
     fun setMerchantStatus(uid: String, type: String, enabled: Boolean) = viewModelScope.launch {
@@ -496,6 +519,7 @@ class AppViewModel(
     }
 
     fun rechargeMerchant(uid: String, operation: String, amount: String, onComplete: (ApiResult) -> Unit = {}) = viewModelScope.launch {
+        if (uid in _state.value.uncertainBalances) { onComplete(ApiResult(false, "余额操作结果待核对，请先重新读取商户余额。", uncertain = true)); return@launch }
         if (_state.value.batch?.running == true) { onComplete(ApiResult(false, "请等待批量操作完成")); return@launch }
         if (_state.value.merchantBalanceUpdating) {
             onComplete(ApiResult(false, "余额操作正在提交，请勿重复点击"))
@@ -509,9 +533,9 @@ class AppViewModel(
                 if (result.success) loadMerchants(_state.value.merchantPage)
                 onComplete(result)
             }.onFailure {
-                _state.update { state -> state.copy(merchantBalanceUpdating = false) }
+                _state.update { state -> state.copy(merchantBalanceUpdating = false, uncertainBalances = state.uncertainBalances + uid) }
                 handleFailure(it)
-                onComplete(ApiResult(false, it.userMessage()))
+                onComplete(ApiResult(false, "余额操作结果待核对，请重新读取商户余额，勿重复提交。", uncertain = true))
             }
     }
 
@@ -555,8 +579,8 @@ class AppViewModel(
         val merchants: com.futoonpay.admin.data.PagedResult<MerchantSummary>,
     )
 
-    class Factory(private val application: FutoonApplication) : ViewModelProvider.Factory {
+    class Factory(private val application: FutoonApplication, private val initialAccountName: String = "管理员") : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(application) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(application, initialAccountName = initialAccountName) as T
     }
 }

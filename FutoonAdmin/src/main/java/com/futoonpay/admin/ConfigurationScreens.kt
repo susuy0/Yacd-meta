@@ -104,7 +104,7 @@ internal fun ConfigurationEditorFields(form: NativeForm, module: String, channel
         PayCard {
             form.fields.filter { it.type != "hidden" && it != fee && it != bindings }.forEach { field ->
                 NativeFieldEditor(field.copy(readOnly = field.readOnly || busy), field.value) { onField(field.name, it) }
-                if (module == "payment_types" && field.name == "name" && field.readOnly) Text("类型标识创建后不可修改", color = Muted, fontSize = 11.sp)
+                if (module == "payment_types" && field.name == "name" && field.readOnly) Text("类型标识创建后不可修改", color = Muted, fontSize = 12.sp)
             }
         }
         if (module == "payment_types") {
@@ -112,7 +112,7 @@ internal fun ConfigurationEditorFields(form: NativeForm, module: String, channel
             PayCard {
                 if (fee != null) NativeFieldEditor(fee.copy(label = "向商户收取的费率 (%)", type = "decimal", readOnly = fee.readOnly || busy), fee.value) { onField(fee.name, it) }
                 else Text("当前后台表单未提供独立支付方式费率，需后台支持后配置。", color = Muted, fontSize = 12.sp)
-                Text("通道成本费率在通道内单独配置，这里不会修改。", color = Muted, fontSize = 11.sp)
+                Text("通道成本费率在通道内单独配置，这里不会修改。", color = Muted, fontSize = 12.sp)
             }
         }
         SectionLabel(if (bindings != null) "关联通道 · 已选 ${selected.size} 个" else "关联通道")
@@ -130,7 +130,7 @@ internal fun ConfigurationEditorFields(form: NativeForm, module: String, channel
                         Checkbox(checked, { next -> onField(bindings.name, (if (next) selected + option.value else selected - option.value).joinToString(",")) }, enabled = !busy && !bindings.readOnly && (compatible || checked))
                         Column(Modifier.weight(1f)) {
                             Text("${option.label} #${option.value}")
-                            Text(when { channel == null -> "通道已失效，取消勾选可移除"; !compatible -> "支付方式不匹配，不可选"; else -> "成本 ${channel.cost.ifBlank { "—" }}% · 限额 ${channel.minimum.ifBlank { "—" }}–${channel.maximum.ifBlank { "—" }}" }, color = Muted, fontSize = 11.sp)
+                            Text(when { channel == null -> "通道已失效，取消勾选可移除"; !compatible -> "支付方式不匹配，不可选"; else -> "成本 ${channel.cost.ifBlank { "—" }}% · 限额 ${channel.minimum.ifBlank { "—" }}–${channel.maximum.ifBlank { "—" }}" }, color = Muted, fontSize = 12.sp)
                         }
                     }
                 }
@@ -140,7 +140,7 @@ internal fun ConfigurationEditorFields(form: NativeForm, module: String, channel
             PayCard {
                 AssociationLinks(associated, onOpenChannel)
                 if (associated.isEmpty()) Text(if (error != null || busy) "关联通道尚未读取" else if (module == "proxies" && channels.any { it.proxyId == null }) "后台未提供完整代理关联字段" else "暂无关联通道", color = Muted)
-                if (module == "payment_types") Text("当前后台未提供多通道绑定字段；现有关联按通道的支付方式展示。", color = Muted, fontSize = 11.sp)
+                if (module == "payment_types") Text("当前后台未提供多通道绑定字段；现有关联按通道的支付方式展示。", color = Muted, fontSize = 12.sp)
             }
         }
     }

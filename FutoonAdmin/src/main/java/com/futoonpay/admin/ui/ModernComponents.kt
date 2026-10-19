@@ -23,9 +23,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.futoonpay.admin.ui.theme.*
 
+internal class PayPanelChrome(val showBack: Boolean, val actions: @Composable RowScope.() -> Unit, val context: @Composable () -> Unit)
+internal val LocalPayPanelChrome = staticCompositionLocalOf<PayPanelChrome?> { null }
+
 @Composable
 internal fun PayCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = Color.White,
+    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = CardColor,
         border = BorderStroke(1.dp, Line)) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 10.dp), content = content)
     }
@@ -40,7 +43,7 @@ internal fun SectionLabel(text: String) {
 @Composable
 internal fun PayBadge(text: String, color: Color = GreenDark) {
     Surface(shape = RoundedCornerShape(6.dp), color = color.copy(alpha = .09f)) {
-        Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Medium,
+        Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
     }
 }
@@ -52,7 +55,7 @@ internal fun PayTabs(options: List<Pair<String, String>>, selected: String, onSe
         val index = options.indexOfFirst { it.first == selected }
         if (index >= 0) scroll.animateScrollToItem(index)
     }
-    LazyRow(state = scroll, modifier = Modifier.fillMaxWidth().height(46.dp).background(Color.White), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+    LazyRow(state = scroll, modifier = Modifier.fillMaxWidth().height((48f * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp).background(CardColor), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
         items(options, key = { it.first }) { (value, label) ->
             val active = selected == value
             Box(modifier = Modifier.fillMaxHeight().clickable { onSelect(value) }.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
@@ -73,9 +76,9 @@ internal fun PayPills(options: List<Pair<String, String>>, selected: String, onS
     }
     LazyRow(state = scroll, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         items(options, key = { it.first }) { (value, label) ->
-            Box(Modifier.height(44.dp).clickable { onSelect(value) }, contentAlignment = Alignment.Center) {
-                Surface(color = if (value == selected) GreenDark else Color.White, shape = RoundedCornerShape(16.dp), border = if (value == selected) null else BorderStroke(1.dp, Line)) {
-                    Text(label, color = if (value == selected) Color.White else Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            Box(Modifier.heightIn(min = 48.dp).clickable { onSelect(value) }, contentAlignment = Alignment.Center) {
+                Surface(color = if (value == selected) GreenDark else CardColor, shape = RoundedCornerShape(16.dp), border = if (value == selected) null else BorderStroke(1.dp, Line)) {
+                    Text(label, color = if (value == selected) ButtonText else Muted, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
                 }
             }
         }
@@ -85,19 +88,23 @@ internal fun PayPills(options: List<Pair<String, String>>, selected: String, onS
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PayTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
-    Column(Modifier.fillMaxWidth().background(Color.White)) {
-        Row(Modifier.fillMaxWidth().height(56.dp).padding(start = if (onBack == null) 16.dp else 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            onBack?.let { IconButton(onClick = it, modifier = Modifier.size(44.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = Ink, modifier = Modifier.size(24.dp)) } }
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val chrome = LocalPayPanelChrome.current
+    val visibleBack = onBack.takeIf { chrome == null || chrome.showBack }
+    Column(Modifier.fillMaxWidth().background(CardColor)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = if (chrome == null) 56.dp else 48.dp).padding(start = if (visibleBack == null) 16.dp else 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            visibleBack?.let { IconButton(onClick = it, modifier = Modifier.size(48.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = Ink, modifier = Modifier.size(24.dp)) } }
+            Text(title, fontSize = if (chrome == null) 18.sp else 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             actions()
+            chrome?.actions?.invoke(this)
         }
         HorizontalDivider(color = Line)
+        chrome?.context?.invoke()
     }
 }
 
 @Composable
 internal fun PayBottomNav(selected: MainTab?, onSelect: (MainTab) -> Unit) {
-    Column(Modifier.fillMaxWidth().background(Color.White)) {
+    Column(Modifier.fillMaxWidth().background(CardColor)) {
         HorizontalDivider(color = Line)
         Row(Modifier.fillMaxWidth().height(64.dp)) {
             MainTab.entries.forEach { tab ->
@@ -122,7 +129,7 @@ internal fun PayBottomNav(selected: MainTab?, onSelect: (MainTab) -> Unit) {
 internal fun AppliedChips(chips: List<Pair<String, String>>, onRemove: (String) -> Unit, onReset: () -> Unit) {
     if (chips.isNotEmpty()) LazyRow(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(chips, key = { it.first }) { (key, label) ->
-            Box(Modifier.height(44.dp).clickable { onRemove(key) }, contentAlignment = Alignment.Center) {
+            Box(Modifier.heightIn(min = 48.dp).clickable { onRemove(key) }, contentAlignment = Alignment.Center) {
                 Surface(color = GreenTint, shape = RoundedCornerShape(15.dp)) {
                     Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(label, color = GreenDark, fontSize = 12.sp)
