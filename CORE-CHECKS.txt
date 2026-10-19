@@ -1,4 +1,14 @@
-PASS: 45 query and HTTP checks
-PASS: 62 identity/recognition/business checks
-PASS: 25 monitor/editor/plugin regressions
-Total: 132
+Futoon chat v0.8.1 — offline core checks
+
+PASS: 45 query and HTTP integration checks
+PASS: 62 identity, recognition and business contract checks
+PASS: module editor and monitoring regressions
+PASS: 75 floating geometry checks (portrait / landscape / IME / small windows / configurable height)
+PASS: 18 production automation dispatcher checks (callbacks / edited messages / durable deduplication / cooldown / account and group isolation / disable cancellation / draft isolation / same-owner relogin)
+PASS: 12 opening draft insertion and context checks; missing-guard negative control rejected
+PASS: 110 Android ICU business regexes and 5 opening variable cases; original bad pattern rejected
+PASS: startup lifecycle and theme refresh, AndroidX callback compatibility, send/media entrypoints, settings host ActionBar and quick reply return guards
+
+The actual Java automation dispatcher is exercised with controlled Telegram transport, clock, scheduler and storage adapters. Rule matching and extension serialization are tested in the real Kotlin module tests. No live callback, Telegram send or backend financial write is performed.
+
+Source and workflow evidence: BUILD.json

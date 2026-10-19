@@ -1,71 +1,86 @@
 {
-  "version": "0.8.0 custom native UI v1.1",
-  "versionCode": 71909,
+  "version": "0.8.1 native extensions",
+  "versionCode": 71919,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "5f9c7580c04e8a09830d2a551f79731754bf6a4041013c572234651abf91db32",
-  "source_baseline": "8dcfae372bbf0474e32a0f9698769d9b62bdcc02",
+  "patch_sha256": "c2dff407e3aac137603e093969eea7e4bcdf282a2515b3ac8ba78f91a3f172dd",
+  "source_baseline": "be9fae25ef4273a75fb1ffa3da3d3c3c11b0985b",
+  "source_commit": "34316dd8ece75cc024b9b1222180adfa44b5b8bd",
+  "source_tree": "e403dcd898b73d8913889609e35e3784b9a7b0b9",
   "validation": {
     "status": "passed",
-    "workflow_run": 39203102774,
-    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39203102774",
+    "workflow_run": 39247979971,
+    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39247979971",
+    "preflight_run": 39245481514,
     "jobs": {
-      "panel-ui": 117900074193,
-      "core-checks": 117900074300,
-      "native-admin": 117900074406,
-      "android": 117901082987
+      "panel-ui": 118044492776,
+      "core-checks": 118044493016,
+      "native-admin": 118044493065,
+      "android": 118046187369
     },
     "job_conclusions": "all success",
     "native_tests": {
-      "tests": 255,
+      "tests": 271,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "screenshots": 36,
+      "screenshots": 39,
       "lint_errors": 0,
-      "lint_warnings": 28
+      "lint_warnings": 29,
+      "lint_hints": 3
     },
     "regex": {
-      "android_icu_patterns": 107,
+      "android_icu_patterns": 110,
       "opening_variable_cases": 5,
       "original_invalid_pattern_negative_control": "passed"
     },
+    "automation_dispatch_checks": 18,
+    "floating_geometry_checks": 75,
     "core_checks": [
-      "startup lifecycle guards",
-      "quick reply draft and send/media entrypoints",
+      "startup lifecycle and theme refresh",
+      "quick reply, send and media entrypoints",
+      "native settings ActionBar",
       "Telegram identity matching",
       "HTTP and write contracts",
-      "floating panel geometry"
+      "draft conversation guards",
+      "durable automation deduplication, cooldown, cancellation and relogin"
     ],
     "apk_component_native_engine_audit": "passed",
-    "test_environment": "Robolectric SDK 35 and controlled synthetic transport",
-    "device_backend": "Android 17 device, system keyboard and live backend not tested; no live account creation, financial write, key reset or Telegram send performed"
+    "test_environment": "Robolectric SDK 35 and controlled synthetic Telegram/backend transport",
+    "device_backend": "Android 17 device, keyboard, gallery crop and live backend not tested; no live account creation, financial write, key reset, Telegram send or bot callback performed"
   },
   "features": {
-    "original_telegram_ui": "preserved",
     "native_ui_only": true,
-    "scoped_telegram_theme": true,
-    "quick_reply_preview_and_management_return": true,
-    "settings_three_entries": true,
-    "evidence_grid": true,
-    "grouped_opening": true,
-    "merchant_multi_match_choice": true,
-    "merchant_edit_review": true,
-    "write_result_verification": true
+    "original_telegram_ui": "preserved",
+    "internal_notes_removed": true,
+    "business_reply_templates": true,
+    "manual_send_only_for_reply_drafts": true,
+    "native_settings_actionbar": true,
+    "customizable_panel": true,
+    "customizable_appearance": true,
+    "gallery_entry_image_with_native_crop": true,
+    "default_background_dim": 0,
+    "remembered_recent_contexts": 4,
+    "account_backend_conversation_state_isolation": true,
+    "process_restart": "navigation and saved business forms; results reloaded",
+    "per_group_automation": true,
+    "new_automation_rules_enabled": false,
+    "automation_actions": [
+      "unique exact bot callback button",
+      "editable draft into empty conversation"
+    ],
+    "existing_merchant_order_settlement_modules": "preserved"
   },
   "previous_release": {
-    "version": "0.7.5",
-    "versionCode": 71899,
-    "source_commit": "417550df9327d78677d154cc603ffc9c45519046",
-    "apk_sha256": "b09b45ea6a74040c88de281b625f47a3b6642fca446fc46c563f4e95272f5c87",
+    "version": "0.8.0",
+    "versionCode": 71909,
+    "source_commit": "a22fbd817ed06558960d99cda0428887d1b4d86b",
+    "apk_sha256": "2db829f3194e8eb690db84d013344194f24c4336b092b5ba5cb1999fd5ce3cfe",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
   },
-  "source_commit": "a22fbd817ed06558960d99cda0428887d1b4d86b",
-  "source_tree": "f035a73c1669bc66a83b40cef5ae3c0f2dc59715",
   "apk": {
-    "filename": "SMS-Futoon-v0.8.0-arm64.apk",
-    "bytes": 41087814,
-    "sha256": "2db829f3194e8eb690db84d013344194f24c4336b092b5ba5cb1999fd5ce3cfe",
+    "bytes": 41147794,
+    "sha256": "0b6037ec62e8942e881bee51930dbc921ac9db663949fbf09b46ec99a94e7670",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -76,25 +91,26 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 17,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71909,
+    "versionCode": 71919,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
+    "filename": "SMS-Futoon-v0.8.1-arm64.apk",
     "same_signer_as_previous_release": true,
     "push_mode": "development-no-fcm (existing build mode; push delivery not tested)",
     "ci_sha256sums": "APK and R8 mapping verified"
   },
   "artifacts": {
     "apk": {
-      "id": 12165038362,
-      "name": "VineChat-Futoon-v0.8.0-native-development-no-fcm",
-      "zip_sha256": "b5fa4523c051ef73c84964c6597fc28c053702ec7dddb5dc8ed715ebd0a10db2"
+      "id": 12184787313,
+      "name": "VineChat-Futoon-v0.8.1-native-development-no-fcm",
+      "zip_sha256": "52de914e6bd9088b8a8b219cd7b058b63bfbfd6c2b0b4b998d43edad16cb6af8"
     },
     "native_reports": {
-      "id": 12163849219,
-      "name": "Futoon-v0.8.0-native-business-checks",
-      "zip_sha256": "7dd54a6c002d354857e6da043a6954c6bb4f691256326fce36a00667a02f57c0"
+      "id": 12184865415,
+      "name": "Futoon-v0.8.1-native-business-checks",
+      "zip_sha256": "92026fe86129c601a1d45894bf47b879b2d9f428d71f2c42541383409b76b7f2"
     }
   }
 }
