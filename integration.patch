@@ -4555,6 +4555,7 @@ index 0000000..59a1ecc
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java
 new file mode 100644
+index 0000000..98a8858
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java
 @@ -0,0 +1,459 @@
@@ -7921,6 +7922,7 @@ index 55d530f..8913fb4 100644
  RELEASE_KEY_ALIAS=androidkey
 diff --git a/Tools/futoon/FutoonPanelLayoutTest.java b/Tools/futoon/FutoonPanelLayoutTest.java
 new file mode 100644
+index 0000000..a0fa348
 --- /dev/null
 +++ b/Tools/futoon/FutoonPanelLayoutTest.java
 @@ -0,0 +1,27 @@
@@ -7951,9 +7953,9 @@ new file mode 100644
 +        System.out.println("PASS: "+checks+" native panel geometry checks (portrait, landscape, IME, small windows)");
 +    }
 +}
-
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java
 new file mode 100644
+index 0000000..54f0263
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java
 @@ -0,0 +1,16 @@
@@ -7970,11 +7972,12 @@ new file mode 100644
 +
 +    public static int sheetHeight(int available, int margin, int preferredMinimum, boolean large, boolean keyboard) {
 +        int maximum = Math.max(0, available - Math.max(0, margin) * 2);
-+        return large || keyboard ? maximum : Math.min(maximum, Math.max(preferredMinimum, available * 65 / 100));
++        return large || keyboard ? maximum : Math.min(maximum, Math.max(preferredMinimum, available * 85 / 100));
 +    }
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
 new file mode 100644
+index 0000000..8e52b23
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
 @@ -0,0 +1,32 @@
@@ -8092,9 +8095,10 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoade
      @SuppressLint("StaticFieldLeak")
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
+index 0000000..62ca8ad
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,225 @@
+@@ -0,0 +1,227 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -8145,7 +8149,7 @@ new file mode 100644
 +    private String initialText="",activeOrder="";
 +    private String exportText="";
 +    private int pickerGeneration;
-+    private boolean expanded,destroyed,paused,keyboard,ballPositioned,choosing;
++    private boolean fullscreen,expanded,destroyed,paused,keyboard,ballPositioned,choosing;
 +    private int lastBottomInset=-1,generation;
 +    private float downX,downY,startX,startY;
 +    private boolean dragged;
@@ -8213,8 +8217,10 @@ new file mode 100644
 +            public void openGallery(){AndroidUtilities.runOnUIThread(FutoonPanel.this::openGallery);}
 +            public void sendEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->FutoonPanel.this.sendEvidence(order,caption));}
 +        });
++        panel.setFullscreenHandler(()->{fullscreen=!fullscreen;resize();});
++        FutoonThemeBridge.bind(panel,panel::setThemeColors);
 +        panel.setVisibility(View.GONE);panel.setElevation(dp(12));
-+        GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(Color.WHITE);panelBg.setCornerRadius(dp(18));panel.setBackground(panelBg);panel.setClipToOutline(true);
++        GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundWhite));panelBg.setCornerRadius(dp(18));panel.setBackground(panelBg);panel.setClipToOutline(true);
 +        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,dp(600),Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL);lp.setMargins(dp(8),0,dp(8),dp(8));root.addView(panel,lp);
 +        applyContext();FutoonStore.Draft saved=FutoonStore.draft(account);if(saved!=null&&saved.address.equals(store.address())){panel.adoptEvidence(saved.order.data.toString(),saved.caption);panel.updateEvidenceCount(photos.size());}if(!initialText.isEmpty()){panel.recognize(initialText);initialText="";}
 +    }
@@ -8237,7 +8243,7 @@ new file mode 100644
 +        open("");panel.recognizeMessageBatch(text.toString(),pointers.toString());
 +    }
 +    public void collapse(){if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);}
-+    private void resize(){if(panel==null)return;int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(420),true,keyboard);int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
++    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(420),fullscreen,keyboard);int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
 +    public void resume(){paused=false;if(expanded&&panel!=null)panel.onShown();}
 +    public void pause(){paused=true;if(panel!=null)panel.onHidden();}
@@ -8513,56 +8519,74 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b
          boolean invalidate = false;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
+index 0000000..6097953
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,55 @@
 +package org.telegram.ui;
 +
 +import android.content.Context;
 +import android.view.View;
-+import com.futoonpay.admin.ChatToolsBridge;
++import com.futoonpay.admin.ChatToolsNavigationBridge;
 +import com.futoonpay.admin.ChatToolsView;
++import org.telegram.messenger.AndroidUtilities;
++import org.telegram.messenger.UserConfig;
 +import org.telegram.messenger.R;
 +import org.telegram.messenger.futoon.FutoonChatPreferences;
 +import org.telegram.ui.ActionBar.ActionBar;
 +import org.telegram.ui.ActionBar.BaseFragment;
 +
-+/** Native settings fragment inside Telegram's existing navigation. */
++/** Native custom settings, scoped to the selected Telegram account. */
 +public final class FutoonChatSettingsActivity extends BaseFragment {
 +    private ChatToolsView tools;
 +    private final boolean replies;
++    private String selectedTab = "", selectedCategory = "";
++    private Runnable returnToPicker;
 +    public FutoonChatSettingsActivity(int account) { this(account, false); }
 +    public FutoonChatSettingsActivity(int account, boolean replies) { currentAccount = account; this.replies = replies; }
++    public FutoonChatSettingsActivity(int account, String tab, String category, Runnable onReturn) { this(account, true); selectedTab = tab; selectedCategory = category; returnToPicker = onReturn; }
++    public String selectedTab() { return selectedTab; }
++    public String selectedCategory() { return selectedCategory; }
 +    @Override public View createView(Context context) {
 +        actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-+        actionBar.setTitle("FutoonPay 设置");
-+        actionBar.setAddToContainer(false);
-+        actionBar.setVisibility(View.GONE);
++        actionBar.setTitle("FutoonPay 设置"); actionBar.setAddToContainer(false); actionBar.setVisibility(View.GONE);
 +        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() { @Override public void onItemClick(int id) { if (id == -1) finishFragment(); } });
 +        FutoonChatPreferences preferences = FutoonChatPreferences.get(currentAccount);
-+        tools = new ChatToolsView(context, new ChatToolsBridge() {
++        tools = new ChatToolsView(context, new ChatToolsNavigationBridge() {
 +            public String load() { return preferences.raw(); }
 +            public void save(String json) throws Exception { preferences.save(currentAccount, json); }
++            public String accountLabel() { return "当前 Telegram 账号 · ID " + UserConfig.getInstance(currentAccount).getClientUserId(); }
++            public String selectedTab() { return selectedTab; }
++            public String selectedCategory() { return selectedCategory; }
++            public void rememberSelection(String tab, String category) { selectedTab = tab; selectedCategory = category; }
++            public void manageAt(String tab, String category) {}
 +            public void selectReply(String text) {}
 +            public void manage() {}
 +            public void originalSendOptions() {}
 +            public void close() { finishFragment(); }
-+        }, false, replies ? "replies" : "tags");
++        }, false, replies ? "replies" : "home");
++        FutoonThemeBridge.bind(tools, tools::setThemeColors);
 +        fragmentView = tools; return fragmentView;
 +    }
 +    @Override public void onResume() { super.onResume(); if (tools != null) tools.onShown(); }
 +    @Override public boolean onBackPressed(boolean invoked) { if (tools != null) { if (invoked) tools.handleBack(); return false; } return super.onBackPressed(invoked); }
 +    @Override public void onPause() { if (tools != null) tools.onHidden(); super.onPause(); }
-+    @Override public void onFragmentDestroy() { if (tools != null) { tools.close(); tools = null; } super.onFragmentDestroy(); }
++    @Override public void onFragmentDestroy() {
++        if (tools != null) { tools.close(); tools = null; }
++        super.onFragmentDestroy();
++        Runnable callback = returnToPicker; returnToPicker = null;
++        if (callback != null) AndroidUtilities.runOnUIThread(callback, 200);
++    }
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonQuickReplies.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonQuickReplies.java
 new file mode 100644
+index 0000000..db00637
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonQuickReplies.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,56 @@
 +package org.telegram.ui;
 +
-+import com.futoonpay.admin.ChatToolsBridge;
++import com.futoonpay.admin.ChatToolsNavigationBridge;
 +import com.futoonpay.admin.ChatToolsView;
 +import org.telegram.messenger.AndroidUtilities;
 +import org.telegram.messenger.UserConfig;
@@ -8571,35 +8595,54 @@ new file mode 100644
 +import java.util.function.Consumer;
 +
 +public final class FutoonQuickReplies {
-+    public static boolean show(ChatActivity parent, int account, Consumer<String> insert, Runnable originalSendOptions) {
++    public static boolean show(ChatActivity parent, int account, Consumer<String> insert, Runnable originalSendOptions) { return show(parent, account, insert, originalSendOptions, "", ""); }
++    private static boolean current(ChatActivity parent, int account, long owner, long dialog, long topic) {
++        return UserConfig.getInstance(account).getClientUserId() == owner && parent.getDialogId() == dialog && parent.getTopicId() == topic
++            && parent.getParentActivity() != null && parent.getFragmentView() != null && parent.getFragmentView().getWindowToken() != null
++            && parent.isLastFragment() && !parent.isPaused();
++    }
++    private static boolean show(ChatActivity parent, int account, Consumer<String> insert, Runnable originalSendOptions, String initialTab, String initialCategory) {
 +        if (parent == null || parent.getParentActivity() == null) return false;
 +        AndroidUtilities.hideKeyboard(parent.getFragmentView());
-+        long owner = UserConfig.getInstance(account).getClientUserId();
++        long owner = UserConfig.getInstance(account).getClientUserId(), dialogId = parent.getDialogId(), topic = parent.getTopicId();
 +        FutoonChatPreferences preferences = FutoonChatPreferences.get(account);
-+        BottomSheet[] sheet = new BottomSheet[1];
-+        Runnable[] after = new Runnable[1];
-+        ChatToolsView tools = new ChatToolsView(parent.getParentActivity(), new ChatToolsBridge() {
++        BottomSheet[] sheet = new BottomSheet[1]; Runnable[] after = new Runnable[1];
++        String[] selection = { initialTab, initialCategory };
++        ChatToolsView tools = new ChatToolsView(parent.getParentActivity(), new ChatToolsNavigationBridge() {
 +            public String load() { return preferences.raw(); }
 +            public void save(String json) throws Exception { preferences.save(account, json); }
-+            public void selectReply(String text) { after[0] = () -> insert.accept(text); close(); }
-+            public void manage() { after[0] = () -> parent.presentFragment(new FutoonChatSettingsActivity(account, true)); close(); }
++            public String accountLabel() { return "当前 Telegram 账号 · ID " + owner; }
++            public String selectedTab() { return selection[0]; }
++            public String selectedCategory() { return selection[1]; }
++            public void rememberSelection(String tab, String category) { selection[0] = tab; selection[1] = category; }
++            public void selectReply(String text) { if (text == null || text.length() > 4096) return; after[0] = () -> insert.accept(text); close(); }
++            public void manage() { manageAt(selection[0], selection[1]); }
++            public void manageAt(String tab, String category) {
++                after[0] = () -> {
++                    FutoonChatSettingsActivity[] settings = new FutoonChatSettingsActivity[1];
++                    settings[0] = new FutoonChatSettingsActivity(account, tab, category, () -> {
++                        if (current(parent, account, owner, dialogId, topic)) show(parent, account, insert, originalSendOptions, settings[0].selectedTab(), settings[0].selectedCategory());
++                    });
++                    parent.presentFragment(settings[0]);
++                };
++                close();
++            }
 +            public void originalSendOptions() { after[0] = originalSendOptions; close(); }
 +            public void close() { if (sheet[0] != null) sheet[0].dismiss(); }
 +        }, true);
++        FutoonThemeBridge.bind(tools, tools::setThemeColors);
 +        tools.setPanelHeight(Math.min(AndroidUtilities.dp(560), (int) (AndroidUtilities.displaySize.y * .72f)));
 +        sheet[0] = new BottomSheet.Builder(parent.getParentActivity()).setCustomView(tools).create();
-+        if (parent.showDialog(sheet[0], dialog -> {
-+            tools.close();
-+            Runnable action = after[0]; after[0] = null;
-+            if (action != null) AndroidUtilities.runOnUIThread(() -> {
-+                if (UserConfig.getInstance(account).getClientUserId() == owner && parent.getParentActivity() != null && parent.getFragmentView() != null && parent.getFragmentView().getWindowToken() != null) action.run();
-+            }, 100);
++        if (parent.showDialog(sheet[0], dismissed -> {
++            tools.close(); Runnable action = after[0]; after[0] = null;
++            if (action != null) AndroidUtilities.runOnUIThread(() -> { if (current(parent, account, owner, dialogId, topic)) action.run(); }, 100);
 +        }) == null) { sheet[0].dismiss(); tools.close(); return false; }
 +        tools.onShown(); return true;
 +    }
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java
 new file mode 100644
+index 0000000..d84bd58
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java
 @@ -0,0 +1,59 @@
@@ -8661,4 +8704,56 @@ new file mode 100644
 +    public static CharSequence decorate(int account, String telegramId, CharSequence name, TextPaint paint, int width) {
 +        return com.futoonpay.admin.ChatTagRenderer.decorate(name, get(account).tag(telegramId), paint, width, AndroidUtilities.density, Theme.isCurrentThemeDark());
 +    }
++}
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonThemeBridge.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonThemeBridge.java
+new file mode 100644
+index 0000000..173b7e4
+--- /dev/null
++++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonThemeBridge.java
+@@ -0,0 +1,46 @@
++package org.telegram.ui;
++
++import android.view.View;
++import java.util.function.Consumer;
++import org.json.JSONObject;
++import org.telegram.messenger.AndroidUtilities;
++import org.telegram.messenger.NotificationCenter;
++import org.telegram.ui.ActionBar.Theme;
++
++/** Reads the active Telegram theme without changing its global keys or account settings. */
++public final class FutoonThemeBridge implements View.OnAttachStateChangeListener, NotificationCenter.NotificationCenterDelegate {
++    private final View view;
++    private final Consumer<String> receiver;
++    private boolean observing;
++    private FutoonThemeBridge(View view, Consumer<String> receiver) { this.view = view; this.receiver = receiver; }
++    public static void bind(View view, Consumer<String> receiver) {
++        FutoonThemeBridge bridge = new FutoonThemeBridge(view, receiver);
++        view.addOnAttachStateChangeListener(bridge);
++        bridge.apply();
++        if (view.isAttachedToWindow()) bridge.onViewAttachedToWindow(view);
++    }
++    private void apply() {
++        try {
++            JSONObject colors = new JSONObject().put("dark", Theme.isCurrentThemeDark())
++                .put("surface", Theme.getColor(Theme.key_windowBackgroundWhite))
++                .put("background", Theme.getColor(Theme.key_windowBackgroundGray))
++                .put("text", Theme.getColor(Theme.key_windowBackgroundWhiteBlackText))
++                .put("secondaryText", Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2))
++                .put("accent", Theme.getColor(Theme.key_featuredStickers_addButton))
++                .put("accentText", Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4))
++                .put("buttonText", Theme.getColor(Theme.key_featuredStickers_buttonText))
++                .put("divider", Theme.getColor(Theme.key_divider))
++                .put("error", Theme.getColor(Theme.key_text_RedRegular))
++                .put("success", Theme.getColor(Theme.key_windowBackgroundWhiteGreenText2));
++            receiver.accept(colors.toString());
++        } catch (org.json.JSONException e) { throw new IllegalStateException("Unable to read Telegram theme", e); }
++    }
++    @Override public void onViewAttachedToWindow(View target) {
++        if (!observing) { NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didSetNewTheme); observing = true; }
++        apply();
++    }
++    @Override public void onViewDetachedFromWindow(View target) {
++        if (observing) { NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didSetNewTheme); observing = false; }
++    }
++    @Override public void didReceivedNotification(int id, int account, Object... args) { if (id == NotificationCenter.didSetNewTheme) AndroidUtilities.runOnUIThread(() -> { if (view.isAttachedToWindow()) apply(); }); }
 +}

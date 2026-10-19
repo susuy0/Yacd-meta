@@ -81,8 +81,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             merchant == null -> Text(state.merchantError ?: "当前会话未指定商户，可按 TGID 或 PID 手动查询", color = if (state.merchantError == null) Muted else Danger, fontSize = 12.sp)
             else -> {
                 if (!compact) Text("${merchant.username.ifBlank { "商户" }} · PID ${merchant.uid}", style = MaterialTheme.typography.titleMedium)
-                Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 11.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
-                if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 11.sp)
+                Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 12.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
+                if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户", fontSize = if (compact) 12.sp else 14.sp) }
                     OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "商户操作", fontSize = if (compact) 12.sp else 14.sp) }
@@ -147,7 +147,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 item { PayPills(queryKinds, state.queryKind, workflows::setKind) }
                 item { Row {
                     TextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
-                    if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 11.sp)
+                    if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 12.sp)
                 } }
                 if (Regex("[＊*…●•]{2,}").containsMatchIn(state.text)) item { Text("发现遮挡编号，请补全；不会用编号片段匹配订单。", color = Warning, fontSize = 12.sp) }
                 if (state.candidates.isNotEmpty()) {
@@ -164,8 +164,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                             OutlinedTextField(candidate.value, { workflows.editCandidate(candidate.id, value = it) }, modifier = Modifier.weight(1f), singleLine = true, enabled = !state.running, label = { Text(queryKindLabel(candidate.kind)) })
                         }
                         PayPills(queryKinds, candidate.kind) { workflows.editCandidate(candidate.id, kind = it) }
-                        Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 11.sp)
-                        if (candidate.error.isNotBlank()) Text(candidate.error, color = Warning, fontSize = 11.sp)
+                        Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 12.sp)
+                        if (candidate.error.isNotBlank()) Text(candidate.error, color = Warning, fontSize = 12.sp)
                         candidate.orders.forEach { raw -> val order = JSONObject(raw); OrderResultCard(order) { openOrder(order) } }
                         if (candidate.total > candidate.orders.size) TextButton(onClick = {
                             val column = when (candidate.matchedKind.ifBlank { candidate.kind }) { "PID" -> "uid"; "MERCHANT_ORDER" -> "out_trade_no"; "CHANNEL_ORDER" -> "api_trade_no"; else -> "trade_no" }
@@ -213,7 +213,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(4.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(order.optString("trade_no"), color = GreenDark)
             Text("PID ${order.optString("uid")} · ${order.optString("currency", "CNY")} ${order.optString("money")} · ${orderStatusLabel(order.optInt("status"))}", fontSize = 12.sp)
-            Text("查看订单与选择付款凭证 ›", color = Muted, fontSize = 11.sp)
+            Text("查看订单与选择付款凭证 ›", color = Muted, fontSize = 12.sp)
         }
     }
 }

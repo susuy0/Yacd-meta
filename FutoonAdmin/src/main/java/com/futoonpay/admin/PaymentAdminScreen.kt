@@ -1,5 +1,7 @@
 package com.futoonpay.admin
 
+import com.futoonpay.admin.ui.theme.CardColor
+import com.futoonpay.admin.ui.theme.ButtonText
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.imePadding
@@ -685,7 +687,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            if (state.spec.supportsAdd) Surface(color = Color.White) {
+            if (state.spec.supportsAdd) Surface(color = CardColor) {
                 Button(shape = RoundedCornerShape(10.dp), onClick = viewModel::openAdd, enabled = !state.loading,
                     modifier = Modifier.fillMaxWidth().padding(16.dp).height(48.dp)) {
                     Text("新建" + state.spec.title)
@@ -805,7 +807,7 @@ internal fun PaymentChannelScreen(state: PaymentAdminState, modifier: Modifier, 
         item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索名称、ID、支付方式或插件", fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
         val filters = document?.paymentChannelTypeFilters().orEmpty()
         if (filters.isNotEmpty()) item { PayTabs(filters.map { it.value to it.label }, state.channelType, onTypeChange) }
-        item { Text("${channels.size} 个通道 · 官网状态分类", color = Muted, fontSize = 11.sp) }
+        item { Text("${channels.size} 个通道 · 官网状态分类", color = Muted, fontSize = 12.sp) }
         item { MultiSelectBar(selection, channels.map { it.id }, paymentBatchOptions(state.spec.id, channels.filter { it.id in selection.selected }.map { PaymentBatchRow(it.id, "${it.name} #${it.id}", it.actions) }), state.loading, onBatch) }
         itemsIndexed(channels, key = { index, it -> "${it.id}:$index" }) { _, channel -> SelectableRecord(selection, channel.id, "通道 ${channel.id}") { PaymentChannelCard(channel, state.channelTab, onOpenDetail, onTest, onOrders, onAction) } }
         item { ListFeedback(state.loading && document == null, state.loadError, !state.loading && channels.isEmpty(), onRetry) }
@@ -827,7 +829,7 @@ private fun PaymentChannelCard(
         PaymentChannelStatus.DISABLED -> Danger
         PaymentChannelStatus.UNKNOWN -> Warning
     }
-    Card(modifier = Modifier.clickable { onOpenDetail(item) }, colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(modifier = Modifier.clickable { onOpenDetail(item) }, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -837,7 +839,7 @@ private fun PaymentChannelCard(
                         item.paymentType.takeIf(String::isNotBlank),
                         item.plugin.takeIf(String::isNotBlank),
                     ).joinToString(" · ")
-                    if (subtitle.isNotBlank()) Text(subtitle, color = Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (subtitle.isNotBlank()) Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 val toggle = item.actions.firstOrNull { action ->
                     if (displayedStatus == PaymentChannelStatus.ENABLED) action.label.contains("停用") || action.label.contains("关闭") || action.label.contains("禁用")
@@ -851,8 +853,8 @@ private fun PaymentChannelCard(
             }
             paymentChannelExtraFields(item).forEach { (label, value) ->
                 Row(Modifier.fillMaxWidth()) {
-                    Text(label, color = Muted, fontSize = 11.sp, modifier = Modifier.width(86.dp))
-                    Text(value, fontSize = 11.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(label, color = Muted, fontSize = 12.sp, modifier = Modifier.width(86.dp))
+                    Text(value, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             PayBadge(if (activeTab == PaymentChannelTab.ALL && item.statusText.isNotBlank()) item.statusText else displayedStatus.label, statusColor)
@@ -901,7 +903,7 @@ private fun PaymentChannelDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -928,7 +930,7 @@ private fun PaymentChannelDetailScreen(
                 }
             }
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         Text("支付插件", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                         if (detail == null && loading) Text("正在读取官网插件资料…", color = Muted, fontSize = 12.sp)
@@ -960,7 +962,7 @@ private fun PaymentChannelDetailScreen(
             }
             if (channel.actions.isNotEmpty()) item {
                 Text("通道管理", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+                Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
                     LazyRow(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         items(channel.actions.distinctBy { it.label to it.endpoint }) { action ->
                             TextButton(onClick = {
@@ -1042,7 +1044,7 @@ private fun PaymentTestDialog(
                     }) { Text("复制付款链接") }
                 } }
                 item {
-                Text("创建测试订单会使用官网同一接口；只有点击确认后才会提交。", color = Muted, fontSize = 11.sp)
+                Text("创建测试订单会使用官网同一接口；只有点击确认后才会提交。", color = Muted, fontSize = 12.sp)
                 }
             }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1057,7 +1059,7 @@ private fun PaymentTestDialog(
 @Composable
 private fun ChannelValueTile(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier.clip(RoundedCornerShape(9.dp)).background(MaterialTheme.colorScheme.primaryContainer).padding(10.dp)) {
-        Text(label, color = Muted, fontSize = 10.sp)
+        Text(label, color = Muted, fontSize = 12.sp)
         Text(value, color = Ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -1073,7 +1075,7 @@ private fun PaymentChannelSortPicker(
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(label, color = Muted, fontSize = 10.sp)
+                Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
             }
         }
@@ -1095,7 +1097,7 @@ private fun PaymentChannelGroupPicker(
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text("分组维度", color = Muted, fontSize = 10.sp)
+                Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
             }
         }
@@ -1136,7 +1138,7 @@ internal fun RollGroupScreen(state: PaymentAdminState, modifier: Modifier, query
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { PayPills(RollGroupTab.entries.map { it.name to it.label }, state.rollTab.name) { onTabChange(RollGroupTab.valueOf(it)) } }
         item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索名称、ID、支付方式", fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-        item { Text("${groups.size} 个轮询组 · 官网状态分类", color = Muted, fontSize = 11.sp) }
+        item { Text("${groups.size} 个轮询组 · 官网状态分类", color = Muted, fontSize = 12.sp) }
         item { MultiSelectBar(selection, groups.map { it.id }, paymentBatchOptions(state.spec.id, groups.filter { it.id in selection.selected }.map { PaymentBatchRow(it.id, "${it.name} #${it.id}", it.actions) }), state.loading, onBatch) }
         itemsIndexed(groups, key = { index, it -> "${it.id}:$index" }) { _, group -> SelectableRecord(selection, group.id, "轮询组 ${group.id}") { RollGroupCard(group, state.rollTab, onAction) } }
         item { ListFeedback(state.loading && document == null, state.loadError, !state.loading && groups.isEmpty(), onRetry) }
@@ -1156,7 +1158,7 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
         RollGroupStatus.DISABLED -> Danger
         RollGroupStatus.UNKNOWN -> Warning
     }
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -1166,12 +1168,12 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
                         item.paymentType.takeIf(String::isNotBlank),
                         item.mode.takeIf(String::isNotBlank),
                     ).joinToString(" · ")
-                    if (subtitle.isNotBlank()) Text(subtitle, color = Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (subtitle.isNotBlank()) Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Text(
                     if (activeTab == RollGroupTab.ALL && item.statusText.isNotBlank()) item.statusText else displayedStatus.label,
                     color = statusColor,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(statusColor.copy(alpha = .10f)).padding(horizontal = 9.dp, vertical = 5.dp),
                 )
@@ -1186,8 +1188,8 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
             }
             rollExtraFields(item).forEach { (label, value) ->
                 Row(Modifier.fillMaxWidth()) {
-                    Text(label, color = Muted, fontSize = 11.sp, modifier = Modifier.width(86.dp))
-                    Text(value, fontSize = 11.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(label, color = Muted, fontSize = 12.sp, modifier = Modifier.width(86.dp))
+                    Text(value, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (item.actions.isNotEmpty()) {
@@ -1210,7 +1212,7 @@ private fun RollSortPicker(label: String, value: RollSortDimension, onSelect: (R
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(label, color = Muted, fontSize = 10.sp)
+                Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
             }
         }
@@ -1228,7 +1230,7 @@ private fun RollGroupPicker(value: RollGroupDimension, onSelect: (RollGroupDimen
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text("分组维度", color = Muted, fontSize = 10.sp)
+                Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
             }
         }
@@ -1267,14 +1269,14 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
                     PayBadge(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else GreenDark)
                 }
                 Text(metrics.rate?.let(::formatMonitorRate) ?: if (metrics.total == 0) "暂无样本" else "暂无统计", color = GreenDark, fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
-                Text("成功率 · 近${window.label}", color = Muted, fontSize = 11.sp)
+                Text("成功率 · 近${window.label}", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("成功 ${metrics.successful ?: "—"}", color = Muted, fontSize = 12.sp)
                     Text("总订单 ${metrics.total ?: "—"}", color = Muted, fontSize = 12.sp)
                     Text("处理中 ${metrics.processing ?: "—"}", color = Muted, fontSize = 12.sp)
                 }
                 HorizontalDivider(color = Line)
-                Text("最近检测：${item.result.ifBlank { "未检测" }}${item.lastChecked.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()}", color = Muted, fontSize = 11.sp)
+                Text("最近检测：${item.result.ifBlank { "未检测" }}${item.lastChecked.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()}", color = Muted, fontSize = 12.sp)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(item.actions.distinctBy { it.label to it.endpoint }) { action -> TextButton(onClick = { onAction(action) }) { Text(action.label, color = if (action.destructive) Danger else GreenDark, fontSize = 12.sp) } }
                     item { TextButton(onClick = { onAction(NativeAction("通道详情", "futoon://channel-detail?id=${item.id}")) }) { Text("通道详情", fontSize = 12.sp) } }
@@ -1295,12 +1297,12 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
 private fun MonitorMetricCard(label: String, value: String, color: Color) {
     Card(
         modifier = Modifier.width(116.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardColor),
         border = CardDefaults.outlinedCardBorder(),
         shape = RoundedCornerShape(12.dp),
     ) {
         Column(Modifier.padding(horizontal = 13.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(label, color = Muted, fontSize = 11.sp, maxLines = 1)
+            Text(label, color = Muted, fontSize = 12.sp, maxLines = 1)
             Text(value, color = color, fontWeight = FontWeight.Bold, fontSize = 19.sp, maxLines = 1)
         }
     }
@@ -1314,7 +1316,7 @@ private fun ChannelMonitorCard(item: ChannelMonitorItem, onAction: (NativeAction
         MonitorHealth.UNKNOWN -> Warning
         MonitorHealth.DISABLED -> Muted
     }
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -1324,12 +1326,12 @@ private fun ChannelMonitorCard(item: ChannelMonitorItem, onAction: (NativeAction
                         item.paymentType.takeIf(String::isNotBlank),
                         item.plugin.takeIf(String::isNotBlank),
                     ).joinToString(" · ")
-                    if (subtitle.isNotBlank()) Text(subtitle, color = Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (subtitle.isNotBlank()) Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Text(
                     item.health.label,
                     color = healthColor,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(healthColor.copy(alpha = .10f)).padding(horizontal = 9.dp, vertical = 5.dp),
                 )
@@ -1344,11 +1346,11 @@ private fun ChannelMonitorCard(item: ChannelMonitorItem, onAction: (NativeAction
                 }
             }
             if (item.result.isNotBlank()) Text("监测结果：${item.result}", color = healthColor, fontSize = 12.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
-            if (item.lastChecked.isNotBlank()) Text("最近检测：${item.lastChecked}", color = Muted, fontSize = 11.sp)
+            if (item.lastChecked.isNotBlank()) Text("最近检测：${item.lastChecked}", color = Muted, fontSize = 12.sp)
             monitorExtraFields(item).forEach { (label, value) ->
                 Row(Modifier.fillMaxWidth()) {
-                    Text(label, color = Muted, fontSize = 11.sp, modifier = Modifier.width(86.dp))
-                    Text(value, fontSize = 11.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(label, color = Muted, fontSize = 12.sp, modifier = Modifier.width(86.dp))
+                    Text(value, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (item.id.isNotBlank() || item.actions.isNotEmpty()) {
@@ -1373,7 +1375,7 @@ private fun ChannelMonitorCard(item: ChannelMonitorItem, onAction: (NativeAction
 @Composable
 private fun MonitorRateCell(label: String, rate: Double?, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(label, color = Muted, fontSize = 9.sp, maxLines = 1)
+        Text(label, color = Muted, fontSize = 12.sp, maxLines = 1)
         Text(rate?.let(::formatMonitorRate) ?: "—", color = monitorRateColor(rate), fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
     }
 }
@@ -1384,7 +1386,7 @@ private fun MonitorSortPicker(label: String, value: MonitorSortDimension, onSele
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(label, color = Muted, fontSize = 10.sp)
+                Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
             }
         }
@@ -1402,7 +1404,7 @@ private fun MonitorGroupPicker(value: MonitorGroupDimension, onSelect: (MonitorG
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text("分组维度", color = Muted, fontSize = 10.sp)
+                Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
             }
         }
@@ -1423,6 +1425,7 @@ private fun SortDirectionButton(ascending: Boolean, onClick: () -> Unit) {
 
 private fun formatMonitorRate(rate: Double): String = if (rate % 1.0 == 0.0) "${rate.toInt()}%" else "%.1f%%".format(rate)
 
+@Composable
 private fun monitorRateColor(rate: Double?): Color = when {
     rate == null -> Muted
     rate >= 90 -> GreenDark
@@ -1437,7 +1440,7 @@ private fun monitorExtraFields(item: ChannelMonitorItem): List<Pair<String, Stri
 
 @Composable
 private fun PaymentRowCard(headers: List<String>, row: List<String>, actions: List<NativeAction>, onAction: (NativeAction) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEachIndexed { index, value ->
                 if (value.isNotBlank()) Row(Modifier.fillMaxWidth()) {
@@ -1501,7 +1504,7 @@ internal fun PaymentEditorScreen(
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            Surface(color = Color.White) { Row(Modifier.fillMaxWidth().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(color = CardColor) { Row(Modifier.fillMaxWidth().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onBack, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
                 Button(shape = RoundedCornerShape(10.dp), onClick = {
                     val submitted = values.filter { (name, value) -> val field = form.fields.first { it.name == name }; !field.readOnly && (!field.sensitive || value.isNotBlank()) }
@@ -1555,8 +1558,8 @@ internal fun PaymentEditorScreen(
                     } } } }
                 }
             }
-            if (form.fields.any { it.sensitive }) item { Text("密码与密钥留空时保留原值", color = Muted, fontSize = 11.sp) }
-            item { Text("非敏感配置自动保存草稿，提交成功后清除", color = Muted, fontSize = 11.sp) }
+            if (form.fields.any { it.sensitive }) item { Text("密码与密钥留空时保留原值", color = Muted, fontSize = 12.sp) }
+            item { Text("非敏感配置自动保存草稿，提交成功后清除", color = Muted, fontSize = 12.sp) }
         }
     }
     pluginChange?.let { next -> AlertDialog(shape = RoundedCornerShape(20.dp), onDismissRequest = { pluginChange = null },
@@ -1568,7 +1571,7 @@ internal fun PaymentEditorScreen(
 @Composable
 private fun RollRouteVisualization(items: List<RollRouteVisualItem>, onOpenChannel: (String) -> Unit) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardColor),
         border = CardDefaults.outlinedCardBorder(),
         shape = RoundedCornerShape(12.dp),
     ) {
@@ -1581,10 +1584,10 @@ private fun RollRouteVisualization(items: List<RollRouteVisualItem>, onOpenChann
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(route.channelLabel, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("通道 #${route.channelId} · 权重 ${route.weight}", color = Muted, fontSize = 10.sp)
+                            Text("通道 #${route.channelId} · 权重 ${route.weight}", color = Muted, fontSize = 12.sp)
                         }
                         Text("${(route.fraction * 100).toInt()}%", color = GreenDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        TextButton(onClick = { onOpenChannel(route.channelId) }) { Text("详情", fontSize = 11.sp) }
+                        TextButton(onClick = { onOpenChannel(route.channelId) }) { Text("详情", fontSize = 12.sp) }
                     }
                     Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(8.dp)).background(Line)) {
                         Box(
@@ -1595,7 +1598,7 @@ private fun RollRouteVisualization(items: List<RollRouteVisualItem>, onOpenChann
                     }
                 }
             }
-            Text("这是配置比例，不代表真实成交占比；顺序模式按配置顺序切换。", color = Muted, fontSize = 10.sp)
+            Text("这是配置比例，不代表真实成交占比；顺序模式按配置顺序切换。", color = Muted, fontSize = 12.sp)
         }
     }
 }

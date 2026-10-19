@@ -1,5 +1,7 @@
 package com.futoonpay.admin
 
+import com.futoonpay.admin.ui.theme.CardColor
+import com.futoonpay.admin.ui.theme.ButtonText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import android.os.Bundle
@@ -191,7 +193,7 @@ internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Un
                 title = {
                     Column {
                         Text(state.definition.title, fontWeight = FontWeight.SemiBold, fontSize = 19.sp)
-                        Text(state.definition.subtitle, color = Muted, fontSize = 11.sp, maxLines = 1)
+                        Text(state.definition.subtitle, color = Muted, fontSize = 12.sp, maxLines = 1)
                     }
                 },
                 actions = {
@@ -199,7 +201,7 @@ internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Un
                     if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
                     else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White, titleContentColor = Ink),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = CardColor, titleContentColor = Ink),
             )
         },
     ) { padding ->
@@ -266,7 +268,7 @@ private fun AjaxModuleScreen(
 @Composable
 private fun GenericRowCard(row: GenericRow, source: ModuleSource.Ajax, onDelete: () -> Unit) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardColor),
         border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp),
     ) {
         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -332,7 +334,7 @@ private fun NoticeCard(text: String) {
 
 @Composable
 internal fun NativeTableRow(headers: List<String>, row: List<String>) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEachIndexed { index, value ->
                 if (value.isNotBlank()) Row(Modifier.fillMaxWidth()) {
@@ -348,10 +350,10 @@ internal fun NativeTableRow(headers: List<String>, row: List<String>) {
 internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String, String>) -> Unit) {
     val values = remember(form) { mutableStateMapOf<String, String>().apply { form.fields.forEach { put(it.name, it.value) } } }
     var confirm by remember { mutableStateOf(false) }
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(form.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            Text("敏感字段不会从网页回填；留空表示不修改", color = Muted, fontSize = 11.sp)
+            Text("敏感字段不会从网页回填；留空表示不修改", color = Muted, fontSize = 12.sp)
             form.fields.filter { it.type != "hidden" }.forEach { field ->
                 NativeFieldEditor(field, values[field.name].orEmpty()) { values[field.name] = it }
             }
@@ -415,7 +417,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
                 fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("⌄", color = Muted, fontSize = 20.sp)
         }
-        if (field.options.isEmpty()) Text(if (field.name.equals("plugin", true)) "请先选择支付方式，插件列表从后台加载" else "后台未返回可选项", color = Muted, fontSize = 11.sp)
+        if (field.options.isEmpty()) Text(if (field.name.equals("plugin", true)) "请先选择支付方式，插件列表从后台加载" else "后台未返回可选项", color = Muted, fontSize = 12.sp)
     }
     if (expanded) com.futoonpay.admin.ui.PaySheet(field.label, { expanded = false }) {
         OutlinedTextField(query, { query = it }, placeholder = { Text("搜索可选项") }, singleLine = true,
@@ -424,9 +426,9 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 420.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             itemsIndexed(options, key = { index, it -> "${it.value}:$index" }) { _, option ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { if (confirmSelection) selected = option.value else { onValueChange(option.value); expanded = false } }
-                    .background(if (option.value == selected) MaterialTheme.colorScheme.primaryContainer else Color.White, RoundedCornerShape(10.dp))
+                    .background(if (option.value == selected) MaterialTheme.colorScheme.primaryContainer else CardColor, RoundedCornerShape(10.dp))
                     .padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) { Text(option.label, fontSize = 14.sp); if (field.name == "plugin") Text(option.value, color = Muted, fontSize = 11.sp) }
+                    Column(Modifier.weight(1f)) { Text(option.label, fontSize = 14.sp); if (field.name == "plugin") Text(option.value, color = Muted, fontSize = 12.sp) }
                     if (option.value == selected) Text("✓", color = GreenDark)
                 }
             }

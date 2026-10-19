@@ -6,6 +6,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -89,6 +93,10 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     private var query by mutableStateOf<RecognizedQuery?>(null)
     private var evidenceRevision by mutableStateOf(0)
     private var closed = false
+    private var palette by mutableStateOf(FutoonPalette())
+    private var fullscreen by mutableStateOf(false)
+    private var keyboardVisible by mutableStateOf(false)
+    private var fullscreenHandler: Runnable? = null
 
     init {
         stateController.performAttach()
@@ -101,7 +109,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent {
             CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) {
-                FutoonTheme { EmbeddedPanelRoot(environment, bridge, navigation, chat, query, evidenceRevision) }
+                FutoonTheme(palette) { EmbeddedPanelRoot(environment, bridge, navigation, chat, query, evidenceRevision, fullscreen, keyboardVisible) { fullscreenHandler?.run() } }
             }
         }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -114,6 +122,9 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         if (!closed) composition.prepare()
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
+    fun setThemeColors(json: String) { if (!closed) { palette = FutoonPalette.parse(json); setBackgroundColor(palette.surface.toArgb()) } }
+    fun setFullscreenHandler(callback: Runnable) { fullscreenHandler = callback }
+    fun setWindowState(full: Boolean, keyboard: Boolean) { fullscreen = full; keyboardVisible = keyboard }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
     fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }
     fun recognize(text: String?) { recognizeText(text.orEmpty(), chat.dialog, chat.topic, 0, false) }
@@ -135,7 +146,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int) {
+@Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, fullscreen: Boolean = false, keyboard: Boolean = false, onFullscreen: () -> Unit = {}) {
     val auth: AppViewModel = viewModel(key = "session", factory = AppViewModel.Factory(environment))
     val state by auth.state.collectAsState()
     val sessionKey = state.adminUrl + ":" + state.accountName + ":" + bridge.accountScope()
@@ -176,10 +187,12 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     CompositionLocalProvider(LocalPanelNavigation provides navigation, LocalPanelWorkflows provides workflows, LocalWorkflowCopy provides bridge::copy) {
         PanelOverlayHost {
             Column(Modifier.fillMaxSize().background(Mist)) {
-                Row(Modifier.fillMaxWidth().height(36.dp).padding(start = 12.dp, end = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (chat.telegramId.isBlank()) chat.label.ifBlank { "FUTOON PAY" } else "${chat.label} · TG ${chat.telegramId}", Modifier.weight(1f), color = Muted, fontSize = 10.sp, maxLines = 1)
-                    IconButton(onClick = bridge::collapse, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Close, "收起悬浮窗", Modifier.size(19.dp)) }
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(CardColor).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("FUTOON PAY", Modifier.weight(1f), color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
+                    IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
                 }
+                PanelContextStrip(chat, workflowState, keyboard)
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     when (state.authStage) {
                         AuthStage.CHECKING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -193,9 +206,16 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                         }
                     }
                 }
-                if (state.authStage == AuthStage.AUTHENTICATED) NavigationBar(containerColor = androidx.compose.ui.graphics.Color.White, modifier = Modifier.height(64.dp), windowInsets = WindowInsets(0, 0, 0, 0)) {
-                    listOf(Triple("recognition", "识别", Icons.Default.DocumentScanner), Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("merchants", "商户", Icons.Default.Storefront), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView)).forEach { (id, title, icon) ->
-                        NavigationBarItem(selected = navigator.tab == id, onClick = { navigator.select(id) }, icon = { Icon(icon, title, Modifier.size(20.dp)) }, label = { Text(title, fontSize = 11.sp) }, colors = NavigationBarItemDefaults.colors(selectedIconColor = GreenDark, selectedTextColor = GreenDark, indicatorColor = GreenTint, unselectedIconColor = Muted, unselectedTextColor = Muted))
+                if (state.authStage == AuthStage.AUTHENTICATED) {
+                    HorizontalDivider(color = Line)
+                    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).background(CardColor)) {
+                        listOf(Triple("recognition", "识别", Icons.Default.DocumentScanner), Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("merchants", "商户", Icons.Default.Storefront), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView)).forEach { (id, title, icon) ->
+                            val active = navigator.tab == id
+                            Column(Modifier.weight(1f).heightIn(min = 52.dp).clickable { navigator.select(id) }.padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)) {
+                                Icon(icon, title, Modifier.size(20.dp), tint = if (active) GreenDark else Muted)
+                                Text(title, fontSize = 12.sp, color = if (active) GreenDark else Muted)
+                            }
+                        }
                     }
                 }
             }
@@ -328,9 +348,26 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                 if (record.optString("sendState").isNotBlank()) item { Text(record.optString("sendState"), color = GreenDark, fontSize = 12.sp) }
                 if (record.optString("note").isNotBlank()) item { Text("内部备注：${record.optString("note")}", color = Muted, fontSize = 12.sp) }
                 val log = record.optJSONArray("log")
-                if (log != null) items(log.length()) { index -> Text(log.optString(index), color = Muted, fontSize = 11.sp) }
+                if (log != null) items(log.length()) { index -> Text(log.optString(index), color = Muted, fontSize = 12.sp) }
             }
         }
         Button(enabled = paths.isNotEmpty(), onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().padding(12.dp).height(48.dp)) { Text("选择收件人并预览") }
+    }
+}
+
+@Composable private fun PanelContextStrip(chat: ChatScope, state: WorkflowState, keyboard: Boolean) {
+    var expanded by rememberSaveable(chat.key) { mutableStateOf(false) }
+    val merchant = state.merchant?.let { JSONObject(it) }
+    Column(Modifier.fillMaxWidth().background(GreenTint).clickable { expanded = !expanded }.padding(horizontal = 12.dp, vertical = if (keyboard) 4.dp else 7.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(chat.label.ifBlank { "当前会话" }, Modifier.weight(1f), color = Ink, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "收起会话信息" else "展开会话信息", tint = GreenDark, modifier = Modifier.size(20.dp))
+        }
+        if (!keyboard || expanded) Text(when { state.merchantLoading -> "正在识别商户…"; merchant != null -> "PID ${merchant.optString("uid")} · ${state.merchantSource}"; else -> "${state.merchantSource.ifBlank { "未指定商户" }} · 可在商户页手动查询" }, color = Muted, fontSize = 12.sp, maxLines = if (expanded) 3 else 1, overflow = TextOverflow.Ellipsis)
+        if (expanded) {
+            Text("Telegram ID：${chat.telegramId.ifBlank { "未识别" }}", color = Ink, fontSize = 13.sp)
+            if (chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
+            if (chat.topic != 0L) Text("话题 ${chat.topic}", color = Muted, fontSize = 12.sp)
+        }
     }
 }

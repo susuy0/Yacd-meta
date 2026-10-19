@@ -1,5 +1,7 @@
 package com.futoonpay.admin
 
+import com.futoonpay.admin.ui.theme.CardColor
+import com.futoonpay.admin.ui.theme.ButtonText
 import android.os.Bundle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
@@ -278,7 +280,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
 private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAction: (PendingDomainAction) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val color = when (row.status) { 1 -> GreenDark; 2 -> Danger; else -> Warning }
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onReview), colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onReview), colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -286,7 +288,7 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
                     Text("商户 ${row.merchantId} · ID ${row.id}", color = Muted, fontSize = 12.sp)
                 }
                 Text(
-                    domainAuditStatusLabel(row.status), color = color, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
+                    domainAuditStatusLabel(row.status), color = color, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
                     modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = .1f)).padding(horizontal = 8.dp, vertical = 4.dp),
                 )
                 Box {

@@ -57,7 +57,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
             Spacer(Modifier.height(28.dp))
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.size(44.dp).background(GreenDark, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                    Text("F", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+                    Text("F", color = ButtonText, fontWeight = FontWeight.Bold, fontSize = 25.sp)
                 }
                 Column { Text("FUTOON PAY", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("管理端", color = Muted, fontSize = 12.sp) }
             }
@@ -69,9 +69,9 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
         item {
             PayCard {
                 LoginField("官网域名或基础地址", origin, { origin = it; error = null }, "https://pay.example.com", KeyboardType.Uri)
-                Text("包含 https://，不带路径", color = Muted, fontSize = 11.sp)
+                Text("包含 https://，不带路径", color = Muted, fontSize = 12.sp)
                 LoginField("后台路径", path, { path = it; error = null }, "/admin", KeyboardType.Uri)
-                Text("以 / 开头，可修改，保存在本机", color = Muted, fontSize = 11.sp)
+                Text("以 / 开头，可修改，保存在本机", color = Muted, fontSize = 12.sp)
                 if (!connected) OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = {
                     runCatching { composeBackendAddress(origin, path) }.onSuccess(onConnect).onFailure { error = it.message }
                 }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(if (busy) "正在连接…" else "连接后台") }
@@ -105,10 +105,10 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
             Button(shape = RoundedCornerShape(10.dp), onClick = { onLogin(username, password, captcha) },
                 enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
+                if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = ButtonText, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.height(16.dp))
-            Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 10.sp)
+            Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 12.sp)
         }
     }
 }
@@ -165,7 +165,7 @@ internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onS
 private fun MenuRow(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClick = onClick).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(38.dp).background(GreenTint, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = GreenDark, modifier = Modifier.size(20.dp)) }
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text(title, fontSize = 14.sp, fontWeight = FontWeight.Medium); Text(subtitle, color = Muted, fontSize = 11.sp) }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text(title, fontSize = 14.sp, fontWeight = FontWeight.Medium); Text(subtitle, color = Muted, fontSize = 12.sp) }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted, modifier = Modifier.size(18.dp))
     }
 }
@@ -188,7 +188,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
     var error by remember { mutableStateOf<String?>(null) }
     BackHandler { if (edit) edit = false else onBack() }
     Scaffold(containerColor = Mist, topBar = { PayTopBar(if (edit) "更换后台地址" else "设置", { if (edit) edit = false else onBack() }) }, bottomBar = {
-        if (edit) Surface(color = Color.White) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (edit) Surface(color = CardColor) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).height(48.dp)) { Text("取消") }
             Button(shape = RoundedCornerShape(10.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).height(48.dp)) { Text("保存并重新登录") }
         } }
@@ -198,9 +198,9 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                 item { Text("保存后会退出当前登录，用新地址重新登录", color = Muted, fontSize = 13.sp) }
                 item { PayCard {
                     LoginField("官网域名或基础地址", origin, { origin = it; error = null }, "https://pay.example.com", KeyboardType.Uri)
-                    Text("包含 https://，不带路径", color = Muted, fontSize = 11.sp)
+                    Text("包含 https://，不带路径", color = Muted, fontSize = 12.sp)
                     LoginField("后台路径", path, { path = it; error = null }, "/admin", KeyboardType.Uri)
-                    Text("以 / 开头，可修改", color = Muted, fontSize = 11.sp)
+                    Text("以 / 开头，可修改", color = Muted, fontSize = 12.sp)
                 } }
                 error?.let { item { Text(it, color = Danger) } }
             } else {
@@ -211,7 +211,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                     DataRow("官网地址", backend.origin); DataRow("后台路径", backend.path)
                     HorizontalDivider(color = Line)
                     TextButton(onClick = { edit = true }, modifier = Modifier.fillMaxWidth()) { Text("更换后台地址 ›") }
-                    Text("更换后需要重新登录", color = Muted, fontSize = 11.sp)
+                    Text("更换后需要重新登录", color = Muted, fontSize = 12.sp)
                 } }
                 item { SectionLabel("版本信息") }
                 item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", "com.futoonpay.vinechat.beta") } }

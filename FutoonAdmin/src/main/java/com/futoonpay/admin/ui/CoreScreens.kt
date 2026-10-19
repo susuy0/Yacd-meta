@@ -1,5 +1,7 @@
 package com.futoonpay.admin.ui
 
+import com.futoonpay.admin.ui.theme.CardColor
+import com.futoonpay.admin.ui.theme.ButtonText
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -161,10 +163,10 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("共 ${state.orderTotal} 笔 · 服务器查询", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                Text(if (state.orderChannelStatsLoading) "成功率更新中…" else "30秒自动刷新", color = Muted, fontSize = 10.sp)
+                Text(if (state.orderChannelStatsLoading) "成功率更新中…" else "30秒自动刷新", color = Muted, fontSize = 12.sp)
             }
         }
-        state.orderChannelStatsMessage?.let { item { Text(it, color = Warning, fontSize = 11.sp) } }
+        state.orderChannelStatsMessage?.let { item { Text(it, color = Warning, fontSize = 12.sp) } }
         item { ListFeedback(state.ordersLoading && state.orders.isEmpty(), state.ordersError, !state.ordersLoading && state.orders.isEmpty(), { viewModel.loadOrders(state.orderPage) }) }
         itemsIndexed(state.orders, key = { index, item -> "${item.tradeNo}:$index" }) { _, order ->
             SelectableRecord(selection, order.tradeNo, order.tradeNo) {
@@ -224,7 +226,7 @@ private fun CurrentOrderMetrics(orders: List<OrderSummary>, page: Int) {
     val rate = if (orders.isEmpty()) null else successful * 100.0 / orders.size
     androidx.compose.material3.Surface(color = com.futoonpay.admin.ui.theme.GreenTint, shape = RoundedCornerShape(12.dp)) { Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("当前页 · 第 $page 页 (${orders.size} 条)", color = Muted, fontSize = 11.sp)
+            Text("当前页 · 第 $page 页 (${orders.size} 条)", color = Muted, fontSize = 12.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { Text("订单 ${orders.size}", fontSize = 13.sp); Text("成功 $successful", fontSize = 13.sp) }
@@ -236,7 +238,7 @@ private fun CurrentOrderMetrics(orders: List<OrderSummary>, page: Int) {
 
 @Composable
 private fun MetricText(label: String, value: String, modifier: Modifier) {
-    Column(modifier) { Text(label, color = Muted, fontSize = 11.sp); Text(value, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
+    Column(modifier) { Text(label, color = Muted, fontSize = 12.sp); Text(value, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) }
 }
 
 @Composable
@@ -249,14 +251,14 @@ private fun OrderCard(order: OrderSummary, channelStat: OrderChannelStat?, chann
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
             StatusPill(orderStatusLabel(order.status), orderStatusColor(order.status))
         }
-        if (order.merchantTradeNo.isNotBlank()) Text("商户单 ${order.merchantTradeNo}", color = Muted, fontSize = 11.sp)
+        if (order.merchantTradeNo.isNotBlank()) Text("商户单 ${order.merchantTradeNo}", color = Muted, fontSize = 12.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${order.merchantName} UID ${order.merchantId}".trim(), color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
             Text(displayOrderAmount(order.amount, order.currency), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(order.paymentType, color = Muted, fontSize = 11.sp)
-            Text(order.createdAt, color = Muted, fontSize = 10.sp)
+            Text(order.paymentType, color = Muted, fontSize = 12.sp)
+            Text(order.createdAt, color = Muted, fontSize = 12.sp)
         }
         if (order.channelId.isNotBlank()) {
             Spacer(Modifier.height(6.dp))
@@ -265,7 +267,7 @@ private fun OrderCard(order: OrderSummary, channelStat: OrderChannelStat?, chann
                 Text("${channelStat?.channelName?.ifBlank { "通道" } ?: "通道"} #${order.channelId}",
                     Modifier.weight(1f), color = Ink, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Box(Modifier.heightIn(min = 44.dp).clickable(onClick = onChannelStat).padding(start = 8.dp), contentAlignment = Alignment.Center) {
-                androidx.compose.material3.Surface(shape = RoundedCornerShape(13.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), color = Color.White) {
+                androidx.compose.material3.Surface(shape = RoundedCornerShape(13.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Line), color = CardColor) {
                 Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(when { channelStat?.fiveMinuteRate != null -> formatRate(channelStat.fiveMinuteRate); channelLoading -> "更新中…"; else -> "暂无样本" },
                         color = Ink, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -275,7 +277,7 @@ private fun OrderCard(order: OrderSummary, channelStat: OrderChannelStat?, chann
                         channelStat.countsOfficial -> "${channelStat.successful}/${channelStat.total} · 近5分钟"
                         else -> "近5分钟 · 官方成功率"
                     },
-                        color = Muted, fontSize = 10.sp)
+                        color = Muted, fontSize = 12.sp)
                 } } }
             }
         }
@@ -300,7 +302,7 @@ private fun ChannelRateCard(stat: OrderChannelStat?, loading: Boolean, onClick: 
                         rate != null -> "近5分钟成功率 · ${formatRate(rate)}"
                         else -> "近5分钟成功率 · 暂无样本"
                     },
-                    color = if (rate == null) Muted else rateColor(rate), fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
+                    color = if (rate == null) Muted else rateColor(rate), fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
                 )
                 Text(
                     when {
@@ -308,10 +310,10 @@ private fun ChannelRateCard(stat: OrderChannelStat?, loading: Boolean, onClick: 
                         stat.source == ChannelRateSource.OFFICIAL -> "官网监测 · 成功 ${stat.successful}/${stat.total} · 处理中 ${stat.processing}"
                         else -> "当前页降级样本 · 成功 ${stat.successful}/${stat.total} · 处理中 ${stat.processing}"
                     },
-                    color = Muted, fontSize = 9.sp,
+                    color = Muted, fontSize = 12.sp,
                 )
             }
-            Text("详情", color = GreenDark, fontSize = 10.sp)
+            Text("详情", color = GreenDark, fontSize = 12.sp)
         }
     }
 }
@@ -339,16 +341,16 @@ private fun ChannelHealthDialog(
                     verticalArrangement = Arrangement.spacedBy(11.dp),
                 ) {
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
                             Column(Modifier.padding(17.dp)) {
                                 Text(
                                     if (stat?.source == ChannelRateSource.OFFICIAL) "近5分钟 · 全通道统计" else "近5分钟 · 当前页样本",
                                     color = Muted, fontSize = 12.sp,
                                 )
                                 Text(rate?.let(::formatRate) ?: "暂无样本", color = GreenDark, fontSize = 32.sp, fontWeight = FontWeight.SemiBold)
-                                Text(stat?.note ?: "官网暂未返回该通道数据", color = Muted, fontSize = 11.sp)
+                                Text(stat?.note ?: "官网暂未返回该通道数据", color = Muted, fontSize = 12.sp)
                                 Spacer(Modifier.height(13.dp))
-                                Text(if (stat?.countsOfficial == true) "全通道订单数量" else "以下数量为当前页近5分钟样本", color = Muted, fontSize = 11.sp)
+                                Text(if (stat?.countsOfficial == true) "全通道订单数量" else "以下数量为当前页近5分钟样本", color = Muted, fontSize = 12.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                                     HealthHeroMetric("成功", stat?.successful, Modifier.weight(1f))
                                     HealthHeroMetric("总订单", stat?.total, Modifier.weight(1f))
@@ -366,31 +368,31 @@ private fun ChannelHealthDialog(
                         }
                     }
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("当前页样本 · 每分钟趋势", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 Spacer(Modifier.height(10.dp))
                                 MerchantSparkline(stat?.minuteBuckets?.reversed()?.map(Int::toDouble).orEmpty(), Modifier.fillMaxWidth().height(105.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    listOf("-4m", "-3m", "-2m", "-1m", "现在").forEach { Text(it, color = Muted, fontSize = 9.sp) }
+                                    listOf("-4m", "-3m", "-2m", "-1m", "现在").forEach { Text(it, color = Muted, fontSize = 12.sp) }
                                 }
                             }
                         }
                     }
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("最近订单与状态明细", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 Spacer(Modifier.height(7.dp))
                                 if (stat?.recentOrders.isNullOrEmpty()) {
-                                    Text("当前页最近5分钟没有该通道订单。", color = Muted, fontSize = 11.sp)
+                                    Text("当前页最近5分钟没有该通道订单。", color = Muted, fontSize = 12.sp)
                                 } else stat?.recentOrders.orEmpty().forEachIndexed { index, order ->
                                     Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Column(Modifier.weight(1f)) {
-                                            Text(order.tradeNo, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                            Text(order.createdAt, color = Muted, fontSize = 9.sp)
+                                            Text(order.tradeNo, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            Text(order.createdAt, color = Muted, fontSize = 12.sp)
                                         }
-                                        Text(money(order.amount), fontWeight = FontWeight.Medium, fontSize = 11.sp)
+                                        Text(money(order.amount), fontWeight = FontWeight.Medium, fontSize = 12.sp)
                                         Spacer(Modifier.width(7.dp))
                                         StatusPill(orderStatusLabel(order.status), orderStatusColor(order.status))
                                     }
@@ -400,7 +402,7 @@ private fun ChannelHealthDialog(
                         }
                     }
                     item {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -487,7 +489,7 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         }
                     }
                     if (detail.status == 1 || detail.status == 2 || detail.status == 3) Row(
-                        Modifier.fillMaxWidth().background(Color.White).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Modifier.fillMaxWidth().background(CardColor).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         actions.firstOrNull { it.action == "notify" }?.let { action -> OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("重新通知") } }
                         actions.firstOrNull { it.action == "refund" }?.let { action -> Button(shape = RoundedCornerShape(10.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("退款") } }
                     }
@@ -510,21 +512,21 @@ private fun notifyLabel(detail: OrderDetail) = when {
 
 @Composable
 private fun TimelineStep(title: String, subtitle: String, complete: Boolean, modifier: Modifier, failed: Boolean = false) {
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(10.dp)) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(if (failed) Danger else if (complete) GreenDark else Line))
             Spacer(Modifier.height(8.dp))
-            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1)
-            Text(subtitle, color = Muted, fontSize = 9.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
+            Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun CompactMetric(label: String, value: String, modifier: Modifier, valueColor: Color = Ink) {
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(11.dp)) {
-            Text(label, color = Muted, fontSize = 10.sp)
+            Text(label, color = Muted, fontSize = 12.sp)
             Text(value, color = valueColor, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
@@ -532,13 +534,13 @@ private fun CompactMetric(label: String, value: String, modifier: Modifier, valu
 
 @Composable
 private fun DetailBlock(title: String, rows: List<Pair<String, String>>) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(14.dp)) {
             Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             Spacer(Modifier.height(8.dp))
             rows.forEachIndexed { index, (label, value) ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Text(label, color = Muted, fontSize = 11.sp, modifier = Modifier.width(92.dp))
+                    Text(label, color = Muted, fontSize = 12.sp, modifier = Modifier.width(92.dp))
                     SelectionContainer(Modifier.weight(1f)) { Text(value.ifBlank { "—" }, color = Ink, fontSize = 13.sp) }
                 }
                 if (index < rows.lastIndex) HorizontalDivider(color = Line)
@@ -685,7 +687,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
     val context = LocalContext.current
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var expanded by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail), colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail), colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -708,7 +710,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
             if (item.usdtAmount.isNotBlank()) Text("${item.usdtAmount} USDT  ·  汇率 ${item.usdtRate}", color = GreenDark, fontSize = 13.sp)
             Spacer(Modifier.height(9.dp))
             Text("${item.chain.ifBlank { item.payType }}  ·  ${maskAccount(item.account)}", color = Muted, fontSize = 12.sp)
-            Text("申请 ${item.createdAt}", color = Muted, fontSize = 11.sp)
+            Text("申请 ${item.createdAt}", color = Muted, fontSize = 12.sp)
             if (item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
             if (item.merchantId.isNotBlank()) {
                 TextButton(onClick = {
@@ -794,7 +796,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
             TextButton(onClick = { advanced = true }) { Text("完整搜索") }
         } }
         if (state.merchantSearch.value.isNotBlank() || state.merchantSearch.groupId.isNotBlank() || state.merchantSearch.status != "0") item {
-            Text("已筛选：${state.merchantSearch.value} · 用户组 ${state.merchantSearch.groupId.ifBlank { "全部" }} · ${MERCHANT_STATUSES.firstOrNull { it.first == state.merchantSearch.status }?.second ?: state.merchantSearch.status}", color = GreenDark, fontSize = 11.sp)
+            Text("已筛选：${state.merchantSearch.value} · 用户组 ${state.merchantSearch.groupId.ifBlank { "全部" }} · ${MERCHANT_STATUSES.firstOrNull { it.first == state.merchantSearch.status }?.second ?: state.merchantSearch.status}", color = GreenDark, fontSize = 12.sp)
         }
         item { ListFeedback(state.merchantsLoading && state.merchants.isEmpty(), state.merchantsError, !state.merchantsLoading && state.merchants.isEmpty(), { viewModel.loadMerchants(state.merchantPage) }) }
         item { MerchantMetrics(state) }
@@ -803,7 +805,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("${state.merchantTotal} 个商户", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                    Text(if (state.merchantFlowLoading) "正在统计7日流水" else "余额、权限与7日流水", color = Muted, fontSize = 11.sp)
+                    Text(if (state.merchantFlowLoading) "正在统计7日流水" else "余额、权限与7日流水", color = Muted, fontSize = 12.sp)
                 }
                 TextButton(onClick = { viewModel.loadMerchantFlows() }, enabled = !state.merchantFlowLoading) { Text("刷新流水") }
             }
@@ -882,7 +884,7 @@ private fun MerchantCard(
     var expanded by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onDetail),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = CardColor),
         border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp),
     ) {
         Column(Modifier.padding(14.dp)) {
@@ -928,7 +930,7 @@ private fun MerchantCard(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .45f))) {
                 Column(Modifier.padding(horizontal = 11.dp, vertical = 9.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("近7日流水", color = Muted, fontSize = 11.sp)
+                        Text("近7日流水", color = Muted, fontSize = 12.sp)
                         Text(
                             when { flow != null -> money(flow.total); flowLoading -> "统计中…"; else -> "暂无统计" },
                             color = GreenDark, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
@@ -1053,7 +1055,7 @@ internal fun MerchantDetailDialog(
                 item { PayTabs((listOf("CNY") + amounts.keys).distinct().map { it to it }, currency) { currency = it } }
                 error?.let { item { Text(it, color = Danger); TextButton(onClick = { onDays(days) }) { Text("重试") } } }
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                         Column(Modifier.padding(14.dp)) {
                             Text("${if (days == 1) "今日" else "近${days}天"}流水趋势 · $currency", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                             Spacer(Modifier.height(12.dp))
@@ -1066,8 +1068,8 @@ internal fun MerchantDetailDialog(
                                         Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .55f)).padding(8.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
-                                        Text(point.date.takeLast(5), color = Muted, fontSize = 9.sp)
-                                        Text("%.2f".format(Locale.US, point.total), fontWeight = FontWeight.Medium, fontSize = 10.sp)
+                                        Text(point.date.takeLast(5), color = Muted, fontSize = 12.sp)
+                                        Text("%.2f".format(Locale.US, point.total), fontWeight = FontWeight.Medium, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -1097,7 +1099,7 @@ internal fun MerchantDetailDialog(
                     )
                 }
                 item {
-                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), border = CardDefaults.outlinedCardBorder()) {
+                    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                         Column(Modifier.padding(14.dp)) {
                             Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -1129,9 +1131,9 @@ internal fun MerchantDetailDialog(
 
 @Composable
 private fun FlowHeroMetric(label: String, value: Double, modifier: Modifier) {
-    Column(modifier.clip(RoundedCornerShape(9.dp)).background(Color.White.copy(alpha = .09f)).padding(9.dp)) {
-        Text(label, color = Color.White.copy(alpha = .65f), fontSize = 9.sp)
-        Text(money(value), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, maxLines = 1)
+    Column(modifier.clip(RoundedCornerShape(9.dp)).background(ButtonText.copy(alpha = .09f)).padding(9.dp)) {
+        Text(label, color = ButtonText.copy(alpha = .80f), fontSize = 12.sp)
+        Text(money(value), color = ButtonText, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -1243,7 +1245,7 @@ internal fun MoreScreen(onLogout: () -> Unit) {
                             navigation.module(entry.id)
                         }
                     },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = CardColor),
                     border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp),
                 ) {
                     Row(Modifier.padding(horizontal = 15.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1298,7 +1300,7 @@ private fun ChoicePicker(label: String, value: String, options: List<Pair<String
     Box {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
-                Text(label, color = Muted, fontSize = 11.sp)
+                Text(label, color = Muted, fontSize = 12.sp)
                 Text(options.firstOrNull { it.first == value }?.second ?: value.ifBlank { "请选择" }, color = Ink)
             }
         }
@@ -1343,14 +1345,14 @@ private fun PaginationBar(page: Int, total: Int, currentSize: Int, onPage: (Int)
 private fun ResultHeader(title: String, subtitle: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
         Text(title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-        Text(subtitle, color = Muted, fontSize = 11.sp)
+        Text(subtitle, color = Muted, fontSize = 12.sp)
     }
 }
 
 @Composable
 private fun LabelValue(label: String, value: String) {
     Column {
-        Text(label, color = Muted, fontSize = 11.sp)
+        Text(label, color = Muted, fontSize = 12.sp)
         Text(value, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -1368,13 +1370,16 @@ private fun EmptyState(text: String) {
     Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) { Text(text, color = Muted) }
 }
 
+@Composable
 private fun orderStatusColor(status: Int) = when (status) { 1 -> GreenDark; 2, 3 -> Danger; else -> Warning }
+@Composable
 private fun settlementStatusColor(status: Int) = when (status) { 1 -> GreenDark; 3 -> Danger; else -> Warning }
 private fun maskAccount(value: String) = if (value.length <= 12) value else value.take(5) + "••••" + value.takeLast(5)
 private fun currencyValue(value: String): Double = value.replace(",", "").replace(Regex("[^0-9.-]"), "").toDoubleOrNull() ?: 0.0
 private fun money(value: Double): String = "¥" + String.format(Locale.US, "%.2f", value)
 private fun money(value: String): String = value.takeIf(String::isNotBlank)?.let { money(currencyValue(it)) } ?: "—"
 private fun formatRate(value: Double): String = String.format(Locale.US, "%.1f%%", value)
+@Composable
 private fun rateColor(value: Double?): Color = when {
     value == null -> Muted
     value < 70.0 -> Danger
