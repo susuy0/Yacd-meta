@@ -112,7 +112,7 @@ with zipfile.ZipFile(path) as z:
     assert z.testzip() is None
     identity = manifest(z.read('AndroidManifest.xml'))
     assert identity['package'] == 'com.futoonpay.vinechat.beta'
-    assert identity['versionCode'] == 71919, identity
+    assert identity['versionCode'] == 71929, identity
     assert identity['application_label'] == '短信', identity
     assert identity['minSdkVersion'] == 23 and identity['targetSdkVersion'] == 36
     assert not identity.get('native_activities'), 'Standalone business activities must not return'

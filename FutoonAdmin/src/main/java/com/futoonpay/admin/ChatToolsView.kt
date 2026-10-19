@@ -44,6 +44,10 @@ import androidx.savedstate.*
 import com.futoonpay.admin.ui.*
 import com.futoonpay.admin.ui.theme.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -142,16 +146,23 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             if (!picker && initialPage == "replies" && refresh == 0 && tabId.isNotBlank()) {
                 page = if (categoryId.isNotBlank() && loaded.tabs.any { t -> t.id == tabId && t.categories.any { it.id == categoryId } }) "replyList" else "categories"
             }
-        } catch (e: Exception) { error = e.message ?: "无法读取本机设置，已有内容没有被改动" }
-        finally { loading = false }
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { currentCoroutineContext().ensureActive(); error = e.message ?: "无法读取本机设置，已有内容没有被改动" }
+        finally {
+            // A picker return or retry can replace this effect while bridge.load() is
+            // still running on IO. The cancelled read must not overwrite the next
+            // read's loading/error state when that blocking call eventually returns.
+            if (currentCoroutineContext().isActive) loading = false
+        }
     }
     fun save(next: ChatToolsConfig, done: () -> Unit = {}) {
         if (saving) return
         saving = true; error = null
         scope.launch {
             try { withContext(Dispatchers.IO) { bridge.save(next.json()) }; config = next; notice = "已保存"; done() }
-            catch (e: Exception) { error = e.message ?: "保存失败，请重试" }
-            finally { saving = false }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { currentCoroutineContext().ensureActive(); error = e.message ?: "保存失败，请重试" }
+            finally { if (currentCoroutineContext().isActive) saving = false }
         }
     }
     val data = config
@@ -254,7 +265,9 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             if (page == "replyList") Text(category?.title.orEmpty(), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (data != null && page in setOf("panel", "appearance", "businessReplies", "automation")) {
-            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, error, Modifier.weight(1f), ::back) { next, done -> save(data.copy(extensions = next), done) }
+            // Host read/save errors and their retry action are rendered above once.
+            // The extension page owns only its local form validation messages.
+            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, Modifier.weight(1f), ::back) { next, done -> save(data.copy(extensions = next), done) }
         } else LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("chat-tools-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (page == "home") {
                 item { SectionLabel("本机自定义配置") }

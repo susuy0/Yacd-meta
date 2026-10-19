@@ -26,7 +26,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 @Composable internal fun ExtensionSettingsContent(page: String, options: ExtensionOptions, host: ChatToolsHostBridge?, revision: Int,
-    saving: Boolean, saveError: String?, modifier: Modifier, onBack: () -> Unit = {}, save: (ExtensionOptions, () -> Unit) -> Unit) {
+    saving: Boolean, modifier: Modifier, onBack: () -> Unit = {}, save: (ExtensionOptions, () -> Unit) -> Unit) {
     var working by remember(page) { mutableStateOf(options) }
     var validation by remember(page) { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
@@ -44,7 +44,7 @@ import java.util.UUID
     }
     Column(modifier.fillMaxWidth().imePadding()) {
     LazyColumn(Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { (validation ?: saveError)?.let { Text(it, color = Danger, fontSize = 13.sp) } }
+        item { validation?.let { Text(it, color = Danger, fontSize = 13.sp) } }
         if (page == "panel") {
             item { PayCard {
                 SectionLabel("展开与状态")

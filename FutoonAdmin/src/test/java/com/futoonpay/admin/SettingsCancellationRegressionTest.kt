@@ -52,7 +52,11 @@ class SettingsCancellationRegressionTest {
         compose.waitUntil(10000) { compose.onAllNodesWithText("新增群规则").fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun reload() { compose.runOnIdle { revision.intValue++ } }
+    private fun reload() {
+        compose.runOnIdle { revision.intValue++ }
+        // Drain Robolectric's Main dispatcher as well as advancing the Compose frame.
+        compose.waitForIdle()
+    }
     private fun waitEntered(gate: SettingsReadGate) { compose.waitUntil(10000) { gate.entered.count == 0L } }
     private fun finishRead(gate: SettingsReadGate) {
         gate.release.countDown()
@@ -92,16 +96,19 @@ class SettingsCancellationRegressionTest {
 
     @Test fun cancelledOldReadCannotHideTheStillPendingNewReadsProgress() {
         val old = gate(); val current = gate()
-        host.read = { n -> when (n) { 2 -> old.await(host.saved); 3 -> current.await(host.saved); else -> host.saved } }
+        val staleError = "已取消的旧读取失败"
+        host.read = { n -> when (n) { 2 -> { old.await(host.saved); throw IOException(staleError) }; 3 -> current.await(host.saved); else -> host.saved } }
         root()
         reload(); waitEntered(old)
         reload(); waitEntered(current)
         finishRead(old)
         compose.onNode(progress).assertExists()
+        compose.onNodeWithText(staleError).assertDoesNotExist()
         assertNoCancellationError()
         finishRead(current)
         compose.waitUntil(10000) { compose.onAllNodes(progress).fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithText("新增群规则").assertIsDisplayed()
+        compose.onNodeWithText(staleError).assertDoesNotExist()
         assertNoCancellationError()
     }
 
@@ -146,7 +153,7 @@ class SettingsCancellationRegressionTest {
             val view = compose.activity.findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0)
             val bitmap = Bitmap.createBitmap(bounds.width.toInt(), bounds.height.toInt(), Bitmap.Config.ARGB_8888)
             Canvas(bitmap).apply { translate(-bounds.left, -bounds.top); view.draw(this) }
-            File("build/ui-screenshots/$name.png").apply { parentFile.mkdirs() }.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            File("build/ui-screenshots/$name.png").apply { parentFile?.mkdirs() }.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             bitmap.recycle()
         }
     }
