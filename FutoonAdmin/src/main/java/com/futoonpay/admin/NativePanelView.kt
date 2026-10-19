@@ -107,7 +107,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
         setViewTreeLifecycleOwner(this)
         setViewTreeViewModelStoreOwner(this)
         setViewTreeSavedStateRegistryOwner(this)
-        compose.id = 0x00f07001
+        compose.id = R.id.futoon_panel_owned_compose
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent {
             CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) {
@@ -129,6 +129,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     fun setWindowState(full: Boolean, keyboard: Boolean) { fullscreen = full; keyboardVisible = keyboard }
     fun setOptions(json: String) { options = ChatToolsConfig.parse(json).extensions }
     fun navigationState(): String = navigation.snapshot()
+    fun currentEvidence(): String = navigation.current.takeIf { it.kind == "evidence" }?.module.orEmpty()
     fun restoreNavigationState(json: String) { if (options.panel.remember && !memory.hasLiveState) navigation.restore(json) }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
     fun updateChatContext(label: String, telegramId: String, source: String, key: String, dialog: Long, topic: Long, ticket: String, role: String) { chat = ChatScope(label, telegramId, source, key, dialog, topic, ticket, role) }

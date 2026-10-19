@@ -254,7 +254,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             if (page == "replyList") Text(category?.title.orEmpty(), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (data != null && page in setOf("panel", "appearance", "businessReplies", "automation")) {
-            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, error, Modifier.weight(1f)) { next, done -> save(data.copy(extensions = next), done) }
+            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, error, Modifier.weight(1f), ::back) { next, done -> save(data.copy(extensions = next), done) }
         } else LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("chat-tools-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (page == "home") {
                 item { SectionLabel("本机自定义配置") }

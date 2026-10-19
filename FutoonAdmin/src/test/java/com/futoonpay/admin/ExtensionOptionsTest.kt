@@ -46,18 +46,18 @@ class ExtensionOptionsTest {
     }
     private val rule = GroupAutomationRule(dialog = -42, topic = 12, sender = 5824870757, keyword = "补单案例", enabled = true, since = 100)
     @Test fun ruleOnlyMatchesItsEnabledGroupTopicSenderAndMessageText() {
-        assertTrue(rule.matches(-42, 12, 5824870757, "新的补单案例", 105, 110))
-        assertFalse(rule.copy(enabled = false).matches(-42, 12, 5824870757, "补单案例", 105, 110))
-        assertFalse(rule.matches(-43, 12, 5824870757, "补单案例", 105, 110))
-        assertFalse(rule.matches(-42, 13, 5824870757, "补单案例", 105, 110))
-        assertFalse(rule.matches(-42, 12, 5824870758, "补单案例", 105, 110))
-        assertFalse(rule.matches(-42, 12, 5824870757, "普通消息", 105, 110))
+        assertTrue(rule.acceptsEvent(-42, 12, 5824870757, "新的补单案例", 105, 110))
+        assertFalse(rule.copy(enabled = false).acceptsEvent(-42, 12, 5824870757, "补单案例", 105, 110))
+        assertFalse(rule.acceptsEvent(-43, 12, 5824870757, "补单案例", 105, 110))
+        assertFalse(rule.acceptsEvent(-42, 13, 5824870757, "补单案例", 105, 110))
+        assertFalse(rule.acceptsEvent(-42, 12, 5824870758, "补单案例", 105, 110))
+        assertFalse(rule.acceptsEvent(-42, 12, 5824870757, "普通消息", 105, 110))
     }
     @Test fun ruleIgnoresHistoryOldMessagesAndFutureClockOutliers() {
-        assertFalse(rule.matches(-42, 12, 5824870757, "补单案例", 99, 110))
-        assertFalse(rule.matches(-42, 12, 5824870757, "补单案例", 105, 410))
-        assertFalse(rule.matches(-42, 12, 5824870757, "补单案例", 300, 110))
-        assertTrue(rule.copy(topic = 0).matches(-42, 999, 5824870757, "补单案例", 105, 110))
+        assertFalse(rule.acceptsEvent(-42, 12, 5824870757, "补单案例", 99, 110))
+        assertFalse(rule.acceptsEvent(-42, 12, 5824870757, "补单案例", 105, 410))
+        assertFalse(rule.acceptsEvent(-42, 12, 5824870757, "补单案例", 300, 110))
+        assertTrue(rule.copy(topic = 0).acceptsEvent(-42, 999, 5824870757, "补单案例", 105, 110))
     }
     @Test fun templateExpandsLiteralDollarBackslashesAndMultilineValuesWithoutRegexReplacementHazards() {
         val result = renderBusinessReply("订单 {系统订单号}\n金额 {金额} {币种}", mapOf("系统订单号" to "a$1\\b", "金额" to "10.00", "币种" to "CNY"))

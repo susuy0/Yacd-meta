@@ -2,6 +2,7 @@ package com.futoonpay.admin
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,7 +26,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 @Composable internal fun ExtensionSettingsContent(page: String, options: ExtensionOptions, host: ChatToolsHostBridge?, revision: Int,
-    saving: Boolean, saveError: String?, modifier: Modifier, save: (ExtensionOptions, () -> Unit) -> Unit) {
+    saving: Boolean, saveError: String?, modifier: Modifier, onBack: () -> Unit = {}, save: (ExtensionOptions, () -> Unit) -> Unit) {
     var working by remember(page) { mutableStateOf(options) }
     var validation by remember(page) { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
@@ -51,7 +52,7 @@ import java.util.UUID
                 ExtensionToggle("记住页面、筛选和未完成操作", working.panel.remember) { working = working.copy(panel = working.panel.copy(remember = it)) }
                 Text("收起后继续当前任务；同一账号、后台和会话隔离保存。应用重启后恢复导航及可保存的表单，业务结果重新读取。", color = Muted, fontSize = 13.sp)
                 Text("默认 Tab", fontWeight = FontWeight.Medium)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     panelTabIds.forEach { id -> FilterChip(selected = working.panel.defaultTab == id, onClick = { working = working.copy(panel = working.panel.copy(defaultTab = id)) }, label = { Text(panelTabNames.getValue(id), fontSize = 12.sp) }) }
                 }
             } }
@@ -127,7 +128,7 @@ import java.util.UUID
     }
     if (discard) PaySheet("尚有未保存的设置", { discard = false }) { Column(Modifier.padding(16.dp)) {
         Text("保存后再离开，或放弃本页的修改。")
-        Row { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(enabled = !saving, onClick = { working = options; discard = false }) { Text("放弃修改") }; TextButton(enabled = !saving, onClick = { persist(working) { discard = false } }) { Text("保存") } }
+        Row { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(enabled = !saving, onClick = { working = options; discard = false; onBack() }) { Text("放弃修改") }; TextButton(enabled = !saving, onClick = { persist(working) { discard = false; onBack() } }) { Text("保存") } }
     } }
     editTemplate?.let { template -> BusinessTemplateEditor(template, { editTemplate = null }) { edited ->
         working = working.copy(templates = if (working.templates.any { it.id == edited.id }) working.templates.map { if (it.id == edited.id) edited else it } else working.templates + edited); editTemplate = null

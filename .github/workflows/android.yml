@@ -41,6 +41,8 @@ jobs:
         run: python3 ci/test_chat_tools.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test account opening draft insertion and conversation guards
         run: python3 ci/test_opening_draft.py "$RUNNER_TEMP/vinechat-tests"
+      - name: Test group automation callback dispatch and draft isolation
+        run: python3 ci/test_group_automation.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test business regexes using Android's ICU engine
         run: python3 ci/test_android_regex.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test identity, recognition and backend contracts

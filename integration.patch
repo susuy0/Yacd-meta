@@ -8103,10 +8103,10 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoade
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000..bd75354
+index 0000000..3e77f49
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,266 @@
+@@ -0,0 +1,278 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -8269,7 +8269,19 @@ index 0000000..bd75354
 +        panel.setVisibility(View.GONE);panel.setElevation(dp(12));
 +        GradientDrawable panelBg=new GradientDrawable();panelBg.setColor(org.telegram.ui.ActionBar.Theme.getColor(org.telegram.ui.ActionBar.Theme.key_windowBackgroundWhite));panelBg.setCornerRadius(dp(18));panel.setBackground(panelBg);panel.setClipToOutline(true);
 +        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,dp(600),Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL);lp.setMargins(dp(8),0,dp(8),dp(8));root.addView(panel,lp);
-+        applyOptions();applyContext();FutoonStore.Draft saved=FutoonStore.draft(account);if(saved!=null&&saved.address.equals(store.address())){panel.updateEvidenceCount(photos.size());}if(!initialText.isEmpty()){panel.recognize(initialText);initialText="";}
++        applyOptions();applyContext();restoreCurrentEvidence();panel.updateEvidenceCount(photos.size());if(!initialText.isEmpty()){panel.recognize(initialText);initialText="";}
++    }
++    private void restoreCurrentEvidence() {
++        if (panel == null || panel.currentEvidence().isEmpty()) return;
++        try {
++            JSONObject order = new JSONObject(panel.currentEvidence()); String trade = order.optString("trade_no");
++            if (trade.isEmpty()) return;
++            JSONObject local; synchronized(store) { String raw = store.readLocal(store.address()); local = raw.isEmpty() ? new JSONObject() : new JSONObject(raw); }
++            JSONArray files = local.optJSONObject("_nativeProofs") == null ? null : local.getJSONObject("_nativeProofs").optJSONArray(trade);
++            prepareEvidence(order.toString(), order.optString("_caption")); photos.clear();
++            if (files != null) for (int i=0; i<files.length() && photos.size()<10; i++) { File file = new File(files.getString(i)); if (file.isFile() && file.getCanonicalPath().startsWith(root.getContext().getCacheDir().getCanonicalPath()+File.separator)) photos.add(file); }
++            syncDraft();
++        } catch (Exception error) { toast("凭证页面已恢复，请重新选择失效的图片"); }
 +    }
 +    private void ensureClient()throws Exception{String address=store.address();if(address.isEmpty())throw new FutoonApi.SessionExpired();if(api==null){api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));}}
 +    private void applyContext(){if(panel!=null)panel.updateChatContext(context.optString("label"),context.optString("tgid"),context.optString("source"),account+":"+dialogId+":"+topicId+":"+context.optString("tgid"),dialogId,topicId,context.optString("ticket"),context.optString("role"));}
@@ -8302,7 +8314,7 @@ index 0000000..bd75354
 +    private void sendEvidence(String raw,String caption){try{prepareEvidence(raw,caption);if(photos.isEmpty())throw new IOException("请先选择凭证图片");ArrayList<String> paths=new ArrayList<>();for(File f:photos){if(!f.isFile())throw new IOException("凭证文件已失效");paths.add(f.getAbsolutePath());}if(!(host.getParentActivity() instanceof LaunchActivity))throw new IOException("无法打开发送预览");((LaunchActivity)host.getParentActivity()).shareFutoonEvidence(account,paths,caption,activeOrder);collapse();}catch(Exception e){toast(e.getMessage());}}
 +    public void addChatPhoto(MessageObject message){restoreDraftFiles();if(!canUsePhoto(account,message)){toast("这张图片受保护或不可用");return;}if(photos.size()>=10){toast("每次最多选择 10 张凭证");return;}File f=message.messageOwner.attachPath==null?null:new File(message.messageOwner.attachPath);if(f==null||!f.isFile())f=FileLoader.getInstance(account).getPathToMessage(message.messageOwner);if(f!=null&&f.isFile()){appendPhoto(f);return;}String name;if(message.getDocument()!=null){name=FileLoader.getAttachFileName(message.getDocument());downloading.put(name,new PendingImage(message,generation,activeOrder));FileLoader.getInstance(account).loadFile(message.getDocument(),message,FileLoader.PRIORITY_HIGH,0);}else{TLRPC.PhotoSize size=FileLoader.getClosestPhotoSizeWithSize(message.messageOwner.media.photo.sizes,AndroidUtilities.getPhotoSize());if(size==null){toast("图片不可用");return;}name=FileLoader.getAttachFileName(size);downloading.put(name,new PendingImage(message,generation,activeOrder));FileLoader.getInstance(account).loadFile(ImageLocation.getForPhoto(size,message.messageOwner.media.photo),message,"jpg",FileLoader.PRIORITY_HIGH,0);}toast("正在下载凭证图片");}
 +    private void appendPhoto(File source){if(!valid())return;if(photos.size()>=10){toast("每次最多选择 10 张凭证");return;}if(source.length()>25*1024*1024){toast("请选择 25 MB 以内的图片");return;}if(source.getAbsolutePath().startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)){if(!photos.contains(source))photos.add(source);syncDraft();open("");return;}final int gen=generation;WORK.execute(()->{try{File dir=new File(root.getContext().getCacheDir(),"futoon-evidence");if(!dir.exists())dir.mkdirs();File copy=File.createTempFile("proof-",".jpg",dir);try(InputStream in=new FileInputStream(source);OutputStream out=new FileOutputStream(copy)){byte[] bytes=new byte[8192];int n;while((n=in.read(bytes))!=-1)out.write(bytes,0,n);}AndroidUtilities.runOnUIThread(()->{if(gen==generation)appendPhoto(copy);});}catch(Exception e){AndroidUtilities.runOnUIThread(()->toast("凭证缓存失败："+e.getMessage()));}});}
-+    private void restoreDraftFiles(){FutoonStore.Draft draft=FutoonStore.draft(account);if(draft==null||!draft.address.equals(store.address())||!activeOrder.isEmpty())return;activeOrder=draft.order.id();sourceMessage=draft.sourceMessage;for(String path:draft.imagePaths){File file=new File(path);if(file.isFile()&&path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)&&!photos.contains(file))photos.add(file);}}
++    private void restoreDraftFiles(){FutoonStore.Draft draft=FutoonStore.draft(account);if(draft==null||!draft.address.equals(store.address())||draft.sourceDialog!=dialogId||draft.sourceTopic!=topicId||!activeOrder.isEmpty())return;activeOrder=draft.order.id();sourceMessage=draft.sourceMessage;for(String path:draft.imagePaths){File file=new File(path);if(file.isFile()&&path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator)&&!photos.contains(file))photos.add(file);}}
 +    private void syncDraft(){
 +        FutoonStore.Draft draft=FutoonStore.draft(account);
 +        if(draft!=null&&draft.address.equals(store.address())){draft.imagePaths.clear();for(File f:photos)draft.imagePaths.add(f.getAbsolutePath());
@@ -8849,10 +8861,10 @@ index 0000000..f101af2
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
 new file mode 100644
-index 0000000..2a579b1
+index 0000000..faffeac
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,138 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -8911,6 +8923,7 @@ index 0000000..2a579b1
 +    @Override public void didReceivedNotification(int event,int eventAccount,Object... args) {
 +        if(eventAccount!=account)return;
 +        if(event==NotificationCenter.appDidLogout){stop();return;}
++        if(event!=NotificationCenter.didReceiveNewMessages && event!=NotificationCenter.replaceMessagesObjects)return;
 +        if(!active()||rules.isEmpty()||args.length<2||!(args[0] instanceof Long)||!(args[1] instanceof ArrayList))return;
 +        if(event==NotificationCenter.didReceiveNewMessages && ((args.length>2&&Boolean.TRUE.equals(args[2])) || (args.length>3&&args[3] instanceof Integer&&((Integer)args[3])!=0)))return;
 +        long dialog=(Long)args[0];if(dialog>=0)return;
@@ -8925,14 +8938,14 @@ index 0000000..2a579b1
 +        long topic=MessageObject.getTopicId(account,message.messageOwner,true), sender=message.getFromChatId();
 +        String text=message.messageOwner.message==null?"":message.messageOwner.message;
 +        for(GroupAutomationRule rule:rules) {
-+            if(!rule.matches(message.getDialogId(),topic,sender,text,message.messageOwner.date,now))continue;
++            if(!rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,now))continue;
 +            String key=messageKey+":"+(rule.getAction().equals("click")?"button:"+rule.getButton():"draft");
 +            if(completed.contains(key)||pending.containsKey(key)||pending.size()>=50)continue;
 +            if(rule.getAction().equals("click")&&button(message,rule)==null)continue;
 +            final GroupAutomationRule snapshot=rule;
 +            long due=Math.max(System.currentTimeMillis(),Math.max(nextDue,ruleDue.getOrDefault(rule.getId(),0L)));
 +            nextDue=due+500;ruleDue.put(rule.getId(),due+rule.getCooldown()*1000L);
-+            Runnable task=()->{pending.remove(key);if(!active()||!rules.contains(snapshot))return;MessageObject current=latest.get(messageKey);if(current!=null)execute(snapshot,current,key);};
++            Runnable task=()->{pending.remove(key);if(!active()||!rules.contains(snapshot))return;MessageObject current=latest.get(messageKey);if(current!=null)try{execute(snapshot,current,key);}catch(Exception error){record(snapshot,current,"执行中止，未自动重试");}};
 +            pending.put(key,task);AndroidUtilities.runOnUIThread(task,Math.max(0,due-System.currentTimeMillis()));
 +        }
 +    }
@@ -8955,7 +8968,7 @@ index 0000000..2a579b1
 +    }
 +    private void execute(GroupAutomationRule rule,MessageObject message,String key) {
 +        long now=System.currentTimeMillis()/1000;
-+        if(!rule.matches(message.getDialogId(),MessageObject.getTopicId(account,message.messageOwner,true),message.getFromChatId(),message.messageOwner.message==null?"":message.messageOwner.message,message.messageOwner.date,now))return;
++        if(!rule.acceptsEvent(message.getDialogId(),MessageObject.getTopicId(account,message.messageOwner,true),message.getFromChatId(),message.messageOwner.message==null?"":message.messageOwner.message,message.messageOwner.date,now))return;
 +        if(rule.getAction().equals("draft")){draft(rule,message,key);return;}
 +        TL_keyboard.KeyboardInlineButton selected=button(message,rule);if(selected==null||!claim(key))return;
 +        TLRPC.TL_messages_getBotCallbackAnswer request=new TLRPC.TL_messages_getBotCallbackAnswer();

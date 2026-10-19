@@ -21,7 +21,7 @@ data class GroupAutomationRule(
     val button: String = "补单案例", val action: String = "click", val draft: String = "",
     val enabled: Boolean = false, val since: Long = 0, val cooldown: Int = 5,
 ) {
-    fun matches(dialog: Long, topic: Long, sender: Long, text: String, messageDate: Long, now: Long): Boolean =
+    fun acceptsEvent(dialog: Long, topic: Long, sender: Long, text: String, messageDate: Long, now: Long): Boolean =
         enabled && this.dialog == dialog && dialog < 0 && (this.topic == 0L || this.topic == topic) && this.sender == sender &&
             messageDate >= since && messageDate <= now + 60 && now - messageDate <= 300 &&
             (keyword.isBlank() || text.contains(keyword, ignoreCase = true))
