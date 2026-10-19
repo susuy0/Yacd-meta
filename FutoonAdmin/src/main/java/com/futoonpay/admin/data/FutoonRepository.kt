@@ -696,7 +696,9 @@ class FutoonRepository(
             endpoint = "ajax_pay.php?act=testpay",
             referer = path,
             fields = mapOf("channel" to channelId, "name" to name, "money" to amount),
+            once = true,
         )
+        if (!json.has("code") || json.isNull("code")) throw java.io.IOException("测试订单创建结果待核对，请先查询订单")
         val code = json.optInt("code", -1)
         return PaymentTestResult(
             success = code == 0 || code == 200,

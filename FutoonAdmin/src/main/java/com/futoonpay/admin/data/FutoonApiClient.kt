@@ -127,6 +127,7 @@ class FutoonApiClient(
                 .post(builder.build())
                 .build(), once = true
         )
+        if (!json.has("code") || json.isNull("code")) throw IOException("后台未明确确认操作结果，请刷新核对")
         val code = json.optInt("code", -1)
         ApiResult(code == 0 || code == 200, json.optString("msg", if (code == 0 || code == 200) "操作成功" else "操作失败"), json.recordId())
     }
@@ -142,6 +143,7 @@ class FutoonApiClient(
             Request.Builder().url(resolve(endpoint)).header("Referer", resolve(referer).toString())
                 .post(builder.build()).build(), once = true
         )
+        if (!json.has("code") || json.isNull("code")) throw IOException("后台未明确确认操作结果，请刷新核对")
         val code = json.optInt("code", -1)
         ApiResult(code == 0 || code == 200, json.optString("msg", if (code == 0 || code == 200) "操作成功" else "操作失败"), json.recordId())
     }
@@ -157,6 +159,7 @@ class FutoonApiClient(
         val json = executeJson(
             Request.Builder().url(url).header("Referer", resolve(referer).toString()).get().build(), once = true
         )
+        if (!json.has("code") || json.isNull("code")) throw IOException("后台未明确确认操作结果，请刷新核对")
         val code = json.optInt("code", -1)
         ApiResult(code == 0 || code == 200, json.optString("msg", if (code == 0 || code == 200) "操作成功" else "操作失败"), json.recordId())
     }
@@ -217,6 +220,7 @@ class FutoonApiClient(
             if (looksLikeLoginPage(raw)) expireSession()
             val json = runCatching { JSONObject(raw) }.getOrNull()
             if (json != null) {
+                if (!json.has("code") || json.isNull("code")) throw IOException("后台未明确确认保存结果，请刷新核对")
                 val code = json.optInt("code", -1)
                 if (code == 403) expireSession()
                 return@withContext ApiResult(code == 0 || code == 200, json.optString("msg", "操作完成"), json.recordId())

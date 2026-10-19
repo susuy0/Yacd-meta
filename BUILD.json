@@ -6,8 +6,18 @@
   "patch_sha256": "5f9c7580c04e8a09830d2a551f79731754bf6a4041013c572234651abf91db32",
   "source_baseline": "8dcfae372bbf0474e32a0f9698769d9b62bdcc02",
   "validation": {
-    "status": "pending CI",
-    "device_backend": "No real device, live creation, key reset or Telegram send test"
+    "status": "pending final CI after one-shot test-payment guard",
+    "device_backend": "No real device, live creation, key reset or Telegram send test",
+    "previous_native_tests": {
+      "source": "da97a994c5f6da91f51252e1661fccbc20cbbd16",
+      "tests": 253,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "screenshots": 36,
+      "lint_errors": 0,
+      "lint_warnings": 28
+    }
   },
   "features": {
     "original_telegram_ui": "preserved",

@@ -117,4 +117,27 @@ class ApiTransportRegressionTest {
         assertFalse(NativeAction("配置", "ajax.php?act=setChannel&id=1").opensNativeDocument())
     }
 
+    @Test fun testPaymentUsesOneShotBodyAndKeepsTheExactFormFields() = runBlocking {
+        var calls = 0
+        val repository = FutoonRepository(fixtureClient({ request ->
+            calls++
+            assertTrue("Test order creation must not replay its request body", request.body!!.isOneShot())
+            val buffer = okio.Buffer(); request.body!!.writeTo(buffer)
+            val fields = buffer.readUtf8().split('&').associate { pair ->
+                val items = pair.split('=', limit = 2)
+                java.net.URLDecoder.decode(items[0], "UTF-8") to java.net.URLDecoder.decode(items.getOrElse(1) { "" }, "UTF-8")
+            }
+            assertEquals(mapOf("channel" to "12", "name" to "测试 & 凭证", "money" to "1.00"), fields)
+            200 to "{\"code\":0,\"trade_no\":\"TEST_1\"}"
+        }))
+        assertTrue(repository.testPayment("12", "测试 & 凭证", "1.00").success)
+        assertEquals(1, calls)
+    }
+    @Test fun missingConfirmationCodeCannotBecomeAnExplicitRetryableFailure() = runBlocking {
+        val client = fixtureClient({ 200 to "{\"msg\":\"response without status\"}" })
+        try { client.postAction("save.php", "order.php", emptyMap()); fail() } catch (error: IOException) { assertTrue(error.message!!.contains("核对")) }
+        try { client.getAction("save.php", "order.php"); fail() } catch (error: IOException) { assertTrue(error.message!!.contains("核对")) }
+        try { FutoonRepository(client).testPayment("12", "测试", "1"); fail() } catch (error: IOException) { assertTrue(error.message!!.contains("核对")) }
+    }
+
 }

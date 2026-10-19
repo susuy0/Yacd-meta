@@ -1,12 +1,26 @@
-PASS: GitHub panel-ui job in run 39049394474
-Merchant TGID lookup and manual merchant switch
-Exact CNY balance direction and amounts
-Order search, filters, detail and OCR review
-Native recipient preview does not imply send success
-Message send failure and server acknowledgement
-Route edit, new rows and saving
-Channel monitor metric windows and editor entry
-Payment plugin loading blocks save until ready
-Text focus/caret and scroll retention
-Natural control heights at 390x650, 320x480 and 390x300
-Dark theme, no horizontal overflow and no JavaScript page errors
+短信 / Futoon chat v0.8.0 定制区域 UI v1.1
+验证源代码：da97a994c5f6da91f51252e1661fccbc20cbbd16
+GitHub Actions：39201132037
+
+253 tests, 0 failures, 0 errors, 0 skipped
+Android Lint: 0 errors, 28 warnings
+36 synthetic-fixture screenshots
+
+新增 / 更新覆盖：
+- 设置首页三个独立入口与实际配置计数
+- Tag 精确 TGID、编辑删除及失败保留输入
+- Tab / 分类 / 文案管理、预览只读和手动填入
+- 管理页返回恢复分类、账号 / 会话 / 话题守卫
+- 原发送选项、发送键与媒体入口
+- 合并草稿长度检查、不截断原草稿
+- 未保存退出、字数上限、开户变量校验与预览
+- 浅色 / 深色 / 自定义主题、320dp / 1.5 倍字号 / 350dp 短窗
+- 商户多命中选择、原生编辑与改动确认
+- 原生更多行级操作，确认前零写入、确认后单次执行
+- 嵌套确认框层级与点击顺序
+- 写入结果不明阻止直接重试，明确拒绝保留显式重试
+- 付款凭证多图、说明、处理状态、手动对象与预览
+- 开户 D0 / D1 权限映射、核对、分步结果和草稿
+
+这是 Robolectric SDK 35 与可控传输测试，未执行真实资金写入或 Telegram 发送。
+Android 17 设备、系统键盘与真实后台仍需实机联调。
