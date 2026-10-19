@@ -97,7 +97,11 @@ class PanelWorkflowsTest {
     @Test fun duplicateTgidBindingNeverChoosesAMerchant() = runBlocking {
         val bridge = WorkflowFixtureBridge { op, _ -> if (op == "merchant.lookup") "{\"rows\":[{\"uid\":\"1\"},{\"uid\":\"2\"}]}" else null }
         val vm = PanelWorkflows(bridge); ready(vm); vm.lookup("telegram_id", "5824870757").join()
-        assertNull(vm.state.value.merchant); assertTrue(vm.state.value.merchantError!!.contains("冲突"))
+        assertNull(vm.state.value.merchant); assertEquals(2, vm.state.value.merchantCandidates.size)
+        vm.chooseMerchant("999"); assertNull(vm.state.value.merchant)
+        vm.chooseMerchant("2"); assertEquals("2", JSONObject(vm.state.value.merchant!!).getString("uid")); assertTrue(vm.state.value.manualMerchant)
+        assertTrue(vm.state.value.merchantCandidates.isEmpty())
+        vm.updateChat(ChatScope("另一会话", key = "different")); assertNull(vm.state.value.merchant); assertTrue(vm.state.value.merchantCandidates.isEmpty())
     }
     @Test fun legacyGroupBindingHistoryFavoritesAndDraftsRemainReadable() = runBlocking {
         val bridge = WorkflowFixtureBridge().apply { saved = """{"groups":{"0:-100:0:":"2022"},"history":[{"text":"S0","kind":"AUTO"}],"favorites":[{"trade_no":"S0"}],"drafts":{"S0":{"order":{"trade_no":"S0"},"caption":"凭证","updated":1}},"futureKey":"keep"}""" }

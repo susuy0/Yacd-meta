@@ -20,6 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material3.*
@@ -341,6 +348,15 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     var inputError by remember(current) { mutableStateOf<String?>(null) }
     var preview by remember { mutableStateOf(false) }
     var discard by remember { mutableStateOf(false) }
+    val fieldFocus = remember { FocusRequester() }
+    val variableColor = GreenDark
+    val variableBackground = GreenTint
+    val errorColor = Danger
+    val templateTransformation = VisualTransformation { text ->
+        val spans = AnnotatedString.Builder(text.text)
+        openingVariables(text.text).forEach { variable -> spans.addStyle(SpanStyle(color = if (variable.known) variableColor else errorColor, background = if (variable.known) variableBackground else errorColor.copy(alpha = .10f)), variable.start, variable.end) }
+        TransformedText(spans.toAnnotatedString(), OffsetMapping.Identity)
+    }
     val dirty = first != current.first || second.text != current.second
     fun close() { if (!saving) { if (dirty) discard = true else onDismiss() } }
     val kind = when (current.kind) { "tag" -> "Tag"; "tab" -> "Tab"; "category" -> "分类"; "opening" -> "开户文案"; else -> "文案" }
@@ -357,7 +373,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(enabled = !saving, onClick = ::close) { Text("取消") }
                 Spacer(Modifier.weight(1f))
-                Button(enabled = !saving && dirty, onClick = {
+                Button(enabled = !saving && dirty && (current.kind != "opening" || validation == null), onClick = {
                     if (validation != null) inputError = validation else try { onSave(first, second.text) } catch (e: IllegalArgumentException) { inputError = e.message }
                 }) { Text(if (saving) "保存中…" else "保存") }
             }
@@ -365,7 +381,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!preview) {
                     if (current.kind != "opening") OutlinedTextField(first, { first = it; inputError = null }, label = { Text(if (current.kind == "tag") "Tag 内容" else "名称") }, singleLine = true, isError = first.length > 64, supportingText = { Text("${first.length} / 64") }, modifier = Modifier.fillMaxWidth(), enabled = !saving)
-                    if (current.kind in setOf("tag", "reply", "opening")) OutlinedTextField(second, { second = it; inputError = null }, label = { Text(when (current.kind) { "tag" -> "生效 Telegram ID（多个用逗号分隔）"; "opening" -> "开户文案模板"; else -> "回复内容" }) }, modifier = Modifier.fillMaxWidth(), minLines = if (current.kind == "opening") 8 else if (current.kind == "reply") 5 else 2, isError = validation != null && second.text.isNotEmpty(), supportingText = { Text("${second.text.length} / ${if (current.kind == "tag") 2000 else QUICK_REPLY_LIMIT}") }, enabled = !saving)
+                    if (current.kind in setOf("tag", "reply", "opening")) OutlinedTextField(second, { second = it; inputError = null }, label = { Text(when (current.kind) { "tag" -> "生效 Telegram ID（多个用逗号分隔）"; "opening" -> "开户文案模板"; else -> "回复内容" }) }, modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus), visualTransformation = if (current.kind == "opening") templateTransformation else VisualTransformation.None, minLines = if (current.kind == "opening") 8 else if (current.kind == "reply") 5 else 2, isError = validation != null && second.text.isNotEmpty(), supportingText = { Text("${second.text.length} / ${if (current.kind == "tag") 2000 else QUICK_REPLY_LIMIT}") }, enabled = !saving)
                 } else PayCard {
                     if (current.kind == "reply") { Text(first, fontWeight = FontWeight.SemiBold); Text(second.text, fontSize = 16.sp) }
                     else {
@@ -384,10 +400,11 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                     }
                 }
                 if (current.kind == "opening") {
+                    if (!preview) openingVariables(second.text).filterNot { it.known }.forEach { variable -> TextButton(onClick = { second = second.copy(selection = TextRange(variable.start, variable.end)); fieldFocus.requestFocus() }) { Text("定位 {${variable.name}}", color = Danger) } }
                     TextButton(enabled = !saving && !preview, onClick = { second = TextFieldValue(defaultOpeningTemplate, TextRange(defaultOpeningTemplate.length)) }) { Text("恢复默认模板") }
                     if (second.text.length > QUICK_REPLY_LIMIT - 300) Text("建议给变量展开留出 300 字以上余量；超长时不会截断密钥或链接。", color = Warning, fontSize = 13.sp)
                 }
-                (inputError ?: error ?: if (second.text.isNotEmpty()) validation else null)?.let { Text(it, color = Danger, fontSize = 13.sp) }
+                (inputError ?: error ?: if (second.text.isNotEmpty() || current.kind == "opening") validation else null)?.let { Text(it, color = Danger, fontSize = 13.sp) }
                 Spacer(Modifier.height(12.dp))
             }
             if (current.kind == "opening" && !preview) {

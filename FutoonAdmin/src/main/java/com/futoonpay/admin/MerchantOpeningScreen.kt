@@ -1,7 +1,13 @@
 package com.futoonpay.admin
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
@@ -27,7 +33,7 @@ internal enum class OpeningStage { FORM, REVIEW, SUBMITTING, RESULT, UNCERTAIN }
 internal data class MerchantOpeningState(
     val form: NativeForm? = null, val loading: Boolean = false, val stage: OpeningStage = OpeningStage.FORM,
     val result: MerchantOpeningResult? = null, val binding: String = "", val linkLoading: Boolean = false,
-    val error: String? = null, val draftInserted: Boolean = false, val inserting: Boolean = false,
+    val dirty: Boolean = false, val error: String? = null, val draftInserted: Boolean = false, val inserting: Boolean = false,
 )
 
 internal class MerchantOpeningViewModel(
@@ -38,11 +44,12 @@ internal class MerchantOpeningViewModel(
 ) : ViewModel() {
     private val mutable = MutableStateFlow(MerchantOpeningState())
     val state = mutable.asStateFlow()
+    private var initialValues = emptyMap<String, String>()
     private var submittedValues = emptyMap<String, String>()
     fun load() = viewModelScope.launch {
         if (state.value.loading || state.value.stage != OpeningStage.FORM) return@launch
         mutable.update { it.copy(loading = true, error = null) }
-        try { val form = repository.merchantOpening(); mutable.update { it.copy(form = form) } }
+        try { val form = repository.merchantOpening(); initialValues = form.fields.associate { it.name to it.value }; mutable.update { it.copy(form = form, dirty = false) } }
         catch (e: CancellationException) { throw e }
         catch (e: Exception) { mutable.update { it.copy(error = e.message ?: "开户资料读取失败") } }
         finally { mutable.update { it.copy(loading = false) } }
@@ -50,8 +57,9 @@ internal class MerchantOpeningViewModel(
     fun edit(name: String, value: String) {
         if (state.value.stage != OpeningStage.FORM || state.value.loading) return
         mutable.update { s -> s.copy(error = null, form = s.form?.let { form -> form.copy(fields = form.fields.map { field ->
-            if (field.name == name && field.type != "hidden" && !field.readOnly) field.copy(value = value.take(4096)) else field
+            if (field.name == name && field.type != "hidden" && !field.readOnly) field.copy(value = value) else field
         }) }) }
+        mutable.update { it.copy(dirty = it.form?.fields?.any { field -> field.type != "hidden" && initialValues[field.name] != field.value } == true) }
     }
     fun review() {
         val form = state.value.form ?: return
@@ -120,13 +128,19 @@ internal class MerchantOpeningViewModel(
     LaunchedEffect(state.stage) { listState.scrollToItem(0) }
     val sameChat = currentChat.key == model.chat.key && currentChat.dialog == model.chat.dialog && currentChat.topic == model.chat.topic
     val busy = state.stage == OpeningStage.SUBMITTING || state.linkLoading || state.inserting
-    BackHandler { if (!busy) { if (state.stage == OpeningStage.REVIEW) model.backToForm() else onBack() } }
+    var discard by remember { mutableStateOf(false) }
+    fun close() { if (!busy) { if (state.stage == OpeningStage.REVIEW) model.backToForm() else if (state.stage == OpeningStage.FORM && state.dirty) discard = true else onBack() } }
+    BackHandler { close() }
+    val missing = state.form?.fields.orEmpty().filter { it.required && it.value.isBlank() }
     val valid = state.form?.fields?.none { it.required && it.value.isBlank() } == true
-    Scaffold(containerColor = Mist, topBar = { PayTopBar("商户开户", { if (!busy) onBack() }) }, bottomBar = {
+    Scaffold(containerColor = Mist, topBar = { PayTopBar("商户开户", ::close) }, bottomBar = {
         Surface(shadowElevation = 6.dp) {
             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when (state.stage) {
-                    OpeningStage.FORM -> Button(onClick = model::review, enabled = valid && !state.loading && sameChat, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("下一步 · 核对开户") }
+                    OpeningStage.FORM -> {
+                        if (missing.isNotEmpty()) Text("还差 ${missing.size} 项：${missing.joinToString("、") { it.label }}", color = Muted, fontSize = 12.sp)
+                        Button(onClick = model::review, enabled = valid && !state.loading && sameChat, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("下一步 · 核对开户") }
+                    }
                     OpeningStage.REVIEW, OpeningStage.SUBMITTING -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = model::backToForm, enabled = !busy, modifier = Modifier.weight(1f)) { Text("返回修改") }
                         Button(onClick = { model.create() }, enabled = !busy && sameChat, modifier = Modifier.weight(1f)) { Text(if (busy) "开户中…" else "确认开户") }
@@ -138,6 +152,12 @@ internal class MerchantOpeningViewModel(
         }
     }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize().testTag("merchant-opening-list"), state = listState, contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            item {
+                val step = when (state.stage) { OpeningStage.FORM -> 0; OpeningStage.REVIEW, OpeningStage.SUBMITTING -> 1; else -> 2 }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    listOf("填写资料", "核对", "结果").forEachIndexed { index, label -> Text("${if (index < step) "✓" else "${index + 1}"} $label", color = if (index == step) GreenDark else Muted, fontSize = 13.sp) }
+                }
+            }
             item { PayCard {
                 Text("会话：${model.chat.label}", color = Ink)
                 if (model.chat.telegramId.isNotBlank()) Text("Telegram ID：${model.chat.telegramId}", color = Muted, fontSize = 12.sp)
@@ -148,20 +168,18 @@ internal class MerchantOpeningViewModel(
             state.error?.let { error -> item { PayCard { Text(error, color = Danger) } } }
             if (state.stage == OpeningStage.FORM) {
                 if (state.form == null && !state.loading) item { TextButton(onClick = { model.load() }) { Text("重新加载开户资料") } }
-                state.form?.fields.orEmpty().filter { it.type != "hidden" }.forEach { field -> item(key = field.name) { PayCard {
-                    if (field.name == "pwd") {
-                        var reveal by remember { mutableStateOf(false) }
-                        OutlinedTextField(field.value, { model.edit(field.name, it) }, label = { Text(field.label) }, enabled = !state.loading && sameChat,
-                            visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(), singleLine = true,
-                            trailingIcon = { TextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示") } },
-                            supportingText = { Text("留空则只能使用密钥登录") }, modifier = Modifier.fillMaxWidth())
-                    } else NativeFieldEditor(field.copy(readOnly = field.readOnly || state.loading || !sameChat), field.value) { model.edit(field.name, it) }
-                } } }
+                val groups = state.form?.fields.orEmpty().filter { it.type != "hidden" }.groupBy { field -> openingFieldGroup(field.name) }
+                groups.forEach { (title, fields) -> item(key = title) {
+                    OpeningFieldGroup(title, fields, !state.loading && sameChat) { name, value -> model.edit(name, value) }
+                } }
+
             } else if (state.stage == OpeningStage.REVIEW || state.stage == OpeningStage.SUBMITTING) {
                 item { PayCard { Text("请核对本次开户信息", style = MaterialTheme.typography.titleMedium); Text("D0 开启结算权限，D1 不开启结算权限。", color = Muted, fontSize = 12.sp) } }
-                state.form?.fields.orEmpty().filter { it.type != "hidden" }.forEach { field -> item { PayCard {
-                    DataRow(field.label, if (field.sensitive) { if (field.value.isBlank()) "留空，仅密钥登录" else "已设置" } else field.options.firstOrNull { it.value == field.value }?.label ?: field.value.ifBlank { "未填写" })
+                state.form?.fields.orEmpty().filter { it.type != "hidden" }.groupBy { openingFieldGroup(it.name) }.forEach { (title, fields) -> item { PayCard {
+                    SectionLabel(title)
+                    fields.forEach { field -> DataRow(field.label, if (field.sensitive) { if (field.value.isBlank()) "留空，仅密钥登录" else "已设置" } else field.options.firstOrNull { it.value == field.value }?.label ?: field.value.ifBlank { "未填写" }) }
                 } } }
+
             } else if (state.stage == OpeningStage.RESULT) {
                 val result = state.result
                 item { PayCard {
@@ -172,6 +190,53 @@ internal class MerchantOpeningViewModel(
                     TextButton(enabled = !busy, onClick = { result?.let { onMerchant(it.uid) } }) { Text("查看商户") }
                     if (state.binding.isBlank()) OutlinedButton(enabled = !busy, onClick = { model.retryBinding() }) { Text(if (state.linkLoading) "获取链接中…" else "重取绑定链接") }
                 } }
+            }
+        }
+    }
+    if (discard) PaySheet("放弃修改？", { discard = false }) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("开户尚未提交，离开后本次填写内容将丢失。")
+            Row { TextButton(onClick = { discard = false }) { Text("继续填写") }; TextButton(onClick = { discard = false; onBack() }) { Text("放弃", color = Danger) } }
+        }
+    }
+
+}
+
+private fun openingFieldGroup(name: String): String = when (name) {
+    "email", "pwd", "url" -> "基础与登录"
+    "settle_id", "account", "username" -> "结算资料"
+    "gid", "settle", "mode", "status", "pay" -> "权限与计费"
+    else -> "其他字段（后台提供）"
+}
+
+@Composable private fun OpeningFieldGroup(title: String, fields: List<NativeField>, enabled: Boolean, onField: (String, String) -> Unit) {
+    var expanded by rememberSaveable(title) { mutableStateOf(true) }
+    PayCard {
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { expanded = !expanded }, verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                if (!expanded) Text(fields.filter { !it.sensitive && it.value.isNotBlank() }.joinToString(" · ") { field -> field.options.firstOrNull { it.value == field.value }?.label ?: field.value }.ifBlank { "未填写" }, color = Muted, fontSize = 12.sp, maxLines = 2)
+            }
+            Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "收起$title" else "展开$title")
+        }
+        if (expanded) fields.forEach { field ->
+            when (field.name) {
+                "pwd" -> {
+                    var reveal by remember { mutableStateOf(false) }
+                    OutlinedTextField(field.value, { onField(field.name, it) }, label = { Text(field.label) }, enabled = enabled,
+                        visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(), singleLine = true,
+                        trailingIcon = { TextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示") } },
+                        supportingText = { Text("留空则只能使用密钥登录") }, modifier = Modifier.fillMaxWidth())
+                }
+                "settle" -> Column {
+                    Text("结算模式", color = Muted, fontSize = 13.sp)
+                    field.options.forEach { option -> Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = enabled) { onField(field.name, option.value) }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = option.value == field.value, onClick = { onField(field.name, option.value) }, enabled = enabled)
+                        Text(option.label, fontSize = 14.sp)
+                    } }
+                    Text("D1 为默认模式。手续费扣除方式与结算权限分别设置。", color = Muted, fontSize = 12.sp)
+                }
+                else -> NativeFieldEditor(field.copy(readOnly = field.readOnly || !enabled), field.value) { onField(field.name, it) }
             }
         }
     }

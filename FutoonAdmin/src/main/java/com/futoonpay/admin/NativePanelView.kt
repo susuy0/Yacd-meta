@@ -122,7 +122,7 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
         if (!closed) composition.prepare()
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
-    fun setThemeColors(json: String) { if (!closed) { palette = FutoonPalette.parse(json); setBackgroundColor(palette.surface.toArgb()) } }
+    fun setThemeColors(json: String) { if (!closed) { palette = FutoonPalette.parse(json); (background as? android.graphics.drawable.GradientDrawable)?.setColor(palette.surface.toArgb()) ?: setBackgroundColor(palette.surface.toArgb()) } }
     fun setFullscreenHandler(callback: Runnable) { fullscreenHandler = callback }
     fun setWindowState(full: Boolean, keyboard: Boolean) { fullscreen = full; keyboardVisible = keyboard }
     fun updateContext(label: String?, telegramId: String?, source: String?) { chat = ChatScope(label.orEmpty(), telegramId.orEmpty(), source.orEmpty()) }
@@ -328,24 +328,27 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     val localState = workflows?.state?.collectAsState()?.value
     var caption by rememberSaveable(order.optString("trade_no")) { mutableStateOf(order.optString("_caption", evidenceCaption(order))) }
     var status by rememberSaveable(order.optString("trade_no")) { mutableStateOf(workflows?.case(order.optString("trade_no"))?.optString("status", "待处理") ?: "待处理") }
-    LaunchedEffect(caption, status) { kotlinx.coroutines.delay(400); workflows?.saveDraft(order, caption, status) }
+    LaunchedEffect(caption, status) { kotlinx.coroutines.delay(400); if (caption.length <= 1024) workflows?.saveDraft(order, caption, status) }
     val paths = remember(revision) { bridge.evidencePaths().toList() }
     Column(Modifier.fillMaxSize()) {
         PayTopBar("选择付款凭证", back)
+        PayCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), compact = true) {
+            Text("订单 ${order.optString("trade_no")}", color = Ink, fontSize = 14.sp)
+            Text("商户 PID ${order.optString("uid")} · ${order.optString("currency", "CNY")} ${order.optString("money")}", color = Muted, fontSize = 13.sp)
+        }
         LazyColumn(Modifier.weight(1f).testTag("receipt-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item { PayCard { Text("订单 ${order.optString("trade_no")}", color = Ink); Text("商户 PID ${order.optString("uid")} · ${order.optString("currency", "CNY")} ${order.optString("money")}", color = Muted, fontSize = 12.sp) } }
-            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册 / 文件") }; OutlinedButton(onClick = { workflows?.saveDraft(order, caption, status); bridge.pickEvidenceFromChat() }, modifier = Modifier.weight(1f)) { Text("从聊天选图") } } }
-            paths.forEachIndexed { index, path -> item(key = path) {
-                val bitmap by produceState<android.graphics.Bitmap?>(null, path, revision) { value = withContext(Dispatchers.IO) { bridge.evidencePreview(path) } }
-                // Compose display lists can retain a thumbnail after this item leaves composition.
-                // These bounded previews must stay valid until their rendering references are collected.
-                PayCard {
-                    bitmap?.let { Image(it.asImageBitmap(), "凭证 ${index + 1}", Modifier.fillMaxWidth().heightIn(max = 160.dp)) }
-                    Row { TextButton(onClick = { bridge.editEvidence(index) }) { Text("编辑") }; TextButton(onClick = { bridge.removeEvidence(index) }) { Text("移除", color = Danger) } }
+            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册 / 文件") }; OutlinedButton(onClick = { if (caption.length <= 1024) workflows?.saveDraft(order, caption, status); bridge.pickEvidenceFromChat() }, modifier = Modifier.weight(1f)) { Text("从聊天选图") } } }
+            item { Text("付款凭证图片 · ${paths.size} / 10 · 每张最多 25 MB", color = Muted, fontSize = 12.sp) }
+            if (paths.isEmpty()) item { PayCard { Text("还没有付款凭证"); Text("可从相册、文件或聊天中选择图片。", color = Muted, fontSize = 13.sp) } }
+            paths.chunked(3).forEachIndexed { rowIndex, images -> item(key = "images-$rowIndex") {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    images.forEachIndexed { column, path -> EvidenceTile(path, rowIndex * 3 + column, revision, bridge, Modifier.weight(1f)) }
+                    repeat(3 - images.size) { Spacer(Modifier.weight(1f)) }
                 }
             } }
-            item { OutlinedTextField(caption, { caption = it.take(1024) }, label = { Text("凭证说明") }, modifier = Modifier.fillMaxWidth()) }
-            item { PayPills(listOf("查单", "补单", "回调异常", "退款核实").map { it to it }, "") { caption = evidenceCaption(order, it) } }
+
+            item { OutlinedTextField(caption, { caption = it }, label = { Text("凭证说明") }, modifier = Modifier.fillMaxWidth(), minLines = 3, isError = caption.length > 1024, supportingText = { Text("${caption.length} / 1024") }) }
+            item { PayPills(listOf("查单", "补单协助", "回调异常", "退款核实").map { it to it }, "") { caption = evidenceCaption(order, it) } }
             item { PayPills(listOf("待处理", "已发出", "等待回复", "已解决").map { it to it }, status) { status = it } }
             item { Text("发送对象由你下一步手动选择，商户 TGID 和支付通道不会决定收件人。", color = Muted, fontSize = 12.sp) }
             item { TextButton(onClick = { workflows?.saveDraft(order, caption, status) }) { Text("保存凭证草稿及处理状态") } }
@@ -357,7 +360,10 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                 if (log != null) items(log.length()) { index -> Text(log.optString(index), color = Muted, fontSize = 12.sp) }
             }
         }
-        Button(enabled = paths.isNotEmpty(), onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().padding(12.dp).height(48.dp)) { Text("选择收件人并预览") }
+        Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp)) {
+            if (paths.isEmpty() || caption.length > 1024) Text(if (paths.isEmpty()) "先选择至少一张图片" else "凭证说明超过 1024 字，请缩短后再发送", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 6.dp))
+            Button(enabled = paths.isNotEmpty() && caption.length <= 1024, onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("选择收件人并预览") }
+        }
     }
 }
 
@@ -374,6 +380,33 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
             Text("Telegram ID：${chat.telegramId.ifBlank { "未识别" }}", color = Ink, fontSize = 13.sp)
             if (chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
             if (chat.topic != 0L) Text("话题 ${chat.topic}", color = Muted, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable private fun EvidenceTile(path: String, index: Int, revision: Int, bridge: NativePanelBridge, modifier: Modifier) {
+    var menu by remember(path) { mutableStateOf(false) }
+    val preview by produceState<Pair<Boolean, android.graphics.Bitmap?>>(false to null, path, revision) {
+        value = true to withContext(Dispatchers.IO) { runCatching { bridge.evidencePreview(path) }.getOrNull() }
+    }
+    Surface(modifier, color = CardColor, shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)) {
+        Column {
+            Box(Modifier.fillMaxWidth().aspectRatio(1f).clickable { bridge.editEvidence(index) }, contentAlignment = Alignment.Center) {
+                val bitmap = preview.second
+                when {
+                    bitmap != null -> Image(bitmap.asImageBitmap(), "凭证 ${index + 1}", Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                    !preview.first -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                    else -> Text("图片不可用\n请移除后重选", color = Danger, fontSize = 12.sp, modifier = Modifier.padding(6.dp))
+                }
+                Surface(Modifier.align(Alignment.TopStart).padding(4.dp), color = CardColor, shape = androidx.compose.foundation.shape.CircleShape) { Text("${index + 1}", color = Ink, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { bridge.editEvidence(index) }, modifier = Modifier.weight(1f)) { Text("编辑", fontSize = 12.sp) }
+                Box {
+                    IconButton(onClick = { menu = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "凭证 ${index + 1} 更多操作") }
+                    DropdownMenu(menu, { menu = false }) { DropdownMenuItem(text = { Text("移除", color = Danger) }, onClick = { menu = false; bridge.removeEvidence(index) }) }
+                }
+            }
         }
     }
 }

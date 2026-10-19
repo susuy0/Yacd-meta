@@ -163,7 +163,7 @@ internal class NativeModuleViewModel(
     }
     fun popDocument(): Boolean {
         val previous = documentHistory.removeLastOrNull() ?: return false
-        _state.update { it.copy(selectedPath = previous.first, document = previous.second, documentDepth = documentHistory.size, message = null, writeUncertain = false) }
+        _state.update { it.copy(selectedPath = previous.first, document = previous.second, documentDepth = documentHistory.size, message = null) }
         return true
     }
 

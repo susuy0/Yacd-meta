@@ -164,6 +164,8 @@ internal object PaymentAdminCatalog {
 }
 
 internal data class PaymentAdminState(
+    val writeUncertain: Boolean = false,
+    val testUncertain: Boolean = false,
     val spec: PaymentAdminSpec,
     val batch: BatchProgress? = null,
     val loading: Boolean = true,
@@ -308,7 +310,7 @@ internal class PaymentAdminViewModel(
             .onSuccess { document ->
                 if (generation != loadGeneration) return@onSuccess
                 val feedback = feedbackAfterLoad.also { feedbackAfterLoad = null }
-                _state.update { it.copy(loading = false, document = document, message = feedback) }
+                _state.update { it.copy(loading = false, writeUncertain = false, document = document, message = feedback) }
                 if (_state.value.spec.id in setOf("payment_types", "proxies")) loadConfigurationContext()
                 if (_state.value.spec.id == "channels" && pendingInitialChannelId.isNotBlank()) {
                     val targetId = pendingInitialChannelId.also { pendingInitialChannelId = "" }
@@ -496,7 +498,7 @@ internal class PaymentAdminViewModel(
     }
 
     fun submitPaymentTest(name: String, amount: String) = viewModelScope.launch {
-        if (_state.value.testLoading) return@launch
+        if (_state.value.testLoading || _state.value.testUncertain) return@launch
         val channel = _state.value.testChannel ?: return@launch
         val numericAmount = amount.toBigDecimalOrNull()
         if (name.isBlank() || numericAmount == null || numericAmount <= java.math.BigDecimal.ZERO || numericAmount.stripTrailingZeros().scale() > 2) {
@@ -508,7 +510,7 @@ internal class PaymentAdminViewModel(
             .onSuccess { result -> _state.update { it.copy(testLoading = false, testResult = result) } }
             .onFailure { error ->
                 _state.update {
-                    it.copy(testLoading = false, testResult = PaymentTestResult(false, error.message ?: "测试支付失败"))
+                    it.copy(testLoading = false, testUncertain = true, testResult = PaymentTestResult(false, "创建结果待核对，请先到订单列表查询，勿重复创建。"))
                 }
             }
     }
@@ -579,7 +581,7 @@ internal class PaymentAdminViewModel(
     }
 
     private fun runAction(block: suspend () -> ApiResult) = viewModelScope.launch {
-        if (_state.value.loading) return@launch
+        if (_state.value.loading || _state.value.writeUncertain) return@launch
         _state.update { it.copy(loading = true, message = null) }
         runCatching { block() }
             .onSuccess { result ->
@@ -594,7 +596,7 @@ internal class PaymentAdminViewModel(
                     load()
                 } else _state.update { it.copy(loading = false, message = result.message) }
             }
-            .onFailure { error -> _state.update { it.copy(loading = false, message = error.message ?: "操作失败") } }
+            .onFailure { error -> _state.update { it.copy(loading = false, writeUncertain = true, message = "操作结果待核对，请返回列表刷新核对，勿重复提交。") } }
     }
 
     class Factory(
@@ -649,6 +651,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
             configurationLoading = state.configurationLoading,
             configurationError = state.configurationError,
             onReloadConfiguration = { viewModel.loadConfigurationContext() },
+            uncertain = state.writeUncertain,
         )
         return
     }
@@ -675,6 +678,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
                 channel = testChannel,
                 loading = state.testLoading,
                 result = state.testResult,
+                uncertain = state.testUncertain,
                 onDismiss = viewModel::closePaymentTest,
                 onSubmit = viewModel::submitPaymentTest,
             )
@@ -1004,6 +1008,7 @@ private fun PaymentTestDialog(
     channel: PaymentChannelItem,
     loading: Boolean,
     result: PaymentTestResult?,
+    uncertain: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (String, String) -> Unit,
 ) {
@@ -1049,8 +1054,8 @@ private fun PaymentTestDialog(
             }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).height(48.dp)) { Text("关闭") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).height(48.dp)) {
-                if (loading) CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp) else Text("创建测试订单")
+            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).height(48.dp)) {
+                if (loading) CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp) else Text(if (uncertain) "在订单中核对" else "创建测试订单")
             }
         }
     }
@@ -1487,6 +1492,7 @@ internal fun PaymentEditorScreen(
     configurationLoading: Boolean = false,
     configurationError: String? = null,
     onReloadConfiguration: () -> Unit = {},
+    uncertain: Boolean = false,
 ) {
     val values = form.fields.associate { it.name to it.value }
     val routeItems = form.toRollRouteVisualItems()
@@ -1509,7 +1515,7 @@ internal fun PaymentEditorScreen(
                 Button(shape = RoundedCornerShape(10.dp), onClick = {
                     val submitted = values.filter { (name, value) -> val field = form.fields.first { it.name == name }; !field.readOnly && (!field.sensitive || value.isNotBlank()) }
                     onSubmit(form, submitted)
-                }, enabled = !loading && !missingRequired, modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "处理中…" else "保存") }
+                }, enabled = !loading && !missingRequired && !uncertain, modifier = Modifier.weight(2f).height(48.dp)) { Text(if (loading) "处理中…" else "保存") }
             } }
         },
         topBar = {
@@ -1517,6 +1523,7 @@ internal fun PaymentEditorScreen(
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (uncertain) item { PayCard { Text("保存结果待核对", color = Warning); Text("请取消返回列表并刷新核对后台状态，避免重复创建或修改。", color = Muted, fontSize = 13.sp) } }
             if (isRollRoute) {
                 if (!form.action.contains("saveRollInfo")) {
                     item { SectionLabel("基本信息") }

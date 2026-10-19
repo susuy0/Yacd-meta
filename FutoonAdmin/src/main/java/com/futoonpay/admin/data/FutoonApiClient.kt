@@ -125,7 +125,7 @@ class FutoonApiClient(
                 .url(resolve(endpoint))
                 .header("Referer", resolve(referer).toString())
                 .post(builder.build())
-                .build()
+                .build(), once = true
         )
         val code = json.optInt("code", -1)
         ApiResult(code == 0 || code == 200, json.optString("msg", if (code == 0 || code == 200) "操作成功" else "操作失败"), json.recordId())
@@ -140,7 +140,7 @@ class FutoonApiClient(
         fields.forEach { (key, values) -> values.forEach { value -> builder.add(key, value) } }
         val json = executeJson(
             Request.Builder().url(resolve(endpoint)).header("Referer", resolve(referer).toString())
-                .post(builder.build()).build()
+                .post(builder.build()).build(), once = true
         )
         val code = json.optInt("code", -1)
         ApiResult(code == 0 || code == 200, json.optString("msg", if (code == 0 || code == 200) "操作成功" else "操作失败"), json.recordId())
@@ -155,7 +155,7 @@ class FutoonApiClient(
             query.forEach { (key, value) -> addQueryParameter(key, value) }
         }.build()
         val json = executeJson(
-            Request.Builder().url(url).header("Referer", resolve(referer).toString()).get().build()
+            Request.Builder().url(url).header("Referer", resolve(referer).toString()).get().build(), once = true
         )
         val code = json.optInt("code", -1)
         ApiResult(code == 0 || code == 200, json.optString("msg", if (code == 0 || code == 200) "操作成功" else "操作失败"), json.recordId())
@@ -209,10 +209,10 @@ class FutoonApiClient(
             val url = resolve(action).newBuilder().apply { fields.forEach { (key, value) -> addQueryParameter(key, value) } }.build()
             requestBuilder.url(url).get().build()
         } else requestBuilder.post(form).build()
-        execute(request).use { response ->
+        (if (method.equals("GET", true)) execute(request) else executeOnce(request)).use { response ->
             if (response.code == 401) expireSession()
             if (response.code == 403) throw PermissionDeniedException()
-            if (!response.isSuccessful) return@withContext ApiResult(false, "保存失败（${response.code}）")
+            if (!response.isSuccessful) throw IOException("保存结果待核对（${response.code}）")
             val raw = response.body?.string().orEmpty()
             if (looksLikeLoginPage(raw)) expireSession()
             val json = runCatching { JSONObject(raw) }.getOrNull()
@@ -222,8 +222,9 @@ class FutoonApiClient(
                 return@withContext ApiResult(code == 0 || code == 200, json.optString("msg", "操作完成"), json.recordId())
             }
             val message = Regex("alert\\(['\"]([^'\"]+)", RegexOption.IGNORE_CASE)
-                .find(raw)?.groupValues?.getOrNull(1) ?: return@withContext ApiResult(false, "后台未确认保存成功，请重试或刷新核对")
+                .find(raw)?.groupValues?.getOrNull(1) ?: throw IOException("后台未确认保存结果，请刷新核对")
             val failed = message.contains("失败") || message.contains("错误") || message.contains("不能为空")
+            if (!failed && !message.contains("成功") && !message.contains("完成")) throw IOException("后台未明确确认保存结果，请刷新核对")
             ApiResult(!failed, message)
         }
     }
@@ -258,7 +259,7 @@ class FutoonApiClient(
     }
 
     private fun executeJson(request: Request, once: Boolean = false): JSONObject =
-        (if (once) client.newBuilder().retryOnConnectionFailure(false).followRedirects(false).followSslRedirects(false).build().newCall(request).execute() else execute(request)).use { response ->
+        (if (once) executeOnce(request) else execute(request)).use { response ->
         if (response.code == 401) expireSession()
         if (response.code == 403) throw PermissionDeniedException()
         if (!response.isSuccessful) throw IOException("请求失败（${response.code}）")
@@ -288,6 +289,8 @@ class FutoonApiClient(
         }
         return JSONObject(trimmed)
     }
+
+    private fun executeOnce(request: Request): Response = client.newBuilder().retryOnConnectionFailure(false).followRedirects(false).followSslRedirects(false).build().newCall(request).execute()
 
     private fun execute(request: Request): Response = client.newCall(request).execute()
 

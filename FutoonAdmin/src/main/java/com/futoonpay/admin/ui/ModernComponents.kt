@@ -55,7 +55,7 @@ internal fun PayTabs(options: List<Pair<String, String>>, selected: String, onSe
         val index = options.indexOfFirst { it.first == selected }
         if (index >= 0) scroll.animateScrollToItem(index)
     }
-    LazyRow(state = scroll, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).background(CardColor), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+    LazyRow(state = scroll, modifier = Modifier.fillMaxWidth().height((48f * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp).background(CardColor), horizontalArrangement = Arrangement.spacedBy(0.dp)) {
         items(options, key = { it.first }) { (value, label) ->
             val active = selected == value
             Box(modifier = Modifier.fillMaxHeight().clickable { onSelect(value) }.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {

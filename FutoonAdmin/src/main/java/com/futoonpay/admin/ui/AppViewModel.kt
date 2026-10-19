@@ -76,6 +76,8 @@ data class AppUiState(
     val merchantBalanceUpdating: Boolean = false,
     val merchantEditorUid: String = "",
     val merchantEditor: com.futoonpay.admin.data.NativeForm? = null,
+    val merchantEditorOriginal: com.futoonpay.admin.data.NativeForm? = null,
+    val merchantEditorUncertain: Boolean = false,
     val merchantEditorLoading: Boolean = false,
     val merchantEditorSaving: Boolean = false,
     val merchantEditorError: String? = null,
@@ -161,12 +163,18 @@ class AppViewModel(
     fun openMerchantEditor(uid: String) = viewModelScope.launch {
         if (_state.value.merchantEditorSaving) return@launch
         val generation = ++merchantEditorGeneration
+        val previous = _state.value.merchantEditor.takeIf { _state.value.merchantEditorUid == uid && _state.value.merchantEditorUncertain }
         originalMerchantEditor = null
-        _state.update { it.copy(merchantEditorUid = uid, merchantEditor = null, merchantEditorLoading = true, merchantEditorError = null) }
+        _state.update { it.copy(merchantEditorUid = uid, merchantEditor = previous, merchantEditorLoading = true, merchantEditorError = null) }
         runCatching { repository.merchantProfile(uid) }.onSuccess { form ->
             if (generation != merchantEditorGeneration) return@onSuccess
             originalMerchantEditor = form
-            _state.update { it.copy(merchantEditor = form, merchantEditorLoading = false) }
+            val draft = previous?.fields?.associate { it.name to it.value }.orEmpty()
+            val restored = if (previous == null) form else form.copy(fields = form.fields.map { field ->
+                if (field.readOnly || field.type == "hidden" || draft[field.name] == null) field else field.copy(value = draft.getValue(field.name))
+            })
+            _state.update { it.copy(merchantEditor = restored, merchantEditorOriginal = form, merchantEditorLoading = false, merchantEditorUncertain = false,
+                merchantEditorError = if (previous == null) null else "已重新读取后台资料。请对照当前值与本次填写内容，核对后再决定是否保存。") }
         }.onFailure { error ->
             if (generation == merchantEditorGeneration) _state.update { it.copy(merchantEditorLoading = false, merchantEditorError = error.userMessage()) }
             handleFailure(error)
@@ -182,11 +190,11 @@ class AppViewModel(
         if (_state.value.merchantEditorSaving) return
         merchantEditorGeneration++
         originalMerchantEditor = null
-        _state.update { it.copy(merchantEditorUid = "", merchantEditor = null, merchantEditorLoading = false, merchantEditorError = null) }
+        _state.update { it.copy(merchantEditorUid = "", merchantEditor = null, merchantEditorOriginal = null, merchantEditorUncertain = false, merchantEditorLoading = false, merchantEditorError = null) }
     }
 
     fun saveMerchantEditor() = viewModelScope.launch {
-        if (_state.value.merchantEditorSaving) return@launch
+        if (_state.value.merchantEditorSaving || _state.value.merchantEditorUncertain) return@launch
         val original = originalMerchantEditor ?: return@launch
         val snapshot = _state.value
         val values = snapshot.merchantEditor?.fields?.associate { it.name to it.value } ?: return@launch
@@ -199,7 +207,8 @@ class AppViewModel(
                 loadMerchants(snapshot.merchantPage, snapshot.merchantSearch)
             }
         }.onFailure { error ->
-            _state.update { it.copy(merchantEditorSaving = false, merchantEditorError = error.userMessage()) }
+            val uncertain = error !is IllegalArgumentException && error !is SessionExpiredException && error !is com.futoonpay.admin.data.PermissionDeniedException
+            _state.update { it.copy(merchantEditorSaving = false, merchantEditorUncertain = uncertain, merchantEditorError = if (uncertain) "保存结果待核对。请重新读取资料并对比，不要重复提交。" else error.userMessage()) }
             handleFailure(error)
         }
     }

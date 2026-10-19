@@ -163,15 +163,15 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
     }
     fun saveNote(trade: String, note: String) { if (state.value.localLoading) return; if (note.length > 4000) { notice("内部备注最多 4000 个字符，内容尚未保存"); return }; val item = case(trade).put("note", note); objectAt("cases").put(trade, item); changed() }
     fun saveDraft(order: JSONObject, caption: String, status: String) {
-        if (state.value.localLoading) return
+        if (state.value.localLoading || caption.length > 1024) return
         val trade = order.optString("trade_no"); if (trade.isBlank()) return
         val origin = MessageSource.from(order.optJSONObject("_source"))
         val drafts = objectAt("drafts")
-        drafts.put(trade, JSONObject().put("order", order).put("caption", caption.take(1024)).put("sourceContext", origin.json()).put("sourceMessage", origin.message).put("updated", System.currentTimeMillis()))
+        drafts.put(trade, JSONObject().put("order", order).put("caption", caption).put("sourceContext", origin.json()).put("sourceMessage", origin.message).put("updated", System.currentTimeMillis()))
         while (drafts.length() > 50) drafts.remove(drafts.keys().asSequence().minBy { drafts.getJSONObject(it).optLong("updated") })
         objectAt("cases").put(trade, case(trade).put("status", status))
         changed()
-        viewModelScope.launch { runCatching { call("evidence.draft", JSONObject().put("order", order).put("caption", caption.take(1024))) }.onFailure(::failure) }
+        viewModelScope.launch { runCatching { call("evidence.draft", JSONObject().put("order", order).put("caption", caption)) }.onFailure(::failure) }
     }
     fun restoreDraft(draft: JSONObject) = viewModelScope.launch {
         val order = draft.optJSONObject("order") ?: return@launch

@@ -104,4 +104,17 @@ class ApiTransportRegressionTest {
         assertTrue(repository.submitPaymentForm("rolls", form, mapOf("list[0][channel]" to "12", "list[0][weight]" to "1", "list[1][channel]" to "", "list[1][weight]" to "30")).success)
         assertEquals(mapOf("list[0][channel]" to "12", "list[0][weight]" to "1"), sent)
     }
+    @Test fun unconfirmedSaveResponseIsNotARetryableExplicitRejection() = runBlocking {
+        val client = fixtureClient({ 200 to "<html>upstream response missing</html>" })
+        try { client.submitForm("save.php", "POST", "order.php", emptyMap()); fail() }
+        catch (error: IOException) { assertTrue(error.message!!.contains("核对")) }
+    }
+    @Test fun nativeActionPathsKeepFieldsEncodedAndOnlyEditorsNavigate() {
+        val edit = NativeAction("编辑公告", "gonggao.php?my=edit", fields = mapOf("title" to "a & b"))
+        assertTrue(edit.opensNativeDocument())
+        assertTrue(edit.documentPath().contains("a+%26+b"))
+        assertFalse(NativeAction("删除", "ajax.php?act=delete&id=1", destructive = true).opensNativeDocument())
+        assertFalse(NativeAction("配置", "ajax.php?act=setChannel&id=1").opensNativeDocument())
+    }
+
 }

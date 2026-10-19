@@ -69,7 +69,9 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
             surfaceContainer = palette.surface, surfaceContainerLow = palette.surface, surfaceContainerHigh = palette.surface,
             surfaceContainerHighest = palette.background, outline = palette.divider, outlineVariant = palette.divider, error = palette.error)
     }
-    CompositionLocalProvider(LocalFutoonPalette provides palette) {
+    val accentContrast = (maxOf(palette.surface.luminance(), palette.accentText.luminance()) + .05f) / (minOf(palette.surface.luminance(), palette.accentText.luminance()) + .05f)
+    val safePalette = if (accentContrast < 4.5f) palette.copy(accentText = palette.text) else palette
+    CompositionLocalProvider(LocalFutoonPalette provides safePalette) {
         MaterialTheme(colorScheme = colors,
             typography = Typography(bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
             shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(16.dp)),

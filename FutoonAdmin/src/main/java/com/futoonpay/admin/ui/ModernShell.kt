@@ -172,9 +172,15 @@ private fun MenuRow(title: String, subtitle: String, icon: ImageVector, onClick:
 
 @Composable
 internal fun DataRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(label, color = Muted, fontSize = 12.sp, modifier = Modifier.widthIn(min = 72.dp, max = 110.dp))
-        Text(value.ifBlank { "—" }, fontSize = 13.sp, modifier = Modifier.weight(1f))
+    val large = androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.3f
+    androidx.compose.foundation.text.selection.SelectionContainer {
+        if (large) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label, color = Muted, fontSize = 13.sp)
+            Text(value.ifBlank { "—" }, fontSize = 15.sp)
+        } else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(label, color = Muted, fontSize = 13.sp, modifier = Modifier.widthIn(min = 72.dp, max = 110.dp))
+            Text(value.ifBlank { "—" }, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        }
     }
 }
 
