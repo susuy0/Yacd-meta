@@ -122,6 +122,7 @@ class ApiTransportRegressionTest {
     @Test fun testPaymentUsesOneShotBodyAndKeepsTheExactFormFields() = runBlocking {
         var calls = 0
         val repository = FutoonRepository(fixtureClient({ request ->
+            if (request.url.queryParameter("act") == "testpay") {
             calls++
             assertTrue("Test order creation must not replay its request body", request.body!!.isOneShot())
             val buffer = okio.Buffer(); request.body!!.writeTo(buffer)
@@ -131,6 +132,7 @@ class ApiTransportRegressionTest {
             }
             assertEquals(mapOf("channel" to "12", "name" to "测试 & 凭证", "money" to "1.00"), fields)
             200 to "{\"code\":0,\"trade_no\":\"TEST_1\"}"
+            } else 200 to "<html></html>"
         }))
         assertTrue(repository.testPayment("12", "测试 & 凭证", "1.00").success)
         assertEquals(1, calls)
