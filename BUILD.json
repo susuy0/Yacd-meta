@@ -1,30 +1,30 @@
 {
-  "version": "0.8.1 native extensions",
-  "versionCode": 71919,
+  "version": "0.8.2 native settings cancellation fix",
+  "versionCode": 71929,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "c2dff407e3aac137603e093969eea7e4bcdf282a2515b3ac8ba78f91a3f172dd",
-  "source_baseline": "be9fae25ef4273a75fb1ffa3da3d3c3c11b0985b",
-  "source_commit": "34316dd8ece75cc024b9b1222180adfa44b5b8bd",
-  "source_tree": "e403dcd898b73d8913889609e35e3784b9a7b0b9",
+  "patch_sha256": "0cfc1d370c2948246152ff74badfd560257bed3045b55ecea9ba11ce9a4b78ed",
+  "source_baseline": "7703d85ad62253001606891be1f56101c014c962",
+  "source_commit": "08ad43074846eaffb2793061a1730e233765854a",
+  "source_tree": "37ae3059abc971630bd47b622630f63af17542f7",
   "validation": {
     "status": "passed",
-    "workflow_run": 39247979971,
-    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39247979971",
-    "preflight_run": 39245481514,
+    "workflow_run": 39265669345,
+    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39265669345",
+    "preflight_run": 39264922463,
     "jobs": {
-      "panel-ui": 118044492776,
-      "core-checks": 118044493016,
-      "native-admin": 118044493065,
-      "android": 118046187369
+      "panel-ui": 118104476582,
+      "native-admin": 118104477169,
+      "core-checks": 118104477457,
+      "android": 118106710463
     },
     "job_conclusions": "all success",
     "native_tests": {
-      "tests": 271,
+      "tests": 275,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "screenshots": 39,
+      "screenshots": 40,
       "lint_errors": 0,
       "lint_warnings": 29,
       "lint_hints": 3
@@ -47,7 +47,30 @@
     ],
     "apk_component_native_engine_audit": "passed",
     "test_environment": "Robolectric SDK 35 and controlled synthetic Telegram/backend transport",
-    "device_backend": "Android 17 device, keyboard, gallery crop and live backend not tested; no live account creation, financial write, key reset, Telegram send or bot callback performed"
+    "device_backend": "Android 17 device, keyboard, gallery crop and live backend not tested; no live account creation, financial write, key reset, Telegram send or bot callback performed",
+    "settings_regression": {
+      "negative_control_source": "c5a13eea8a3f1178f39664a86db3306beaf7edff",
+      "negative_control_run": 39263956093,
+      "reproduced": "Overlapping picker-return reloads display The coroutine scope left the composition twice on v0.8.1",
+      "fixed_cases": [
+        {
+          "name": "rapidPickerReturnsKeepSelectedGroupAndRuleDraftWithoutCancellationErrors",
+          "passed": true
+        },
+        {
+          "name": "aRealSaveFailureIsShownOnceAndTheEditedRuleCanBeSavedAgain",
+          "passed": true
+        },
+        {
+          "name": "aRealReloadFailureIsShownOnceAndRetryRecoversWithoutChangingSettings",
+          "passed": true
+        },
+        {
+          "name": "cancelledOldReadCannotHideTheStillPendingNewReadsProgress",
+          "passed": true
+        }
+      ]
+    }
   },
   "features": {
     "native_ui_only": true,
@@ -69,18 +92,21 @@
       "unique exact bot callback button",
       "editable draft into empty conversation"
     ],
-    "existing_merchant_order_settlement_modules": "preserved"
+    "existing_merchant_order_settlement_modules": "preserved",
+    "cancelled_settings_tasks_do_not_update_ui": true,
+    "settings_errors_render_once_with_retry": true,
+    "unsaved_rule_preserved_on_save_failure": true
   },
   "previous_release": {
-    "version": "0.8.0",
-    "versionCode": 71909,
-    "source_commit": "a22fbd817ed06558960d99cda0428887d1b4d86b",
-    "apk_sha256": "2db829f3194e8eb690db84d013344194f24c4336b092b5ba5cb1999fd5ce3cfe",
+    "version": "0.8.1",
+    "versionCode": 71919,
+    "source_commit": "34316dd8ece75cc024b9b1222180adfa44b5b8bd",
+    "apk_sha256": "0b6037ec62e8942e881bee51930dbc921ac9db663949fbf09b46ec99a94e7670",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
   },
   "apk": {
-    "bytes": 41147794,
-    "sha256": "0b6037ec62e8942e881bee51930dbc921ac9db663949fbf09b46ec99a94e7670",
+    "bytes": 41148028,
+    "sha256": "4e7e1ca452b64e1fcf77a8e3b05e77439b4dabea5a28ac80c47790c5af10e9f3",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -91,26 +117,26 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 17,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71919,
+    "versionCode": 71929,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.8.1-arm64.apk",
+    "filename": "SMS-Futoon-v0.8.2-arm64.apk",
     "same_signer_as_previous_release": true,
     "push_mode": "development-no-fcm (existing build mode; push delivery not tested)",
     "ci_sha256sums": "APK and R8 mapping verified"
   },
   "artifacts": {
     "apk": {
-      "id": 12184787313,
-      "name": "VineChat-Futoon-v0.8.1-native-development-no-fcm",
-      "zip_sha256": "52de914e6bd9088b8a8b219cd7b058b63bfbfd6c2b0b4b998d43edad16cb6af8"
+      "id": 12192809820,
+      "name": "VineChat-Futoon-v0.8.2-native-development-no-fcm",
+      "zip_sha256": "68a80a0d86e7b3db800f076d8598d91f8c224c5a9ed423361e0e0dca37921c3c"
     },
     "native_reports": {
-      "id": 12184865415,
-      "name": "Futoon-v0.8.1-native-business-checks",
-      "zip_sha256": "92026fe86129c601a1d45894bf47b879b2d9f428d71f2c42541383409b76b7f2"
+      "id": 12193671477,
+      "name": "Futoon-v0.8.2-native-business-checks",
+      "zip_sha256": "a42ed7b6086046f8adbaec7469819fd256ef9624d0bc95473ffb5b0323dbf9ea"
     }
   }
 }

@@ -1,8 +1,10 @@
-# 短信 / Futoon chat v0.8.1
+# 短信 / Futoon chat v0.8.2
 
 Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / 商户 / 结算 / 更多」五个独立 Tab。
 
 v0.8.1 新增悬浮窗与外观自定义、相册图片入口、状态恢复、业务回复模板及按群自动化；设置顶栏复用 Telegram 原生组件，移除订单与凭证中的内部备注入口。设置入口、默认值和运行范围见 [EXTENSIONS-v0.8.1.md](EXTENSIONS-v0.8.1.md)。
+
+v0.8.2 修复群自动化和扩展设置在刷新、选群返回时显示两次 `The coroutine scope left the composition` 的问题。已取消的读取不会更新错误和加载状态；真正的读取、保存失败仅显示一次并保留重试入口，保存失败后保留已编辑的规则。
 
 ## 聊天工具
 
@@ -40,10 +42,12 @@ FutoonPay 设置 → 开户文案支持整段编辑与恢复默认。变量为 `
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71919`，ARM64，minSdk 23 / targetSdk 36。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71929`，ARM64，minSdk 23 / targetSdk 36。
 
 v0.8.1 保留现有 Telegram 页面和发送 / 媒体入口，定制功能见 [EXTENSIONS-v0.8.1.md](EXTENSIONS-v0.8.1.md)。业务界面使用原生 Android View 与 Compose。
 
-完整 Android 构建与组件审计通过。271 项原生业务和界面测试全部通过，Lint 0 错误 / 29 警告 / 3 提示；39 张合成数据截图。另通过 18 项实际自动化调度检查、75 项悬浮窗几何检查、110 条 Android ICU 表达式与 5 个开户变量用例，以及原发送 / 媒体、生命周期、身份识别和后台契约回归。
+完整 Android 构建与组件审计通过。275 项原生业务和界面测试全部通过，Lint 0 错误 / 29 警告 / 3 提示；40 张合成数据截图。另通过 18 项实际自动化调度检查、75 项悬浮窗几何检查、110 条 Android ICU 表达式与 5 个开户变量用例，以及原发送 / 媒体、生命周期、身份识别和后台契约回归。
 
-APK 的 v2 签名、内容摘要、ZIP 完整性、版本和 CI 校验值已核验，签名与 v0.8.0 一致。安装包信息见 BUILD.json；构建为 [39247979971](https://github.com/susuy0/Yacd-meta/actions/runs/39247979971)。测试使用合成数据，没有执行真实开户、资金写入、密钥重置、Telegram 发送或机器人点击。Android 17 真机、系统键盘、相册裁剪和真实后台仍需实机联调。
+APK 的 v2 签名、内容摘要、ZIP 完整性、版本和 CI 校验值已核验，签名与 v0.8.1 一致。安装包信息见 BUILD.json；构建为 [39265669345](https://github.com/susuy0/Yacd-meta/actions/runs/39265669345)。测试使用合成数据，没有执行真实开户、资金写入、密钥重置、Telegram 发送或机器人点击。Android 17 真机、系统键盘、相册裁剪和真实后台仍需实机联调。
+
+新增四项设置回归覆盖连续刷新与选群返回、已取消旧读取的延迟失败、真实读取失败后重试、真实保存失败后保留规则并再次保存。旧版负对照复现了与反馈截图相同的两条取消错误；修复版四项全部通过。

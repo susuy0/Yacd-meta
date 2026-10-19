@@ -1,11 +1,11 @@
-短信 / Futoon chat v0.8.1 扩展区域验证
-验证源代码：34316dd8ece75cc024b9b1222180adfa44b5b8bd
-预检 GitHub Actions：39245481514
+短信 / Futoon chat v0.8.2 扩展区域验证
+验证源代码：08ad43074846eaffb2793061a1730e233765854a
+预检 GitHub Actions：39264922463
 完整 Android 构建与最终安装包信息：见 BUILD.json
 
-271 tests, 0 failures, 0 errors, 0 skipped
+275 tests, 0 failures, 0 errors, 0 skipped
 Android Lint: 0 errors, 29 warnings, 3 hints
-39 synthetic-fixture screenshots
+40 synthetic-fixture screenshots
 
 本轮新增 / 更新覆盖：
 - 旧 Tag、快速回复、开户文案配置兼容读取
@@ -32,3 +32,10 @@ Android Lint: 0 errors, 29 warnings, 3 hints
 
 这是 Robolectric SDK 35 与可控传输测试。没有执行真实开户、资金写入、密钥重置、Telegram 发送或机器人点击。
 Android 17 真机、系统键盘、相册裁剪及真实后台仍需实机联调。
+
+v0.8.2 设置取消回归：
+- 连续刷新与选群返回不会显示协程取消错误；保留群和已输入的发送者，规则可成功保存。
+- 取消的旧读取延迟抛出 IO 异常，不会覆盖新读取的错误或加载状态。
+- 真实读取失败只显示一次，重新读取可恢复，不写入或清空已有设置。
+- 真实保存失败只显示一次，已编辑规则保留，第二次保存成功。
+旧版负对照：39263956093；正向预检：39264922463。
