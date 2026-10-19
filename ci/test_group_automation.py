@@ -46,6 +46,7 @@ public class AutomationDispatchTest {
   rule.action="draft";rule.draft="已收到 {消息文字}";engine.reload();emit(engine,message(15,false),1);AndroidUtilities.flush();check(MediaDataController.saved==1&&ConnectionsManager.sent.size()==2,"Draft action must save text without sending a message or button callback");
   emit(engine,message(16,false),1);AndroidUtilities.flush();check(MediaDataController.saved==1,"Existing draft must not be overwritten");MediaDataController.drafts.clear();ChatActivity active=new ChatActivity();active.empty=false;LaunchActivity.current=active;emit(engine,message(17,false),1);AndroidUtilities.flush();check(active.inserted==0,"Unsaved active editor text must not be overwritten");active.empty=true;emit(engine,message(18,false),1);AndroidUtilities.flush();check(active.inserted==1,"Empty active editor receives an editable draft");
   rule.action="click";engine.reload();emit(engine,message(19,true),1);UserConfig.owner=0;AndroidUtilities.flush();check(ConnectionsManager.sent.size()==2,"Logout must invalidate queued actions");
+  engine.didReceivedNotification(NotificationCenter.appDidLogout,0);UserConfig.owner=101;FutoonAutomation restarted=FutoonAutomation.get(0);emit(restarted,message(20,true),1);AndroidUtilities.flush();check(ConnectionsManager.sent.size()==3,"Logging back into the same account must restart message observation");
   System.out.println("PASS: "+cases+" production automation dispatch, durable deduplication, edit, account/group, callback and draft checks");
  }
 }'''

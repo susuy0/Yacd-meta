@@ -169,7 +169,6 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
         val old = array("favorites"); val id = row.optString("trade_no")
         local.put("favorites", JSONArray(if (isFavorite(id)) old.filter { it.optString("trade_no") != id } else (listOf(row) + old).take(100))); changed()
     }
-    fun saveNote(trade: String, note: String) { if (state.value.localLoading) return; if (note.length > 4000) { notice("内部备注最多 4000 个字符，内容尚未保存"); return }; val item = case(trade).put("note", note); objectAt("cases").put(trade, item); changed() }
     fun saveDraft(order: JSONObject, caption: String, status: String) {
         if (state.value.localLoading || caption.length > 1024) return
         val trade = order.optString("trade_no"); if (trade.isBlank()) return

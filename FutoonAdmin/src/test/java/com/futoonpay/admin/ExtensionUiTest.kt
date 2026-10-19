@@ -50,7 +50,7 @@ class ExtensionUiTest {
         host.saved = ChatToolsConfig(tabs = listOf(ReplyTab(title = "保留的分类"))).json(); root("panel")
         compose.onNodeWithText("记住页面、筛选和未完成操作").performClick()
         compose.onNode(hasText("识别") and isSelectable()).performClick()
-        compose.onNodeWithText("保存设置").performScrollTo().performClick()
+        compose.onNodeWithText("保存设置").assertIsDisplayed().performClick()
         compose.waitUntil(5000) { host.writes == 1 }
         val config = ChatToolsConfig.parse(host.saved)
         assertFalse(config.extensions.panel.remember); assertEquals("recognition", config.extensions.panel.defaultTab)
@@ -63,7 +63,7 @@ class ExtensionUiTest {
         compose.onNodeWithText("背景遮罩").performClick()
         compose.onNodeWithText("遮罩深度：25%").assertExists()
         screenshot("38-panel-appearance-dim-options")
-        compose.onNodeWithText("保存设置").performScrollTo().performClick()
+        compose.onNodeWithText("保存设置").assertIsDisplayed().performClick()
         compose.waitUntil(5000) { host.writes == 1 }
         assertEquals(25, ChatToolsConfig.parse(host.saved).extensions.appearance.dim)
     }
@@ -73,7 +73,7 @@ class ExtensionUiTest {
         compose.onNode(hasSetTextAction() and hasText("指定机器人／发送者 Telegram ID")).performScrollTo().performTextReplacement("5824870757")
         compose.onNodeWithText("确定规则").performScrollTo().performClick()
         assertEquals(0, host.writes)
-        compose.onNodeWithText("保存设置").performScrollTo().performClick()
+        compose.onNodeWithText("保存设置").assertIsDisplayed().performClick()
         compose.waitUntil(5000) { host.writes == 1 }
         val rule = ChatToolsConfig.parse(host.saved).extensions.rules.single()
         assertEquals(-42L, rule.dialog); assertEquals(5824870757L, rule.sender); assertFalse(rule.enabled)

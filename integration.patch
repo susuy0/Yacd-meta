@@ -7923,10 +7923,10 @@ index 55d530f..8913fb4 100644
  RELEASE_KEY_ALIAS=androidkey
 diff --git a/Tools/futoon/FutoonPanelLayoutTest.java b/Tools/futoon/FutoonPanelLayoutTest.java
 new file mode 100644
-index 0000000..a0fa348
+index 0000000..d189b72
 --- /dev/null
 +++ b/Tools/futoon/FutoonPanelLayoutTest.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,37 @@
 +package org.telegram.messenger.futoon;
 +
 +public final class FutoonPanelLayoutTest {
@@ -7944,11 +7944,21 @@ index 0000000..a0fa348
 +                int sheet=FutoonPanelLayout.sheetHeight(content,8,360,large,keyboard);
 +                check(sheet>=0&&sheet+16<=Math.max(16,content),"Sheet margins and preferred minimum cannot overflow");
 +            }
++            for(int percent:new int[]{50,85,100}){
++                int custom=FutoonPanelLayout.sheetHeight(content,8,240,false,false,percent);
++                check(custom>=0&&custom<=Math.max(0,content-16),"Custom height must fit even tiny windows");
++            }
 +        }
 +        check(FutoonPanelLayout.contentHeight(844,0,92,24)==728,"Pixel portrait usable area");
 +        check(FutoonPanelLayout.contentHeight(844,0,92,320)==432,"Keyboard replaces navigation inset, not added twice");
 +        check(FutoonPanelLayout.contentHeight(100,0,92,40)==0,"Oversized insets clamp to zero");
 +        check(FutoonPanelLayout.sheetHeight(728,8,360,true,false)==712,"Expanded sheet respects both margins");
++        check(FutoonPanelLayout.sheetHeight(728,8,240,false,false,50)==356,"50 percent must actually shrink the panel");
++        check(FutoonPanelLayout.sheetHeight(728,8,240,false,false,85)==605,"85 percent uses the available area");
++        check(FutoonPanelLayout.sheetHeight(728,8,240,false,false,100)==712,"100 percent respects margins");
++        check(FutoonPanelLayout.sheetHeight(728,8,240,false,false,200)==712,"Oversized percentage clamps");
++        check(FutoonPanelLayout.sheetHeight(728,8,240,false,true,50)==712,"Keyboard always exposes full usable height");
++        check(FutoonPanelLayout.sheetHeight(0,8,240,false,false,85)==0,"Empty window stays zero sized");
 +        // The previous MATCH_PARENT measurement necessarily extended past the screen.
 +        check(92+844>844-24,"Fixture reproduces old parent-measurement overshoot");
 +        System.out.println("PASS: "+checks+" native panel geometry checks (portrait, landscape, IME, small windows)");
@@ -7956,10 +7966,10 @@ index 0000000..a0fa348
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java
 new file mode 100644
-index 0000000..54f0263
+index 0000000..73e8e51
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,20 @@
 +package org.telegram.messenger.futoon;
 +
 +/** Pixel geometry shared by the chat container and floating sheet. No Android dependencies. */
@@ -7974,6 +7984,10 @@ index 0000000..54f0263
 +    public static int sheetHeight(int available, int margin, int preferredMinimum, boolean large, boolean keyboard) {
 +        int maximum = Math.max(0, available - Math.max(0, margin) * 2);
 +        return large || keyboard ? maximum : Math.min(maximum, Math.max(preferredMinimum, available * 85 / 100));
++    }
++    public static int sheetHeight(int available, int margin, int preferredMinimum, boolean large, boolean keyboard, int percent) {
++        int maximum = Math.max(0, available - Math.max(0, margin) * 2);
++        return large || keyboard ? maximum : Math.min(maximum, Math.max(Math.min(preferredMinimum, maximum), maximum * Math.max(50, Math.min(100, percent)) / 100));
 +    }
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
@@ -8094,16 +8108,17 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoade
      public static ApplicationLoader applicationLoaderInstance;
  
      @SuppressLint("StaticFieldLeak")
-@@ -258,5 +259,6 @@
+@@ -258,5 +259,7 @@
              if (user != null) {
                  MessagesController.getInstance(a).putUser(user, true);
                  SendMessagesHelper.getInstance(a).checkUnsentMessages();
-+                org.telegram.messenger.futoon.FutoonAutomation.get(a);
++                final int automationAccount = a;
++                AndroidUtilities.runOnUIThread(() -> org.telegram.messenger.futoon.FutoonAutomation.get(automationAccount));
              }
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000..3e77f49
+index 0000000..bcde74a
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 @@ -0,0 +1,278 @@
@@ -8302,7 +8317,7 @@ index 0000000..3e77f49
 +        open("");panel.recognizeMessageBatch(text.toString(),pointers.toString());
 +    }
 +    public void collapse(){savePanelState();if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);if(!options().getPanel().getRemember())releasePanel();}
-+    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(420),fullscreen,keyboard);if(!fullscreen&&!keyboard){int usable=Math.max(0,available-dp(16));h=Math.min(usable,Math.max(Math.min(dp(420),usable),Math.round(usable*options().getPanel().getHeight()/100f)));}int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
++    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(240),fullscreen,keyboard,options().getPanel().getHeight());int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
 +    public void resume(){paused=false;applyOptions();if(expanded&&panel!=null)panel.onShown();}
 +    public void pause(){paused=true;savePanelState();if(panel!=null)panel.onHidden();}
@@ -8578,7 +8593,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b
          boolean invalidate = false;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
-index 0000000..2a545b9
+index 0000000..8c5ee34
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 @@ -0,0 +1,69 @@
@@ -8617,7 +8632,7 @@ index 0000000..2a545b9
 +        actions = new FutoonSettingsHostActions(this, currentAccount, () -> { if (tools != null) tools.reloadSettings(); });
 +        tools = new ChatToolsView(context, new ChatToolsHostBridge() {
 +            public String load() { return preferences.raw(); }
-+            public void save(String json) throws Exception { preferences.save(currentAccount, json); }
++            public void save(String json) throws Exception { preferences.save(currentAccount, json); AndroidUtilities.runOnUIThread(() -> { if (tools != null) FutoonThemeBridge.refresh(tools); }); }
 +            public String accountLabel() { return "当前 Telegram 账号 · ID " + UserConfig.getInstance(currentAccount).getClientUserId(); }
 +            public String selectedTab() { return selectedTab; }
 +            public String selectedCategory() { return selectedCategory; }
@@ -8726,10 +8741,10 @@ index 0000000..04262f1
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java
 new file mode 100644
-index 0000000..a0e4b9f
+index 0000000..c3701a6
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonChatPreferences.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,66 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -8768,7 +8783,8 @@ index 0000000..a0e4b9f
 +    public static synchronized FutoonChatPreferences get(int account) {
 +        long owner = UserConfig.getInstance(account).getClientUserId();
 +        FutoonChatPreferences result = instances.get(owner);
-+        if (result == null) { result = new FutoonChatPreferences(owner); instances.put(owner, result); if (owner > 0) AndroidUtilities.runOnUIThread(() -> FutoonAutomation.get(account)); }
++        if (result == null) { result = new FutoonChatPreferences(owner); instances.put(owner, result); }
++        if (owner > 0) FutoonAutomation.ensureStarted(account);
 +        return result;
 +    }
 +    public String raw() { return preferences.getString("config", ""); }
@@ -8778,6 +8794,10 @@ index 0000000..a0e4b9f
 +        if (owner <= 0 || UserConfig.getInstance(account).getClientUserId() != owner) throw new IllegalStateException("Telegram 账号已变化，请重新打开设置");
 +        ChatToolsConfig next = ChatToolsConfig.parse(json);
 +        if (!preferences.edit().putString("config", next.json()).commit()) throw new java.io.IOException("保存失败，请重试");
++        if (config.getExtensions().getPanel().getRemember() && !next.getExtensions().getPanel().getRemember()) {
++            android.content.SharedPreferences ui = ApplicationLoader.applicationContext.getSharedPreferences("futoon_panel_ui_" + owner, Context.MODE_PRIVATE);
++            android.content.SharedPreferences.Editor edit = ui.edit(); for (String key : ui.getAll().keySet()) if (key.startsWith("navigation:")) edit.remove(key); edit.apply();
++        }
 +        config = next; revision++;
 +        AndroidUtilities.runOnUIThread(() -> FutoonAutomation.get(account).reload());
 +        AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_NAME));
@@ -8861,10 +8881,10 @@ index 0000000..f101af2
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
 new file mode 100644
-index 0000000..faffeac
+index 0000000..718caa5
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,145 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -8883,6 +8903,7 @@ index 0000000..faffeac
 +/** Per-account message automation. It never scans history or synthesizes screen touches. */
 +public final class FutoonAutomation implements NotificationCenter.NotificationCenterDelegate {
 +    private static final HashMap<Integer, FutoonAutomation> instances = new HashMap<>();
++    private static final HashSet<Integer> starting = new HashSet<>();
 +    private final int account;
 +    private final long owner;
 +    private final SharedPreferences preferences;
@@ -8892,13 +8913,18 @@ index 0000000..faffeac
 +    private final HashMap<String, Runnable> pending = new HashMap<>();
 +    private final HashMap<String, Long> ruleDue = new HashMap<>();
 +    private long nextDue;
++    private boolean stopped;
 +    private List<GroupAutomationRule> rules = Collections.emptyList();
 +    public static synchronized FutoonAutomation get(int account) {
 +        long owner = UserConfig.getInstance(account).getClientUserId();
 +        FutoonAutomation result = instances.get(account);
-+        if (result != null && result.owner != owner) { result.stop(); instances.remove(account); result = null; }
++        if (result != null && (result.owner != owner || result.stopped)) { result.stop(); instances.remove(account); result = null; }
 +        if (result == null) { result = new FutoonAutomation(account, owner); instances.put(account, result); result.reload(); }
 +        return result;
++    }
++    public static void ensureStarted(int account) {
++        synchronized(FutoonAutomation.class) { FutoonAutomation current=instances.get(account); long owner=UserConfig.getInstance(account).getClientUserId(); if(owner<=0 || current!=null&&!current.stopped&&current.owner==owner || !starting.add(account))return; }
++        AndroidUtilities.runOnUIThread(()->{ synchronized(FutoonAutomation.class){starting.remove(account);} if(UserConfig.getInstance(account).isClientActivated())get(account); });
 +    }
 +    public static void startAccounts() { for (int account=0; account<UserConfig.MAX_ACCOUNT_COUNT; account++) if (UserConfig.getInstance(account).isClientActivated()) get(account); }
 +    private FutoonAutomation(int account, long owner) {
@@ -8910,13 +8936,14 @@ index 0000000..faffeac
 +        center.addObserver(this, NotificationCenter.replaceMessagesObjects);
 +        center.addObserver(this, NotificationCenter.appDidLogout);
 +    }
-+    private boolean active() { return owner>0 && UserConfig.getInstance(account).isClientActivated() && UserConfig.getInstance(account).getClientUserId()==owner; }
++    private boolean active() { return !stopped && owner>0 && UserConfig.getInstance(account).isClientActivated() && UserConfig.getInstance(account).getClientUserId()==owner; }
 +    public void reload() {
 +        for(Runnable action:pending.values())AndroidUtilities.cancelRunOnUIThread(action);
 +        pending.clear(); ruleDue.clear(); nextDue=0;
 +        rules=active()?new ArrayList<>(FutoonChatPreferences.get(account).options().getRules()):Collections.emptyList();
 +    }
 +    private void stop() {
++        if(stopped)return;stopped=true;
 +        for(Runnable action:pending.values())AndroidUtilities.cancelRunOnUIThread(action); pending.clear(); latest.clear(); rules=Collections.emptyList();
 +        NotificationCenter center=NotificationCenter.getInstance(account); center.removeObserver(this,NotificationCenter.didReceiveNewMessages);center.removeObserver(this,NotificationCenter.replaceMessagesObjects);center.removeObserver(this,NotificationCenter.appDidLogout);
 +    }

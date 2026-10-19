@@ -123,6 +123,25 @@ class OwnerlessWindowRegressionTest {
         assertTrue(compose(panel).hasComposition)
     }
 
+    @Test fun rememberedPanelReopensWithANewLifecycleAndRetainsItsModelsAndRoute() {
+        val first = NativePanelView(activity, FixtureBridge(), "ownerless-restore-fixture")
+        cleanup += first::close
+        val oldRoot = content(first); premeasure(oldRoot); activity.setContentView(oldRoot); first.onShown(); render(oldRoot)
+        first.recognizeCandidate("2806", "PID")
+        val models = first.viewModelStore
+        val navigation = first.navigationState()
+        first.onHidden(); first.close()
+        assertEquals(Lifecycle.State.DESTROYED, first.lifecycle.currentState)
+        val second = NativePanelView(activity, FixtureBridge(), "ownerless-restore-fixture")
+        cleanup += second::close
+        assertSame(models, second.viewModelStore)
+        assertEquals(navigation, second.navigationState())
+        val root = content(second); premeasure(root); activity.setContentView(root); second.onShown(); render(root)
+        assertTrue(compose(second).hasComposition)
+        assertEquals(Lifecycle.State.RESUMED, second.lifecycle.currentState)
+        second.close()
+    }
+
     @Test fun businessPanelSurvivesMeasuringBeforeTheHostIsAttached() {
         val bridge = FixtureBridge()
         val panel = NativePanelView(activity, bridge)

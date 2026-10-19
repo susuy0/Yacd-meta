@@ -42,7 +42,8 @@ import java.util.UUID
         try { ExtensionOptions.parse(next.json()); validation = null; save(next) { working = next; done() } }
         catch (e: Exception) { validation = e.message ?: "设置内容不正确" }
     }
-    LazyColumn(modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier.fillMaxWidth().imePadding()) {
+    LazyColumn(Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { (validation ?: saveError)?.let { Text(it, color = Danger, fontSize = 13.sp) } }
         if (page == "panel") {
             item { PayCard {
@@ -106,7 +107,7 @@ import java.util.UUID
             } }
             item { TextButton(enabled = !saving, onClick = { working = working.copy(templates = (working.templates + defaultBusinessTemplates.filter { d -> working.templates.none { it.id == d.id } })) }) { Text("补回缺少的默认模板") } }
         } else if (page == "automation") {
-            item { Text("每个群单独开启；可再限定话题与发送者。只处理启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
+            item { Text("每个群单独开启；可再限定话题与发送者。只处理 5 分钟内、启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
             item { Row { Button(enabled = !saving, onClick = { editRule = GroupAutomationRule(dialog = -1, sender = 0) }) { Text("新增群规则") }; TextButton(onClick = { log = host?.automationLog() ?: "暂无执行记录" }) { Text("执行记录") } } }
             working.rules.groupBy { it.dialog }.forEach { (_, rules) ->
                 item { PayCard {
@@ -124,7 +125,9 @@ import java.util.UUID
             if (working.rules.isEmpty()) item { Text("还没有群规则。选择群组后填写实际机器人 ID 和按钮全名。", color = Muted) }
             item { Text("应用在线并收到消息时执行。按钮动作仅支持机器人回调按钮；超时或结果不明不自动重试。", color = Muted, fontSize = 12.sp) }
         }
-        item { Button(enabled = dirty && !saving, onClick = { persist(working) }, modifier = Modifier.fillMaxWidth()) { Text(if (saving) "正在保存…" else "保存设置") } }
+    }
+    HorizontalDivider(color = Line)
+    Button(enabled = dirty && !saving, onClick = { persist(working) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) { Text(if (saving) "正在保存…" else "保存设置") }
     }
     if (discard) PaySheet("尚有未保存的设置", { discard = false }) { Column(Modifier.padding(16.dp)) {
         Text("保存后再离开，或放弃本页的修改。")

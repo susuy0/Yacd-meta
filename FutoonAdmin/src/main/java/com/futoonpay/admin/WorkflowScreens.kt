@@ -246,7 +246,6 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
 
 @Composable internal fun OrderWorkflowTools(detail: OrderDetail) {
     val workflows = LocalPanelWorkflows.current ?: return
-    val copy = LocalWorkflowCopy.current
     val state by workflows.state.collectAsState()
     val row = workflows.rememberDetail(detail)
     var dialog by remember(detail.tradeNo) { mutableStateOf("") }

@@ -127,7 +127,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     fun setThemeColors(json: String) { if (!closed) { palette = FutoonPalette.parse(json); (background as? android.graphics.drawable.GradientDrawable)?.setColor(palette.surface.toArgb()) ?: setBackgroundColor(palette.surface.toArgb()) } }
     fun setFullscreenHandler(callback: Runnable) { fullscreenHandler = callback }
     fun setWindowState(full: Boolean, keyboard: Boolean) { fullscreen = full; keyboardVisible = keyboard }
-    fun setOptions(json: String) { options = ChatToolsConfig.parse(json).extensions }
+    fun setOptions(json: String) { val next = ChatToolsConfig.parse(json).extensions; if (options.panel.remember && !next.panel.remember) PanelMemories.clearAccount(bridge.accountScope()); options = next }
     fun navigationState(): String = navigation.snapshot()
     fun currentEvidence(): String = navigation.current.takeIf { it.kind == "evidence" }?.module.orEmpty()
     fun restoreNavigationState(json: String) { if (options.panel.remember && !memory.hasLiveState) navigation.restore(json) }
