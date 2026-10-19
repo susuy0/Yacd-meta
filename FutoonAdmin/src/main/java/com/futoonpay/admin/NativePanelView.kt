@@ -187,12 +187,11 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
     CompositionLocalProvider(LocalPanelNavigation provides navigation, LocalPanelWorkflows provides workflows, LocalWorkflowCopy provides bridge::copy) {
         PanelOverlayHost {
             Column(Modifier.fillMaxSize().background(Mist)) {
-                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(CardColor).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (state.authStage != AuthStage.AUTHENTICATED) Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(CardColor).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("FUTOON PAY", Modifier.weight(1f), color = Ink, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                     IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
                 }
-                PanelContextStrip(chat, workflowState, keyboard)
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     when (state.authStage) {
                         AuthStage.CHECKING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -201,7 +200,14 @@ class NativePanelView(context: Context, private val bridge: NativePanelBridge) :
                             val holder = rememberSaveableStateHolder()
                             val route = navigator.current
                             holder.SaveableStateProvider(route.id) {
-                                EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions)
+                                BoxWithConstraints(Modifier.fillMaxSize()) {
+                                    val compact = maxHeight < 410.dp
+                                    val chrome = PayPanelChrome(navigator.canPop, actions = {
+                                        IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
+                                        IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
+                                    }, context = { PanelContextStrip(chat, workflowState, keyboard || compact) })
+                                    CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions) }
+                                }
                             }
                         }
                     }

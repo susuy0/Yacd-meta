@@ -439,7 +439,16 @@ class FutoonRepository(
         }
     }
 
-    suspend fun nativeDocument(path: String): NativeDocument = NativeDocumentParser.parse(api.document(path), path)
+    suspend fun nativeDocument(path: String): NativeDocument {
+        val raw = api.document(path)
+        val html = if (raw.trimStart().startsWith("{")) runCatching { JSONObject(raw).optString("data").takeIf { it.contains('<') } }.getOrNull() ?: raw else raw
+        return NativeDocumentParser.parse(html, path)
+    }
+
+    suspend fun runNativeAction(path: String, action: NativeAction): ApiResult =
+        if (action.method.equals("POST", true)) api.postAction(action.endpoint, path, action.fields)
+        else api.getAction(action.endpoint, path, action.fields)
+
 
     suspend fun paymentDocument(
         moduleId: String,

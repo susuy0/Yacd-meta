@@ -17,3 +17,15 @@ internal fun nativeActionTarget(document: NativeDocument?, action: NativeAction)
     }
     return "目标：${action.label}"
 }
+
+/** Only explicit editor/detail links are navigation; mutations still require confirmation. */
+internal fun NativeAction.opensNativeDocument(): Boolean = method.equals("GET", true) && !destructive &&
+    listOf("编辑", "配置", "查看", "详情", "新增", "添加").any(label::contains) &&
+    !listOf("save", "set", "del", "delete", "remove", "reset", "update", "check", "detect").any {
+        endpoint.substringAfter("act=", "").substringBefore('&').startsWith(it, true)
+    }
+
+internal fun NativeAction.documentPath(): String = endpoint + if (fields.isEmpty()) "" else
+    (if (endpoint.contains('?')) "&" else "?") + fields.entries.joinToString("&") { (key, value) ->
+        java.net.URLEncoder.encode(key, "UTF-8") + "=" + java.net.URLEncoder.encode(value, "UTF-8")
+    }

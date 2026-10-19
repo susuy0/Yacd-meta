@@ -31,7 +31,7 @@ internal data class WorkflowState(
     val extracting: Boolean = false, val running: Boolean = false, val error: String? = null,
     val group: String = "none", val localLoading: Boolean = true, val localRevision: Int = 0,
     val notice: String? = null,
-    val merchant: String? = null, val merchantLoading: Boolean = false, val merchantError: String? = null,
+    val merchant: String? = null, val merchantCandidates: List<String> = emptyList(), val merchantLoading: Boolean = false, val merchantError: String? = null,
     val manualMerchant: Boolean = false, val merchantSource: String = "",
 )
 
@@ -161,7 +161,7 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
         val old = array("favorites"); val id = row.optString("trade_no")
         local.put("favorites", JSONArray(if (isFavorite(id)) old.filter { it.optString("trade_no") != id } else (listOf(row) + old).take(100))); changed()
     }
-    fun saveNote(trade: String, note: String) { if (state.value.localLoading) return; val item = case(trade).put("note", note.take(4000)); objectAt("cases").put(trade, item); changed() }
+    fun saveNote(trade: String, note: String) { if (state.value.localLoading) return; if (note.length > 4000) { notice("内部备注最多 4000 个字符，内容尚未保存"); return }; val item = case(trade).put("note", note); objectAt("cases").put(trade, item); changed() }
     fun saveDraft(order: JSONObject, caption: String, status: String) {
         if (state.value.localLoading) return
         val trade = order.optString("trade_no"); if (trade.isBlank()) return
@@ -216,26 +216,32 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
     fun updateChat(value: ChatScope) {
         if (chat.key == value.key && chat.telegramId == value.telegramId) { chat = value; return }
         chat = value; lookupGeneration++; lookupColumn = "telegram_id"; lookupValue = ""
-        mutable.update { it.copy(merchant = null, merchantError = null, manualMerchant = false, merchantLoading = false) }
+        mutable.update { it.copy(merchant = null, merchantCandidates = emptyList(), merchantError = null, manualMerchant = false, merchantLoading = false) }
         lookupAutomatic()
     }
     fun lookupAutomatic() {
         val bound = binding()
         if (chat.telegramId.isNotBlank()) lookup("telegram_id", chat.telegramId, false, chat.source)
         else if (bound.isNotBlank()) lookup("uid", bound, true, "本群记住的商户")
-        else { lookupGeneration++; mutable.update { it.copy(merchant = null, merchantLoading = false, merchantError = null, manualMerchant = false, merchantSource = "未指定商户") } }
+        else { lookupGeneration++; mutable.update { it.copy(merchant = null, merchantCandidates = emptyList(), merchantLoading = false, merchantError = null, manualMerchant = false, merchantSource = "未指定商户") } }
     }
     fun refreshMerchant() { if (lookupValue.isNotBlank()) lookup(lookupColumn, lookupValue, state.value.manualMerchant, state.value.merchantSource) else lookupAutomatic() }
     fun lookup(column: String, value: String, manual: Boolean = true, origin: String = "手动指定") = viewModelScope.launch {
         val generation = ++lookupGeneration
         lookupColumn = column; lookupValue = value.trim()
-        mutable.update { it.copy(merchant = null, merchantLoading = true, merchantError = null, manualMerchant = manual, merchantSource = origin) }
+        mutable.update { it.copy(merchant = null, merchantCandidates = emptyList(), merchantLoading = true, merchantError = null, manualMerchant = manual, merchantSource = origin) }
         try {
             val rows = JSONObject(call("merchant.lookup", JSONObject().put("column", column).put("value", value.trim()))).optJSONArray("rows").objects()
             if (generation != lookupGeneration) return@launch
-            check(rows.size <= 1) { "商户绑定有冲突，请到后台核对" }
-            mutable.update { it.copy(merchant = rows.firstOrNull()?.toString(), merchantLoading = false, merchantError = if (rows.isEmpty()) "未找到对应商户，请核对 TGID/PID" else null) }
+            val matches = rows.distinctBy { it.optString("uid") }
+            mutable.update { it.copy(merchant = matches.singleOrNull()?.toString(), merchantCandidates = if (matches.size > 1) matches.map { row -> row.toString() } else emptyList(), merchantLoading = false, merchantError = if (matches.isEmpty()) "未找到对应商户，请核对 TGID/PID" else null) }
         } catch (e: Throwable) { if (e is CancellationException) throw e; if (generation == lookupGeneration) mutable.update { it.copy(merchantLoading = false, merchantError = e.message ?: "商户查询失败") } }
+    }
+    fun chooseMerchant(uid: String) {
+        val selected = state.value.merchantCandidates.firstOrNull { JSONObject(it).optString("uid") == uid } ?: return
+        // Refresh the explicitly selected PID; never silently revert to the first TGID match.
+        lookupGeneration++; lookupColumn = "uid"; lookupValue = uid
+        mutable.update { it.copy(merchant = selected, merchantCandidates = emptyList(), manualMerchant = true, merchantSource = "手动选择 · PID $uid", merchantError = null) }
     }
     fun toggleGroupBinding() {
         if (state.value.localLoading || chat.dialog >= 0 || chat.telegramId.isNotBlank() || chat.key.isBlank()) return

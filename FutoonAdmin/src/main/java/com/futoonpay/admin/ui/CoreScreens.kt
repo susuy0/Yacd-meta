@@ -103,6 +103,7 @@ import com.futoonpay.admin.data.OrderSearchFilters
 import com.futoonpay.admin.data.SettlementSearchFilters
 import com.futoonpay.admin.data.SettlementSummary
 import com.futoonpay.admin.data.SETTLEMENT_CHECKED_RESULT
+import com.futoonpay.admin.data.merchantAccountStatusLabel
 import com.futoonpay.admin.data.merchantPaymentStatusLabel
 import com.futoonpay.admin.data.orderSettlementStatusLabel
 import com.futoonpay.admin.data.orderStatusLabel
@@ -897,7 +898,7 @@ private fun MerchantCard(
                     Text(merchant.username.ifBlank { "商户 ${merchant.uid}" }, fontWeight = FontWeight.SemiBold)
                     Text("UID ${merchant.uid} · ${merchant.groupName}", color = Muted, fontSize = 12.sp)
                 }
-                StatusPill(if (merchant.status == 1) "正常" else "封禁", if (merchant.status == 1) GreenDark else Danger)
+                StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
                 Box {
                     IconButton(onClick = { expanded = true }, modifier = Modifier.size(44.dp)) { Icon(Icons.Default.MoreVert, "商户操作") }
                     DropdownMenu(expanded, { expanded = false }) {
@@ -909,8 +910,8 @@ private fun MerchantCard(
                                 merchant,
                             ),
                             MerchantAction(if (merchant.settlementEnabled) "关闭结算" else "开启结算", "toggleSettle", merchant),
-                            MerchantAction("增加余额", "add", merchant),
-                            MerchantAction("扣除余额", "reduce", merchant),
+                            MerchantAction("增加 CNY 余额", "add", merchant),
+                            MerchantAction("扣除 CNY 余额", "reduce", merchant),
                             MerchantAction("修改用户组", "group", merchant),
                             MerchantAction("重置密钥", "resetKey", merchant),
                         ).forEach { action ->
@@ -970,7 +971,7 @@ private fun MerchantMetrics(state: AppUiState) {
     val frozen = state.merchants.sumOf { currencyValue(it.frozenBalance) }
     val flow = state.merchants.sumOf { state.merchantFlows[it.uid]?.total ?: 0.0 }
     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        CompactMetric("本页余额", money(balance), Modifier.weight(1f), GreenDark)
+        CompactMetric("本页 CNY 余额", money(balance), Modifier.weight(1f), GreenDark)
         CompactMetric("冻结资金", money(frozen), Modifier.weight(1f), if (frozen > 0) Danger else Ink)
         CompactMetric("7日流水", if (state.merchantFlowLoading && state.merchantFlows.isEmpty()) "统计中…" else money(flow), Modifier.weight(1f), GreenDark)
     }
@@ -980,11 +981,13 @@ private fun MerchantMetrics(state: AppUiState) {
 private fun MerchantSparkline(values: List<Double>, modifier: Modifier = Modifier) {
     if (values.isEmpty()) { Box(modifier, contentAlignment = Alignment.Center) { Text("暂无统计", color = Muted, fontSize = 12.sp) }; return }
     val points = values.map { if (it.isFinite()) it.coerceAtLeast(0.0) else 0.0 }
+    val accent = GreenDark
+    val fill = Green
     Canvas(modifier) {
         val max = points.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
         if (points.size == 1) {
             val y = size.height - (points.single() / max * (size.height * .82f)).toFloat() - size.height * .08f
-            drawCircle(GreenDark, radius = 3.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width / 2, y))
+            drawCircle(accent, radius = 3.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width / 2, y))
             return@Canvas
         }
         val step = if (points.size <= 1) size.width else size.width / (points.size - 1)
@@ -1004,12 +1007,12 @@ private fun MerchantSparkline(values: List<Double>, modifier: Modifier = Modifie
         }
         area.lineTo(size.width, size.height)
         area.close()
-        drawPath(area, Green.copy(alpha = .14f))
-        drawPath(line, GreenDark, style = Stroke(width = 2.dp.toPx()))
+        drawPath(area, fill.copy(alpha = .14f))
+        drawPath(line, accent, style = Stroke(width = 2.dp.toPx()))
         points.forEachIndexed { index, value ->
             val x = index * step
             val y = size.height - (value / max * (size.height * .82f)).toFloat() - size.height * .08f
-            drawCircle(GreenDark, radius = 2.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y))
+            drawCircle(accent, radius = 2.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y))
         }
     }
 }
@@ -1043,7 +1046,7 @@ internal fun MerchantDetailDialog(
                 item { PayCard {
                     DataRow("商户", "${merchant.username} · UID ${merchant.uid}"); DataRow("用户组", merchant.groupName)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusPill(if (merchant.status == 1) "正常" else "封禁", if (merchant.status == 1) GreenDark else Danger)
+                        StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
                         StatusPill(merchantPaymentStatusLabel(merchant.paymentStatus), if (merchant.paymentEnabled) GreenDark else Danger)
                         StatusPill(if (merchant.settlementEnabled) "结算正常" else "结算关闭", if (merchant.settlementEnabled) GreenDark else Danger)
                     }
@@ -1157,7 +1160,7 @@ internal fun MerchantActionDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("商户 UID ${pending.merchant.uid}", color = Muted)
                 if (isBalance) {
-                    Text("当前余额 ¥${pending.merchant.balance}", color = Muted)
+                    Text("当前 CNY 余额 ${pending.merchant.balance.ifBlank { "—" }}", color = Muted)
                     OutlinedTextField(
                     amount, { amount = it }, label = { Text("金额（正数）") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,

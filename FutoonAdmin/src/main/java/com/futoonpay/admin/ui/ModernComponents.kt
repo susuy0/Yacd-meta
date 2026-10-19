@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.futoonpay.admin.ui.theme.*
 
+internal class PayPanelChrome(val showBack: Boolean, val actions: @Composable RowScope.() -> Unit, val context: @Composable () -> Unit)
+internal val LocalPayPanelChrome = staticCompositionLocalOf<PayPanelChrome?> { null }
+
 @Composable
 internal fun PayCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = CardColor,
@@ -85,13 +88,17 @@ internal fun PayPills(options: List<Pair<String, String>>, selected: String, onS
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PayTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
+    val chrome = LocalPayPanelChrome.current
+    val visibleBack = onBack.takeIf { chrome == null || chrome.showBack }
     Column(Modifier.fillMaxWidth().background(CardColor)) {
-        Row(Modifier.fillMaxWidth().height(56.dp).padding(start = if (onBack == null) 16.dp else 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            onBack?.let { IconButton(onClick = it, modifier = Modifier.size(48.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = Ink, modifier = Modifier.size(24.dp)) } }
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(Modifier.fillMaxWidth().heightIn(min = if (chrome == null) 56.dp else 48.dp).padding(start = if (visibleBack == null) 16.dp else 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            visibleBack?.let { IconButton(onClick = it, modifier = Modifier.size(48.dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = Ink, modifier = Modifier.size(24.dp)) } }
+            Text(title, fontSize = if (chrome == null) 18.sp else 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             actions()
+            chrome?.actions?.invoke(this)
         }
         HorizontalDivider(color = Line)
+        chrome?.context?.invoke()
     }
 }
 

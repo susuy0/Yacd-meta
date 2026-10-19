@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -88,6 +89,10 @@ import com.futoonpay.admin.data.GenericRow
 import com.futoonpay.admin.data.NativeDocument
 import com.futoonpay.admin.data.NativeField
 import com.futoonpay.admin.data.NativeForm
+import com.futoonpay.admin.data.NativeAction
+import com.futoonpay.admin.data.opensNativeDocument
+import com.futoonpay.admin.data.documentPath
+import com.futoonpay.admin.data.nativeActionTarget
 import com.futoonpay.admin.ui.theme.Danger
 import com.futoonpay.admin.ui.theme.FutoonTheme
 import com.futoonpay.admin.ui.theme.GreenDark
@@ -108,6 +113,8 @@ internal data class NativeModuleState(
     val rows: List<GenericRow> = emptyList(),
     val selectedPath: String = "",
     val document: NativeDocument? = null,
+    val documentDepth: Int = 0,
+    val writeUncertain: Boolean = false,
     val message: String? = null,
 )
 
@@ -119,6 +126,7 @@ internal class NativeModuleViewModel(
     private val _state = MutableStateFlow(NativeModuleState(definition = definition, selectedPath = firstPath))
     val state = _state.asStateFlow()
     private var feedbackAfterLoad: String? = null
+    private val documentHistory = mutableListOf<Pair<String, NativeDocument>>()
 
     init { load() }
 
@@ -135,14 +143,28 @@ internal class NativeModuleViewModel(
                 is ModuleSource.Documents -> {
                     val document = repository.nativeDocument(path.ifBlank { source.pages.first().path })
                     val feedback = feedbackAfterLoad.also { feedbackAfterLoad = null }
-                    _state.update { it.copy(loading = false, document = document, rows = emptyList(), message = feedback) }
+                    _state.update { it.copy(loading = false, document = document, rows = emptyList(), message = feedback, writeUncertain = false) }
                 }
             }
         }.onFailure { error -> _state.update { it.copy(loading = false, message = error.message ?: "加载失败") } }
     }
 
-    fun submit(form: NativeForm, values: Map<String, String>) = runAction {
+    fun submit(form: NativeForm, values: Map<String, String>) = runAction(form.method.equals("GET", true)) {
         repository.submitNativeForm(_state.value.selectedPath, form, values)
+    }
+
+    fun openAction(action: NativeAction) {
+        if (_state.value.loading) return
+        if (action.opensNativeDocument()) {
+            _state.value.document?.let { documentHistory += _state.value.selectedPath to it }
+            _state.update { it.copy(documentDepth = documentHistory.size) }
+            load(path = action.documentPath())
+        } else runAction { repository.runNativeAction(_state.value.selectedPath, action) }
+    }
+    fun popDocument(): Boolean {
+        val previous = documentHistory.removeLastOrNull() ?: return false
+        _state.update { it.copy(selectedPath = previous.first, document = previous.second, documentDepth = documentHistory.size, message = null, writeUncertain = false) }
+        return true
     }
 
     fun addBlacklist(type: String, content: String, reason: String, days: String, remark: String) = runAction {
@@ -153,8 +175,8 @@ internal class NativeModuleViewModel(
 
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
-    private fun runAction(action: suspend () -> ApiResult) = viewModelScope.launch {
-        if (_state.value.loading) return@launch
+    private fun runAction(queryOnly: Boolean = false, action: suspend () -> ApiResult) = viewModelScope.launch {
+        if (_state.value.loading || (_state.value.writeUncertain && !queryOnly)) return@launch
         _state.update { it.copy(loading = true, message = null) }
         runCatching { action() }
             .onSuccess { result ->
@@ -165,7 +187,7 @@ internal class NativeModuleViewModel(
                     _state.update { it.copy(loading = false, message = result.message) }
                 }
             }
-            .onFailure { error -> _state.update { it.copy(loading = false, message = error.message ?: "操作失败") } }
+            .onFailure { error -> _state.update { it.copy(loading = false, writeUncertain = !queryOnly, message = if (queryOnly) error.message ?: "查询失败" else "操作结果待核对，请先刷新核对后台状态，勿重复提交。") } }
     }
 
     class Factory(private val repository: FutoonRepository, private val definition: ModuleDefinition) : ViewModelProvider.Factory {
@@ -179,6 +201,8 @@ internal class NativeModuleViewModel(
 internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val back = { if (!viewModel.popDocument()) onBack() }
+    BackHandler(enabled = state.documentDepth > 0) { back() }
     var addBlacklist by rememberSaveable { mutableStateOf(false) }
     state.message?.let { message ->
         LaunchedEffect(message) { snackbar.showSnackbar(message); viewModel.consumeMessage() }
@@ -188,27 +212,17 @@ internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Un
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            TopAppBar(
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } },
-                title = {
-                    Column {
-                        Text(state.definition.title, fontWeight = FontWeight.SemiBold, fontSize = 19.sp)
-                        Text(state.definition.subtitle, color = Muted, fontSize = 12.sp, maxLines = 1)
-                    }
-                },
-                actions = {
-                    if (state.definition.id == "blacklist") IconButton(onClick = { addBlacklist = true }) { Icon(Icons.Default.Add, "添加黑名单") }
-                    if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
-                    else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = CardColor, titleContentColor = Ink),
-            )
+            com.futoonpay.admin.ui.PayTopBar(state.definition.title, back) {
+                if (state.definition.id == "blacklist") IconButton(onClick = { addBlacklist = true }) { Icon(Icons.Default.Add, "添加黑名单") }
+                if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
+                else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
+            }
         },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when (val source = state.definition.source) {
                 is ModuleSource.Ajax -> AjaxModuleScreen(state, source, viewModel::load, viewModel::deleteBlacklist)
-                is ModuleSource.Documents -> DocumentModuleScreen(state, source, viewModel::load, viewModel::submit)
+                is ModuleSource.Documents -> DocumentModuleScreen(state, source, viewModel::load, viewModel::submit, viewModel::openAction)
             }
         }
     }
@@ -295,7 +309,10 @@ private fun DocumentModuleScreen(
     source: ModuleSource.Documents,
     onLoad: (Int, String, String) -> Unit,
     onSubmit: (NativeForm, Map<String, String>) -> Unit,
+    onAction: (NativeAction) -> Unit,
 ) {
+    var pending by remember { mutableStateOf<NativeAction?>(null) }
+    fun action(value: NativeAction) { if (value.opensNativeDocument()) onAction(value) else pending = value }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (source.pages.size > 1) item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -308,15 +325,36 @@ private fun DocumentModuleScreen(
                 }
             }
         }
+        if (state.writeUncertain) item { NoticeCard("操作结果待核对。请点右上角刷新，确认后台现状后再操作。") }
+        state.document?.actions?.takeIf { it.isNotEmpty() }?.let { actions -> item {
+            NativeActionButtons(actions, !state.loading && !state.writeUncertain, ::action)
+        } }
         state.document?.notices?.forEach { notice -> item { NoticeCard(notice) } }
         state.document?.tables?.forEach { table ->
             item { Text(table.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 5.dp)) }
-            items(table.rows) { row -> NativeTableRow(table.headers, row) }
+            itemsIndexed(table.rows) { index, row -> Column {
+                NativeTableRow(table.headers, row)
+                NativeActionButtons(table.rowActions.getOrNull(index).orEmpty(), !state.loading && !state.writeUncertain, ::action)
+            } }
         }
-        state.document?.forms?.forEach { form -> item { NativeFormCard(form, onSubmit) } }
+        state.document?.forms?.forEach { form -> item { NativeFormCard(form, onSubmit, state.loading || state.writeUncertain) } }
         if (!state.loading && state.document?.let { it.forms.isEmpty() && it.tables.isEmpty() } != false) {
             item { EmptyModule("此页面暂时没有可显示的数据或表单") }
         }
+    }
+    pending?.let { chosen -> com.futoonpay.admin.ui.PaySheet("确认${chosen.label}", { pending = null }) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(nativeActionTarget(state.document, chosen), fontWeight = FontWeight.Medium)
+            Text("操作：${chosen.label}，确认后立即提交到付款后台。", color = Muted)
+            Row { TextButton(onClick = { pending = null }) { Text("取消") }; Button(enabled = !state.loading && !state.writeUncertain, onClick = { pending = null; onAction(chosen) }) { Text("确认${chosen.label}") } }
+        }
+    } }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable private fun NativeActionButtons(actions: List<NativeAction>, enabled: Boolean, onAction: (NativeAction) -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        actions.forEach { action -> TextButton(enabled = enabled, onClick = { onAction(action) }) { Text(action.label, color = if (action.destructive) Danger else GreenDark) } }
     }
 }
 
@@ -347,7 +385,7 @@ internal fun NativeTableRow(headers: List<String>, row: List<String>) {
 }
 
 @Composable
-internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String, String>) -> Unit) {
+internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String, String>) -> Unit, busy: Boolean = false) {
     val values = remember(form) { mutableStateMapOf<String, String>().apply { form.fields.forEach { put(it.name, it.value) } } }
     var confirm by remember { mutableStateOf(false) }
     Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
@@ -355,9 +393,11 @@ internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String,
             Text(form.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Text("敏感字段不会从网页回填；留空表示不修改", color = Muted, fontSize = 12.sp)
             form.fields.filter { it.type != "hidden" }.forEach { field ->
-                NativeFieldEditor(field, values[field.name].orEmpty()) { values[field.name] = it }
+                NativeFieldEditor(field.copy(readOnly = field.readOnly || busy), values[field.name].orEmpty()) { values[field.name] = it }
             }
-            Button(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text("保存设置") }
+            Button(enabled = !busy, onClick = {
+                if (form.method.equals("GET", true)) onSubmit(form, values.toMap()) else confirm = true
+            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text(if (form.method.equals("GET", true)) "查询" else "保存设置") }
         }
     }
     if (confirm) AlertDialog(shape = RoundedCornerShape(20.dp), 
