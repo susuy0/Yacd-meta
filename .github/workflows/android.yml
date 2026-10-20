@@ -1,172 +1,28 @@
-name: VineChat Android
+name: Verify frozen Futoon v0.8.4 artifacts
 on:
   push:
-    branches: [main, master, native-startup-validation]
-    paths: [integration.patch, "FutoonAdmin/**", "ci/**", ".github/workflows/android.yml"]
-  workflow_dispatch:
-    inputs:
-      require_push:
-        description: Require this app's Firebase push configuration
-        type: boolean
-        default: false
-      abis:
-        description: Native architectures
-        type: choice
-        options: [arm64-v8a, "armeabi-v7a,arm64-v8a,x86,x86_64"]
-        default: arm64-v8a
+    branches: [verify-channel-shortcuts-v084]
 permissions:
   contents: read
-concurrency:
-  group: vinechat-${{ github.ref }}
-  cancel-in-progress: true
+  actions: read
 jobs:
-  core-checks:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07
-        with:
-          distribution: temurin
-          java-version: "17"
-      - name: Prepare pinned source for core tests
-        run: bash ci/checkout.sh "$RUNNER_TEMP/vinechat-tests" minimal
-      - name: Test Lite startup and theme refresh regression
-        run: python3 ci/test_startup_colors.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test AndroidX leave-hint callback compatibility
-        run: python3 ci/test_activity_callbacks.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test send button, chat tools and branding regression
-        run: python3 ci/test_chat_tools.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test account opening draft insertion and conversation guards
-        run: python3 ci/test_opening_draft.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test group automation callback dispatch and draft isolation
-        run: python3 ci/test_group_automation.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test business regexes using Android's ICU engine
-        run: python3 ci/test_android_regex.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test removed capture permissions and gallery compatibility
-        run: python3 ci/test_media_trim.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test identity, recognition and backend contracts
-        run: bash "$RUNNER_TEMP/vinechat-tests/Tools/futoon/run-tests.sh"
-  panel-ui:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Audit fully native panel contract
-        run: python3 ci/test_native_panel.py .
-  native-admin:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07
-        with:
-          distribution: temurin
-          java-version: "17"
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
-        with:
-          gradle-version: "8.13"
-          cache-provider: basic
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
-        with:
-          packages: platform-tools
-      - name: Install business integration test SDK
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Test original v1.3.4 business code and panel adapter
-        run: bash ci/test_native_admin.sh "$RUNNER_TEMP/futoon-native-tests"
-      - name: Keep business integration regression reports
-        if: always()
+      - name: Install signature verification dependency
+        run: python3 -m pip install cryptography==46.0.3
+      - name: Verify build artifacts, regression reports, APK signature and identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/verify_channel_artifacts.py
+      - name: Upload verified APK and result
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Futoon-v0.8.4-native-business-checks
-          path: |
-            ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/ui-screenshots/*
-            ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/reports/*
-            ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/test-results/*
-          if-no-files-found: warn
-          retention-days: 30
-  android:
-    if: github.ref != 'refs/heads/native-startup-validation'
-    needs: [core-checks, panel-ui, native-admin]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 120
-    env:
-      REQUIRE_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.require_push }}
-      VINE_API_ID: ${{ secrets.VINE_API_ID }}
-      VINE_API_HASH: ${{ secrets.VINE_API_HASH }}
-      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
-      NATIVE_ABIS: ${{ inputs.abis || 'arm64-v8a' }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Validate push configuration
-        run: python3 ci/configure.py --validate-only
-      - uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07
-        with:
-          distribution: temurin
-          java-version: "17"
-      - name: Prepare pinned Telegram source and submodules
-        run: bash ci/checkout.sh "$GITHUB_WORKSPACE/upstream" full
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
-        with:
-          gradle-version: "8.13"
-          cache-provider: basic
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
-        with:
-          packages: platform-tools
-      - name: Install Android toolchain
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
-      - name: Configure application
-        id: config
-        run: |
-          python3 ci/configure.py --root upstream
-          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > upstream/local.properties
-      - name: Compile client Java
-        env:
-          SKIP_GOOGLE: ${{ steps.config.outputs.skip_google }}
-        run: |
-          args=(-PvineFutoonDev=true "-PvineAbis=$NATIVE_ABIS")
-          if [[ "$SKIP_GOOGLE" == true ]]; then args+=(-PvineSkipGoogleServices=true); fi
-          if [[ -z "$VINE_API_ID" ]]; then unset VINE_API_ID; fi
-          if [[ -z "$VINE_API_HASH" ]]; then unset VINE_API_HASH; fi
-          gradle -p upstream :TMessagesProj:compileDebugJavaWithJavac \
-            "${args[@]}" --no-daemon --max-workers=2 \
-            -Pkotlin.compiler.execution.strategy=in-process \
-            "-Dorg.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1g" --stacktrace
-      - name: Compile native libraries and APK
-        env:
-          SKIP_GOOGLE: ${{ steps.config.outputs.skip_google }}
-        run: |
-          args=(-PvineFutoonDev=true "-PvineAbis=$NATIVE_ABIS")
-          if [[ "$SKIP_GOOGLE" == true ]]; then args+=(-PvineSkipGoogleServices=true); fi
-          if [[ -z "$VINE_API_ID" ]]; then unset VINE_API_ID; fi
-          if [[ -z "$VINE_API_HASH" ]]; then unset VINE_API_HASH; fi
-          gradle -p upstream :TMessagesProj_App:assembleAfatDebug \
-            "${args[@]}" --no-daemon --max-workers=2 \
-            -Pkotlin.compiler.execution.strategy=in-process \
-            "-Dorg.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1g" --stacktrace
-      - name: Audit removed components
-        run: python3 ci/audit_apk.py upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk
-      - name: Collect APK and checksum
-        run: |
-          mkdir -p output
-          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.8.4-native-test.apk
-          cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/usage.txt output/REMOVED-JAVA.txt
-          cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/mapping.txt output/mapping.txt
-          cd output
-          sha256sum VineChat-Futoon-v0.8.4-native-test.apk mapping.txt > SHA256SUMS
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: VineChat-Futoon-v0.8.4-native-${{ steps.config.outputs.push_mode }}
-          path: output/*
+          name: SMS-Futoon-v0.8.4-verified-arm64
+          path: verification/*
           if-no-files-found: error
           retention-days: 30
-
-
