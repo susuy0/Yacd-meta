@@ -62,9 +62,9 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         text = value; textSize = size * palette.fontScale; setTextColor(color); gravity = Gravity.CENTER_VERTICAL
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
-    private fun button(label: String, weight: Float, action: () -> Unit) = text(label, 13f).apply {
+    private fun button(label: String, weight: Float, action: () -> Unit) = text(label, 13f, palette.accentText.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; contentDescription = label.replace('\n', ' ') + "，按钮"
-        background = GradientDrawable().apply { setColor(palette.background.toArgb()); cornerRadius = dp(10).toFloat() }
+        background = GradientDrawable().apply { setColor(androidx.core.graphics.ColorUtils.blendARGB(palette.surface.toArgb(), palette.accent.toArgb(), .10f)); cornerRadius = dp(24).toFloat() }
         setOnClickListener { action() }
         layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply { setMargins(dp(2), 0, dp(2), 0) }
     }

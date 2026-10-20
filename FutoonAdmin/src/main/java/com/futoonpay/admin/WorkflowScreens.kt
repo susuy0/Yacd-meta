@@ -154,7 +154,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     if (manual) PaySheet("手动查询商户", { manual = false }) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PayPills(listOf("telegram_id" to "TGID", "uid" to "商户 PID"), column) { column = it }
-            OutlinedTextField(value, { value = it.take(19) }, label = { Text("完整 TGID 或 PID") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(value, { value = it.take(19) }, label = { Text("完整 TGID 或 PID") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
             Button(enabled = value.matches(Regex("[0-9]{1,19}")), onClick = { workflows.lookup(column, value); manual = false }, modifier = Modifier.fillMaxWidth()) { Text("查询商户") }
         }
     }
@@ -173,7 +173,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             state.error?.let { item { Text(it, color = Danger, fontSize = 12.sp) } }
             if (page == "recognize") {
                 item { CurrentMerchantCard(workflows, actions, chat, navigator, compact = true) }
-                item { OutlinedTextField(state.text, workflows::setText, label = { Text(if (state.ocr) "图片识别结果，请先校对" else "粘贴消息、订单号或商户 PID") }, modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4) }
+                item { OutlinedTextField(state.text, workflows::setText, label = { Text(if (state.ocr) "图片识别结果，请先校对" else "粘贴消息、订单号或商户 PID") }, modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4 , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
                 item { Row {
                     TextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
                     if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 12.sp)
@@ -191,7 +191,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                     items(candidates, key = { it.id }) { candidate -> PayCard {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(candidate.selected, { workflows.editCandidate(candidate.id, selected = it) }, enabled = !state.running)
-                            OutlinedTextField(candidate.value, { workflows.editCandidate(candidate.id, value = it) }, modifier = Modifier.weight(1f), singleLine = true, enabled = !state.running, label = { Text(queryKindLabel(candidate.kind)) })
+                            OutlinedTextField(candidate.value, { workflows.editCandidate(candidate.id, value = it) }, modifier = Modifier.weight(1f), singleLine = true, enabled = !state.running, label = { Text(queryKindLabel(candidate.kind)) } , colors = com.futoonpay.admin.ui.ChatFieldColors())
                         }
                         PayPills(queryKinds, candidate.kind) { workflows.editCandidate(candidate.id, kind = it) }
                         Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 12.sp)
@@ -277,7 +277,7 @@ internal val LocalWorkflowCopy = staticCompositionLocalOf<(String) -> Unit> { {}
     PaySheet(title, onClose) {
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val limit = 8000
-            OutlinedTextField(value, { value = it }, modifier = Modifier.fillMaxWidth().weight(1f), label = { Text("可编辑内容") }, isError = value.length > limit, supportingText = { Text("${value.length} / $limit") })
+            OutlinedTextField(value, { value = it }, modifier = Modifier.fillMaxWidth().weight(1f), label = { Text("可编辑内容") }, isError = value.length > limit, supportingText = { Text("${value.length} / $limit") } , colors = com.futoonpay.admin.ui.ChatFieldColors())
             Button(enabled = value.length <= limit, onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text("复制草稿") }
         }
     }
@@ -300,7 +300,7 @@ internal val LocalWorkflowCopy = staticCompositionLocalOf<(String) -> Unit> { {}
         PayTopBar(if (route.module == "stats") "商户统计 · PID ${route.merchantId}" else "资金流水 · PID ${route.merchantId}", back)
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (route.module == "stats") item { Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(day, { day = it }, modifier = Modifier.weight(1f), label = { Text("日期 YYYY-MM-DD") }, singleLine = true)
+                OutlinedTextField(day, { day = it }, modifier = Modifier.weight(1f), label = { Text("日期 YYYY-MM-DD") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 TextButton(onClick = { runCatching { LocalDate.parse(day) }.onSuccess { queryDay = day; revision++ }.onFailure { error = "日期格式不正确" } }) { Text("查询") }
             } }
             if (loading) item { CircularProgressIndicator() }

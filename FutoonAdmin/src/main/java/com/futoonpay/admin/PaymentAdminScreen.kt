@@ -704,7 +704,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             if (state.spec.supportsAdd) Surface(color = CardColor) {
-                Button(shape = RoundedCornerShape(10.dp), onClick = viewModel::openAdd, enabled = !state.loading,
+                Button(shape = RoundedCornerShape(24.dp), onClick = viewModel::openAdd, enabled = !state.loading,
                     modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(min = 48.dp)) {
                     Text("新建" + state.spec.title)
                 }
@@ -781,12 +781,12 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
     } else if (state.spec.id in setOf("payment_types", "proxies")) {
         ConfigurationListScreen(state, modifier, query, { query = it }, ::select, { viewModel.loadConfigurationContext() }, { viewModel.load() }, viewModel::offerBatch)
     } else LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { OutlinedTextField(query, { query = it }, placeholder = { Text("筛选当前列表名称、ID 或配置") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(query, { query = it }, placeholder = { Text("筛选当前列表名称、ID 或配置") }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         document?.notices?.forEach { notice -> item { PaymentNotice(notice) } }
         if (!document?.actions.isNullOrEmpty()) item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(document?.actions.orEmpty()) { action ->
-                    OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { select(action) }, enabled = !state.loading) { Text(action.label) }
+                    OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { select(action) }, enabled = !state.loading) { Text(action.label) }
                 }
             }
         }
@@ -799,11 +799,11 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
         item { ListFeedback(state.loading && document == null, state.loadError, !state.loading && document?.tables?.flatMap { it.rows }?.none { row -> query.isBlank() || row.any { it.contains(query.trim(), true) } } != false, { viewModel.load() }) }
     }
     pending?.let { action ->
-        AlertDialog(shape = RoundedCornerShape(20.dp), 
+        AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null },
             title = { Text("确认${action.label}") },
             text = { Text(com.futoonpay.admin.data.nativeActionTarget(document, action) + configurationActionAssociations(state, action) + "\n该操作会立即更新后台状态。") },
-            confirmButton = { Button(shape = RoundedCornerShape(10.dp), onClick = { viewModel.execute(action); pending = null }) { Text("确认${action.label}") } },
+            confirmButton = { Button(shape = RoundedCornerShape(24.dp), onClick = { viewModel.execute(action); pending = null }) { Text("确认${action.label}") } },
             dismissButton = { TextButton(onClick = { pending = null }) { Text("取消") } },
         )
     }
@@ -821,7 +821,7 @@ internal fun PaymentChannelScreen(state: PaymentAdminState, modifier: Modifier, 
     val selection = rememberRecordSelection(listOf(state.spec.id, state.page, state.channelTab, state.channelType, query), channels.map { it.id })
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { PayPills(PaymentChannelTab.entries.map { it.name to it.label }, state.channelTab.name) { name -> onTabChange(PaymentChannelTab.valueOf(name)) } }
-        item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索名称、ID、支付方式或插件", fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
+        item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索名称、ID、支付方式或插件", fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         val filters = document?.paymentChannelTypeFilters().orEmpty()
         if (filters.isNotEmpty()) item { PayTabs(filters.map { it.value to it.label }, state.channelType, onTypeChange) }
         item { Text("${channels.size} 个通道 · 官网状态分类", color = Muted, fontSize = 12.sp) }
@@ -968,10 +968,10 @@ private fun PaymentChannelDetailScreen(
             item {
                 Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(shape = RoundedCornerShape(10.dp), onClick = onTest, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("测试支付") }
-                    OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onOrders, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("通道订单") }
+                    Button(shape = RoundedCornerShape(24.dp), onClick = onTest, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("测试支付") }
+                    OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onOrders, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("通道订单") }
                 }
-                OutlinedButton(shape = RoundedCornerShape(10.dp), 
+                OutlinedButton(shape = RoundedCornerShape(24.dp),
                     onClick = onRelatedType,
                     enabled = !detail?.paymentTypeId.isNullOrBlank(),
                     modifier = Modifier.fillMaxWidth(),
@@ -998,11 +998,11 @@ private fun PaymentChannelDetailScreen(
         }
     }
     pending?.let { action ->
-        AlertDialog(shape = RoundedCornerShape(20.dp), 
+        AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null },
             title = { Text("确认${action.label}") },
             text = { Text("该操作会立即更新通道状态，并可能影响正在处理的支付。") },
-            confirmButton = { Button(shape = RoundedCornerShape(10.dp), onClick = { onAction(action); pending = null }) { Text("确认") } },
+            confirmButton = { Button(shape = RoundedCornerShape(24.dp), onClick = { onAction(action); pending = null }) { Text("确认") } },
             dismissButton = { TextButton(onClick = { pending = null }) { Text("取消") } },
         )
     }
@@ -1040,16 +1040,16 @@ private fun PaymentTestDialog(
                 Text("${channel.name} · 通道 #${channel.id}", color = Muted, fontSize = 12.sp)
                 }
                 item {
-                OutlinedTextField(name, { name = it }, label = { Text("订单名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(name, { name = it }, label = { Text("订单名称") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 }
                 item {
-                OutlinedTextField(amount, { amount = it }, label = { Text("测试金额") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(amount, { amount = it }, label = { Text("测试金额") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 }
                 result?.let { item {
                     Text(it.message, color = if (it.success) GreenDark else Danger, fontSize = 12.sp)
                     if (it.tradeNo.isNotBlank()) androidx.compose.foundation.text.selection.SelectionContainer { Text("订单号 ${it.tradeNo}", fontSize = 12.sp) }
                     if (it.success && qr != null) androidx.compose.foundation.Image(qr.asImageBitmap(), "支付二维码", Modifier.fillMaxWidth().height(220.dp))
-                    if (it.success && canOpen) OutlinedButton(shape = RoundedCornerShape(10.dp), 
+                    if (it.success && canOpen) OutlinedButton(shape = RoundedCornerShape(24.dp),
                         onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(paymentUrl))) }.onFailure {
                             android.widget.Toast.makeText(context, "未找到可打开付款页的应用，可复制付款链接", android.widget.Toast.LENGTH_LONG).show()
                         } },
@@ -1066,8 +1066,8 @@ private fun PaymentTestDialog(
                 }
             }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("关闭") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) {
+            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("关闭") }
+            Button(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) {
                 if (loading) CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp) else Text(if (uncertain) "在订单中核对" else "创建测试订单")
             }
         }
@@ -1091,7 +1091,7 @@ private fun PaymentChannelSortPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
@@ -1113,7 +1113,7 @@ private fun PaymentChannelGroupPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
@@ -1155,7 +1155,7 @@ internal fun RollGroupScreen(state: PaymentAdminState, modifier: Modifier, query
     val selection = rememberRecordSelection(listOf(state.spec.id, state.page, state.rollTab, query), groups.map { it.id })
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { PayPills(RollGroupTab.entries.map { it.name to it.label }, state.rollTab.name) { onTabChange(RollGroupTab.valueOf(it)) } }
-        item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索名称、ID、支付方式", fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索名称、ID、支付方式", fontSize = 12.sp) }, leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         item { Text("${groups.size} 个轮询组 · 官网状态分类", color = Muted, fontSize = 12.sp) }
         item { MultiSelectBar(selection, groups.map { it.id }, paymentBatchOptions(state.spec.id, groups.filter { it.id in selection.selected }.map { PaymentBatchRow(it.id, "${it.name} #${it.id}", it.actions) }), state.loading, onBatch) }
         itemsIndexed(groups, key = { index, it -> "${it.id}:$index" }) { _, group -> SelectableRecord(selection, group.id, "轮询组 ${group.id}") { RollGroupCard(group, state.rollTab, onAction) } }
@@ -1228,7 +1228,7 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
 private fun RollSortPicker(label: String, value: RollSortDimension, onSelect: (RollSortDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
@@ -1246,7 +1246,7 @@ private fun RollSortPicker(label: String, value: RollSortDimension, onSelect: (R
 private fun RollGroupPicker(value: RollGroupDimension, onSelect: (RollGroupDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
@@ -1275,7 +1275,7 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { PayPills(MonitorWindow.entries.map { it.name to it.label }, window.name) { window = MonitorWindow.valueOf(it) } }
         item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索通道 ID") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-            trailingIcon = { IconButton(onClick = { onLoad(1, query) }) { Icon(Icons.Default.Search, "搜索通道") } }) }
+            trailingIcon = { IconButton(onClick = { onLoad(1, query) }) { Icon(Icons.Default.Search, "搜索通道") } } , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         item { Text("近${window.label} · ${channels.size} 个通道", color = Muted, fontSize = 12.sp) }
         item { MultiSelectBar(selection, channels.map { it.id }, paymentBatchOptions(state.spec.id, channels.filter { it.id in selection.selected }.map { PaymentBatchRow(it.id, "${it.name} #${it.id}", it.actions) }), state.loading, onBatch) }
         itemsIndexed(channels, key = { index, it -> "${it.id}:$index" }) { _, item ->
@@ -1304,9 +1304,9 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
         }
         item { ListFeedback(state.loading && channels.isEmpty(), state.loadError, !state.loading && channels.isEmpty(), { onLoad(state.page, query) }) }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onLoad(state.page - 1, query) }, enabled = state.page > 1 && !state.loading) { Text("上一页") }
+            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page - 1, query) }, enabled = state.page > 1 && !state.loading) { Text("上一页") }
             Text("第 ${state.page} 页", color = Muted, fontSize = 12.sp)
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onLoad(state.page + 1, query) }, enabled = channels.size >= FutoonRepository.PAGE_SIZE && !state.loading) { Text("下一页") }
+            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page + 1, query) }, enabled = channels.size >= FutoonRepository.PAGE_SIZE && !state.loading) { Text("下一页") }
         } }
     }
 }
@@ -1402,7 +1402,7 @@ private fun MonitorRateCell(label: String, rate: Double?, modifier: Modifier = M
 private fun MonitorSortPicker(label: String, value: MonitorSortDimension, onSelect: (MonitorSortDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
@@ -1420,7 +1420,7 @@ private fun MonitorSortPicker(label: String, value: MonitorSortDimension, onSele
 private fun MonitorGroupPicker(value: MonitorGroupDimension, onSelect: (MonitorGroupDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
@@ -1436,7 +1436,7 @@ private fun MonitorGroupPicker(value: MonitorGroupDimension, onSelect: (MonitorG
 
 @Composable
 private fun SortDirectionButton(ascending: Boolean, onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, modifier = Modifier.width(76.dp).height(56.dp), shape = RoundedCornerShape(10.dp)) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.width(76.dp).height(56.dp), shape = RoundedCornerShape(24.dp)) {
         Text(if (ascending) "升序" else "降序", fontSize = 12.sp)
     }
 }
@@ -1524,8 +1524,8 @@ internal fun PaymentEditorScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Surface(color = CardColor) { Row(Modifier.fillMaxWidth().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = onBack, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-                Button(shape = RoundedCornerShape(10.dp), onClick = {
+                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onBack, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+                Button(shape = RoundedCornerShape(24.dp), onClick = {
                     val submitted = values.filter { (name, value) -> val field = form.fields.first { it.name == name }; !field.readOnly && (!field.sensitive || value.isNotBlank()) }
                     onSubmit(form, submitted)
                 }, enabled = !loading && !missingRequired && !uncertain, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "处理中…" else "保存") }
@@ -1560,7 +1560,7 @@ internal fun PaymentEditorScreen(
                         }
                     }
                 }
-                item { OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = {
+                item { OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = {
                     if (visibleRoutes >= channelFields.size) onAddRoute()
                     visibleRoutes++
                 }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text("添加通道") } }
@@ -1584,7 +1584,7 @@ internal fun PaymentEditorScreen(
     }
     pluginChange?.let { next -> AlertDialog(shape = RoundedCornerShape(20.dp), onDismissRequest = { pluginChange = null },
         title = { Text("更换支付插件") }, text = { Text("更换后会重新加载账户配置字段，当前账户输入将清空。") },
-        confirmButton = { Button(shape = RoundedCornerShape(10.dp), onClick = { onFieldChange("plugin", next); pluginChange = null }) { Text("更换插件") } },
+        confirmButton = { Button(shape = RoundedCornerShape(24.dp), onClick = { onFieldChange("plugin", next); pluginChange = null }) { Text("更换插件") } },
         dismissButton = { TextButton(onClick = { pluginChange = null }) { Text("保留当前插件") } }) }
 }
 

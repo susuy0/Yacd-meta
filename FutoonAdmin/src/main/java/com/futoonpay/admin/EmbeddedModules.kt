@@ -256,8 +256,8 @@ private fun AjaxModuleScreen(
                 placeholder = { Text("搜索${source.labels[source.searchField] ?: "记录"}") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 trailingIcon = { IconButton(onClick = { onLoad(1, query, state.selectedPath) }) { Icon(Icons.Default.Search, "搜索") } },
-                singleLine = true, shape = RoundedCornerShape(10.dp),
-            )
+                singleLine = true, shape = RoundedCornerShape(14.dp),
+             , colors = com.futoonpay.admin.ui.ChatFieldColors())
         }
         item { Text("${state.total} 条记录", fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
         items(state.rows) { row ->
@@ -267,11 +267,11 @@ private fun AjaxModuleScreen(
         item {
             val next = state.page * 30 < state.total && state.rows.isNotEmpty()
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onLoad(state.page - 1, query, state.selectedPath) }, enabled = state.page > 1) {
+                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page - 1, query, state.selectedPath) }, enabled = state.page > 1) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null); Text("上一页")
                 }
                 Text("第 ${state.page} 页", color = Muted, fontSize = 12.sp)
-                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onLoad(state.page + 1, query, state.selectedPath) }, enabled = next) {
+                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page + 1, query, state.selectedPath) }, enabled = next) {
                     Text("下一页"); Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
                 }
             }
@@ -281,7 +281,7 @@ private fun AjaxModuleScreen(
         AlertDialog(shape = RoundedCornerShape(20.dp), 
             onDismissRequest = { deleteRow = null }, title = { Text("移除黑名单") },
             text = { Text("确认移除 ${row.values["content"].orEmpty()}？") },
-            confirmButton = { Button(shape = RoundedCornerShape(10.dp), onClick = { onDelete(row.id); deleteRow = null }) { Text("确认移除") } },
+            confirmButton = { Button(shape = RoundedCornerShape(24.dp), onClick = { onDelete(row.id); deleteRow = null }) { Text("确认移除") } },
             dismissButton = { TextButton(onClick = { deleteRow = null }) { Text("取消") } },
         )
     }
@@ -405,14 +405,14 @@ internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String,
             }
             Button(enabled = !busy, onClick = {
                 if (form.method.equals("GET", true)) onSubmit(form, values.toMap()) else confirm = true
-            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) { Text(if (form.method.equals("GET", true)) "查询" else "保存设置") }
+            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) { Text(if (form.method.equals("GET", true)) "查询" else "保存设置") }
         }
     }
     if (confirm) AlertDialog(shape = RoundedCornerShape(20.dp), 
         onDismissRequest = { confirm = false }, title = { Text("确认保存") },
         text = { Text("设置会立即提交到管理后台。资金、通道和权限参数请再次核对。") },
         confirmButton = {
-            Button(shape = RoundedCornerShape(10.dp), onClick = {
+            Button(shape = RoundedCornerShape(24.dp), onClick = {
                 val submitted = values.filter { (name, value) ->
                     val field = form.fields.first { it.name == name }
                     !field.readOnly && (!field.sensitive || value.isNotBlank())
@@ -444,8 +444,8 @@ internal fun NativeFieldEditor(field: NativeField, value: String, onValueChange:
                 keyboardType = when (field.type) { "decimal" -> KeyboardType.Decimal; "number" -> KeyboardType.Number; "email" -> KeyboardType.Email; else -> KeyboardType.Text },
             ),
             singleLine = field.type != "textarea", minLines = if (field.type == "textarea") 3 else 1,
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
-        )
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
+         , colors = com.futoonpay.admin.ui.ChatFieldColors())
     }
 }
 
@@ -460,7 +460,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(field.label + if (field.required) " *" else "", color = Ink, fontSize = 13.sp)
         OutlinedButton(onClick = { query = ""; selected = value; expanded = true }, enabled = !field.readOnly && field.options.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(10.dp)) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
             Text(current.ifBlank { if (field.options.isEmpty()) "暂无可用选项" else "请选择" }, color = Ink,
                 fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("⌄", color = Muted, fontSize = 20.sp)
@@ -469,7 +469,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
     }
     if (expanded) com.futoonpay.admin.ui.PaySheet(field.label, { expanded = false }) {
         OutlinedTextField(query, { query = it }, placeholder = { Text("搜索可选项") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
         val options = field.options.filter { query.isBlank() || it.label.contains(query, true) || it.value.contains(query, true) }
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 420.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             itemsIndexed(options, key = { index, it -> "${it.value}:$index" }) { _, option ->
@@ -482,7 +482,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
             }
             if (options.isEmpty()) item { Text("没有匹配的选项", color = Muted, modifier = Modifier.padding(16.dp)) }
         }
-        if (confirmSelection) Button(shape = RoundedCornerShape(10.dp), onClick = { onValueChange(selected); expanded = false },
+        if (confirmSelection) Button(shape = RoundedCornerShape(24.dp), onClick = { onValueChange(selected); expanded = false },
             enabled = field.options.any { it.value == selected }, modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(min = 48.dp)) {
             Text(field.options.firstOrNull { it.value == selected }?.label?.let { "选择 $it" } ?: "选择插件")
         }
@@ -500,14 +500,14 @@ private fun BlacklistDialog(onDismiss: () -> Unit, onConfirm: (String, String, S
         onDismissRequest = onDismiss, title = { Text("添加黑名单") },
         text = {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                item { OutlinedTextField(type, { type = it }, label = { Text("类型代码") }, singleLine = true) }
-                item { OutlinedTextField(content, { content = it }, label = { Text("匹配内容") }, singleLine = true) }
-                item { OutlinedTextField(reason, { reason = it }, label = { Text("拦截原因") }) }
-                item { OutlinedTextField(days, { days = it }, label = { Text("有效天数（0 为永久）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true) }
-                item { OutlinedTextField(remark, { remark = it }, label = { Text("备注") }) }
+                item { OutlinedTextField(type, { type = it }, label = { Text("类型代码") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
+                item { OutlinedTextField(content, { content = it }, label = { Text("匹配内容") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
+                item { OutlinedTextField(reason, { reason = it }, label = { Text("拦截原因") } , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
+                item { OutlinedTextField(days, { days = it }, label = { Text("有效天数（0 为永久）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
+                item { OutlinedTextField(remark, { remark = it }, label = { Text("备注") } , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             }
         },
-        confirmButton = { Button(shape = RoundedCornerShape(10.dp), onClick = { onConfirm(type, content, reason, days, remark) }, enabled = content.isNotBlank()) { Text("确认添加") } },
+        confirmButton = { Button(shape = RoundedCornerShape(24.dp), onClick = { onConfirm(type, content, reason, days, remark) }, enabled = content.isNotBlank()) { Text("确认添加") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
     )
 }

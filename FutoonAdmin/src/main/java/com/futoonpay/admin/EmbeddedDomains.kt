@@ -220,14 +220,14 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
                 OutlinedTextField(
                     keyword, { keyword = it }, label = { Text("域名") }, placeholder = { Text("要搜索的域名") },
                     leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                )
+                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
             item {
                 OutlinedTextField(
                     merchantId, { merchantId = it }, label = { Text("商户号") }, singleLine = true, readOnly = viewModel.lockMerchant,
                     trailingIcon = { IconButton(onClick = { viewModel.load(1, keyword, merchantId, state.status) }) { Icon(Icons.Default.Search, "搜索") } },
                     modifier = Modifier.fillMaxWidth(),
-                )
+                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
             item {
                 PayTabs(listOf("-1" to "全部", "0" to "待审核", "1" to "已通过", "2" to "已拒绝"), state.status.toString()) { viewModel.load(1, keyword, merchantId, it.toInt()) }
@@ -237,11 +237,11 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             item { ListFeedback(state.loading && state.rows.isEmpty(), state.loadError, !state.loading && state.rows.isEmpty(), { viewModel.load() }) }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { viewModel.load(state.page - 1, keyword, merchantId, state.status) }, enabled = state.page > 1) {
+                    OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { viewModel.load(state.page - 1, keyword, merchantId, state.status) }, enabled = state.page > 1) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null); Text("上一页")
                     }
                     Text("第 ${state.page} 页", color = Muted, fontSize = 12.sp)
-                    OutlinedButton(shape = RoundedCornerShape(10.dp), 
+                    OutlinedButton(shape = RoundedCornerShape(24.dp),
                         onClick = { viewModel.load(state.page + 1, keyword, merchantId, state.status) },
                         enabled = state.page * FutoonRepository.DOMAIN_PAGE_SIZE < state.total && state.rows.isNotEmpty(),
                     ) { Text("下一页"); Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) }
@@ -259,23 +259,23 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
                 if (row.auditedAt.isNotBlank()) DataRow("审核时间", row.auditedAt)
                 if (row.projectName.isNotBlank()) DataRow("所属项目", row.projectName)
             }
-            OutlinedTextField(remark, { remark = it }, label = { Text("审核备注 / 拒绝理由") }, minLines = 3, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+            OutlinedTextField(remark, { remark = it }, label = { Text("审核备注 / 拒绝理由") }, minLines = 3, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
             reviewError?.let { Text(it, color = Danger, fontSize = 12.sp) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 fun submitReview(status: Int) { reviewLoading = true; reviewError = null; viewModel.setStatus(row.id, status, remark) { response -> reviewLoading = false; if (response.success) selectedDomain = null else reviewError = response.message } }
-                OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { submitReview(2) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 2) { Text("拒绝", color = Danger) }
-                Button(shape = RoundedCornerShape(10.dp), onClick = { submitReview(1) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 1) { Text(if (reviewLoading) "提交中…" else "通过审核") }
+                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { submitReview(2) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 2) { Text("拒绝", color = Danger) }
+                Button(shape = RoundedCornerShape(24.dp), onClick = { submitReview(1) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 1) { Text(if (reviewLoading) "提交中…" else "通过审核") }
             }
         }
     } }
     if (showAdd) AddDomainDialog({ showAdd = false }, if(viewModel.lockMerchant)state.merchantId else "") { uid, domain -> viewModel.add(uid, domain); showAdd = false }
     pending?.let { action ->
         val label = when { action.delete -> "删除域名"; action.status == 1 -> "通过审核"; else -> "拒绝域名" }
-        AlertDialog(shape = RoundedCornerShape(20.dp), 
+        AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null }, title = { Text(label) },
             text = { Text("${action.row.domain}\n商户 ${action.row.merchantId}\n该操作会立即更新后台审核状态。") },
             confirmButton = {
-                Button(shape = RoundedCornerShape(10.dp), onClick = {
+                Button(shape = RoundedCornerShape(24.dp), onClick = {
                     if (action.delete) viewModel.delete(action.row.id) else viewModel.setStatus(action.row.id, action.status ?: 0, "") {}
                     pending = null
                 }) { Text("确认") }
@@ -324,16 +324,16 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
 private fun AddDomainDialog(onDismiss: () -> Unit, fixedMerchantId: String = "", onConfirm: (String, String) -> Unit) {
     var merchantId by rememberSaveable { mutableStateOf(fixedMerchantId) }
     var domain by rememberSaveable { mutableStateOf("") }
-    AlertDialog(shape = RoundedCornerShape(20.dp), 
+    AlertDialog(shape = RoundedCornerShape(20.dp),
         onDismissRequest = onDismiss,
         title = { Text("添加授权支付域名") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(merchantId, { merchantId = it }, label = { Text("商户 ID") }, singleLine = true, readOnly = fixedMerchantId.isNotBlank())
-                OutlinedTextField(domain, { domain = it }, label = { Text("域名") }, supportingText = { Text("支持通配符 *") }, singleLine = true)
+                OutlinedTextField(merchantId, { merchantId = it }, label = { Text("商户 ID") }, singleLine = true, readOnly = fixedMerchantId.isNotBlank() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                OutlinedTextField(domain, { domain = it }, label = { Text("域名") }, supportingText = { Text("支持通配符 *") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
         },
-        confirmButton = { Button(shape = RoundedCornerShape(10.dp), onClick = { onConfirm(merchantId.trim(), domain.trim()) }, enabled = merchantId.isNotBlank() && domain.isNotBlank()) { Text("确认添加") } },
+        confirmButton = { Button(shape = RoundedCornerShape(24.dp), onClick = { onConfirm(merchantId.trim(), domain.trim()) }, enabled = merchantId.isNotBlank() && domain.isNotBlank()) { Text("确认添加") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
     )
 }

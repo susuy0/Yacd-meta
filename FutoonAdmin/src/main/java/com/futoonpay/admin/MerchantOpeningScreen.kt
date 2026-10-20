@@ -225,7 +225,7 @@ private fun openingFieldGroup(name: String): String = when (name) {
                     OutlinedTextField(field.value, { onField(field.name, it) }, label = { Text(field.label) }, enabled = enabled,
                         visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(), singleLine = true,
                         trailingIcon = { TextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示") } },
-                        supportingText = { Text("留空则只能使用密钥登录") }, modifier = Modifier.fillMaxWidth())
+                        supportingText = { Text("留空则只能使用密钥登录") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 }
                 "settle" -> Column {
                     Text("结算模式", color = Muted, fontSize = 13.sp)

@@ -43,7 +43,7 @@ internal fun ConfigurationListScreen(state: PaymentAdminState, modifier: Modifie
     } }
     val selection = rememberRecordSelection(listOf(module, state.page, query), visible.map { it.id })
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { OutlinedTextField(query, onQuery, placeholder = { Text(if (module == "proxies") "搜索代理名称、ID、地址" else "搜索支付方式、调用值、ID") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(query, onQuery, placeholder = { Text(if (module == "proxies") "搜索代理名称、ID、地址" else "搜索支付方式、调用值、ID") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         item { MultiSelectBar(selection, visible.map { it.id }, paymentBatchOptions(module, visible.filter { it.id in selection.selected }), state.loading, onBatch) }
         if (state.configurationLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         state.configurationError?.let { error -> item { PayCard { Text(error, color = Danger); TextButton(onClick = onReloadContext) { Text("重新加载关联通道") } } } }
@@ -119,7 +119,7 @@ internal fun ConfigurationEditorFields(form: NativeForm, module: String, channel
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (error != null) PayCard { Text(error, color = Danger); TextButton(onClick = onRetry) { Text("重新加载关联通道") } }
         if (bindings != null) {
-            OutlinedTextField(query, { query = it }, placeholder = { Text("搜索通道名称或 ID") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(query, { query = it }, placeholder = { Text("搜索通道名称或 ID") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
             val options = (channels.map { NativeOption(it.id, it.name) } + bindings.options + selected.map { NativeOption(it, "原有通道 #$it") }).distinctBy { it.value }
             options.filter { query.isBlank() || "${it.label} ${it.value}".contains(query.trim(), true) }.forEach { option ->
                 val channel = channels.firstOrNull { it.id == option.value }

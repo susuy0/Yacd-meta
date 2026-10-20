@@ -50,6 +50,7 @@ val Danger: Color @Composable get() = MaterialTheme.colorScheme.error
 val Warning: Color @Composable get() = LocalFutoonPalette.current.accentText
 val GreenTint: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
 val CardColor: Color @Composable get() = MaterialTheme.colorScheme.surface
+val FieldColor: Color @Composable get() = MaterialTheme.colorScheme.surfaceContainerHighest
 val ButtonText: Color @Composable get() = MaterialTheme.colorScheme.onPrimary
 
 private fun readableButtonText(accent: Color, proposed: Color): Color {
@@ -69,15 +70,15 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
             background = palette.background, onBackground = palette.text, surface = palette.surface, onSurface = palette.text,
             surfaceVariant = palette.background, onSurfaceVariant = palette.secondaryText,
             surfaceContainer = palette.surface, surfaceContainerLow = palette.surface, surfaceContainerHigh = palette.surface,
-            surfaceContainerHighest = palette.background, outline = palette.divider, outlineVariant = palette.divider, error = palette.error)
+            surfaceContainerHighest = lerp(palette.surface, palette.secondaryText, if (palette.dark) .14f else .08f), outline = palette.divider, outlineVariant = palette.divider, error = palette.error)
     }
     val accentContrast = (maxOf(palette.surface.luminance(), palette.accentText.luminance()) + .05f) / (minOf(palette.surface.luminance(), palette.accentText.luminance()) + .05f)
     val safePalette = if (accentContrast < 4.5f) palette.copy(accentText = palette.text) else palette
     val density = androidx.compose.ui.platform.LocalDensity.current
     CompositionLocalProvider(LocalFutoonPalette provides safePalette, androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * palette.fontScale)) {
         MaterialTheme(colorScheme = colors,
-            typography = Typography(bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
-            shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(16.dp)),
+            typography = Typography(titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp), titleMedium = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
+            shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp)),
             content = { CompositionLocalProvider(LocalContentColor provides colors.onSurface) { content() } })
     }
 }

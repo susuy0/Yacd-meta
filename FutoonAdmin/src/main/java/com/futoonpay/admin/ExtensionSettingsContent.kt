@@ -86,7 +86,7 @@ import java.util.UUID
                         RadioButton(working.appearance.theme == id, { working = working.copy(appearance = working.appearance.copy(theme = id)) }); Text(title)
                     }
                 }
-                OutlinedTextField(working.appearance.accent, { working = working.copy(appearance = working.appearance.copy(accent = it)) }, label = { Text("强调色，例如 #2481CC；留空跟随主题") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(working.appearance.accent, { working = working.copy(appearance = working.appearance.copy(accent = it)) }, label = { Text("强调色，例如 #2481CC；留空跟随主题") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf("#2481CC", "#087A4B", "#7954C4", "#D16B32").forEach { color ->
                     Box(Modifier.size(44.dp).background(Color(android.graphics.Color.parseColor(color)), androidx.compose.foundation.shape.CircleShape).clickable { working = working.copy(appearance = working.appearance.copy(accent = color)) })
                 } }
@@ -162,8 +162,8 @@ import java.util.UUID
     var discard by remember { mutableStateOf(false) }
     fun back() { if (title != initial.title || body != initial.body) discard = true else close() }
     PaySheet("业务回复模板", ::back) { Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("模板名称") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        OutlinedTextField(body, { body = it }, label = { Text("模板正文") }, minLines = 6, supportingText = { Text("${body.length} / 4096") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(title, { title = it }, label = { Text("模板名称") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        OutlinedTextField(body, { body = it }, label = { Text("模板正文") }, minLines = 6, supportingText = { Text("${body.length} / 4096") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Text("插入变量", fontWeight = FontWeight.Medium)
         businessReplyVariables.chunked(3).forEach { row -> Row { row.forEach { variable -> TextButton(onClick = { body += "{$variable}" }) { Text(variable, fontSize = 12.sp) } } } }
         Text("变量在生成草稿时替换；缺失信息显示为“未提供”。", color = Muted, fontSize = 12.sp)
@@ -191,17 +191,17 @@ import java.util.UUID
     fun back() { if (dirty) discard = true else close() }
     LaunchedEffect(revision) { if (awaitingPick) { val picked = runCatching { JSONObject(host?.selectedGroup().orEmpty()) }.getOrNull(); if (picked != null && picked.optLong("dialog") < 0) { dialog = picked.optString("dialog"); groupName = picked.optString("title"); topic = picked.optString("topic", "0"); awaitingPick = false } } }
     PaySheet("群自动化规则", ::back) { Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("规则名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(title, { title = it }, label = { Text("规则名称") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Button(enabled = host != null, onClick = { awaitingPick = true; host?.pickAutomationGroup() }) { Text("选择群组") }
         Text(groupName.ifBlank { "尚未选择群组" }, color = Muted)
-        OutlinedTextField(dialog, { dialog = it }, label = { Text("客户端群 ID（选择群组自动填写）") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(topic, { topic = it }, label = { Text("话题 ID；0 表示全部话题") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(sender, { sender = it }, label = { Text("指定机器人／发送者 Telegram ID") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(keyword, { keyword = it }, label = { Text("消息包含文字（点击按钮时可留空）") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(dialog, { dialog = it }, label = { Text("客户端群 ID（选择群组自动填写）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        OutlinedTextField(topic, { topic = it }, label = { Text("话题 ID；0 表示全部话题") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        OutlinedTextField(sender, { sender = it }, label = { Text("指定机器人／发送者 Telegram ID") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        OutlinedTextField(keyword, { keyword = it }, label = { Text("消息包含文字（点击按钮时可留空）") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Row { FilterChip(action == "click", { action = "click" }, label = { Text("点击机器人按钮") }); Spacer(Modifier.width(8.dp)); FilterChip(action == "draft", { action = "draft" }, label = { Text("生成回复草稿") }) }
-        if (action == "click") OutlinedTextField(button, { button = it }, label = { Text("按钮完整文字，精确匹配") }, modifier = Modifier.fillMaxWidth())
-        else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth()); Text("可用 {消息文字}、{群名称}、{发送者ID}；已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
-        OutlinedTextField(cooldown, { cooldown = it }, label = { Text("执行间隔（2～3600 秒）") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        if (action == "click") OutlinedTextField(button, { button = it }, label = { Text("按钮完整文字，精确匹配") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()); Text("可用 {消息文字}、{群名称}、{发送者ID}；已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
+        OutlinedTextField(cooldown, { cooldown = it }, label = { Text("执行间隔（2～3600 秒）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Text("新增规则默认关闭，保存规则后再按群开启。点击只执行指定按钮，不延伸到后续确认。", color = Muted, fontSize = 12.sp)
         error?.let { Text(it, color = Danger) }
         Row { TextButton(onClick = ::back) { Text("取消") }; Button(onClick = { try {

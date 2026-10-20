@@ -9204,7 +9204,7 @@ index 4e91bfd3457ff17f058d401f0cd4e6bdfa5356b7..4e1575019cb5da541ef366deb64f6c0b
              QrResult qrResult = new QrResult();
              if (bounds != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
-index 0fae7fdda99102496683e4c1cf866df7cf156a93..a4f72f8352b30b1690487a0ed5ed9ce30ecb519d 100644
+index 0fae7fdda99102496683e4c1cf866df7cf156a93..0ad19738f9176690f69facabb6c2e49850db1524 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 @@ -169,7 +169,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
@@ -9224,6 +9224,24 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..a4f72f8352b30b1690487a0ed5ed9ce3
      private boolean nameLayoutFits;
      public float nameLayoutTranslateX;
      private boolean nameLayoutEllipsizeLeft;
+@@ -1249,7 +1250,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+         }
+ 
+         if (useForceThreeLines || SharedConfig.useThreeLinesLayout || true) {
+-            Theme.dialogs_namePaint[0].setTextSize(dp(17));
++            Theme.dialogs_namePaint[0].setTextSize(dp(16));
+             Theme.dialogs_nameEncryptedPaint[0].setTextSize(dp(17));
+             Theme.dialogs_messagePaint[0].setTextSize(dp(16));
+             Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(16));
+@@ -1263,7 +1264,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+             paintIndex = 1;
+             thumbSize = 18;
+         } else {
+-            Theme.dialogs_namePaint[0].setTextSize(dp(17));
++            Theme.dialogs_namePaint[0].setTextSize(dp(16));
+             Theme.dialogs_nameEncryptedPaint[0].setTextSize(dp(17));
+             Theme.dialogs_messagePaint[0].setTextSize(dp(16));
+             Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(16));
 @@ -2390,6 +2391,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              if (nameString instanceof String) {
                  nameString = ((String) nameString).replace('\n', ' ');
@@ -9253,6 +9271,19 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..a4f72f8352b30b1690487a0ed5ed9ce3
              int left;
              if (fullSeparator || currentDialogFolderId != 0 && archiveHidden && !fullSeparator2 || fullSeparator2 && !archiveHidden) {
                  left = 0;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailSettingsCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailSettingsCell.java
+index 48d278b1da6a917eed92e78315c1c5e10dc39e58..43c9cf6a34d1a56424b493b578e5f8f28536e617 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailSettingsCell.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailSettingsCell.java
+@@ -48,7 +48,7 @@ public class TextDetailSettingsCell extends FrameLayout {
+ 
+         valueTextView = new TextView(context);
+         valueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2));
+-        valueTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
++        valueTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+         valueTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
+         valueTextView.setLines(1);
+         valueTextView.setMaxLines(1);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
 index 5d4d97c4a538bfbe85a67e48008254b067ee889a..233e00c815629f8943424f02944de81000a9932d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
@@ -10996,6 +11027,46 @@ index 73439a9bfbe77f339272eafcf7c5011483f91e61..8ff0380538949b16edc40cea83f715f1
          Activity _activity = LaunchActivity.instance;
          if (_activity == null) _activity = AndroidUtilities.findActivity(ApplicationLoader.applicationContext);
          if (_activity == null) return;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ReplyMessageLine.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ReplyMessageLine.java
+index 2f52841f912ea2e5eadc34985b8dd7dc113f73f1..ccaa7a846ce8e522f8a800634c8f1d98902eabb7 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ReplyMessageLine.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ReplyMessageLine.java
+@@ -459,6 +459,10 @@ public class ReplyMessageLine {
+         if (sticker != null) {
+             sticker.set(stickerDocumentId, true);
+         }
++        if (!sponsored && (type == TYPE_REPLY || type == TYPE_QUOTE || type == TYPE_LINK || type == TYPE_CONTACT)) {
++            setSimpleColor(Theme.getColor(messageObject.isOutOwner() ? Theme.key_chat_outReplyLine : Theme.key_chat_inReplyLine, resourcesProvider), dark);
++            nameColor = Theme.getColor(messageObject.isOutOwner() ? Theme.key_chat_outReplyNameText : Theme.key_chat_inReplyNameText, resourcesProvider);
++        }
+         emojiColor = getColor();
+         return nameColorAnimated.set(nameColor);
+     }
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java
+index 2607144c519305ae85a700df303c21679143560b..a9c4819f07a6449af7c187446c784c5988db76b2 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java
+@@ -164,7 +164,7 @@ public class ScrollSlidingTextTabStrip extends HorizontalScrollView implements T
+         this.resourcesProvider = resourcesProvider;
+ 
+         selectorDrawable = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, null);
+-        float rad = AndroidUtilities.dpf2(14);
++        float rad = AndroidUtilities.dpf2(18);
+         selectorDrawable.setCornerRadii(new float[]{rad, rad, rad, rad, rad, rad, rad, rad});
+ //        selectorDrawable.setCornerRadii(new float[]{rad, rad, rad, rad, 0, 0, 0, 0});
+ 
+@@ -757,9 +757,9 @@ public class ScrollSlidingTextTabStrip extends HorizontalScrollView implements T
+ //            );
+             selectorDrawable.setBounds(
+                 getPaddingLeft() + (int) l + dp(4),
+-                getPaddingTop() + dp(4),
++                getPaddingTop() + dp(6),
+                 getPaddingLeft() + (int) r - dp(4),
+-                height - getPaddingBottom() - dp(4)
++                height - getPaddingBottom() - dp(6)
+             );
+             selectorDrawable.draw(canvas);
+             selectorDrawable.setAlpha(wasAlpha);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
 index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef845c59ac6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
@@ -11073,7 +11144,7 @@ index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef8
                      }
                  }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
-index 44295250c3685eed39aaec116dc062b21d0a3f05..2628ba3f4678b3641e14eb24f122556e0b54aa19 100644
+index 44295250c3685eed39aaec116dc062b21d0a3f05..32ba2115807357b7b0aeef5512133d8ddec70014 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
 @@ -72,6 +72,7 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
@@ -11091,14 +11162,18 @@ index 44295250c3685eed39aaec116dc062b21d0a3f05..2628ba3f4678b3641e14eb24f122556e
 -            paintCounterBackground.setColor(Theme.multAlpha(colorSelected, 0.09f * alpha));
 -            tmpRectF.set(0, 0, viewWidth, getHeight());
 +            paintCounterBackground.setColor(Theme.multAlpha(com.futoonpay.admin.appearance.ChatLook.selected(org.telegram.ui.FutoonChatAppearance.dark()), alpha));
-+            tmpRectF.set(viewWidth / 2f - dp(30), 0, viewWidth / 2f + dp(30), dp(32));
++            tmpRectF.set(viewWidth / 2f - dp(32), dp(2), viewWidth / 2f + dp(32), dp(34));
              final float r = Math.min(tmpRectF.width(), tmpRectF.height()) / 2f;
              final float s = lerp(0.6f, 1, selectedFactor) * MathUtils.clamp(attachScale, 0, 1);
              canvas.save();
-@@ -237,6 +238,20 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
-         textView.setTypeface(selected ? AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_EXTRA_BOLD) : AndroidUtilities.bold());
-     }
+@@ -234,7 +235,21 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+         isSelectedAnimator.setValue(selected, animated);
+         checkPlayAnimation(animated);
  
+-        textView.setTypeface(selected ? AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_EXTRA_BOLD) : AndroidUtilities.bold());
++        textView.setTypeface(chatAppearanceGlyph != null ? (selected ? AndroidUtilities.bold() : android.graphics.Typeface.DEFAULT) : (selected ? AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_EXTRA_BOLD) : AndroidUtilities.bold()));
++    }
++
 +    public void setChatAppearance(String glyph) {
 +        chatAppearanceGlyph = glyph;
 +        tabAnimation = null;
@@ -11106,16 +11181,14 @@ index 44295250c3685eed39aaec116dc062b21d0a3f05..2628ba3f4678b3641e14eb24f122556e
 +        imageView.setVisibility(VISIBLE);
 +        if (backupImageView != null) backupImageView.setVisibility(GONE);
 +        imageView.setImageDrawable(org.telegram.ui.FutoonChatAppearance.icon(glyph));
-+        imageView.setLayoutParams(LayoutHelper.createFrame(24, 24, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 4, 0, 0));
-+        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 38, 0, 0));
++        imageView.setLayoutParams(LayoutHelper.createFrame(24, 24, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 6, 0, 0));
++        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 42, 0, 0));
 +        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
 +        textView.setTypeface(AndroidUtilities.bold());
 +        invalidate();
-+    }
-+
-     public boolean isTabSelected() {
-         return isSelectedAnimator.getValue();
      }
+ 
+     public boolean isTabSelected() {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
 index 1c4f424ad7329a371dd04c42cf99cea28e2bf999..8bbaa169ba12a6674ebe0b8971227ef1ba8a8d91 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
@@ -11650,10 +11723,10 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..8b15e494ddfdeac40ed9b36dcbf18427
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837b385e1e0
+index 0000000000000000000000000000000000000000..5bd42f92d8956fbcc931488d4114a9b3016a5c26
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,163 @@
 +package org.telegram.ui;
 +
 +import android.graphics.drawable.Drawable;
@@ -11680,11 +11753,25 @@ index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837
 +            put("key_actionBarDefaultSubmenuSeparator", Theme.key_actionBarDefaultSubmenuSeparator);
 +            put("key_actionBarDefaultSubtitle", Theme.key_actionBarDefaultSubtitle);
 +            put("key_actionBarDefaultTitle", Theme.key_actionBarDefaultTitle);
++            put("key_actionBarTabActiveText", Theme.key_actionBarTabActiveText);
++            put("key_actionBarTabLine", Theme.key_actionBarTabLine);
++            put("key_actionBarTabSelector", Theme.key_actionBarTabSelector);
++            put("key_actionBarTabUnactiveText", Theme.key_actionBarTabUnactiveText);
 +            put("key_avatar_backgroundActionBarBlue", Theme.key_avatar_backgroundActionBarBlue);
 +            put("key_avatar_subtitleInProfileBlue", Theme.key_avatar_subtitleInProfileBlue);
++            put("key_chat_inAudioDurationText", Theme.key_chat_inAudioDurationText);
++            put("key_chat_inAudioPerformerText", Theme.key_chat_inAudioPerformerText);
++            put("key_chat_inAudioTitleText", Theme.key_chat_inAudioTitleText);
 +            put("key_chat_inBubble", Theme.key_chat_inBubble);
 +            put("key_chat_inBubbleSelected", Theme.key_chat_inBubbleSelected);
 +            put("key_chat_inBubbleShadow", Theme.key_chat_inBubbleShadow);
++            put("key_chat_inContactNameText", Theme.key_chat_inContactNameText);
++            put("key_chat_inContactPhoneSelectedText", Theme.key_chat_inContactPhoneSelectedText);
++            put("key_chat_inContactPhoneText", Theme.key_chat_inContactPhoneText);
++            put("key_chat_inFileInfoSelectedText", Theme.key_chat_inFileInfoSelectedText);
++            put("key_chat_inFileInfoText", Theme.key_chat_inFileInfoText);
++            put("key_chat_inFileNameText", Theme.key_chat_inFileNameText);
++            put("key_chat_inForwardedNameText", Theme.key_chat_inForwardedNameText);
 +            put("key_chat_inReplyLine", Theme.key_chat_inReplyLine);
 +            put("key_chat_inReplyMediaMessageText", Theme.key_chat_inReplyMediaMessageText);
 +            put("key_chat_inReplyMessageText", Theme.key_chat_inReplyMessageText);
@@ -11700,6 +11787,9 @@ index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837
 +            put("key_chat_messagePanelVoicePressed", Theme.key_chat_messagePanelVoicePressed);
 +            put("key_chat_messageTextIn", Theme.key_chat_messageTextIn);
 +            put("key_chat_messageTextOut", Theme.key_chat_messageTextOut);
++            put("key_chat_outAudioDurationText", Theme.key_chat_outAudioDurationText);
++            put("key_chat_outAudioPerformerText", Theme.key_chat_outAudioPerformerText);
++            put("key_chat_outAudioTitleText", Theme.key_chat_outAudioTitleText);
 +            put("key_chat_outBubble", Theme.key_chat_outBubble);
 +            put("key_chat_outBubbleGradient1", Theme.key_chat_outBubbleGradient1);
 +            put("key_chat_outBubbleGradient2", Theme.key_chat_outBubbleGradient2);
@@ -11707,6 +11797,13 @@ index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837
 +            put("key_chat_outBubbleGradientAnimated", Theme.key_chat_outBubbleGradientAnimated);
 +            put("key_chat_outBubbleSelected", Theme.key_chat_outBubbleSelected);
 +            put("key_chat_outBubbleShadow", Theme.key_chat_outBubbleShadow);
++            put("key_chat_outContactNameText", Theme.key_chat_outContactNameText);
++            put("key_chat_outContactPhoneSelectedText", Theme.key_chat_outContactPhoneSelectedText);
++            put("key_chat_outContactPhoneText", Theme.key_chat_outContactPhoneText);
++            put("key_chat_outFileInfoSelectedText", Theme.key_chat_outFileInfoSelectedText);
++            put("key_chat_outFileInfoText", Theme.key_chat_outFileInfoText);
++            put("key_chat_outFileNameText", Theme.key_chat_outFileNameText);
++            put("key_chat_outForwardedNameText", Theme.key_chat_outForwardedNameText);
 +            put("key_chat_outReplyLine", Theme.key_chat_outReplyLine);
 +            put("key_chat_outReplyMediaMessageText", Theme.key_chat_outReplyMediaMessageText);
 +            put("key_chat_outReplyMessageText", Theme.key_chat_outReplyMessageText);
@@ -11761,6 +11858,7 @@ index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837
 +            put("key_profile_verifiedCheck", Theme.key_profile_verifiedCheck);
 +            put("key_switch2TrackChecked", Theme.key_switch2TrackChecked);
 +            put("key_switchTrackChecked", Theme.key_switchTrackChecked);
++            put("key_telegram_color", Theme.key_telegram_color);
 +            put("key_telegram_color_dialogsLogo", Theme.key_telegram_color_dialogsLogo);
 +            put("key_windowBackgroundGray", Theme.key_windowBackgroundGray);
 +            put("key_windowBackgroundGrayShadow", Theme.key_windowBackgroundGrayShadow);
@@ -11794,10 +11892,10 @@ index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a2957a25e00
+index 0000000000000000000000000000000000000000..2613c8fba72a445bee1d5334174d5401f1625803
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,72 @@
 +package org.telegram.ui;
 +
 +import android.content.Context;
@@ -11826,6 +11924,7 @@ index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a29
 +    public String selectedCategory() { return selectedCategory; }
 +    @Override public View createView(Context context) {
 +        actionBar.setBackButtonImage(R.drawable.ic_ab_back);
++        actionBar.setTitleSize(20);
 +        actionBar.setTitle("FutoonPay 设置");
 +        actionBar.setAllowOverlayTitle(true);
 +        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() { @Override public void onItemClick(int id) { if (id == -1 && tools != null) tools.handleBack(); } });
@@ -13550,7 +13649,7 @@ index 9ab26df3ac49dd83ab70fe19f1bb321e43959321..35a26fa65d0bc448eb8386adceedc923
          if (requestCode == 3) {
              if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
-index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..d6be582865b3886847405b76b13a4eb08c8c9a0d 100644
+index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..63ee47025a702af645417f5535435b4271e7e0b6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 @@ -654,6 +654,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
@@ -13579,6 +13678,24 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..d6be582865b3886847405b76b13a4eb0
                          return;
                      }
                      ImageLocation location = avatarsViewPager.getImageLocation(avatarsViewPager.getRealPosition());
+@@ -5558,7 +5559,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+                 nameTextView[a].setTextColor(getThemedColor(Theme.key_actionBarDefaultTitle));
+             }
+             nameTextView[a].setPadding(0, AndroidUtilities.dp(6), 0, AndroidUtilities.dp(a == 0 ? 12 : 4));
+-            nameTextView[a].setTextSizePx(dp(17.5f));
++            nameTextView[a].setTextSizePx(dp(20));
+             nameTextView[a].setGravity(Gravity.LEFT);
+             nameTextView[a].setTypeface(AndroidUtilities.bold());
+             nameTextView[a].setLeftDrawableTopPadding(-AndroidUtilities.dp(1.3f));
+@@ -5624,7 +5625,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+ 
+             onlineTextView[a].setEllipsizeByGradient(true);
+             onlineTextView[a].setTextColor(applyPeerColor(getThemedColor(Theme.key_actionBarDefaultSubtitle), true, null));
+-            onlineTextView[a].setTextSizePx(dp(13.5f));
++            onlineTextView[a].setTextSizePx(dp(14));
+             onlineTextView[a].setGravity(Gravity.LEFT);
+             onlineTextView[a].setAlpha(a == 0 ? 0.0f : 1.0f);
+             onlineTextView[a].setPivotX(dp(8));
 @@ -6029,9 +6030,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
  
      private int getHeaderOnlyExtraHeight() {
@@ -13717,10 +13834,18 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..cbd4930ecb4775fc833c898d6f6769006a21529a 100644
+index 693df7877dde165920833faafae227cf60679d29..a7a37009cdf86b64df95fd9479e1118b8b0d7dc8 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-@@ -698,6 +698,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -296,6 +296,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
+         actionBar.setAllowOverlayTitle(true);
+         actionBar.setUseContainerForTitles();
++        actionBar.setTitleSize(20);
+         actionBar.setTitle(getString(R.string.Settings));
+         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
+             @Override
+@@ -698,6 +699,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          }
  
          items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
@@ -13728,7 +13853,7 @@ index 693df7877dde165920833faafae227cf60679d29..cbd4930ecb4775fc833c898d6f676900
          items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
          items.add(SettingCell.Factory.of(3, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_privacy, getString(R.string.SettingsPrivacySecurity), getString(R.string.SettingsPrivacySecurityInfo)));
          items.add(SettingCell.Factory.of(5, IconBackgroundColors.RED.top, IconBackgroundColors.RED.bottom, R.drawable.settings_sounds, getString(R.string.SettingsNotifications), getString(R.string.SettingsNotificationsInfo)));
-@@ -817,6 +818,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -817,6 +819,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              return;
          }
          switch (item.id) {
@@ -15362,7 +15487,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..af0e298ddee4b10569cac5514a3790af58ce1fec 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..1c521296d30462c19ea7f71e70ce9d5523c6fc1a 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
@@ -15370,7 +15495,7 @@ index 55d530f04eceaa33faa42b235a441f289255dbee..af0e298ddee4b10569cac5514a3790af
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7197
++APP_VERSION_CODE=7198
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat

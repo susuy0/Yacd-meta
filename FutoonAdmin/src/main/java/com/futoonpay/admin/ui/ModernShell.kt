@@ -73,7 +73,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 Text("包含 https://，不带路径", color = Muted, fontSize = 12.sp)
                 LoginField("后台路径", path, { path = it; error = null }, "/admin", KeyboardType.Uri)
                 Text("以 / 开头，可修改，保存在本机", color = Muted, fontSize = 12.sp)
-                if (!connected) OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = {
+                if (!connected) OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = {
                     runCatching { composeBackendAddress(origin, path) }.onSuccess(onConnect).onFailure { error = it.message }
                 }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(if (busy) "正在连接…" else "连接后台") }
             }
@@ -83,14 +83,14 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 LoginField("账号", username, { username = it }, "管理员账号", KeyboardType.Text, connected)
                 Text("密码", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 OutlinedTextField(password, { password = it }, singleLine = true, enabled = connected,
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
                     visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    trailingIcon = { IconButton(onClick = { visible = !visible }) { Icon(if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, "显示或隐藏密码") } })
+                    trailingIcon = { IconButton(onClick = { visible = !visible }) { Icon(if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, "显示或隐藏密码") } } , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 if (connected) {
                     Text("验证码", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(captcha, { captcha = it.take(8) }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp))
+                        OutlinedTextField(captcha, { captcha = it.take(8) }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
                         val image = remember(state.captcha) { state.captcha?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }
                         Box(Modifier.width(112.dp).height(52.dp).background(Mist, RoundedCornerShape(10.dp)).clickable(onClick = onCaptcha), contentAlignment = Alignment.Center) {
                             if (state.captchaLoading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -104,7 +104,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
         (error ?: state.message)?.let { item { Text(it, color = Danger, fontSize = 13.sp) } }
     }
         Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Button(shape = RoundedCornerShape(10.dp), onClick = { onLogin(username, password, captcha) },
+            Button(shape = RoundedCornerShape(24.dp), onClick = { onLogin(username, password, captcha) },
                 enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = ButtonText, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
@@ -120,7 +120,7 @@ private fun LoginField(label: String, value: String, onChange: (String) -> Unit,
     Text(label, fontWeight = FontWeight.Medium, fontSize = 13.sp)
     OutlinedTextField(value, onChange, singleLine = true, enabled = enabled,
         placeholder = { Text(placeholder, fontSize = 13.sp) }, modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboard), shape = RoundedCornerShape(10.dp))
+        keyboardOptions = KeyboardOptions(keyboardType = keyboard), shape = RoundedCornerShape(14.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
 }
 
 @Composable
@@ -164,9 +164,9 @@ internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onS
 
 @Composable
 private fun MenuRow(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClick = onClick).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(38.dp).background(GreenTint, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) { Icon(icon, null, tint = GreenDark, modifier = Modifier.size(20.dp)) }
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text(title, fontSize = 14.sp, fontWeight = FontWeight.Medium); Text(subtitle, color = Muted, fontSize = 12.sp) }
+    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).clickable(onClick = onClick).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(icon, null, tint = Muted, modifier = Modifier.size(24.dp)) }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium); Text(subtitle, color = Muted, fontSize = 13.sp) }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted, modifier = Modifier.size(18.dp))
     }
 }
@@ -196,8 +196,8 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
     BackHandler { if (edit) edit = false else onBack() }
     Scaffold(containerColor = Mist, topBar = { PayTopBar(if (edit) "更换后台地址" else "设置", { if (edit) edit = false else onBack() }) }, bottomBar = {
         if (edit) Surface(color = CardColor) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            Button(shape = RoundedCornerShape(10.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
+            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            Button(shape = RoundedCornerShape(24.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
         } }
     }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -222,7 +222,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                 } }
                 item { SectionLabel("版本信息") }
                 item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", "com.futoonpay.vinechat.beta") } }
-                item { OutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
+                item { OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
             }
         }
     }

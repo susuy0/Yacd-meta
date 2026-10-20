@@ -53,7 +53,7 @@ internal fun businessReplyValues(order: OrderDetail?, merchant: MerchantSummary?
             }
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (!loading && templates.isEmpty()) Text("还没有业务回复模板，请在 FutoonPay 设置中新增。", color = Muted)
-            OutlinedTextField(body, { body = it }, label = { Text("回复草稿，可修改") }, modifier = Modifier.fillMaxWidth().weight(1f), isError = body.length > 4096, supportingText = { Text("${body.length} / 4096") }, enabled = !inserting)
+            OutlinedTextField(body, { body = it }, label = { Text("回复草稿，可修改") }, modifier = Modifier.fillMaxWidth().weight(1f), isError = body.length > 4096, supportingText = { Text("${body.length} / 4096") }, enabled = !inserting , colors = com.futoonpay.admin.ui.ChatFieldColors())
             error?.let { Text(it, color = Danger, fontSize = 13.sp) }
             Text("核对变量与内容后填入当前会话，由你手动发送。", color = Muted, fontSize = 12.sp)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

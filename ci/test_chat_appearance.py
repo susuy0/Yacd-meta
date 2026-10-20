@@ -24,3 +24,12 @@ assert 'FutoonPanel' in (src/'ChatActivity.java').read_text()
 assert 'ChatLook.bubblePath' in (src/'ActionBar/MessageDrawable.java').read_text()
 assert 'getImageReceiver' in (src/'ProfileActivity.java').read_text() and 'Telegram ID' in (src/'ProfileActivity.java').read_text()
 print(f'PASS: {len(mapped)} native theme keys, cached palette, native filters, composer allocation guard, existing callbacks, business and permission boundaries')
+
+components=(repo/'FutoonAdmin/src/main/java/com/futoonpay/admin/ui/ModernComponents.kt').read_text()
+panel=(repo/'FutoonAdmin/src/main/java/com/futoonpay/admin/NativePanelView.kt').read_text()
+assert 'ChatNavigationBar(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)' in panel
+assert 'Role.Tab' in components and 'selectableGroup()' in components
+assert 'MainTab.entries.find { it.name == id }?.let(onSelect)' in components
+assert 'ChatFilterTabs(options, selected, onSelect)' in components
+assert 'ChatFieldColors()' in components
+print('PASS: shared native tab routing, configured order, accessibility selection, scrollable filters and field styles')

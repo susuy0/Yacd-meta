@@ -139,7 +139,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     }
     Column(Modifier.fillMaxSize()) {
         Text(if((state.scope?.dialog?:0)<0) "关联到当前群，所有话题共用，可勾选多个通道。" else "关联到当前会话，可勾选多个通道。",Modifier.padding(16.dp),color=Muted,fontSize=13.sp)
-        OutlinedTextField(query,{query=it},placeholder={Text("搜索通道名称或 ID")},singleLine=true,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp))
+        OutlinedTextField(query,{query=it},placeholder={Text("搜索通道名称或 ID")},singleLine=true,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
         LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             if(loading)item{CircularProgressIndicator()}
             error?.let{item{Text(it,color=Danger);TextButton(onClick={retry++}){Text("重试")}}}

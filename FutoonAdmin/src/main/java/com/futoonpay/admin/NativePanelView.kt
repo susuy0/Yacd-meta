@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -242,17 +243,13 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                     }
                 }
                 if (state.authStage == AuthStage.AUTHENTICATED) {
-                    HorizontalDivider(color = Line)
-                    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).background(CardColor)) {
-                        val tabs = listOf(Triple("recognition", "识别", Icons.Default.DocumentScanner), Triple("orders", "订单", Icons.Default.ReceiptLong), Triple("merchants", "商户", Icons.Default.Storefront), Triple("settlements", "结算", Icons.Default.AccountBalanceWallet), Triple("more", "更多", Icons.Default.GridView))
-                        tabs.sortedBy { options.panel.tabOrder.indexOf(it.first) }.forEach { (id, title, icon) ->
-                            val active = navigator.tab == id
-                            Column(Modifier.weight(1f).heightIn(min = 52.dp).clickable { navigator.select(id) }.padding(vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)) {
-                                Icon(icon, title, Modifier.size(20.dp), tint = if (active) GreenDark else Muted)
-                                Text(title, fontSize = 12.sp, color = if (active) GreenDark else Muted)
-                            }
-                        }
-                    }
+                    val tabs = listOf(
+                        ChatNavItem("recognition", "识别", Icons.Outlined.DocumentScanner, Icons.Default.DocumentScanner),
+                        ChatNavItem("orders", "订单", Icons.Outlined.ReceiptLong, Icons.Default.ReceiptLong),
+                        ChatNavItem("merchants", "商户", Icons.Outlined.Storefront, Icons.Default.Storefront),
+                        ChatNavItem("settlements", "结算", Icons.Outlined.AccountBalanceWallet, Icons.Default.AccountBalanceWallet),
+                        ChatNavItem("more", "更多", Icons.Outlined.MoreHoriz, Icons.Default.MoreHoriz))
+                    ChatNavigationBar(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)
                 }
             }
             if (state.authStage == AuthStage.AUTHENTICATED) CurrentMerchantDialogs(merchantActions, workflows, chat)
@@ -410,7 +407,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                 }
             } }
 
-            item { OutlinedTextField(caption, { caption = it }, label = { Text("凭证说明") }, modifier = Modifier.fillMaxWidth(), minLines = 3, isError = caption.length > 1024, supportingText = { Text("${caption.length} / 1024") }) }
+            item { OutlinedTextField(caption, { caption = it }, label = { Text("凭证说明") }, modifier = Modifier.fillMaxWidth(), minLines = 3, isError = caption.length > 1024, supportingText = { Text("${caption.length} / 1024") } , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { PayPills(listOf("查单", "补单协助", "回调异常", "退款核实").map { it to it }, "") { caption = evidenceCaption(order, it) } }
             item { PayPills(listOf("待处理", "已发出", "等待回复", "已解决").map { it to it }, status) { status = it } }
             item { Text("发送对象由你下一步手动选择，商户 TGID 和支付通道不会决定收件人。", color = Muted, fontSize = 12.sp) }

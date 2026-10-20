@@ -41,6 +41,16 @@ public final class ChatLook {
             case "key_chats_message": case "key_chats_message_threeLines": case "key_windowBackgroundWhiteGrayText":
             case "key_windowBackgroundWhiteGrayText2": case "key_windowBackgroundWhiteGrayText3": case "key_windowBackgroundWhiteGrayText4":
             case "key_glass_tabUnselected": case "key_glass_defaultIcon": case "key_profile_status": case "key_avatar_subtitleInProfileBlue": case "key_windowBackgroundWhiteGrayIcon": return secondary(dark);
+            case "key_chat_inFileNameText": case "key_chat_outFileNameText":
+            case "key_chat_inAudioTitleText": case "key_chat_outAudioTitleText":
+            case "key_chat_inContactNameText": case "key_chat_outContactNameText": return text(dark);
+            case "key_chat_inFileInfoText": case "key_chat_outFileInfoText": case "key_chat_inFileInfoSelectedText": case "key_chat_outFileInfoSelectedText":
+            case "key_chat_inContactPhoneText": case "key_chat_outContactPhoneText": case "key_chat_inContactPhoneSelectedText": case "key_chat_outContactPhoneSelectedText":
+            case "key_chat_inAudioPerformerText": case "key_chat_outAudioPerformerText": case "key_chat_inAudioDurationText": case "key_chat_outAudioDurationText": return secondary(dark);
+            case "key_chat_inForwardedNameText": case "key_chat_outForwardedNameText": return secondary(dark);
+            case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return accent(dark);
+            case "key_actionBarTabUnactiveText": return secondary(dark);
+            case "key_actionBarTabSelector": return selected(dark);
             case "key_chat_messagePanelSend": return dark ? 0xff00a884 : 0xff008069;
             case "key_chats_unreadCounter": case "key_featuredStickers_addButton":
             case "key_switch2TrackChecked": case "key_switchTrackChecked": case "key_checkbox": case "key_dialogButton": case "key_chats_actionBackground": case "key_profile_actionBackground": case "key_profile_verifiedBackground":
