@@ -45,6 +45,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutable = MutableStateFlow(ChannelShortcutState())
     val state = mutable.asStateFlow()
+    private val accountSession = bridge.session()
     private var generation = 0L
     private var request = 0L
     private var job: Job? = null
@@ -59,7 +60,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         if (environment == null || address != environmentAddress) { environment = EmbeddedEnvironment(bridge); environmentAddress = address }
         return environment!!.repository
     }
-    fun current(key: ChannelScope?, token: Long): Boolean = !closed && active && key != null && state.value.scope == key && generation == token && bridge.address() == key.backend && bridge.accountScope() == key.account && bridge.hasSession() && bridge.session().isActive()
+    fun current(key: ChannelScope?, token: Long): Boolean = !closed && active && key != null && state.value.scope == key && generation == token && bridge.address() == key.backend && bridge.accountScope() == key.account && accountSession.isActive()
     fun bind(label: String, dialog: Long, topic: Long) {
         val key = ChannelScope(bridge.accountScope(), bridge.address(), dialog, topic)
         if (state.value.scope != key) {
@@ -115,7 +116,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
                 if (current(key, token) && sequence == request) mutable.update { it.copy(snapshot = stats, loading = false) }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
-                if (current(key, token) && sequence == request) mutable.update { it.copy(loading = false, error = e.message ?: "读取失败", invalid = e is ChannelUnavailableException) }
+                if (current(key, token) && sequence == request) mutable.update { it.copy(loading = false, error = e.message ?: "读取失败", invalid = e is ChannelUnavailableException || e is PermissionDeniedException || e is SessionExpiredException) }
             }
         }
     }
