@@ -66,7 +66,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     val original by actions.model.state.collectAsState()
     val matched = state.merchant?.let { JSONObject(it).toMerchantSummary() }
     val merchant = matched
-    if (lockedMerchantId.isNotBlank() && (state.merchantLoading || merchant?.uid != lockedMerchantId)) {
+    if (lockedMerchantId.isNotBlank() && (state.merchantLoading || merchant?.uid != lockedMerchantId || (chat.telegramId.isNotBlank() && merchant?.telegramId != chat.telegramId))) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (state.merchantLoading) CircularProgressIndicator(Modifier.size(24.dp))
             Text(if (state.merchantLoading) "正在查询商户 $lockedMerchantId…" else state.merchantError ?: "商户信息不匹配，请重新查询", color = Muted)
