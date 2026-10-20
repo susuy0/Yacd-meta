@@ -414,11 +414,13 @@ class AppViewModel(
         _state.update { it.copy(merchants = listOf(merchant), merchantTotal = 1, merchantPage = 1, merchantSearch = MerchantSearchFilters(column = "uid", value = merchant.uid)) }
     }
 
-    fun loadMerchants(page: Int = 1, search: MerchantSearchFilters = _state.value.merchantSearch) = viewModelScope.launch {
+    fun loadMerchants(page: Int = 1, search: MerchantSearchFilters = _state.value.merchantSearch) = loadScopedMerchants(page, if(lockedMerchantId.isBlank())search else search.copy(column="uid",value=lockedMerchantId))
+
+    private fun loadScopedMerchants(page: Int, search: MerchantSearchFilters) = viewModelScope.launch {
         val generation = ++merchantsGeneration
         merchantFlowsGeneration += 1
         _state.update { it.copy(refreshing = true, merchantsLoading = true, merchantsError = null, message = null, merchantSearch = search) }
-        runCatching { repository.merchants(page, search.toRequest()) }
+        runCatching { repository.merchants(page, search.toRequest()).also { result -> check(lockedMerchantId.isBlank() || result.rows.all { it.uid == lockedMerchantId }) { "后台返回了其他商户资料" } } }
             .onSuccess { result ->
                 if (generation != merchantsGeneration) return@onSuccess
                 _state.update {

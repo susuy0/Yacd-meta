@@ -107,11 +107,11 @@ class ConversationShortcutsTest {
         try{repo.associatedOrders(1,mapOf("channel" to "99"),setOf("12"));fail()}catch(_:IllegalArgumentException){};assertEquals(0,calls)
         try{repo.associatedOrders(1,emptyMap(),setOf("12"));fail()}catch(e:IllegalStateException){assertTrue(e.message.orEmpty().contains("其他通道"))}
     }
-    @Test fun merchantOrdersAndSettlementsRemainPinnedAfterResetSearchAndPagination()=runBlocking{
+    @Test fun merchantOrdersSettlementsAndPostEditReloadRemainPinnedAfterResetAndPagination()=runBlocking{
         val seen=mutableListOf<Map<String,String>>();val repo=FutoonRepository(fixtureClient({request->seen+=params(request.body);200 to """{"total":0,"rows":[]}"""}))
         val vm=AppViewModel(TestEnvironment(repo),loadOnStart=false,lockedMerchantId="2806")
         vm.loadOrders(1,OrderSearchFilters(merchantId="999")).join();vm.loadOrders(2,OrderSearchFilters()).join();vm.loadSettlements(1,SettlementSearchFilters(merchantId="999")).join();vm.loadSettlements(2,SettlementSearchFilters()).join()
-        assertEquals(4,seen.size);assertTrue(seen.all{it["uid"]=="2806"})
+        vm.loadMerchants(1,MerchantSearchFilters(column="uid",value="999")).join();assertEquals(5,seen.size);assertTrue(seen.take(4).all{it["uid"]=="2806"});assertEquals("uid",seen.last()["column"]);assertEquals("2806",seen.last()["value"])
     }
     @Test fun domainAuditFiltersAndAddUseTheRecognizedMerchantEvenAfterChangingSearch()=runBlocking{
         val seen=mutableListOf<Pair<String,Map<String,String>>>();val repo=FutoonRepository(fixtureClient({request->seen+=request.url.queryParameter("act").orEmpty() to params(request.body);200 to """{"code":0,"total":0,"rows":[]}"""}))

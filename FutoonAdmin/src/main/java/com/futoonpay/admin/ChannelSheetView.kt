@@ -262,7 +262,7 @@ private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
         BatchDialog(original.batch,vm::startBatch,vm::closeBatch,vm::retryBatch);return
     }
     var loaded by remember{mutableStateOf(false)}
-    LaunchedEffect(vm){vm.openMerchantEditor(merchant.uid)}
+    LaunchedEffect(vm){vm.setCurrentMerchant(merchant);vm.openMerchantEditor(merchant.uid)}
     val form=original.merchantEditor
     LaunchedEffect(form,original.merchantEditorLoading){
         if(form!=null)loaded=true
