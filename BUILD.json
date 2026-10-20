@@ -1,63 +1,11 @@
 {
-  "version": "0.8.3 camera, location and video editor removal",
-  "versionCode": 71939,
+  "version": "0.8.4 conversation channel shortcuts",
+  "versionCode": 71949,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "5ae9c0b2a67760ea896408a37a03980cb0b6fc79a0ce7bd620ce9a7b11ae616a",
-  "source_baseline": "f245a3d55195888f814c936d3d6bad590139383c",
-  "source_commit": "f71972b5607fe71cc5b95d7dada01c39f09b3ea8",
-  "source_tree": "b34b066e25e73b7f905d13992d0dd43328b90bac",
-  "validation": {
-    "status": "apk_verified",
-    "workflow_run": 39277452912,
-    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39277452912",
-    "permission_dispatch_checks": 118,
-    "modified_java_parse_checks": 90,
-    "all_manifest_variants": "passed",
-    "core_checks": "passed",
-    "panel_audit": "passed",
-    "device_backend": "Android 17 device and live backend not tested; no live financial write, account creation, key reset, Telegram send or bot callback performed",
-    "gallery_routing_negative_control": "passed; first and subsequent image indices preserved",
-    "removed_location_consent": "inline bot and read-only map controls removed",
-    "native_tests": {
-      "tests": 275,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0,
-      "screenshots": 40,
-      "lint_errors": 0,
-      "lint_warnings": 29,
-      "lint_hints": 3
-    },
-    "jobs": {
-      "native-admin": 118145524645,
-      "core-checks": 118145525494,
-      "panel-ui": 118145525498,
-      "android": 118147912573
-    },
-    "workflow_status_at_verification": "in_progress (artifact uploaded; post-job finalization pending)",
-    "job_conclusions": {
-      "core-checks": "success",
-      "panel-ui": "success",
-      "native-admin": "success",
-      "android": "APK compiled, audited and uploaded; job finalization pending"
-    },
-    "apk_component_native_engine_audit": "passed",
-    "apk_v2_signature_and_content_digest": "verified",
-    "ci_sha256sums": "APK and R8 mapping verified",
-    "test_environment": "Robolectric SDK 35, JVM Activity fakes and controlled synthetic Telegram/backend transport",
-    "automation_dispatch_checks": 18,
-    "floating_geometry_checks": 75,
-    "regex": {
-      "android_icu_patterns": 110,
-      "opening_variable_cases": 5
-    },
-    "removed_whole_capture_classes": [
-      "org.telegram.messenger.camera.CameraController",
-      "org.telegram.messenger.camera.Camera2Session",
-      "org.telegram.utils.camera.roundvideo.RoundVideoCameraController"
-    ]
-  },
+  "source_baseline": "8f4892b6f64fffc0ec0899c6d653f88185aa6e60",
+  "source_commit": "55eda3173f0f438aef5d3e52f62da1abbdd37c6e",
+  "source_tree": "c5428ceac4a93dc0d32290da68624e50629ebdc0",
   "features": {
     "native_ui_only": true,
     "original_telegram_ui": "preserved except requested camera, location-sharing and video-editor controls",
@@ -97,18 +45,81 @@
     "evidence_image_send": true,
     "existing_video_playback": true,
     "existing_video_send_via_system_picker": true,
-    "gallery_qr_recognition": true
+    "gallery_qr_recognition": true,
+    "conversation_channel_bar": true,
+    "channel_orders_locked_to_selected_channel": true,
+    "channel_success_rate_windows": 5,
+    "native_channel_editor": true,
+    "account_backend_dialog_topic_isolation": true,
+    "persistent_and_temporary_channel_selection": true,
+    "real_native_cookie_session_refresh": true,
+    "channel_sheet_dirty_and_mutation_close_guards": true,
+    "chat_bar_periodic_polling": false
   },
   "previous_release": {
-    "version": "0.8.2 native settings cancellation fix",
-    "versionCode": 71929,
-    "source_commit": "08ad43074846eaffb2793061a1730e233765854a",
-    "apk_sha256": "4e7e1ca452b64e1fcf77a8e3b05e77439b4dabea5a28ac80c47790c5af10e9f3",
+    "version": "0.8.3 camera, location and video editor removal",
+    "versionCode": 71939,
+    "source_commit": "f71972b5607fe71cc5b95d7dada01c39f09b3ea8",
+    "apk_sha256": "c45d307bd339d598232012e4edf8b9e0b9dfed0f3bf8097235f65e755ad433c6",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
   },
+  "validation": {
+    "status": "apk_verified",
+    "workflow_run": 39373491768,
+    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39373491768",
+    "workflow_status": "completed",
+    "workflow_conclusion": "success",
+    "verification_run": 39374718425,
+    "verification_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39374718425",
+    "verification_executor": "independent GitHub Actions job; local execution environment disconnected before final artifact download",
+    "core_checks": "passed",
+    "panel_audit": "passed",
+    "native_tests": {
+      "tests": 303,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 46,
+      "screenshots": 43,
+      "lint_errors": 0,
+      "lint_warnings": 36,
+      "lint_hints": 0
+    },
+    "jobs": {
+      "panel-ui": 118466522125,
+      "core-checks": 118466522424,
+      "native-admin": 118466522461,
+      "android": 118467850709
+    },
+    "job_conclusions": {
+      "panel-ui": "success",
+      "core-checks": "success",
+      "native-admin": "success",
+      "android": "success"
+    },
+    "apk_component_native_engine_audit": "passed",
+    "apk_v2_signature_and_content_digest": "verified",
+    "ci_sha256sums": "APK and R8 mapping verified",
+    "test_environment": "Robolectric SDK 35, JVM Activity fakes and controlled synthetic Telegram/backend transport",
+    "device_backend": "Robolectric and controlled synthetic transport; Android 17 device, IME, live backend and FCM delivery not tested.",
+    "permission_dispatch_checks": 118,
+    "automation_dispatch_checks": 18,
+    "floating_geometry_checks": 75,
+    "regex": {
+      "android_icu_patterns": 110,
+      "opening_variable_cases": 5
+    },
+    "no_live_test_actions": [
+      "financial writes",
+      "account creation",
+      "key reset",
+      "Telegram send",
+      "bot callbacks"
+    ]
+  },
   "apk": {
-    "bytes": 40911311,
-    "sha256": "c45d307bd339d598232012e4edf8b9e0b9dfed0f3bf8097235f65e755ad433c6",
+    "bytes": 40944013,
+    "sha256": "2df2821d4b8def7cfbfbcb9ed5af9512cd8fcbfac354298417eef030138e50e8",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -117,41 +128,37 @@
     ],
     "futoon_assets": 0,
     "native_core_bytes": 9893208,
-    "native_operation_markers": 17,
+    "native_operation_markers": 20,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71939,
+    "versionCode": 71949,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.8.3-arm64.apk",
+    "filename": "SMS-Futoon-v0.8.4-arm64.apk",
     "same_signer_as_previous_release": true,
-    "removed_permissions": [
-      "CAMERA",
-      "RECORD_AUDIO",
-      "ACCESS_FINE_LOCATION",
-      "ACCESS_COARSE_LOCATION",
-      "ACCESS_BACKGROUND_LOCATION",
-      "ACCESS_MEDIA_LOCATION",
-      "READ_MEDIA_VIDEO",
-      "FOREGROUND_SERVICE_CAMERA",
-      "FOREGROUND_SERVICE_MICROPHONE",
-      "FOREGROUND_SERVICE_LOCATION"
-    ],
     "push_mode": "development-no-fcm (existing build mode; push delivery not tested)",
     "ci_sha256sums": "APK and R8 mapping verified"
   },
   "artifacts": {
     "apk": {
-      "id": 12200151763,
-      "name": "VineChat-Futoon-v0.8.3-native-development-no-fcm",
-      "zip_bytes": 59934719,
-      "zip_sha256": "ebf17cbfc6776e4cc26102958dde524b5288c287151673d664f5495d73f6f729"
+      "id": 12242613720,
+      "name": "VineChat-Futoon-v0.8.4-native-development-no-fcm",
+      "zip_bytes": 60059485,
+      "zip_sha256": "65ab2e0069098e9c140371299110f6118aee6e058f4410c1c1b3c5600e1594cc"
     },
     "native_reports": {
-      "id": 12199645887,
-      "name": "Futoon-v0.8.3-native-business-checks",
-      "zip_sha256": "adaec3637c96f698adb2b1a468033026466c3a0e63292346a5ab4cbb09c0cb53"
+      "id": 12242269522,
+      "name": "Futoon-v0.8.4-native-business-checks",
+      "zip_bytes": 3420973,
+      "zip_sha256": "a90d0f3e8e49edc7d51432d22829c52d8ab48b73bdd4af32dd38a3a8db21c11a"
+    },
+    "verified_package": {
+      "id": 12242578744,
+      "name": "SMS-Futoon-v0.8.4-verified-arm64",
+      "zip_bytes": 39218852,
+      "zip_sha256": "30cf3dd2dbf51acfa3086e64c935bb4aed47d326ac0c5962b0e603803602e250",
+      "url": "https://github.com/susuy0/Yacd-meta/actions/runs/39374718425/artifacts/12242578744"
     }
   }
 }
