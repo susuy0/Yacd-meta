@@ -1,15 +1,15 @@
 {
-  "version": "0.8.6 shared merchant More operations",
-  "versionCode": 71969,
+  "version": "0.9.0 native WhatsApp-style appearance",
+  "versionCode": 71979,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "1f99a87966a610d3f22774ffd94863b4d050dc65e80b751893a5fe4c390e36be",
-  "source_baseline": "249ddee160ff6809946c1b6ac8dd8f7054089859",
-  "source_commit": "a640a2ff6756207dbbccf06155944b35e8171f57",
-  "source_tree": "ae46121a8edff732f2785b20bcfeae2a704569b1",
+  "patch_sha256": "775495bee1ac5f2062662fd3f40335533bd871dea0f47f88fadc5d3b1457b0cb",
+  "source_baseline": "a640a2ff6756207dbbccf06155944b35e8171f57",
+  "source_commit": "c768f26b4a2e7ab61522814be960e78bc7800fa4",
+  "source_tree": "a857c8bd209bad6aa0a88e0fc9ee6dd45dce84cd",
   "features": {
     "native_ui_only": true,
-    "original_telegram_ui": "preserved except requested camera, location-sharing and video-editor controls",
+    "original_telegram_ui": "native WhatsApp-style visual adaptation; existing Futoon operations and requested trim preserved",
     "internal_notes_removed": true,
     "business_reply_templates": true,
     "manual_send_only_for_reply_drafts": true,
@@ -76,47 +76,55 @@
     "shortcut_more_merchant_locked": true,
     "shortcut_more_rejects_old_conversation": true,
     "merchant_confirmations_inside_owned_panel": true,
-    "shortcut_more_telegram_identity_checked": true
+    "shortcut_more_telegram_identity_checked": true,
+    "native_chat_appearance": true,
+    "native_unread_group_filters": true,
+    "cached_light_dark_palette": true,
+    "native_bubble_tail_geometry": true,
+    "native_pattern_wallpaper": true,
+    "equal_width_three_tab_navigation": true,
+    "appearance_runtime_reflection": false,
+    "business_routes_changed_by_appearance": false
   },
   "previous_release": {
-    "version": "0.8.5 merchant shortcuts and group multi-channel associations",
-    "versionCode": 71959,
-    "source_commit": "47036d99d1dffedb15e62721aeef30c8eec0aea4",
-    "apk_sha256": "f6b9004f8b1a92bd77f2333bfeb2f32bd725fbb58d5dc34b873fd163e5a02e99",
+    "version": "0.8.6 shared merchant More operations",
+    "versionCode": 71969,
+    "source_commit": "a640a2ff6756207dbbccf06155944b35e8171f57",
+    "apk_sha256": "965b79cbe2a720629edf324a79265eeaf2a403a94261dca5329f0fcfeef24a0b",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
   },
   "validation": {
     "status": "apk_verified",
-    "workflow_run": 39394873477,
-    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39394873477",
+    "workflow_run": 39456208769,
+    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39456208769",
     "workflow_status": "completed",
     "workflow_conclusion": "success",
     "native_tests": {
-      "tests": 326,
+      "tests": 335,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "suites": 48,
-      "screenshots": 47,
+      "suites": 49,
+      "screenshots": 53,
       "lint": {
         "Error": 0,
         "Fatal": 0,
-        "Warning": 37,
+        "Warning": 38,
         "Information": 0,
         "Hint": 3
       },
-      "source_commit": "a640a2ff6756207dbbccf06155944b35e8171f57"
+      "source_commit": "c768f26b4a2e7ab61522814be960e78bc7800fa4"
     },
     "jobs": {
-      "native-admin": 118534998919,
-      "core-checks": 118534999311,
-      "panel-ui": 118534999354,
-      "android": 118536172209
+      "panel-ui": 118744380711,
+      "native-admin": 118744380874,
+      "core-checks": 118744380994,
+      "android": 118746278047
     },
     "job_conclusions": {
+      "panel-ui": "success",
       "native-admin": "success",
       "core-checks": "success",
-      "panel-ui": "success",
       "android": "success"
     },
     "core_checks": "passed",
@@ -142,11 +150,15 @@
       "bot callbacks"
     ],
     "new_merchant_more_tests": 5,
-    "updated_merchant_bar_route_test": true
+    "updated_merchant_bar_route_test": true,
+    "new_native_appearance_tests": 9,
+    "native_appearance_theme_keys": 115,
+    "full_screen_pixel_parity": "not verified; no authenticated device screenshot comparison",
+    "component_geometry_screenshots": "6 new synthetic light/dark 320/390/640 dp (640 RTL)"
   },
   "apk": {
-    "bytes": 40961858,
-    "sha256": "965b79cbe2a720629edf324a79265eeaf2a403a94261dca5329f0fcfeef24a0b",
+    "bytes": 40966432,
+    "sha256": "37183f82c7a6f53f6103daa161e0f92b515e02d2cd0953570e4b3da9c96550f7",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -157,28 +169,28 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 20,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71969,
+    "versionCode": 71979,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.8.6-arm64.apk",
+    "filename": "SMS-Futoon-v0.9.0-arm64.apk",
     "same_signer_as_previous_release": true,
     "ci_sha256sums": "APK and R8 mapping verified",
     "push_mode": "development-no-fcm (existing build mode; push delivery not tested)"
   },
   "artifacts": {
-    "apk": {
-      "id": 12251529254,
-      "name": "VineChat-Futoon-v0.8.6-native-development-no-fcm",
-      "zip_bytes": 60109611,
-      "zip_sha256": "e108c7dcd10c4401500d526a2e2777064dfbf1d9a5d88af3bcd437989b18a4d2"
-    },
     "native_reports": {
-      "id": 12251576846,
-      "name": "Futoon-v0.8.6-native-business-checks",
-      "zip_bytes": 3568267,
-      "zip_sha256": "f64bd6ca553ee41aa006af41fda1ced2e7ca61f2dce2ae7d295183b1c3acf3d3"
+      "id": 12281356763,
+      "name": "Futoon-v0.9.0-native-business-checks",
+      "zip_bytes": 3597532,
+      "zip_sha256": "eb283c4a99416a0b0b1a6bb71a59b19ada75678af1b5238d6e5dccd654fbeffd"
+    },
+    "apk": {
+      "id": 12280899583,
+      "name": "VineChat-Futoon-v0.9.0-native-development-no-fcm",
+      "zip_bytes": 60128697,
+      "zip_sha256": "f46a1bdfa05ee5d5282f28acd70e6bbedcbbb64bb85f1ee9b602a88de328f1f8"
     }
   }
 }

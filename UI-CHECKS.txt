@@ -1,22 +1,21 @@
-短信 / Futoon chat v0.8.6 商户更多菜单验证
-源码：a640a2ff6756207dbbccf06155944b35e8171f57
-GitHub Actions：39394873477
+短信 / Futoon chat v0.9.0 原生外观验证
+源码：c768f26b4a2e7ab61522814be960e78bc7800fa4
+GitHub Actions：39456208769
 
-326 tests, 0 failures, 0 errors, 0 skipped; 48 suites
-Android Lint: 0 errors, 37 warnings
-47 synthetic-fixture screenshots.
+335 tests, 0 failures, 0 errors, 0 skipped; 49 suites
+Android Lint: 0 errors, 38 warnings
+53 synthetic-fixture screenshots, including 6 new shared native component geometry screenshots.
 
-- 聊天栏“更多”传递正确商户/会话/话题，复用识别商户原操作菜单。
-- 保留商户订单、结算、域名审核三个独立原生入口。
-- 移除识别卡片、当前商户卡片、列表和详情中的直接编辑商户入口。
-- 更多菜单保留余额、账号/支付/结算开关、用户组、密钥、流水、统计和回复草稿。
-- 后台返回错误商户时不显示操作；会话变化时旧菜单不可操作。
-- 320dp/390dp四按钮与商户+多通道布局通过。
-- 原商户识别、多通道、订单/结算/域名固定商户、生命周期、发送/媒体/快速回复、凭证、开户、自动化和权限裁剪回归通过。
+- 原生底部三栏、搜索与真实未读/群组筛选、气泡、图案背景、输入区、圆形发送键、菜单及明暗配色。
+- 外观新增9项测试，115个真实Theme键、无反射缓存适配器与绘制期间无背景重建审计通过。
+- 明暗色文本对比、语义状态颜色保留、透明度、气泡连排尾角、48dp按钮、320/390/640dp及RTL共享组件几何验证通过。
+- Futoon扩展、原商户更多、识别、多通道、商户固定查询、发送/媒体/快速回复、凭证、开户和按群自动化回归通过。
+- 不恢复联系人、通话、拍照、语音、定位或视频编辑权限。
 
 完整Android构建和权限/组件/原生引擎审计通过。
 APK与mapping CI校验值、ZIP长度/SHA-256/CRC、APK v2签名及内容摘要核验通过。
-APK：SMS-Futoon-v0.8.6-arm64.apk；40,961,858字节；71969；签名与v0.8.5一致。
-SHA-256：965b79cbe2a720629edf324a79265eeaf2a403a94261dca5329f0fcfeef24a0b
+APK：SMS-Futoon-v0.9.0-arm64.apk；40,966,432字节；71979；签名与v0.8.6一致。
+SHA-256：37183f82c7a6f53f6103daa161e0f92b515e02d2cd0953570e4b3da9c96550f7
 
-仅Robolectric SDK35、合成数据与受控传输；Android17真机、系统键盘、相册裁剪、真实后台和FCM送达未验证。
+仅Robolectric SDK35、合成数据与受控传输；不是全屏像素一致性验证。
+Android17真机、系统键盘、相册裁剪、真实后台、全屏截图对比和FCM送达未验证。

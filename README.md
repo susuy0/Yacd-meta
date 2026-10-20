@@ -1,10 +1,18 @@
-# 短信 / Futoon chat v0.8.6
+# 短信 / Futoon chat v0.9.0
 
 Telegram 聊天内的 Android 原生悬浮面板，包含「识别 / 订单 / 商户 / 结算 / 更多」五个独立 Tab。
 
 v0.8.1 新增悬浮窗与外观自定义、相册图片入口、状态恢复、业务回复模板及按群自动化；设置顶栏复用 Telegram 原生组件，移除订单与凭证中的内部备注入口。设置入口、默认值和运行范围见 [EXTENSIONS-v0.8.1.md](EXTENSIONS-v0.8.1.md)。
 
 v0.8.2 修复群自动化和扩展设置在刷新、选群返回时显示两次 `The coroutine scope left the composition` 的问题。已取消的读取不会更新错误和加载状态；真正的读取、保存失败仅显示一次并保留重试入口，保存失败后保留已编辑的规则。
+
+## 原生聊天外观
+
+v0.9.0 采用 WhatsApp Android 风格：中性白/深色底色、绿色强调色、等宽底部三栏、圆角搜索、全部/未读/群组筛选、顶部尾角消息气泡、轻量图案聊天背景、胶囊输入区和圆形发送键。资料、设置、附件面板与菜单使用统一配色。
+
+扩展功能入口与操作保持原样：聊天框上方商户/多通道快捷栏、悬浮窗五个 Tab、识别、商户更多、订单/结算/域名、付款凭证、快速回复、Tag、自定义外观与按群自动化。不会为外观恢复通话、联系人、拍照、语音或定位功能。仍使用原生 Android 控件及现有 Telegram 流程。
+
+这是原生外观适配版；尚未进行已登录真机的逐屏截图对比，不宣称全 App 像素级一致。
 
 ## 会话商户与群多通道快捷栏
 
@@ -56,12 +64,14 @@ FutoonPay 设置 → 开户文案支持整段编辑与恢复默认。变量为 `
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71969`，ARM64，minSdk 23 / targetSdk 36。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71979`，ARM64，minSdk 23 / targetSdk 36。
 
-最终代码 `a640a2ff6756207dbbccf06155944b35e8171f57` 的 326 项原生业务与界面测试全部通过，0失败、0错误、0跳过，48 个测试套件、47 张合成数据截图；Lint 0错误、37 警告。本轮新增5项检查，覆盖原商户更多菜单复用、无编辑入口、错误商户拒绝、旧会话拦截与识别卡片展开，并更新聊天栏真实按钮接线测试。原商户识别、多通道、订单/结算/域名固定商户、发送/媒体/快速回复、开户、群自动化和权限裁剪回归通过。
+最终代码 `c768f26b4a2e7ab61522814be960e78bc7800fa4` 的 335 项原生业务与界面测试全部通过，0失败、0错误、0跳过，49 个测试套件、53 张合成数据截图；Lint 0错误、38 警告。新增9项外观测试覆盖明暗色可读性、错误/支付状态颜色保留、图标与背景透明度、气泡尾角、真实筛选按钮回调、48dp触控目标与320/390/640dp/RTL组件几何。6张新截图是共享原生组件的合成几何测试，不是已登录 Telegram 全屏截图。
 
-[完整构建记录](https://github.com/susuy0/Yacd-meta/actions/runs/39394873477)。客户端Java、原生库、APK及组件/权限审计通过；下载产物的ZIP SHA-256与CRC、CI APK/mapping校验值、v2签名及签名内容摘要、包名/版本/ABI、移除权限、20个原生桥接操作均已核验。
+原有商户识别、更多菜单、多通道、订单/结算/域名固定商户、发送/媒体/快速回复、开户、群自动化和权限裁剪回归通过。启动检查仍执行真实生命周期方法，并验证移除空值保护会重现原崩溃。
 
-APK：`SMS-Futoon-v0.8.6-arm64.apk`，`40,961,858` 字节，签名与v0.8.5一致。SHA-256：`965b79cbe2a720629edf324a79265eeaf2a403a94261dca5329f0fcfeef24a0b`。GitHub产物为 [VineChat-Futoon-v0.8.6-native-development-no-fcm](https://github.com/susuy0/Yacd-meta/actions/runs/39394873477/artifacts/12251529254)。完整信息见 [BUILD.json](BUILD.json)。
+[完整构建记录](https://github.com/susuy0/Yacd-meta/actions/runs/39456208769)。客户端Java、原生库、APK及组件/权限审计通过；下载产物的ZIP SHA-256与CRC、CI APK/mapping校验值、v2签名及签名内容摘要、包名/版本/ABI、移除权限、20个原生桥接操作均已核验。
 
-测试使用合成数据，没有执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。Android17真机、系统键盘、相册裁剪与真实后台仍需实机联调。保留现有development-no-fcm构建模式，未验证FCM推送。
+APK：`SMS-Futoon-v0.9.0-arm64.apk`，`40,966,432` 字节，签名与v0.8.6一致。SHA-256：`37183f82c7a6f53f6103daa161e0f92b515e02d2cd0953570e4b3da9c96550f7`。GitHub产物为 [VineChat-Futoon-v0.9.0-native-development-no-fcm](https://github.com/susuy0/Yacd-meta/actions/runs/39456208769/artifacts/12280899583)。完整信息见 [BUILD.json](BUILD.json)。
+
+测试使用合成数据，没有执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。Android17真机、系统键盘、相册裁剪、真实后台以及全屏像素对比未验证。保留现有development-no-fcm构建模式，未验证FCM推送。
