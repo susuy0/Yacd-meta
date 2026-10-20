@@ -18,9 +18,11 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[35],application=Application::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ChannelShortcutRegressionTest {
     private val context get()=androidx.test.core.app.ApplicationProvider.getApplicationContext<Application>()
     private fun key(account:String="0:915",backend:String="https://pay.example/admin/",dialog:Long=-100,topic:Long=1)=ChannelScope(account,backend,dialog,topic)
@@ -112,6 +114,6 @@ class ChannelShortcutRegressionTest {
         val dialog=Dialog(activity);dialog.setContentView(root);dialog.show();view.onShown();shadowOf(Looper.getMainLooper()).idle()
         assertEquals(Lifecycle.State.RESUMED,view.lifecycle.currentState)
         view.dirty=true;assertFalse(view.requestClose());assertTrue(view.discard)
-        view.forceClose();assertTrue(view.requestClose());view.close();model.close();dialog.dismiss();controller.pause().stop().destroy()
+        view.forceClose();assertTrue(view.requestClose());view.close();model.close();dialog.dismiss();shadowOf(Looper.getMainLooper()).idle();controller.pause().stop().destroy();shadowOf(Looper.getMainLooper()).idle()
     }
 }

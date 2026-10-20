@@ -23,7 +23,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
     testOptions {
         unitTests.isIncludeAndroidResources = true
-        unitTests.all { it.maxHeapSize = "3g" }
+        unitTests.all { it.maxHeapSize = "3g"; it.failFast = true }
     }
 }
 dependencies {
