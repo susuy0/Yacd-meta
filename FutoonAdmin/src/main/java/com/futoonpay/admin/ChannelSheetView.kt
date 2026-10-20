@@ -30,6 +30,8 @@ import com.futoonpay.admin.ui.theme.*
 import kotlinx.coroutines.*
 import org.json.JSONObject
 
+internal val LocalChannelMutationBusy = staticCompositionLocalOf<((Boolean) -> Unit)?> { null }
+
 /** Independently owns the AndroidX tree in Telegram's ownerless BottomSheet window. */
 class ChannelSheetView internal constructor(context: Context, internal val model: ChannelShortcutModel, private val kind: String, private val host: ChannelSheetHost) : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
     private val registry = LifecycleRegistry(this)
@@ -67,7 +69,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun requestClose(): Boolean {
         if (closed || allowClose) return true
-        if (busy) { android.widget.Toast.makeText(context,"正在保存，请稍候",android.widget.Toast.LENGTH_SHORT).show(); return false }
+        if (busy) { android.widget.Toast.makeText(context,"正在处理，请稍候",android.widget.Toast.LENGTH_SHORT).show(); return false }
         if (dirty) { discard = true; return false }
         return true
     }
@@ -193,7 +195,8 @@ class ChannelSheetView internal constructor(context: Context, internal val model
         override fun module(id:String,channelId:String,channelType:String){view.openPanel("channel",channelId)}
         override fun evidence(order:OrderSummary){val raw=JSONObject().put("trade_no",order.tradeNo).put("out_trade_no",order.merchantTradeNo).put("uid",order.merchantId).put("money",order.amount).put("currency",order.currency);view.openPanel("evidence",order=raw.toString())}
     }}
-    CompositionLocalProvider(LocalPanelNavigation provides nav){OrdersScreen(state,vm)}
+    val mutationBusy=remember(view){ { value:Boolean -> view.busy=value } }
+    CompositionLocalProvider(LocalPanelNavigation provides nav, LocalChannelMutationBusy provides mutationBusy){OrdersScreen(state,vm)}
 }
 
 @Composable private fun ShortcutEditor(view:ChannelSheetView,link:ChannelLink){

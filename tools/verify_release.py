@@ -122,8 +122,10 @@ with zipfile.ZipFile(path) as z:
     assert abis == ['arm64-v8a'], abis
     assert not any(n.startswith('assets/futoon/') for n in z.namelist()), 'Obsolete HTML business assets returned'
     dex = b''.join(z.read(n) for n in z.namelist() if n.endswith('.dex'))
-    operations = ['chat.tools.read','ui.draft','local.read','local.write','delivery.read','orders.search','order.detail','merchant.lookup','merchant.balance','merchant.profile','form.save','evidence.draft','evidence.restore','ui.source','ocr.gallery','channel.test','module.editor']
+    operations = ['chat.tools.read','ui.draft','local.read','local.write','delivery.read','orders.search','order.detail','merchant.lookup','merchant.balance','merchant.profile','form.save','evidence.draft','evidence.restore','ui.source','ocr.gallery','channel.test','module.editor','ui.channel.order','ui.channel.open']
     for operation in operations: assert operation.encode() + b'\0' in dex, operation
+    for label in ['通道订单', '选择支付通道', '记住此会话', '仅本次使用', '会话快捷栏']:
+        assert label.encode() + b'\0' in dex, 'Channel shortcuts missing: ' + label
     for descriptor in ['Lorg/telegram/ui/FutoonThemeBridge;', 'Lorg/telegram/ui/FutoonQuickReplies;', 'Lorg/telegram/ui/FutoonChatSettingsActivity;', 'Lorg/telegram/ui/FutoonSettingsHostActions;', 'Lorg/telegram/messenger/futoon/FutoonAutomation;']:
         assert descriptor.encode() + b'\0' in dex, descriptor
     fixed_pattern = b'\\{([^{}\\n]+)\\}'

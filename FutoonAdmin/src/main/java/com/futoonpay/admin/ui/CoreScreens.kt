@@ -68,6 +68,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -135,6 +137,10 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
     var pending by remember { mutableStateOf<PendingOrderAction?>(null) }
     var selectedChannelId by rememberSaveable { mutableStateOf("") }
     var actionLoading by remember { mutableStateOf(false) }
+    val channelMutationBusy = com.futoonpay.admin.LocalChannelMutationBusy.current
+    SideEffect { channelMutationBusy?.invoke(actionLoading || state.batch?.running == true) }
+    DisposableEffect(channelMutationBusy) { onDispose { channelMutationBusy?.invoke(false) } }
+
     var actionError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(searchSignal) { if (searchSignal > 0) advanced = true }
     LaunchedEffect(state.orderSearch) { filters = state.orderSearch }
@@ -198,9 +204,9 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
             }
     }
     pending?.let { action -> OrderActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.order.tradeNo in state.uncertainOrders, onVerify = { pending = null; actionError = null; viewModel.loadOrderDetail(action.order.tradeNo) }) { amount, password, remark ->
-        actionLoading = true; actionError = null
+        actionLoading = true; actionError = null; channelMutationBusy?.invoke(true)
         viewModel.runOrderAction(OrderCommand(action.action, action.order.tradeNo, action.status, amount, password, remark)) { result ->
-            actionLoading = false
+            actionLoading = false; channelMutationBusy?.invoke(false)
             if (result.success) { pending = null; actionError = null } else actionError = result.message
         }
     } }

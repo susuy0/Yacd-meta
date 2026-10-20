@@ -113,6 +113,8 @@ class ChannelShortcutRegressionTest {
         root.measure(w,h);assertTrue((view.getChildAt(0) as ComposeView).hasComposition);assertEquals(560,view.measuredHeight)
         val dialog=Dialog(activity);dialog.setContentView(root);dialog.show();view.onShown();shadowOf(Looper.getMainLooper()).idle()
         assertEquals(Lifecycle.State.RESUMED,view.lifecycle.currentState)
+        view.busy=true;assertFalse(view.requestClose());assertFalse(view.discard)
+        view.busy=false
         view.dirty=true;assertFalse(view.requestClose());assertTrue(view.discard)
         view.forceClose();assertTrue(view.requestClose());view.close();model.close();dialog.dismiss();shadowOf(Looper.getMainLooper()).idle();controller.pause().stop().destroy();shadowOf(Looper.getMainLooper()).idle()
     }
