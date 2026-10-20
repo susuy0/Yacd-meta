@@ -40,13 +40,15 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
     fun onHidden() { model.pause(); sheet?.onHidden() }
     fun close() { if (closed) return; closed = true; sheet?.forceClose(); host.closeSheet(); model.close(); jobs.cancel() }
     fun fromOrder(channel: String) { if (!closed) model.fromOrder(channel) }
-    fun reloadSettings() { if (!closed) { model.bind(model.state.value.label, model.state.value.scope?.dialog ?: 0, model.state.value.scope?.topic ?: 0); model.reloadSettings() } }
+    fun reloadSettings() { if (!closed) { bindChat(model.state.value.label, model.state.value.scope?.dialog ?: 0, model.state.value.scope?.topic ?: 0); model.reloadSettings() } }
     fun setThemeColors(json: String) { palette = FutoonPalette.parse(json); if (!closed) render(model.state.value); sheet?.setThemeColors(json) }
     fun sheetDismissed() { sheet?.close(); sheet = null }
     private fun open(kind: String) {
+        reloadSettings()
         if (closed || sheet != null || !model.state.value.visible) return
-        val view = ChannelSheetView(context, model, kind, host)
-        sheet = view; host.showSheet(view, kind)
+        val resolvedKind = if (model.state.value.link == null) "select" else kind
+        val view = ChannelSheetView(context, model, resolvedKind, host)
+        sheet = view; host.showSheet(view, resolvedKind)
     }
     private fun text(value: String, size: Float, color: Int = palette.text.toArgb()) = TextView(context).apply {
         text = value; textSize = size * palette.fontScale; setTextColor(color); gravity = Gravity.CENTER_VERTICAL

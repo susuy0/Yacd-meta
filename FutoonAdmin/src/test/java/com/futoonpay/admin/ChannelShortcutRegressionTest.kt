@@ -61,6 +61,21 @@ class ChannelShortcutRegressionTest {
         model.bind("B",-100,2);assertNull(model.state.value.link);assertNull(model.state.value.snapshot)
         model.bind("A",-100,1);assertNull(model.state.value.link);model.close()
     }
+    @Test fun changingBackendRebindsWithoutReusingTheOtherEnvironmentsChannel(){
+        var backend="https://a.example/admin/"
+        val bridge=object:FixtureBridge(){override fun address()=backend}
+        val model=ChannelShortcutModel(context,bridge);model.store.prefs.edit().clear().commit();model.bind("A",-100,1)
+        val original=model.state.value.scope!!;model.store.remember(original,ChannelLink("12","A线"));model.reloadSettings();assertEquals("12",model.state.value.link?.id)
+        backend="https://b.example/admin/";model.bind("A",-100,1);assertNull(model.state.value.link);assertNull(model.state.value.snapshot)
+        backend="https://a.example/admin/";model.bind("A",-100,1);assertEquals("12",model.state.value.link?.id);model.close()
+    }
+    @Test fun loginAndLogoutRefreshVisibilityWithoutRecreatingTheConversation(){
+        var logged=false
+        val bridge=object:FixtureBridge(){override fun address()="https://fixture.example/admin/";override fun hasSession()=logged}
+        val model=ChannelShortcutModel(context,bridge);model.store.prefs.edit().clear().commit();model.bind("A",-100,1);model.resume();assertFalse(model.state.value.visible)
+        logged=true;model.reloadSettings();assertTrue(model.state.value.visible)
+        logged=false;model.reloadSettings();assertFalse(model.state.value.visible);assertNull(model.state.value.snapshot);model.close()
+    }
     @Test fun malformedOrderChannelIdsAreNeverBound(){
         val model=ChannelShortcutModel(context,FixtureBridge());model.store.prefs.edit().clear().commit();model.bind("A",-100,1)
         listOf("", "0", "-1", "12foo", "1&status=0").forEach{model.fromOrder(it);assertNull(model.state.value.link)};model.close()

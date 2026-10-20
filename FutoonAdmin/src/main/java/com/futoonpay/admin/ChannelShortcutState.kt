@@ -66,7 +66,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         if (state.value.scope != key) {
             generation++; request++; job?.cancel()
             mutable.value = ChannelShortcutState(key, label, store.link(key), window = store.window)
-            reloadSettings(); if (active) refresh()
+            reloadSettings()
         } else { mutable.update { it.copy(label = label) }; reloadSettings() }
     }
     fun reloadSettings() {
@@ -75,11 +75,13 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         val changedWindow = state.value.window != store.window
         val nextLink = if (state.value.source == "已记住") store.link(key) else state.value.link
         val changedLink = state.value.link?.id != nextLink?.id
-        if (changedWindow || changedLink) { generation++; request++; job?.cancel() }
-        mutable.update { old -> old.copy(visible = visible, window = store.window, link = nextLink, snapshot = if (changedWindow || changedLink) null else old.snapshot, error = if (changedWindow || changedLink) null else old.error, loading = if (changedWindow || changedLink) false else old.loading) }
-        if (visible && (changedWindow || changedLink)) refresh()
+        val shownNow = visible && !state.value.visible
+        val hiddenNow = !visible && state.value.visible
+        if (changedWindow || changedLink || hiddenNow) { generation++; request++; job?.cancel() }
+        mutable.update { old -> old.copy(visible = visible, window = store.window, link = nextLink, snapshot = if (changedWindow || changedLink || hiddenNow) null else old.snapshot, error = if (changedWindow || changedLink) null else old.error, loading = if (changedWindow || changedLink || hiddenNow) false else old.loading) }
+        if (visible && (changedWindow || changedLink || shownNow)) refresh()
     }
-    fun resume() { if (closed) return; active = true; reloadSettings(); if (state.value.snapshot == null && state.value.link != null) refresh() }
+    fun resume() { if (closed) return; active = true; reloadSettings(); if (state.value.snapshot == null && state.value.link != null && !state.value.loading) refresh() }
     fun pause() { active = false; generation++; request++; job?.cancel(); mutable.update { it.copy(loading = false) } }
     fun close() { if (closed) return; closed = true; store.prefs.unregisterOnSharedPreferenceChangeListener(listener); scope.cancel() }
     fun select(link: ChannelLink, remember: Boolean, source: String = "仅本次") {

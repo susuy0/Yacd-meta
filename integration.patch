@@ -11194,7 +11194,7 @@ index 0000000000000000000000000000000000000000..fae8d2ebe47e3e395f2db2372cb48389
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ada07b89bc62f35b1e1091d17abc09bbdbd6af5a
+index 0000000000000000000000000000000000000000..bfb9ed595129bf045076ae9e11fd1fa20ae4484d
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 @@ -0,0 +1,324 @@
@@ -11374,10 +11374,10 @@ index 0000000000000000000000000000000000000000..ada07b89bc62f35b1e1091d17abc09bb
 +            public void removeEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index>=0&&index<photos.size()){photos.remove(index);syncDraft();}});}
 +            public void editEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index<0||index>=photos.size())return;File original=photos.get(index);int gen=generation;new FutoonImageEditor(host.getParentActivity(),original,file->{if(valid()&&gen==generation&&index<photos.size()&&photos.get(index).equals(original)){photos.set(index,file);syncDraft();}},()->{}).show();});}
 +            public boolean hasSession(){if(!valid())return false;try{ensureClient();return api.hasSession();}catch(Exception ignored){return false;}}
-+            public void configure(String address,String username)throws Exception{synchronized(FutoonPanel.this){String normalized=FutoonApi.normalizeAddress(address);store.address(normalized);store.username(username);api=new FutoonApi(normalized,store.session(normalized));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));generation++;}}
++            public void configure(String address,String username)throws Exception{synchronized(FutoonPanel.this){String normalized=FutoonApi.normalizeAddress(address);store.address(normalized);store.username(username);api=new FutoonApi(normalized,store.session(normalized));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));generation++;AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});}}
 +            public byte[] captcha()throws Exception{synchronized(FutoonPanel.this){ensureClient();return api.captcha();}}
-+            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);store.username(username);return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
-+            public void logout()throws Exception{synchronized(FutoonPanel.this){ensureClient();api.logout();}}
++            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);store.username(username);AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
++            public void logout()throws Exception{synchronized(FutoonPanel.this){ensureClient();api.logout();AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});}}
 +            public String call(String operation,String params)throws Exception{return nativeCall(operation,new JSONObject(params));}
 +            public void collapse(){AndroidUtilities.runOnUIThread(FutoonPanel.this::collapse);}
 +            public void copy(String text){AndroidUtilities.runOnUIThread(()->{((ClipboardManager)root.getContext().getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("富通",text));toast("已复制");});}
