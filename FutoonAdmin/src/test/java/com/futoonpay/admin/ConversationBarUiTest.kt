@@ -30,8 +30,6 @@ class ConversationBarUiTest {
     private fun host()=object:ChannelSheetHost{override fun heightChanged(pixels:Int){};override fun showSheet(view:ChannelSheetView,kind:String){};override fun closeSheet(){}}
     private fun render(view:NativeChannelBarView,width:Int,height:Int){view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY));view.layout(0,0,width,height)}
     private fun screenshot(view:View,name:String,width:Int,height:Int){val bitmap=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);view.draw(Canvas(bitmap));java.io.File("build/ui-screenshots/$name.png").apply{parentFile.mkdirs()}.outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle()}
-    @Before fun setup(){Dispatchers.setMain(UnconfinedTestDispatcher())}
-    @After fun cleanup(){Dispatchers.resetMain()}
     @Test fun merchantActionsHaveFullTouchTargetsOnNarrowAndRegularScreens(){
         for(width in listOf(320,390)){
             val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state());render(view,width,76)
@@ -51,14 +49,16 @@ class ConversationBarUiTest {
         val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state(-100));render(view,320,124)
         val node=texts(view).single{it.text.toString()=="选择支付通道"};assertTrue(node.isClickable);assertTrue(node.height>=48);view.close()
     }
-    @Test fun fourMerchantButtonsDispatchToFourDistinctNativeSheets()=runBlocking{
+    @Test fun fourMerchantButtonsDispatchToFourDistinctNativeSheets(){
         val opened=mutableListOf<String>()
         val bridge=object:FixtureBridge(){override fun accountScope()="test:772";override fun address()="https://fixture.example/admin/";override fun hasSession()=true;override fun call(operation:String,params:String):String{assertEquals("merchant.lookup",operation);return """{"rows":[{"uid":"2806","telegram_id":"5824870757","username":"诺诺"}]}"""}}
         val view=NativeChannelBarView(context,bridge,object:ChannelSheetHost{override fun heightChanged(pixels:Int){};override fun showSheet(view:ChannelSheetView,kind:String){opened+=kind};override fun closeSheet(){}})
-        try{view.model.store.prefs.edit().clear().commit();view.bindChat("私信",5824870757,0,"5824870757","私信");view.onShown();withTimeout(5000){view.model.state.first{it.merchant!=null}}
+        try{view.model.store.prefs.edit().clear().commit();view.bindChat("私信",5824870757,0,"5824870757","私信");view.onShown();val deadline=System.nanoTime()+5_000_000_000L
+            while(view.model.state.value.merchant==null&&System.nanoTime()<deadline){org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();Thread.sleep(5)}
+            assertNotNull(view.model.state.value.merchant)
             val expected=linkedMapOf("编辑商户" to "merchant-edit","商户订单" to "merchant-orders","结算" to "merchant-settlements","域名审核" to "merchant-domains")
             for((label,kind)in expected){texts(view).single{it.text.toString()==label}.performClick();assertEquals(kind,opened.last());view.sheetDismissed()}
             assertEquals(4,opened.distinct().size)
-        }finally{view.close()}
+        }finally{view.close();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()}
     }
 }

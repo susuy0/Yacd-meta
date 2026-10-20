@@ -186,7 +186,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
 @Composable private fun ChannelStatistics(model: ChannelShortcutModel) {
     val state by model.state.collectAsState()
     val lifecycle=androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(model,lifecycle,state.targets.map{it.id},state.window) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { model.refresh(all=true); while(isActive){delay(30_000);model.refresh(all=true)} } }
+    LaunchedEffect(model,lifecycle,state.targets.map{it.id},state.window) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { model.refresh(all=true); while(isActive){delay(30_000);if(!model.state.value.loading)model.refresh(all=true)} } }
     Column(Modifier.fillMaxSize()) {
         ChannelFilters(model)
         FlowWindows(state.window,model::changeWindow)

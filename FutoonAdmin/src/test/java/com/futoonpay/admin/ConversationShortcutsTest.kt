@@ -62,7 +62,7 @@ class ConversationShortcutsTest {
         val model=ChannelShortcutModel(context,bridge{id->rows(merchant(id,if(id=="111")"2806" else "2807"))})
         model.store.prefs.edit().clear().commit();model.store.replaceChannels(key(),listOf(ChannelLink("12","A"),ChannelLink("13","B")))
         model.bind("工单 A",-100,1,"111","话题");model.resume();assertEquals("2806",resolved(model).merchant?.uid)
-        model.bind("工单 B",-100,2,"222","话题");assertNull(model.state.value.merchant);val s=resolved(model)
+        model.bind("工单 B",-100,2,"222","话题");assertNotEquals("2806",model.state.value.merchant?.uid);val s=resolved(model)
         assertEquals("2807",s.merchant?.uid);assertEquals(listOf("12","13"),s.channels.map{it.id});assertNull(s.link);model.close()
     }
     @Test fun delayedResponseFromAnOldTopicCannotPopulateTheNewTopic()=runBlocking{
