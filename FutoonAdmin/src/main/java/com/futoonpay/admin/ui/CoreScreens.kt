@@ -607,12 +607,10 @@ private fun OrderActionDialog(
                 Text("订单 ${pending.order.tradeNo}", fontSize = 12.sp, color = Muted)
                 if (pending.amountRequired) OutlinedTextField(
                     value = amount, onValueChange = { amount = it }, label = { Text("退款金额") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
-                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, colors = com.futoonpay.admin.ui.ChatFieldColors())
                 if (pending.passwordRequired) OutlinedTextField(
                     value = paymentPassword, onValueChange = { paymentPassword = it }, label = { Text("支付密码") },
-                    visualTransformation = PasswordVisualTransformation(), singleLine = true,
-                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                    visualTransformation = PasswordVisualTransformation(), singleLine = true, colors = com.futoonpay.admin.ui.ChatFieldColors())
                 if (pending.amountRequired) OutlinedTextField(remark, { remark = it }, label = { Text("退款说明（可选）") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 if (pending.amountRequired && !validRefundAmount(amount, pending.order.amount)) Text("请输入不超过订单金额的正数，最多两位小数", color = Danger, fontSize = 12.sp)
                 error?.let { Text(it, color = Danger, fontSize = 12.sp) }
@@ -1178,8 +1176,7 @@ internal fun MerchantActionDialog(
                     amount, { amount = it }, label = { Text("金额（正数）") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true,
                     enabled = !busy, isError = amount.isNotBlank() && parsedAmount == null,
-                    supportingText = { Text("大于 0，最多两位小数；方向由所选操作决定") },
-                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                    supportingText = { Text("大于 0，最多两位小数；方向由所选操作决定") }, colors = com.futoonpay.admin.ui.ChatFieldColors())
                     parsedAmount?.let {
                         Text("本次${if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.ADD) "增加" else "扣除"} ${operation!!.sign}¥${it.setScale(2).toPlainString()}",
                             color = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.ADD) GreenDark else Danger,
@@ -1334,8 +1331,7 @@ private fun SearchField(value: String, placeholder: String, onValueChange: (Stri
         value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(),
         placeholder = { Text(placeholder) }, leadingIcon = { Icon(Icons.Default.Search, null) },
         trailingIcon = { IconButton(onClick = onSearch) { Icon(Icons.Default.Search, "搜索") } },
-        singleLine = true, shape = RoundedCornerShape(14.dp),
-     , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        singleLine = true, shape = RoundedCornerShape(14.dp), colors = com.futoonpay.admin.ui.ChatFieldColors())
 }
 
 @Composable

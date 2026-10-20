@@ -219,15 +219,13 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             item {
                 OutlinedTextField(
                     keyword, { keyword = it }, label = { Text("域名") }, placeholder = { Text("要搜索的域名") },
-                    leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                    leadingIcon = { Icon(Icons.Default.Search, null) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
             item {
                 OutlinedTextField(
                     merchantId, { merchantId = it }, label = { Text("商户号") }, singleLine = true, readOnly = viewModel.lockMerchant,
                     trailingIcon = { IconButton(onClick = { viewModel.load(1, keyword, merchantId, state.status) }) { Icon(Icons.Default.Search, "搜索") } },
-                    modifier = Modifier.fillMaxWidth(),
-                 , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                    modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
             item {
                 PayTabs(listOf("-1" to "全部", "0" to "待审核", "1" to "已通过", "2" to "已拒绝"), state.status.toString()) { viewModel.load(1, keyword, merchantId, it.toInt()) }

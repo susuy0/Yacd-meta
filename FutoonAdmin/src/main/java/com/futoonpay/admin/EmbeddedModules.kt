@@ -256,8 +256,7 @@ private fun AjaxModuleScreen(
                 placeholder = { Text("搜索${source.labels[source.searchField] ?: "记录"}") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 trailingIcon = { IconButton(onClick = { onLoad(1, query, state.selectedPath) }) { Icon(Icons.Default.Search, "搜索") } },
-                singleLine = true, shape = RoundedCornerShape(14.dp),
-             , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                singleLine = true, shape = RoundedCornerShape(14.dp), colors = com.futoonpay.admin.ui.ChatFieldColors())
         }
         item { Text("${state.total} 条记录", fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
         items(state.rows) { row ->
@@ -444,8 +443,7 @@ internal fun NativeFieldEditor(field: NativeField, value: String, onValueChange:
                 keyboardType = when (field.type) { "decimal" -> KeyboardType.Decimal; "number" -> KeyboardType.Number; "email" -> KeyboardType.Email; else -> KeyboardType.Text },
             ),
             singleLine = field.type != "textarea", minLines = if (field.type == "textarea") 3 else 1,
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
-         , colors = com.futoonpay.admin.ui.ChatFieldColors())
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = com.futoonpay.admin.ui.ChatFieldColors())
     }
 }
 
