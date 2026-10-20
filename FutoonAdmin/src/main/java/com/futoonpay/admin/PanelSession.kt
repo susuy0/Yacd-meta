@@ -15,7 +15,7 @@ interface PanelSession {
     fun saveCookies(json: String)
     fun clearCookies()
 }
-internal class PanelCookieJar(private val session: PanelSession, private val base: HttpUrl) : AdminCookieStore {
+internal class PanelCookieJar(private val session: PanelSession, private val base: HttpUrl, private val onChanged: () -> Unit = {}) : AdminCookieStore {
     private fun checkScope() {
         if (!session.isActive() || session.address() != base.toString()) throw IOException("Telegram 账号或后台已变化，请重新打开面板")
     }
@@ -47,8 +47,9 @@ internal class PanelCookieJar(private val session: PanelSession, private val bas
         val rows=JSONArray()
         for(c in all.values) rows.put(JSONObject().put("name",c.name).put("value",c.value).put("domain",c.domain).put("path",c.path).put("secure",c.secure).put("httpOnly",c.httpOnly).put("expiry",if(c.persistent)c.expiresAt else -1))
         session.saveCookies(rows.toString())
+        onChanged()
     }
     override fun has(name: String)=read().values.any { it.name==name }
-    override fun clear() { checkScope(); session.clearCookies() }
+    override fun clear() { checkScope(); session.clearCookies(); onChanged() }
     private fun key(c: Cookie)="${c.name}|${c.domain}|${c.path}"
 }

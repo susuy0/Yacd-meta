@@ -40,6 +40,6 @@ internal class EmbeddedEnvironment(private val bridge: NativePanelBridge) : Pane
         val scope = object : PanelSession by delegate {
             override fun isActive() = current == revision && delegate.isActive() && delegate.address() == address
         }
-        activeRepository = FutoonRepository(FutoonApiClient(PanelCookieJar(scope, address.toHttpUrl()), address.toHttpUrl(), onSessionExpired = { expired.value = true }))
+        activeRepository = FutoonRepository(FutoonApiClient(PanelCookieJar(scope, address.toHttpUrl()) { runCatching { bridge.call("ui.channel.refresh", "{}") } }, address.toHttpUrl(), onSessionExpired = { expired.value = true }))
     }
 }

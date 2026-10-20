@@ -11194,10 +11194,10 @@ index 0000000000000000000000000000000000000000..fae8d2ebe47e3e395f2db2372cb48389
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bfb9ed595129bf045076ae9e11fd1fa20ae4484d
+index 0000000000000000000000000000000000000000..e54bea339bdd218376f72043e80fd7be2ee700da
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,324 @@
+@@ -0,0 +1,328 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -11373,7 +11373,7 @@ index 0000000000000000000000000000000000000000..bfb9ed595129bf045076ae9e11fd1fa2
 +            public android.graphics.Bitmap evidencePreview(String path){if(!valid()||!path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator))return null;return ImageLoader.loadBitmap(path,null,320,320,true);}
 +            public void removeEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index>=0&&index<photos.size()){photos.remove(index);syncDraft();}});}
 +            public void editEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index<0||index>=photos.size())return;File original=photos.get(index);int gen=generation;new FutoonImageEditor(host.getParentActivity(),original,file->{if(valid()&&gen==generation&&index<photos.size()&&photos.get(index).equals(original)){photos.set(index,file);syncDraft();}},()->{}).show();});}
-+            public boolean hasSession(){if(!valid())return false;try{ensureClient();return api.hasSession();}catch(Exception ignored){return false;}}
++            public boolean hasSession(){return valid() && com.futoonpay.admin.ChannelSessionStatus.hasSession(FutoonNativeBridge.session(account,store));}
 +            public void configure(String address,String username)throws Exception{synchronized(FutoonPanel.this){String normalized=FutoonApi.normalizeAddress(address);store.address(normalized);store.username(username);api=new FutoonApi(normalized,store.session(normalized));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));generation++;AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});}}
 +            public byte[] captcha()throws Exception{synchronized(FutoonPanel.this){ensureClient();return api.captcha();}}
 +            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);store.username(username);AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
@@ -11455,6 +11455,10 @@ index 0000000000000000000000000000000000000000..bfb9ed595129bf045076ae9e11fd1fa2
 +        if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");
 +        final String backend=store.address();final int requestGeneration=generation;
 +        if(operation.equals("chat.tools.read"))return FutoonChatPreferences.get(account).raw();
++        if(operation.equals("ui.channel.refresh")) {
++            AndroidUtilities.runOnUIThread(()->{if(valid() && requestGeneration==generation && backend.equals(store.address()) && channelBar!=null)channelBar.reloadSettings();});
++            return "{}";
++        }
 +        if(operation.equals("ui.channel.order") || operation.equals("ui.channel.open")) {
 +            if(params.optLong("dialog")!=dialogId || params.optLong("topic")!=topicId) throw new IOException("会话已变化");
 +            AndroidUtilities.runOnUIThread(()->{
