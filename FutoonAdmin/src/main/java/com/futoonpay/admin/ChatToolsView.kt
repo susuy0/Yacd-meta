@@ -382,8 +382,8 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     var first by remember(current) { mutableStateOf(current.first) }
     var second by remember(current) { mutableStateOf(TextFieldValue(current.second, TextRange(current.second.length))) }
     var inputError by remember(current) { mutableStateOf<String?>(null) }
-    var preview by remember { mutableStateOf(false) }
-    var discard by remember { mutableStateOf(false) }
+    var preview by remember(current) { mutableStateOf(false) }
+    var discard by remember(current) { mutableStateOf(false) }
     val fieldFocus = remember { FocusRequester() }
     val variableColor = GreenDark
     val variableBackground = GreenTint

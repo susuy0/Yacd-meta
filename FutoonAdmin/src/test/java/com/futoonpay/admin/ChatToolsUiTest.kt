@@ -62,7 +62,11 @@ class ChatToolsUiTest {
         compose.onNode(hasSetTextAction()).performTextInput("查单"); save()
         compose.onNodeWithText("新增分类").performClick(); compose.onNode(hasSetTextAction()).performTextInput("付款凭证"); save()
         compose.onNodeWithText("新增文案").performClick()
-        compose.onNode(hasSetTextAction() and hasText("名称")).performTextInput("索要凭证")
+        // The panel inserts its dialog through a DisposableEffect; wait for that next
+        // composition before asking for a field in the newly attached editor.
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("chat-tools-editor").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("编辑").performClick()
+        compose.onNode(hasSetTextAction() and hasText("名称")).performScrollTo().performTextInput("索要凭证")
         compose.onNode(hasSetTextAction() and hasText("回复内容")).performTextInput("请提供付款凭证\n谢谢")
         save()
         assertEquals("请提供付款凭证\n谢谢", ChatToolsConfig.parse(bridge.saved).tabs.single().categories.single().replies.single().body)

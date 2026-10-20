@@ -58,13 +58,15 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         setOnClickListener { action() }
         layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply { setMargins(dp(2), 0, dp(2), 0) }
     }
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); if (!closed) render(model.state.value) }
     internal fun render(state: ChannelShortcutState) {
         if (closed) return
         removeAllViews(); setBackgroundColor(palette.surface.toArgb())
         val scale = resources.configuration.fontScale * palette.fontScale
         val large = scale >= 1.3f
         val linked = state.link != null
-        val height = if (!state.visible) 0 else if (!linked) 49 else if (large) (48 * scale).toInt() + 48 else 76
+        val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
+        val height = if (!state.visible) 0 else if (!linked || compact) 49 else if (large) (48 * scale).toInt() + 48 else 76
         visibility = if (height == 0) GONE else VISIBLE
         if (lastHeight != dp(height)) { lastHeight = dp(height); host.heightChanged(lastHeight) }
         if (height == 0) return
@@ -74,6 +76,15 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { setPadding(dp(12),0,0,0); setOnClickListener { open("select") }; isFocusable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(0,-1,1f))
             row.addView(text("×", 24f, palette.secondaryText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "隐藏此话题的通道入口，可在 Futoonpay 设置恢复"; setOnClickListener { model.hide() }; isFocusable = true }, LayoutParams(dp(48),-1))
             addView(row, LayoutParams(-1,dp(48))); return
+        }
+        if (compact) {
+            val row=LinearLayout(context).apply{orientation=HORIZONTAL;setPadding(dp(4),0,dp(4),0)}
+            row.addView(text("${state.link!!.name} #${state.link.id}",12f).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.MIDDLE;contentDescription="当前通道 ${state.link.name}，ID ${state.link.id}，点击切换";setOnClickListener{open("select")};isFocusable=true},LayoutParams(0,dp(48),1f))
+            row.addView(button("通道订单",.9f){open("orders")}.apply{isEnabled=!state.invalid})
+            row.addView(button("成功率 ${if(state.loading) "更新中" else if(state.error!=null) "获取失败" else state.snapshot?.rateText?:"—"}",1.2f){open("stats")}.apply{isEnabled=!state.invalid})
+            row.addView(button("编辑通道",.9f){open("edit")}.apply{isEnabled=!state.invalid})
+            row.addView(text("切换",12f,palette.accentText.toArgb()).apply{gravity=Gravity.CENTER;setOnClickListener{open("select")};isFocusable=true;contentDescription="切换支付通道，按钮"},LayoutParams(dp(48),dp(48)))
+            addView(row,LayoutParams(-1,dp(48)));return
         }
         val body = LinearLayout(context).apply { orientation = HORIZONTAL }
         val left = LinearLayout(context).apply { orientation = VERTICAL }
