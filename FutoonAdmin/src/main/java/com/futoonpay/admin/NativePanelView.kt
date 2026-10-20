@@ -234,7 +234,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                                     val chrome = PayPanelChrome(navigator.canPop, actions = {
                                         IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                                         IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
-                                    }, context = { PanelContextStrip(chat, workflowState, keyboard || compact) })
+                                    }, context = { if (route.kind != "merchant_more") PanelContextStrip(chat, workflowState, keyboard || compact) })
                                     CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
                                 }
                             }

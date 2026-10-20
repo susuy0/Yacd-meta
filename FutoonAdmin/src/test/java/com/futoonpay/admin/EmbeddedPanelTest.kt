@@ -81,10 +81,13 @@ class EmbeddedPanelTest {
         compose.onNodeWithText("切换商户").assertDoesNotExist()
         for (label in listOf("增加 CNY 余额", "扣除 CNY 余额", "封禁账号", "关闭支付", "关闭结算", "修改用户组", "重置密钥", "商户订单", "商户结算", "域名审核", "生成商户回复", "资金流水", "商户统计")) compose.onNodeWithText(label).assertExists()
         screenshot("23-merchant-more-shared-operations")
-        // Invoke the button's accessible action after scrolling. Opening a second
-        // Android window during Robolectric's pointer ripple can keep it non-idle.
-        compose.onNodeWithText("修改用户组").performScrollTo().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick) { it() }
-        compose.onNodeWithText("商户 UID 2806", substring = true).assertExists()
+        compose.onNodeWithText("PID 1011 · 私信").assertDoesNotExist()
+        compose.onNodeWithText("修改用户组").performScrollTo().performClick()
+        compose.onNodeWithText("商户 UID 2806", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("用户组 GID").assertIsDisplayed()
+        compose.onNodeWithText("到期时间（可留空）").assertIsDisplayed()
+        compose.onNodeWithText("取消").performClick()
+        compose.onNodeWithText("商户 UID 2806", substring = true).assertDoesNotExist()
         assertTrue(fixture.calls.any { it.first == "merchant.lookup" && it.second.optString("column") == "uid" && it.second.optString("value") == "2806" })
         assertFalse(fixture.calls.any { it.first in listOf("merchant.profile", "form.save", "merchant.balance") })
         assertEquals(0, fixture.sent.get())

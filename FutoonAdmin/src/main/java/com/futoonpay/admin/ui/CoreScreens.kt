@@ -1167,7 +1167,7 @@ internal fun MerchantActionDialog(
     val operation = com.futoonpay.admin.data.MerchantBalanceOperation.fromAction(pending.action)
     val isBalance = operation != null
     val parsedAmount = com.futoonpay.admin.data.merchantBalanceAmount(amount)
-    AlertDialog(shape = RoundedCornerShape(20.dp), 
+    com.futoonpay.admin.PanelAlertDialog(shape = RoundedCornerShape(20.dp),
         onDismissRequest = { if (!busy) onDismiss() }, title = { Text(pending.label) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

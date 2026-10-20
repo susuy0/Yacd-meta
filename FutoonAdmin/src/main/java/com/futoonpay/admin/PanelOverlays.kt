@@ -1,6 +1,9 @@
 package com.futoonpay.admin
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -43,5 +46,31 @@ private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null 
         store.items[id] = PanelOverlay({ dismiss() }, { body() })
         store.order.add(id)
         onDispose { store.order.remove(id); store.items.remove(id) }
+    }
+}
+
+/** Keep merchant confirmations in the existing owned panel instead of a second window. */
+@Composable internal fun PanelAlertDialog(
+    shape: androidx.compose.ui.graphics.Shape,
+    onDismissRequest: () -> Unit,
+    title: @Composable () -> Unit,
+    text: @Composable () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    dismissButton: @Composable () -> Unit,
+) {
+    if (LocalOverlays.current == null) {
+        androidx.compose.material3.AlertDialog(onDismissRequest = onDismissRequest, shape = shape, title = title, text = text, confirmButton = confirmButton, dismissButton = dismissButton)
+        return
+    }
+    PanelDialog(onDismissRequest) {
+        Box(Modifier.fillMaxSize().imePadding().padding(16.dp), contentAlignment = Alignment.Center) {
+            androidx.compose.material3.Surface(Modifier.widthIn(max = 560.dp).fillMaxWidth(), shape = shape, color = androidx.compose.material3.MaterialTheme.colorScheme.surface) {
+                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.MaterialTheme.typography.headlineSmall, content = title)
+                    Box(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) { text() }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) { dismissButton(); confirmButton() }
+                }
+            }
+        }
     }
 }
