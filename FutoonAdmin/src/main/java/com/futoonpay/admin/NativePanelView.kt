@@ -150,6 +150,10 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     fun openShortcutTarget(kind: String, id: String, order: String) {
         when (kind) {
             "merchant" -> navigation.merchants(id)
+            "merchant-orders" -> navigation.orders(merchantId = id)
+            "merchant-settlements" -> navigation.settlements(id)
+            "merchant-domains" -> navigation.domains(id)
+            "channel-orders" -> navigation.orders(channelId = id)
             "channel" -> navigation.module("channels", channelId = id)
             "evidence" -> navigatorEvidence(order, evidenceCaption(JSONObject(order)))
         }

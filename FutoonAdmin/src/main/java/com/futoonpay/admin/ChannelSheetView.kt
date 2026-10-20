@@ -9,6 +9,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -90,11 +91,12 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     val model = view.model
     val state by model.state.collectAsState()
     val link = state.link
+    var page by remember { mutableStateOf(initial) }
     Column(Modifier.fillMaxSize().background(CardColor).imePadding()) {
-        if (initial != "edit") {
+        if (page !in setOf("edit", "merchant-edit", "merchant-domains")) {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(when(initial) { "orders" -> "通道订单"; "stats" -> "成功率"; else -> "选择支付通道" }, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                    Text(when(page) { "orders" -> "通道订单"; "stats" -> "成功率"; "merchant-orders" -> "商户订单"; "merchant-settlements" -> "商户结算"; "merchant-select" -> "选择当前商户"; "edit-select" -> "选择要编辑的通道"; else -> "选择支付通道" }, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
                     if (link != null) Text("${link.name} #${link.id}", color = Muted, fontSize = 13.sp)
                 }
                 TextButton(onClick = close, modifier = Modifier.heightIn(min = 48.dp)) { Text("关闭") }
@@ -103,11 +105,13 @@ class ChannelSheetView internal constructor(context: Context, internal val model
         }
         Box(Modifier.fillMaxWidth().weight(1f)) {
             when {
-                initial == "select" -> ChannelSelector(view, close)
-                link == null -> Text("请先选择支付通道", Modifier.padding(16.dp))
-                initial == "stats" -> ChannelStatistics(model)
-                initial == "orders" -> ShortcutOrders(view, link)
-                initial == "edit" -> ShortcutEditor(view, link)
+                page == "select" -> ChannelSelector(view, close)
+                page == "edit-select" -> ChannelEditorChoice(state.channels) { selected -> model.select(selected,false);page="edit" }
+                page.startsWith("merchant") -> MerchantShortcutContent(view,page)
+                state.targets.isEmpty() -> Text("请先选择支付通道", Modifier.padding(16.dp))
+                page == "stats" -> ChannelStatistics(model)
+                page == "orders" -> ScopedShortcutOrders(view)
+                page == "edit" && link != null -> ShortcutEditor(view, link)
             }
         }
     }
@@ -116,87 +120,160 @@ class ChannelSheetView internal constructor(context: Context, internal val model
 @Composable private fun ChannelSelector(view: ChannelSheetView, close: () -> Unit) {
     val model = view.model
     val state by model.state.collectAsState()
+    val original = remember { state.channels }
     var query by remember { mutableStateOf("") }
     var choices by remember { mutableStateOf<List<ConfigurationChannel>>(emptyList()) }
-    var selected by remember { mutableStateOf(state.link?.id.orEmpty()) }
+    var selected by remember { mutableStateOf(original.map { it.id }.toSet()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var retry by remember { mutableIntStateOf(0) }
     var failure by remember { mutableStateOf<String?>(null) }
+    SideEffect { view.dirty=selected!=original.map{it.id}.toSet() }
     LaunchedEffect(retry) {
-        loading = true; error = null
-        try { choices = model.repository().configurationChannels() }
-        catch (e: CancellationException) { throw e }
-        catch (e: Exception) { error = e.message ?: "读取通道失败" }
-        finally { if (currentCoroutineContext().isActive) loading = false }
+        loading=true;error=null
+        try { choices=model.repository().configurationChannels() }
+        catch(e:CancellationException){throw e}
+        catch(e:Exception){error=e.message?:"读取通道失败"}
+        finally { if(currentCoroutineContext().isActive)loading=false }
     }
     Column(Modifier.fillMaxSize()) {
-        Text("关联范围：${state.label}\n${state.scope?.account} · ${state.scope?.backend}\n话题 ${state.scope?.topic ?: 0}", Modifier.padding(16.dp), color = Muted, fontSize = 12.sp)
+        Text(if((state.scope?.dialog?:0)<0) "关联到当前群，所有话题共用，可勾选多个通道。" else "关联到当前会话，可勾选多个通道。",Modifier.padding(16.dp),color=Muted,fontSize=13.sp)
         OutlinedTextField(query,{query=it},placeholder={Text("搜索通道名称或 ID")},singleLine=true,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp))
         LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            if (loading) item { CircularProgressIndicator() }
-            error?.let { item { Text(it,color=Danger); TextButton(onClick={retry++}){Text("重试")} } }
-            if (state.source != "已记住" && state.scope?.let(model.store::link) != null) item {
-                TextButton(onClick={model.restoreRemembered();close()}) { Text("恢复为已记住的通道") }
-            }
-            val rows=choices.filter { query.isBlank() || it.id.contains(query,true) || it.name.contains(query,true) }
-            items(rows,key={it.id}) { row ->
-                Row(Modifier.fillMaxWidth().heightIn(min=62.dp).background(if(selected==row.id) MaterialTheme.colorScheme.primaryContainer else CardColor).clickable{selected=row.id}.padding(10.dp),verticalAlignment=Alignment.CenterVertically) {
-                    RadioButton(selected==row.id,{selected=row.id})
-                    Column { Text(row.name,fontSize=15.sp); Text("#${row.id} · ${row.typeId}",color=Muted,fontSize=12.sp) }
+            if(loading)item{CircularProgressIndicator()}
+            error?.let{item{Text(it,color=Danger);TextButton(onClick={retry++}){Text("重试")}}}
+            val rows=choices.filter{query.isBlank()||it.id.contains(query,true)||it.name.contains(query,true)}
+            items(rows,key={it.id}){row->
+                fun toggle(){selected=if(row.id in selected)selected-row.id else selected+row.id}
+                Row(Modifier.fillMaxWidth().heightIn(min=62.dp).clickable{toggle()}.padding(8.dp),verticalAlignment=Alignment.CenterVertically){
+                    Checkbox(row.id in selected,{toggle()});Column{Text(row.name);Text("#${row.id} · ${row.typeId}",color=Muted,fontSize=12.sp)}
                 }
             }
-            if(!loading && error==null && rows.isEmpty()) item{Text("没有匹配的通道",color=Muted)}
+            original.filter{old->choices.none{it.id==old.id}&&old.id in selected}.forEach{old->item(key="missing:"+old.id){Row(verticalAlignment=Alignment.CenterVertically){Text("${old.name} #${old.id} · 后台未返回",Modifier.weight(1f),color=Warning);TextButton(onClick={selected=selected-old.id}){Text("移除")}}}}
+            if(!loading&&error==null&&rows.isEmpty())item{Text("没有匹配的通道",color=Muted)}
             failure?.let{item{Text(it,color=Danger)}}
         }
-        Row(Modifier.fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            fun choose(remember:Boolean) { choices.firstOrNull{it.id==selected}?.let { row ->
-                try { model.select(ChannelLink(row.id,row.name),remember);close() } catch(e:Exception){failure=e.message?:"保存关联失败"}
-            } }
-            OutlinedButton(onClick={choose(false)},enabled=!loading&&choices.any{it.id==selected},modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("仅本次使用")}
-            Button(onClick={choose(true)},enabled=!loading&&choices.any{it.id==selected},modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("记住此会话")}
+        Row(Modifier.fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            val allowed=!loading&&error==null
+            OutlinedButton(enabled=allowed&&selected.size==1,onClick={
+                val row=choices.firstOrNull{it.id in selected}
+                if(row!=null){model.select(ChannelLink(row.id,row.name),false);view.dismissAfterSave()}
+            },modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("仅本次使用")}
+            Button(enabled=allowed,onClick={try{
+                val saved=selected.mapNotNull{id->choices.firstOrNull{it.id==id}?.let{ChannelLink(it.id,it.name)}?:original.firstOrNull{it.id==id}}
+                model.associate(saved);view.dismissAfterSave()
+            }catch(e:Exception){failure=e.message?:"保存关联失败"}},modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("保存关联（${selected.size}）")}
         }
+    }
+}
+
+@Composable private fun ChannelEditorChoice(channels:List<ChannelLink>,choose:(ChannelLink)->Unit){
+    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+        item{Text("编辑前请选择具体通道",color=Muted)}
+        items(channels,key={it.id}){row->OutlinedButton(onClick={choose(row)},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)){Text("${row.name} #${row.id}")}}
+    }
+}
+
+@Composable private fun ChannelFilters(model:ChannelShortcutModel){
+    val state by model.state.collectAsState()
+    if(state.channels.size>1)LazyRow(Modifier.fillMaxWidth(),contentPadding=PaddingValues(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+        item{FilterChip(state.link==null,{model.selectAll()},label={Text("全部通道（${state.channels.size}）")},modifier=Modifier.heightIn(min=48.dp))}
+        items(state.channels,key={it.id}){row->FilterChip(state.link?.id==row.id,{model.select(row,false)},label={Text(row.name+" #"+row.id)},modifier=Modifier.heightIn(min=48.dp))}
     }
 }
 
 @Composable private fun ChannelStatistics(model: ChannelShortcutModel) {
     val state by model.state.collectAsState()
     val lifecycle=androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(model,lifecycle) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { model.refresh(); while(isActive){delay(30_000);model.refresh()} } }
+    LaunchedEffect(model,lifecycle,state.targets.map{it.id},state.window) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { model.refresh(all=true); while(isActive){delay(30_000);model.refresh(all=true)} } }
     Column(Modifier.fillMaxSize()) {
+        ChannelFilters(model)
         FlowWindows(state.window,model::changeWindow)
         LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
             if(state.loading) item{LinearProgressIndicator(Modifier.fillMaxWidth())}
             state.error?.let{item{Text("读取失败：$it",color=Danger)}}
+            if(state.link==null) items(state.channels,key={it.id}){row->
+                val stats=state.snapshots[row.id]
+                PayCard{Text("${row.name} #${row.id}",fontWeight=FontWeight.SemiBold);Text(stats?.rateText?:"—",fontSize=28.sp);Text("近${state.window.label} · 总订单 ${stats?.total?:"—"} · 成功 ${stats?.successful?:"—"}",color=Muted);state.channelErrors[row.id]?.let{Text(it,color=Danger)}}
+            }
             val data=state.snapshot
-            item{Text(data?.rateText?:"—",fontSize=36.sp,fontWeight=FontWeight.SemiBold);Text("近${state.window.label} · 官方通道监测",color=Muted)}
-            item{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("总订单 ${data?.total?:"—"}");Text("成功 ${data?.successful?:"—"}");Text("处理中 ${data?.processing?:"—"}")}}
+            if(state.link!=null)item{Text(data?.rateText?:"—",fontSize=36.sp,fontWeight=FontWeight.SemiBold);Text("近${state.window.label} · 官方通道监测",color=Muted)}
+            if(state.link!=null)item{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("总订单 ${data?.total?:"—"}");Text("成功 ${data?.successful?:"—"}");Text("处理中 ${data?.processing?:"—"}")}}
             if(data?.total?.let{it in 1..9}==true)item{Text("样本少：${data.total} 笔，谨慎判断",color=Warning)}
             item{Text("成功率趋势",fontWeight=FontWeight.Medium);Text("后台尚未提供此时间窗的完整趋势数据",color=Muted)}
             item{Text("最近订单",fontWeight=FontWeight.Medium);Text("请从通道订单查看；不以当前页样本代替整个时间窗。",color=Muted)}
             item{Text(data?.updated?.let{"更新于 "+java.text.SimpleDateFormat("HH:mm:ss",java.util.Locale.getDefault()).format(java.util.Date(it))}?:"缺失字段显示 —；未以 0% 或 100% 代替。",color=Muted,fontSize=12.sp)}
         }
-        TextButton(onClick=model::refresh,enabled=!state.loading,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("刷新统计 · 面板内每30秒更新")}
+        TextButton(onClick={model.refresh(all=true)},enabled=!state.loading,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("刷新统计 · 面板内每30秒更新")}
     }
 }
 @OptIn(ExperimentalLayoutApi::class)
 @Composable private fun FlowWindows(window:MonitorWindow,onChange:(MonitorWindow)->Unit){FlowRow(Modifier.fillMaxWidth().padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)){listOf(MonitorWindow.FIVE_MINUTES,MonitorWindow.HALF_HOUR,MonitorWindow.HOUR,MonitorWindow.SIX_HOURS,MonitorWindow.DAY).forEach{item->FilterChip(selected=window==item,onClick={onChange(item)},label={Text(item.label)},modifier=Modifier.heightIn(min=48.dp))}}}
 
-@Composable private fun ShortcutOrders(view:ChannelSheetView,link:ChannelLink){
+@Composable private fun ScopedShortcutOrders(view:ChannelSheetView,merchantId:String=""){
+    val shortcut by view.model.state.collectAsState()
+    val ids=if(merchantId.isNotBlank())emptySet()else shortcut.targets.map{it.id}.toSet()
     val environment=remember{EmbeddedEnvironment(view.model.bridge)}
-    val vm:AppViewModel=viewModel(factory=object:ViewModelProvider.Factory{@Suppress("UNCHECKED_CAST")override fun<T:ViewModel> create(c:Class<T>):T=AppViewModel(environment,loadOnStart=false,lockedChannelId=link.id) as T})
+    val vm:AppViewModel=viewModel(key="orders:"+merchantId+":"+ids.joinToString(","),factory=object:ViewModelProvider.Factory{@Suppress("UNCHECKED_CAST")override fun<T:ViewModel> create(c:Class<T>):T=AppViewModel(environment,loadOnStart=false,lockedChannelId=ids.singleOrNull().orEmpty(),lockedMerchantId=merchantId,allowedChannelIds=ids) as T})
     val state by vm.state.collectAsState()
-    LaunchedEffect(link.id){vm.loadOrders(1,OrderSearchFilters(channelId=link.id))}
-    val nav=remember{object:PanelNavigation{
-        override fun orders(channelId:String,merchantId:String){}
-        override fun settlements(merchantId:String){view.openPanel("merchant",merchantId)}
-        override fun merchants(merchantId:String){view.openPanel("merchant",merchantId)}
-        override fun domains(merchantId:String){view.openPanel("merchant",merchantId)}
-        override fun module(id:String,channelId:String,channelType:String){view.openPanel("channel",channelId)}
-        override fun evidence(order:OrderSummary){val raw=JSONObject().put("trade_no",order.tradeNo).put("out_trade_no",order.merchantTradeNo).put("uid",order.merchantId).put("money",order.amount).put("currency",order.currency);view.openPanel("evidence",order=raw.toString())}
-    }}
-    val mutationBusy=remember(view){ { value:Boolean -> view.busy=value } }
-    CompositionLocalProvider(LocalPanelNavigation provides nav, LocalChannelMutationBusy provides mutationBusy){OrdersScreen(state,vm)}
+    LaunchedEffect(vm){vm.loadOrders(1,OrderSearchFilters(merchantId=merchantId,channelId=ids.singleOrNull().orEmpty()))}
+    val nav=remember(view){shortcutNavigation(view)}
+    val mutationBusy=remember(view){{value:Boolean->view.busy=value}}
+    Column(Modifier.fillMaxSize()){
+        if(merchantId.isBlank()){ChannelFilters(view.model);if(ids.size>1)Text("全部关联通道 · 按通道分组分页",Modifier.padding(horizontal=16.dp),color=Muted,fontSize=12.sp)}
+        CompositionLocalProvider(LocalPanelNavigation provides nav,LocalChannelMutationBusy provides mutationBusy){Box(Modifier.weight(1f)){OrdersScreen(state,vm)}}
+        BatchDialog(state.batch,vm::startBatch,vm::closeBatch,vm::retryBatch)
+    }
+}
+
+private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
+    override fun orders(channelId:String,merchantId:String){view.openPanel(if(merchantId.isNotBlank())"merchant-orders" else "channel-orders",if(merchantId.isNotBlank())merchantId else channelId)}
+    override fun settlements(merchantId:String){view.openPanel("merchant-settlements",merchantId)}
+    override fun merchants(merchantId:String){view.openPanel("merchant",merchantId)}
+    override fun domains(merchantId:String){view.openPanel("merchant-domains",merchantId)}
+    override fun module(id:String,channelId:String,channelType:String){view.openPanel("channel",channelId)}
+    override fun evidence(order:OrderSummary){val raw=JSONObject().put("trade_no",order.tradeNo).put("out_trade_no",order.merchantTradeNo).put("uid",order.merchantId).put("money",order.amount).put("currency",order.currency);view.openPanel("evidence",order=raw.toString())}
+}
+
+@Composable private fun MerchantShortcutContent(view:ChannelSheetView,kind:String){
+    val state by view.model.state.collectAsState()
+    val merchant=state.merchant
+    if(kind=="merchant-select"){
+        LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp)){
+            item{Text("TG ${state.telegramId} 对应多个商户，请核对后选择。",color=Warning)}
+            items(state.merchantCandidates,key={it.uid}){row->OutlinedButton(onClick={view.model.chooseMerchant(row.uid);view.dismissAfterSave()},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)){Text("${row.username} · 商户 ${row.uid}")}}
+        };return
+    }
+    if(merchant==null){Text(state.merchantError?:"正在识别商户…",Modifier.padding(16.dp));return}
+    val environment=remember{EmbeddedEnvironment(view.model.bridge)}
+    if(kind=="merchant-orders"){ScopedShortcutOrders(view,merchant.uid);return}
+    if(kind=="merchant-domains"){
+        val vm:DomainAuditViewModel=viewModel(key="domains:"+merchant.uid,factory=DomainAuditViewModel.Factory(environment.repository,merchant.uid,true))
+        val busy=remember(view){{value:Boolean->view.busy=value}}
+        CompositionLocalProvider(LocalChannelMutationBusy provides busy){DomainAuditRoot(vm){view.requestDismiss()}};return
+    }
+    val vm:AppViewModel=viewModel(key=kind+":"+merchant.uid,factory=object:ViewModelProvider.Factory{@Suppress("UNCHECKED_CAST")override fun<T:ViewModel> create(c:Class<T>):T=AppViewModel(environment,loadOnStart=false,lockedMerchantId=merchant.uid) as T})
+    val original by vm.state.collectAsState()
+    if(kind=="merchant-settlements"){
+        LaunchedEffect(vm){vm.loadSettlements(1,SettlementSearchFilters(merchantId=merchant.uid))}
+        SideEffect{view.busy=original.batch?.running==true||original.refreshing&&!original.settlementsLoading}
+        CompositionLocalProvider(LocalPanelNavigation provides remember(view){shortcutNavigation(view)}){SettlementsScreen(original,vm)}
+        BatchDialog(original.batch,vm::startBatch,vm::closeBatch,vm::retryBatch);return
+    }
+    var loaded by remember{mutableStateOf(false)}
+    LaunchedEffect(vm){vm.openMerchantEditor(merchant.uid)}
+    val form=original.merchantEditor
+    LaunchedEffect(form,original.merchantEditorLoading){
+        if(form!=null)loaded=true
+        if(loaded&&form==null&&!original.merchantEditorLoading&&!original.merchantEditorSaving){view.model.refreshMerchant();view.dismissAfterSave()}
+    }
+    SideEffect{
+        val baseline=original.merchantEditorOriginal?.fields.orEmpty().associate{it.name to it.value}
+        view.dirty=form?.fields.orEmpty().any{!it.readOnly&&it.type!="hidden"&&(!it.sensitive||it.value.isNotBlank())&&baseline[it.name]!=it.value}
+        view.busy=original.merchantEditorSaving
+        view.discardAction={vm.closeMerchantEditor()}
+    }
+    MerchantProfileScreen(original,{view.requestDismiss()},vm::editMerchantField,vm::saveMerchantEditor,{vm.openMerchantEditor(merchant.uid)})
 }
 
 @Composable private fun ShortcutEditor(view:ChannelSheetView,link:ChannelLink){

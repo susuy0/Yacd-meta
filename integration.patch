@@ -11194,7 +11194,7 @@ index 0000000000000000000000000000000000000000..fae8d2ebe47e3e395f2db2372cb48389
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e54bea339bdd218376f72043e80fd7be2ee700da
+index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a30c5a6fb
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 @@ -0,0 +1,328 @@
@@ -11416,7 +11416,7 @@ index 0000000000000000000000000000000000000000..e54bea339bdd218376f72043e80fd7be
 +
 +    public boolean isView(View view){return view==root;}
 +    public void onBottomInsetChanged(int inset){if(lastBottomInset==inset)return;lastBottomInset=inset;root.requestLayout();}
-+    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(channelBar!=null)channelBar.bindChat(label,dialog,topic);if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){applyContext();return;}boolean reopen=expanded;if(dialogId!=dialog||topicId!=topic)releasePanel();dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}if(reopen){ensurePanel();panel.setVisibility(View.VISIBLE);panel.onShown();}applyContext();if(panel!=null)panel.updateEvidenceCount(photos.size());}
++    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){if(channelBar!=null)channelBar.bindChat(label,dialog,topic,identity==null?"":identity.telegramId,identity==null?"":identity.source);applyContext();return;}boolean reopen=expanded;if(dialogId!=dialog||topicId!=topic)releasePanel();dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}if(channelBar!=null)channelBar.bindChat(label,dialog,topic,identity==null?"":identity.telegramId,identity==null?"":identity.source);if(reopen){ensurePanel();panel.setVisibility(View.VISIBLE);panel.onShown();}applyContext();if(panel!=null)panel.updateEvidenceCount(photos.size());}
 +    public void open(String text){if(destroyed)return;host.bindFutoonContext();ensurePanel();expanded=true;paused=false;ball.setVisibility(View.GONE);applyOptions();panel.setVisibility(View.VISIBLE);panel.onShown();resize();root.bringToFront();if(text!=null&&!text.isEmpty())panel.recognizeText(text,dialogId,topicId,sourceMessage,false);}
 +    public void recognizeSelected(String text,long messageId){sourceMessage=Math.max(0,messageId);open(text);}
 +    public void recognizeMessage(MessageObject message){if(message==null||message.messageOwner==null)return;ArrayList<MessageObject> messages=new ArrayList<>();messages.add(message);if(message.replyMessageObject!=null)messages.add(message.replyMessageObject);recognizeMessages(messages);}
@@ -14512,7 +14512,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..fc95e34edb4c3efaa2d2f6c26d36dc92ca3b2bf2 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..6c86541304b7b61b892491cec8dba92096450bd8 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
@@ -14520,7 +14520,7 @@ index 55d530f04eceaa33faa42b235a441f289255dbee..fc95e34edb4c3efaa2d2f6c26d36dc92
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7194
++APP_VERSION_CODE=7195
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat

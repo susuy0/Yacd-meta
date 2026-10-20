@@ -102,6 +102,7 @@ import kotlinx.coroutines.launch
 
 internal data class DomainAuditState(
     val loading: Boolean = true,
+    val writing: Boolean = false,
     val page: Int = 1,
     val keyword: String = "",
     val merchantId: String = "",
@@ -115,7 +116,9 @@ internal data class DomainAuditState(
 internal class DomainAuditViewModel(
     private val repository: FutoonRepository,
     initialMerchantId: String = "",
+    val lockMerchant: Boolean = false,
 ) : ViewModel() {
+    private val lockedMerchantId=initialMerchantId
     private val _state = MutableStateFlow(DomainAuditState(merchantId = initialMerchantId))
     val state = _state.asStateFlow()
     private var feedback: String? = null
@@ -128,13 +131,14 @@ internal class DomainAuditViewModel(
         merchantId: String = _state.value.merchantId,
         status: Int = _state.value.status,
     ) = viewModelScope.launch {
+        val merchantId=if(lockMerchant)lockedMerchantId else merchantId
         _state.update { it.copy(loading = true, page = page, keyword = keyword, merchantId = merchantId, status = status, message = null, loadError = null) }
         val filters = buildMap {
             if (keyword.isNotBlank()) put("kw", keyword.trim())
             if (merchantId.isNotBlank()) put("uid", merchantId.trim())
             put("dstatus", status.toString())
         }
-        runCatching { repository.domainAudits(page, filters) }
+        runCatching { repository.domainAudits(page, filters).also { result -> check(!lockMerchant || result.rows.all{it.merchantId==lockedMerchantId}) { "后台返回了其他商户域名" } } }
             .onSuccess { result ->
                 val message = feedback.also { feedback = null }
                 _state.update { it.copy(loading = false, total = result.total, rows = result.rows, message = message) }
@@ -142,32 +146,34 @@ internal class DomainAuditViewModel(
             .onFailure { error -> _state.update { it.copy(loading = false, loadError = error.message ?: "域名列表加载失败", message = error.message ?: "域名列表加载失败") } }
     }
 
-    fun add(merchantId: String, domain: String) = runAction { repository.addDomain(merchantId, domain) }
+    fun add(merchantId: String, domain: String) = runAction { repository.addDomain(if(lockMerchant)lockedMerchantId else merchantId, domain) }
     fun setStatus(id: String, status: Int, remark: String, onComplete: (ApiResult) -> Unit) = runAction(onComplete) { repository.setDomainStatus(id, status, remark) }
     fun delete(id: String) = runAction { repository.deleteDomain(id) }
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
     private fun runAction(onComplete: (ApiResult) -> Unit = {}, action: suspend () -> ApiResult) = viewModelScope.launch {
         if (_state.value.loading) { onComplete(ApiResult(false, "请等待当前请求完成")); return@launch }
-        _state.update { it.copy(loading = true, message = null) }
+        _state.update { it.copy(loading = true, writing = true, message = null) }
         runCatching { action() }
             .onSuccess { result ->
+                _state.update { it.copy(writing=false) }
                 if (result.success) {
                     feedback = result.message
                     load()
                 } else _state.update { it.copy(loading = false, message = result.message) }
                 onComplete(result)
             }
-            .onFailure { error -> _state.update { it.copy(loading = false, message = error.message ?: "操作失败") }; onComplete(ApiResult(false, error.message ?: "操作失败")) }
+            .onFailure { error -> _state.update { it.copy(loading = false, writing = false, message = error.message ?: "操作失败") }; onComplete(ApiResult(false, error.message ?: "操作失败")) }
     }
 
     class Factory(
         private val repository: FutoonRepository,
         private val initialMerchantId: String = "",
+        private val lockMerchant: Boolean = false,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            DomainAuditViewModel(repository, initialMerchantId) as T
+            DomainAuditViewModel(repository, initialMerchantId, lockMerchant) as T
     }
 }
 
@@ -178,6 +184,9 @@ private data class PendingDomainAction(val row: DomainAuditSummary, val status: 
 internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val mutationBusy=LocalChannelMutationBusy.current
+    androidx.compose.runtime.SideEffect { mutationBusy?.invoke(state.writing) }
+    androidx.compose.runtime.DisposableEffect(mutationBusy) { onDispose { mutationBusy?.invoke(false) } }
     var keyword by rememberSaveable { mutableStateOf(state.keyword) }
     var merchantId by rememberSaveable { mutableStateOf(state.merchantId) }
     var showAdd by rememberSaveable { mutableStateOf(false) }
@@ -215,7 +224,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             }
             item {
                 OutlinedTextField(
-                    merchantId, { merchantId = it }, label = { Text("商户号") }, singleLine = true,
+                    merchantId, { merchantId = it }, label = { Text("商户号") }, singleLine = true, readOnly = viewModel.lockMerchant,
                     trailingIcon = { IconButton(onClick = { viewModel.load(1, keyword, merchantId, state.status) }) { Icon(Icons.Default.Search, "搜索") } },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -259,7 +268,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             }
         }
     } }
-    if (showAdd) AddDomainDialog({ showAdd = false }) { uid, domain -> viewModel.add(uid, domain); showAdd = false }
+    if (showAdd) AddDomainDialog({ showAdd = false }, if(viewModel.lockMerchant)state.merchantId else "") { uid, domain -> viewModel.add(uid, domain); showAdd = false }
     pending?.let { action ->
         val label = when { action.delete -> "删除域名"; action.status == 1 -> "通过审核"; else -> "拒绝域名" }
         AlertDialog(shape = RoundedCornerShape(20.dp), 
@@ -312,15 +321,15 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
 }
 
 @Composable
-private fun AddDomainDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
-    var merchantId by rememberSaveable { mutableStateOf("") }
+private fun AddDomainDialog(onDismiss: () -> Unit, fixedMerchantId: String = "", onConfirm: (String, String) -> Unit) {
+    var merchantId by rememberSaveable { mutableStateOf(fixedMerchantId) }
     var domain by rememberSaveable { mutableStateOf("") }
     AlertDialog(shape = RoundedCornerShape(20.dp), 
         onDismissRequest = onDismiss,
         title = { Text("添加授权支付域名") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(merchantId, { merchantId = it }, label = { Text("商户 ID") }, singleLine = true)
+                OutlinedTextField(merchantId, { merchantId = it }, label = { Text("商户 ID") }, singleLine = true, readOnly = fixedMerchantId.isNotBlank())
                 OutlinedTextField(domain, { domain = it }, label = { Text("域名") }, supportingText = { Text("支持通配符 *") }, singleLine = true)
             }
         },

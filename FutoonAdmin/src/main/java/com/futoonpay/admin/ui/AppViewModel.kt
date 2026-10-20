@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.futoonpay.admin.PanelEnvironment as FutoonApplication
+import com.futoonpay.admin.data.associatedOrders
 import com.futoonpay.admin.data.ApiResult
 import com.futoonpay.admin.data.BatchProgress
 import com.futoonpay.admin.data.BatchRequest
@@ -114,6 +115,8 @@ class AppViewModel(
     loadOnStart: Boolean = true,
     initialAccountName: String = "管理员",
     private val lockedChannelId: String = "",
+    private val lockedMerchantId: String = "",
+    private val allowedChannelIds: Set<String> = emptySet(),
 ) : ViewModel() {
     private val _state = MutableStateFlow(AppUiState(accountName = initialAccountName))
     val state: StateFlow<AppUiState> = _state.asStateFlow()
@@ -316,13 +319,17 @@ class AppViewModel(
         _state.update { it.copy(refreshing = false) }
     }
 
-    fun loadOrders(page: Int = 1, search: OrderSearchFilters = _state.value.orderSearch) = loadScopedOrders(page, if (lockedChannelId.isBlank()) search else search.copy(channelId = lockedChannelId))
+    fun loadOrders(page: Int = 1, search: OrderSearchFilters = _state.value.orderSearch) = loadScopedOrders(page, search.copy(channelId = lockedChannelId.ifBlank { search.channelId }, merchantId = lockedMerchantId.ifBlank { search.merchantId }))
 
     private fun loadScopedOrders(page: Int, search: OrderSearchFilters) = viewModelScope.launch {
         val generation = ++ordersGeneration
         orderChannelStatsGeneration += 1
         _state.update { it.copy(refreshing = true, ordersLoading = true, ordersError = null, message = null, orderSearch = search) }
-        runCatching { repository.orders(page, search.toRequest()) }
+        runCatching {
+            val result = if (allowedChannelIds.isEmpty()) repository.orders(page, search.toRequest()) else repository.associatedOrders(page, search.toRequest(), allowedChannelIds)
+            check(lockedMerchantId.isBlank() || result.rows.all { it.merchantId == lockedMerchantId }) { "后台返回了其他商户订单" }
+            result
+        }
             .onSuccess { result ->
                 if (generation != ordersGeneration) return@onSuccess
                 _state.update {
@@ -387,10 +394,12 @@ class AppViewModel(
         it.copy(orderDetailTradeNo = "", orderDetail = null, orderDetailLoading = false)
     }
 
-    fun loadSettlements(page: Int = 1, search: SettlementSearchFilters = _state.value.settlementSearch) = viewModelScope.launch {
+    fun loadSettlements(page: Int = 1, search: SettlementSearchFilters = _state.value.settlementSearch) = loadScopedSettlements(page, search.copy(merchantId = lockedMerchantId.ifBlank { search.merchantId }))
+
+    private fun loadScopedSettlements(page: Int, search: SettlementSearchFilters) = viewModelScope.launch {
         val generation = ++settlementsGeneration
         _state.update { it.copy(refreshing = true, settlementsLoading = true, settlementsError = null, message = null, settlementSearch = search) }
-        runCatching { repository.settlements(page, search.toRequest()) }
+        runCatching { repository.settlements(page, search.toRequest()).also { result -> check(lockedMerchantId.isBlank() || result.rows.all { it.merchantId == lockedMerchantId }) { "后台返回了其他商户结算" } } }
             .onSuccess { result ->
                 if (generation != settlementsGeneration) return@onSuccess
                 _state.update { it.copy(refreshing = false, settlementsLoading = false, settlementsError = null, settlements = result.rows, uncertainSettlements = it.uncertainSettlements - result.rows.map { row -> row.id }.toSet(), settlementTotal = result.total, settlementPage = page) }
