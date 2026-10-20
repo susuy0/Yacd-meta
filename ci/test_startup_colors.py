@@ -30,18 +30,20 @@ methods = "\n".join(method(s) for s in (
 test = r'''
 public class StartupColorsTest {
     static class View {
-        int invalidations, updates;
+        int invalidations, updates, background;
+        void setBackgroundColor(int color) { background = color; }
         void invalidate() { invalidations++; }
         void updateColors() { updates++; }
     }
     static class GlassTabView extends View {
         void updateColorsLottie() { updates++; }
     }
+    static class FutoonChatAppearance { static boolean dark() { return true; } }
     static class ColorSource { void setColor(int color) {} }
     static class Parent { public void onResume() {} }
     static class Tabs extends Parent {
         ColorSource iBlur3SourceColor = new ColorSource();
-        View fadeView, tabsView, tabsViewBackground;
+        View fadeView, tabsView, tabsViewBackground, tabsViewWrapper;
         GlassTabView[] tabs;
         int badgeChecks, unreadChecks, hints, blurChecks;
         int getEstBackgroundColor() { return 0xFF121212; }
@@ -61,7 +63,7 @@ public class StartupColorsTest {
         t.onResume(); // all omitted / views not ready
         GlassTabView chats = new GlassTabView(), settings = new GlassTabView(), profile = new GlassTabView();
         t.tabs = new GlassTabView[] {chats, null, settings, null, profile};
-        t.fadeView = new View(); t.tabsView = new View(); t.tabsViewBackground = new View();
+        t.fadeView = new View(); t.tabsView = new View(); t.tabsViewBackground = new View(); t.tabsViewWrapper = new View();
         for (int i = 0; i < 20; i++) {
             t.onResume(); // cold start, foreground return, account/page recreation
             t.blur3_updateColors(); // theme delegate refresh
@@ -70,6 +72,8 @@ public class StartupColorsTest {
             "Every surviving tab must refresh on resume and theme change");
         check(t.tabsView.invalidations == 40 && t.tabsViewBackground.updates == 40,
             "Tab background refresh must remain active");
+        check(t.tabsView.background == 0xFF111B21 && t.tabsViewWrapper.background == 0xFF111B21,
+            "Both tab surfaces must refresh without missing lifecycle views");
         check(t.badgeChecks == 22 && t.unreadChecks == 22 && t.hints == 22,
             "Resume must complete the remaining lifecycle work");
         check(t.blurChecks == 42, "Blur invalidation must remain active");
@@ -79,6 +83,9 @@ public class StartupColorsTest {
 '''.replace("METHODS", methods)
 with tempfile.TemporaryDirectory(prefix="vinechat-startup-") as temporary:
     root = Path(temporary)
+    appearance = root / "com/futoonpay/admin/appearance/ChatLook.java"
+    appearance.parent.mkdir(parents=True)
+    appearance.write_text("package com.futoonpay.admin.appearance; public class ChatLook { public static int surface(boolean dark) { return dark ? 0xFF111B21 : 0xFFFFFFFF; } }")
     (root / "StartupColorsTest.java").write_text(test)
     subprocess.run(["javac", "StartupColorsTest.java"], cwd=root, check=True)
     subprocess.run(["java", "StartupColorsTest"], cwd=root, check=True)
