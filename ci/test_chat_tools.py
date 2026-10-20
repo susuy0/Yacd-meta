@@ -87,6 +87,8 @@ print('PASS: read-only profile TGID, both tag surfaces, draft-only insertion, se
 # Execute the actual Telegram bridge with the same listener replacement contract
 # as BaseFragment.showDialog. No Android device or message send is involved.
 stubs = {
+ 'com/futoonpay/admin/ChannelChatToolsHostBridge.java': 'package com.futoonpay.admin; public interface ChannelChatToolsHostBridge extends ChatToolsHostBridge {String channelAccountScope();String channelBackendAddress();}',
+ 'org/telegram/messenger/futoon/FutoonStore.java': 'package org.telegram.messenger.futoon; public class FutoonStore {public FutoonStore(int a){}public String address(){return "https://fixture.example/admin/";}}',
  'android/app/Dialog.java': '''package android.app; public class Dialog { public interface OnDismissListener { void onDismiss(Dialog dialog); } public OnDismissListener listener; public int dismissCalls; public void setOnDismissListener(OnDismissListener listener){this.listener=listener;} public void dismiss(){dismissCalls++;if(listener!=null)listener.onDismiss(this);} }''',
  'android/view/View.java': '''package android.view; public class View {public static final int GONE=8; public Object getWindowToken(){return this;} }''',
  'android/content/Context.java': '''package android.content; public class Context {}''',

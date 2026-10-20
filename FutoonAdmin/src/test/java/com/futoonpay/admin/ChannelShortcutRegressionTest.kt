@@ -82,6 +82,24 @@ class ChannelShortcutRegressionTest {
         for(value in listOf("-1%","101%","NaN","Infinity","n/a")){assertNull(parseChannelSnapshot(JSONObject().put("rate_5min",value),MonitorWindow.FIVE_MINUTES).rate)}
         val data=parseChannelSnapshot(JSONObject("""{"total_count_5min":4,"success_count_5min":8}"""),MonitorWindow.FIVE_MINUTES);assertNull(data.successful)
     }
+    @Test fun actualComposerInsetsReserveExactlyOneBarAndPreserveBottomControls(){
+        for(width in listOf(320,390,844)) for(height in listOf(0,49,76,120)) {
+            val composer=FrameLayout(context)
+            val input=View(context);composer.addView(input,FrameLayout.LayoutParams(-1,44,android.view.Gravity.BOTTOM))
+            val bar=View(context);ChannelComposerHost.attach(composer,bar,0);ChannelComposerHost.resize(composer,bar,height)
+            composer.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.AT_MOST))
+            composer.layout(0,0,composer.measuredWidth,composer.measuredHeight)
+            assertEquals(height+44,composer.measuredHeight);assertEquals(0,bar.top);assertEquals(height,bar.bottom);assertEquals(height,input.top);assertEquals(height+44,input.bottom)
+            ChannelComposerHost.resize(composer,bar,0);composer.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(1000,View.MeasureSpec.AT_MOST));assertEquals(44,composer.measuredHeight)
+        }
+    }
+    @Test fun replyTranslationDoesNotApplyBarPaddingTwice(){
+        for(bar in listOf(0,49,76,120)) for(progress in listOf(0f,.5f,1f)) {
+            val total=bar+44+48
+            val actualTop=bar+ChannelComposerHost.replyTranslation(total,44f,48,progress,bar)
+            assertEquals((total-44-48*progress),actualTop,.001f)
+        }
+    }
     @Test fun shortcutSheetOwnsItsLifecycleBeforeOwnerlessWindowPremeasurement(){
         val controller=Robolectric.buildActivity(Activity::class.java).setup();val activity=controller.get()
         val model=ChannelShortcutModel(activity,FixtureBridge());model.bind("测试群",-100,1)

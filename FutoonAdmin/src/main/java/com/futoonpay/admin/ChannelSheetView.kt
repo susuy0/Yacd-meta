@@ -77,7 +77,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     internal fun openPanel(kind: String, id: String = "", order: String = "") {
         val key = model.state.value.scope ?: return
         allowClose = true; host.closeSheet()
-        model.bridge.call("ui.channel.open", JSONObject().put("kind",kind).put("id",id).put("order",order).put("dialog",key.dialog).put("topic",key.topic).toString())
+        runCatching { model.bridge.call("ui.channel.open", JSONObject().put("kind",kind).put("id",id).put("order",order).put("dialog",key.dialog).put("topic",key.topic).toString()) }.onFailure { android.widget.Toast.makeText(context, it.message ?: "会话已变化", android.widget.Toast.LENGTH_LONG).show() }
     }
     override fun onAttachedToWindow() { super.onAttachedToWindow(); if (!closed) composition.prepare() }
     override fun onMeasure(w: Int, h: Int) { if (!closed) composition.prepare(); super.onMeasure(w, if (panelHeight > 0) MeasureSpec.makeMeasureSpec(minOf(panelHeight, if (MeasureSpec.getMode(h) == MeasureSpec.UNSPECIFIED) panelHeight else MeasureSpec.getSize(h)),MeasureSpec.EXACTLY) else h) }
@@ -204,13 +204,17 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     var loaded by remember{mutableStateOf(false)}
     var baseline by remember{mutableStateOf<Map<String,String>?>(null)}
     var submitted by remember{mutableStateOf(false)}
+    var submittedName by remember{mutableStateOf(link.name)}
+    var verifying by remember{mutableStateOf(false)}
+    var verified by remember{mutableStateOf<String?>(null)}
+    val scope=rememberCoroutineScope()
     val snackbar=remember{SnackbarHostState()}
     LaunchedEffect(vm){vm.openShortcutEditor(link.id)}
     LaunchedEffect(state.editor,state.accountLoading,state.pluginLoading){
         val form=state.editor
         if(form!=null&&!state.accountLoading&&!state.pluginLoading&&baseline==null){baseline=form.fields.associate{it.name to it.value};loaded=true}
         if(form!=null) view.dirty=baseline?.let{old->form.fields.any{it.type!="hidden"&&it.value!=old[it.name].orEmpty()}}?:false
-        if(loaded&&submitted&&form==null&&!state.writeUncertain){view.model.saved(link.name);view.dismissAfterSave()}
+        if(loaded&&submitted&&form==null&&!state.writeUncertain){view.model.saved(submittedName);view.dismissAfterSave()}
     }
     SideEffect{view.busy=submitted&&state.loading;view.discardAction={state.editor?.let{drafts.remove(repo.backendAddress,it)};vm.closeEditor()}}
     LaunchedEffect(state.primarySaved){if(state.primarySaved){state.editor?.fields?.firstOrNull{it.name=="name"}?.value?.let(view.model::saved)}}
@@ -219,9 +223,24 @@ class ChannelSheetView internal constructor(context: Context, internal val model
         if(state.primarySaved)Text("基本信息已保存；只重试账户配置",Modifier.padding(horizontal=16.dp),color=Warning)
         if(state.writeUncertain)Text("保存结果未知，请先核对后台配置，勿重复提交。密钥状态无法从掩码判断。",Modifier.padding(16.dp),color=Warning)
         state.message?.let{Text(it,Modifier.padding(horizontal=16.dp),color=Danger)}
+        if(state.writeUncertain) TextButton(enabled=!verifying,onClick={scope.launch {
+            verifying=true
+            try {
+                val document=state.document ?: error("请关闭后重新读取通道配置")
+                val latest=repo.paymentEditor("channels", NativeAction("编辑通道", "ajax_pay.php?act=getChannel&id=${link.id}"), document)
+                val current=latest.fields.associate{it.name to it.value}
+                val fields=state.editor?.fields.orEmpty().filter{!it.sensitive && it.type!="hidden" && !it.name.startsWith("account::")}
+                val matching=fields.count{current[it.name]==it.value}
+                verified="已重新读取：基本信息 ${matching}/${fields.size} 项与本次填写一致。账户配置及密钥请在后台核对；当前仍禁止重复提交。"
+            } catch(e:CancellationException){throw e}
+            catch(e:Exception){verified="核对失败：${e.message}"}
+            finally{if(currentCoroutineContext().isActive)verifying=false}
+        }}){Text(if(verifying)"核对中…" else "核对当前配置")}
+        verified?.let{Text(it,Modifier.padding(horizontal=16.dp),color=Muted,fontSize=12.sp)}
+
         val form=state.editor
         when{
-            form!=null->Box(Modifier.weight(1f)){PaymentEditorScreen(form.copy(fields=form.fields.map{if(state.loading||(state.primarySaved&&!it.name.startsWith("account::")))it.copy(readOnly=true)else it}),state.loading||state.pluginLoading||state.accountLoading,{view.requestDismiss()},vm::updateEditorField,{f,v->submitted=true;vm.submit(f,v)}, {},snackbar,state.routeChannels,state.routeStats,vm::appendRoute,uncertain=state.writeUncertain)}
+            form!=null->Box(Modifier.weight(1f)){PaymentEditorScreen(form.copy(fields=form.fields.map{if(state.loading||(state.primarySaved&&!it.name.startsWith("account::")))it.copy(readOnly=true)else it}),state.loading||state.pluginLoading||state.accountLoading,{view.requestDismiss()},vm::updateEditorField,{f,v->submittedName=v["name"].orEmpty().ifBlank{submittedName};submitted=true;vm.submit(f,v)}, {},snackbar,state.routeChannels,state.routeStats,vm::appendRoute,uncertain=state.writeUncertain)}
             state.loading->Box(Modifier.weight(1f).fillMaxWidth(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
             else->Column(Modifier.padding(16.dp)){Text(state.loadError?:"无法读取通道编辑表单",color=Danger);TextButton(onClick={vm.openShortcutEditor(link.id)}){Text("重试")};TextButton(onClick={view.requestDismiss()}){Text("关闭")}}
         }

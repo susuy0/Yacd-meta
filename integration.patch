@@ -9684,7 +9684,7 @@ index 88fe6a16845b615376d66c4e3dfa512d56e652ea..e44f701772efd6c9eafc7aded3e22a54
          }
          String fileName = FileLoader.getDocumentFileName(messageObject.getDocument());
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
-index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be8855776631 100644
+index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85d16d4136 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 @@ -919,7 +919,7 @@ public class ChatActivityEnterView extends FrameLayout implements
@@ -9746,7 +9746,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4777,7 +4781,66 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -4777,7 +4781,58 @@ public class ChatActivityEnterView extends FrameLayout implements
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
@@ -9755,20 +9755,12 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
 +    public void setFutoonChannelBar(View view) {
 +        if (futoonChannelBar != null) removeView(futoonChannelBar);
 +        futoonChannelBar = view;
-+        addView(view, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, Gravity.TOP));
-+        setClipToPadding(false);
++        com.futoonpay.admin.ChannelComposerHost.attach(this, view, futoonChannelBarHeight);
 +    }
 +    public void setFutoonChannelBarHeight(int pixels) {
 +        if (futoonChannelBarHeight == pixels) return;
 +        futoonChannelBarHeight = Math.max(0, pixels);
-+        setPadding(getPaddingLeft(), futoonChannelBarHeight, getPaddingRight(), getPaddingBottom());
-+        if (futoonChannelBar != null) {
-+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams)futoonChannelBar.getLayoutParams();
-+            lp.height = futoonChannelBarHeight;
-+            lp.topMargin = -futoonChannelBarHeight;
-+            futoonChannelBar.setLayoutParams(lp);
-+        }
-+        requestLayout();
++        com.futoonpay.admin.ChannelComposerHost.resize(this, futoonChannelBar, futoonChannelBarHeight);
 +    }
 +
 +    private boolean isFutoonComposer() {
@@ -9813,7 +9805,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -8114,7 +8177,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8114,7 +8169,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                      }
                  }
              }
@@ -9822,7 +9814,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8188,14 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8125,14 +8180,14 @@ public class ChatActivityEnterView extends FrameLayout implements
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }
@@ -9839,7 +9831,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
                  if (animated) {
                      if (runningAnimationType == 1 && caption == null || runningAnimationType == 3 && caption != null) {
                          return;
-@@ -11578,20 +11641,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -11578,20 +11633,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  }, null);
              }
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_buttonTypeRequestGeoLocation.class)) {
@@ -9861,7 +9853,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) {
              SendMessagesHelper.getInstance(currentAccount).sendCallback(true, messageObject, button, parentFragment);
          } else if (buttonTypeSwitchInline != null) {
-@@ -14564,7 +14614,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14564,7 +14606,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              if (botCommandsMenuButton != null) {
                  botWebViewButton.setMeasuredButtonWidth(botCommandsMenuButton.getMeasuredWidth());
              }
@@ -9870,16 +9862,16 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be88
              measureChild(botWebViewButton, widthMeasureSpec, heightMeasureSpec);
          }
  //        if (botWebViewMenuContainer != null) {
-@@ -15646,7 +15696,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15646,7 +15688,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          if (topView != null) {
              final float y = getMeasuredHeight() - animatorInputFieldHeight.getFactor();
  
 -            topView.setTranslationY(y - topView.getMeasuredHeight() * visibility);
-+            topView.setTranslationY(y - topView.getMeasuredHeight() * visibility - futoonChannelBarHeight);
++            topView.setTranslationY(com.futoonpay.admin.ChannelComposerHost.replyTranslation(getMeasuredHeight(), animatorInputFieldHeight.getFactor(), topView.getMeasuredHeight(), visibility, futoonChannelBarHeight));
              topView.setVisibility(visibility > 0 ? VISIBLE : GONE);
          }
  
-@@ -15664,7 +15714,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15664,7 +15706,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              (animatorTopViewVisibility.getValue() ? 1 : 0):
              animatorTopViewVisibility.getFloatValue();
  

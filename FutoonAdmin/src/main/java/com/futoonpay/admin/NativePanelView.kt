@@ -206,7 +206,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     } }
     BackHandler { if (!navigator.pop()) bridge.collapse() }
     CompositionLocalProvider(LocalPanelNavigation provides navigation, LocalPanelWorkflows provides workflows, LocalWorkflowCopy provides bridge::copy,
-        LocalChannelOrderFound provides { channel: String -> bridge.call("ui.channel.order", JSONObject().put("channel", channel).put("dialog", chat.dialog).put("topic", chat.topic).toString()); Unit }) {
+        LocalChannelOrderFound provides { channel: String -> runCatching { bridge.call("ui.channel.order", JSONObject().put("channel", channel).put("dialog", chat.dialog).put("topic", chat.topic).toString()) }; Unit }) {
         PanelOverlayHost {
             Column(Modifier.fillMaxSize().background(Mist)) {
                 if (state.authStage != AuthStage.AUTHENTICATED) Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(CardColor).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -58,13 +58,13 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         setOnClickListener { action() }
         layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply { setMargins(dp(2), 0, dp(2), 0) }
     }
-    private fun render(state: ChannelShortcutState) {
+    internal fun render(state: ChannelShortcutState) {
         if (closed) return
         removeAllViews(); setBackgroundColor(palette.surface.toArgb())
         val scale = resources.configuration.fontScale * palette.fontScale
         val large = scale >= 1.3f
         val linked = state.link != null
-        val height = if (!state.visible) 0 else if (!linked) 48 else if (large) (48 * scale).toInt() + 48 else 76
+        val height = if (!state.visible) 0 else if (!linked) 49 else if (large) (48 * scale).toInt() + 48 else 76
         visibility = if (height == 0) GONE else VISIBLE
         if (lastHeight != dp(height)) { lastHeight = dp(height); host.heightChanged(lastHeight) }
         if (height == 0) return
@@ -73,20 +73,25 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             val row = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
             row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { setPadding(dp(12),0,0,0); setOnClickListener { open("select") }; isFocusable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(0,-1,1f))
             row.addView(text("×", 24f, palette.secondaryText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "隐藏此话题的通道入口，可在 Futoonpay 设置恢复"; setOnClickListener { model.hide() }; isFocusable = true }, LayoutParams(dp(48),-1))
-            addView(row, LayoutParams(-1,dp(47))); return
+            addView(row, LayoutParams(-1,dp(48))); return
         }
         val body = LinearLayout(context).apply { orientation = HORIZONTAL }
         val left = LinearLayout(context).apply { orientation = VERTICAL }
         val info = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10),0,dp(4),0) }
         // Identity is a readable label, not a 27dp click target. Full name is repeated in the switch sheet.
         info.addView(text(state.link!!.name, 14f).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; contentDescription = "当前通道 ${state.link.name}，ID ${state.link.id}" }, LayoutParams(0,-1,1f))
-        info.addView(text(" #${state.link.id} · ${if (state.invalid) "需重新选择" else state.source}", 11f, palette.secondaryText.toArgb()), LayoutParams(-2,-1))
+        info.addView(text(" #${state.link.id} ", 11f, palette.secondaryText.toArgb()), LayoutParams(-2,-1))
+        info.addView(text(if(state.invalid) "需重新选择" else state.source, 11f, if(state.source == "已记住") palette.secondaryText.toArgb() else palette.accentText.toArgb()).apply {
+            setPadding(dp(4),0,dp(4),0)
+            background=GradientDrawable().apply { cornerRadius=dp(8).toFloat(); setStroke(dp(1), if(state.source == "已记住") palette.divider.toArgb() else palette.accentText.toArgb()) }
+        }, LayoutParams(-2,dp(20)))
         left.addView(info, LayoutParams(-1,dp(if (large) 47 else 27)))
         val buttons = LinearLayout(context).apply { orientation = HORIZONTAL; setPadding(dp(6),0,dp(4),0) }
         buttons.addView(button("通道订单", 1f) { open("orders") }.apply { isEnabled = !state.invalid; alpha = if (isEnabled) 1f else .38f })
         val rate = if (state.loading) "更新中…" else if (state.error != null) "获取失败" else state.snapshot?.rateText ?: "—"
         val stamp = state.snapshot?.updated?.let { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(it)) }.orEmpty()
-        val rateLabel = "成功率 $rate\n近${state.window.label}${if (stamp.isBlank()) "" else " · $stamp"}"
+        val stale = state.snapshot?.updated?.let { System.currentTimeMillis() - it > 600_000 } == true
+        val rateLabel = "成功率 $rate\n近${state.window.label}${if (stamp.isBlank()) "" else " · $stamp"}${if (stale) " 已过期" else ""}"
         buttons.addView(button(rateLabel, if (large) 1f else 1.35f) { open("stats") }.apply { textSize = 12f * palette.fontScale; isEnabled = !state.invalid; alpha = if (isEnabled) 1f else .38f })
         buttons.addView(button("编辑通道", 1f) { open("edit") }.apply { isEnabled = !state.invalid; alpha = if (isEnabled) 1f else .38f })
         left.addView(buttons, LayoutParams(-1,dp(height - if (large) 48 else 28)))
