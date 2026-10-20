@@ -40,7 +40,14 @@ class ChatToolsUiTest {
             File("build/ui-screenshots/$name.png").apply { parentFile.mkdirs() }.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }; bitmap.recycle()
         }
     }
-    private fun save() { compose.onNodeWithText("保存", useUnmergedTree = true).performClick(); compose.waitUntil(5000) { compose.onAllNodesWithTag("chat-tools-editor").fetchSemanticsNodes().isEmpty() } }
+    private fun save() {
+        compose.onNodeWithText("保存", useUnmergedTree = true).performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithTag("chat-tools-editor").fetchSemanticsNodes().isEmpty() }
+        // Apply the host overlay's removal and the next page's layout before a
+        // coordinate click, rather than querying the old page's retained bounds.
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+    }
     @Test fun settingsAddsEditsAndDeletesAnExactTgidTag() {
         root(); compose.onNodeWithText("会话 Tag").performClick()
         compose.onNodeWithText("新增 Tag").performClick()
@@ -61,10 +68,17 @@ class ChatToolsUiTest {
         compose.onNodeWithText("一键回复").performClick(); compose.onNodeWithText("新增 Tab").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("查单"); save()
         compose.onNodeWithText("新增分类").performClick(); compose.onNode(hasSetTextAction()).performTextInput("付款凭证"); save()
-        compose.onNodeWithText("新增文案").performClick()
+        assertEquals("付款凭证", ChatToolsConfig.parse(bridge.saved).tabs.single().categories.single().title)
+        compose.onNodeWithText("新增文案").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
         // The panel inserts its dialog through a DisposableEffect; wait for that next
         // composition before asking for a field in the newly attached editor.
-        compose.waitUntil(5000) { compose.onAllNodesWithTag("chat-tools-editor").fetchSemanticsNodes().isNotEmpty() }
+        try { compose.waitUntil(5000) { compose.onAllNodesWithTag("chat-tools-editor").fetchSemanticsNodes().isNotEmpty() } }
+        catch (e: Exception) {
+            screenshot("failure-new-reply-editor")
+            println("Synthetic quick-reply configuration: " + bridge.saved)
+            println(compose.onRoot(useUnmergedTree = true).printToString())
+            throw e
+        }
         compose.onNodeWithText("编辑").performClick()
         compose.onNode(hasSetTextAction() and hasText("名称")).performScrollTo().performTextInput("索要凭证")
         compose.onNode(hasSetTextAction() and hasText("回复内容")).performTextInput("请提供付款凭证\n谢谢")
