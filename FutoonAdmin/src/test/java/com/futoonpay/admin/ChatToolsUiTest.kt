@@ -69,6 +69,9 @@ class ChatToolsUiTest {
         compose.onNode(hasSetTextAction()).performTextInput("查单"); save()
         compose.onNodeWithText("新增分类").performClick(); compose.onNode(hasSetTextAction()).performTextInput("付款凭证"); save()
         assertEquals("付款凭证", ChatToolsConfig.parse(bridge.saved).tabs.single().categories.single().title)
+        // The IO save can finish after the editor overlay is removed. Wait for
+        // the category selection and saving state before asserting the actual button.
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("新增文案") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("新增文案").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
         // The panel inserts its dialog through a DisposableEffect; wait for that next
         // composition before asking for a field in the newly attached editor.
