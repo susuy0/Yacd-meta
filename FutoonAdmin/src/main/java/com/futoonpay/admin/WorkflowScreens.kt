@@ -28,7 +28,6 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     var detail by mutableStateOf<MerchantSummary?>(null)
     var days by mutableIntStateOf(7)
     var balanceError by mutableStateOf<String?>(null)
-    fun edit(merchant: MerchantSummary) { model.setCurrentMerchant(merchant); model.openMerchantEditor(merchant.uid) }
     fun choose(action: MerchantAction) { model.setCurrentMerchant(action.merchant); balanceError = null; pending = action }
     fun showDetail(merchant: MerchantSummary) { detail = merchant; days = 7; model.loadMerchantDetailFlow(merchant.uid, 7) }
 }
@@ -37,9 +36,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     val model = actions.model
     val state by model.state.collectAsState()
     val scope = rememberCoroutineScope()
-    LaunchedEffect(chat.key, chat.telegramId) { if (actions.contextKey != chat.key) { actions.contextKey = chat.key; actions.pending = null; actions.detail = null; model.closeMerchantEditor() } }
+    LaunchedEffect(chat.key, chat.telegramId) { if (actions.contextKey != chat.key + "|" + chat.telegramId) { actions.contextKey = chat.key + "|" + chat.telegramId; actions.pending = null; actions.detail = null; model.closeMerchantEditor() } }
     LaunchedEffect(state.message) { state.message?.let { workflows.notice(it); workflows.refreshMerchant(); model.consumeMessage() } }
-    if (state.merchantEditorUid.isNotBlank()) MerchantProfileDialog(state, model::closeMerchantEditor, model::editMerchantField, model::saveMerchantEditor, { model.openMerchantEditor(state.merchantEditorUid) })
     actions.pending?.let { action ->
         MerchantActionDialog(action, { actions.pending = null }, state.refreshing || state.merchantBalanceUpdating, actions.balanceError, uncertain = action.merchant.uid in state.uncertainBalances, onVerify = { actions.pending = null; workflows.refreshMerchant(); model.loadMerchants(1, MerchantSearchFilters(column = "uid", value = action.merchant.uid)) }) { amount, group, end ->
             if (action.action in listOf("add", "reduce")) model.rechargeMerchant(action.merchant.uid, action.action, amount) { result ->
@@ -58,16 +56,24 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     }
     actions.detail?.let { merchant -> MerchantDetailDialog(merchant, state.merchantDetailFlow, state.merchantDetailLoading, { actions.detail = null }, actions.days, state.merchantDetailError,
         { days -> actions.days = days; model.loadMerchantDetailFlow(merchant.uid, days) },
-        { actions.detail = null; actions.edit(merchant) },
+        null,
         { actions.detail = null; model.offerBatch(merchantKeyRequest(listOf(merchant))) }) }
     BatchDialog(state.batch, model::startBatch, model::closeBatch, model::retryBatch)
 }
 
-@Composable internal fun CurrentMerchantCard(workflows: PanelWorkflows, actions: CurrentMerchantActions, chat: ChatScope, navigator: PanelNavigator, compact: Boolean = false) {
+@Composable internal fun CurrentMerchantCard(workflows: PanelWorkflows, actions: CurrentMerchantActions, chat: ChatScope, navigator: PanelNavigator, compact: Boolean = false, lockedMerchantId: String = "") {
     val state by workflows.state.collectAsState()
     val original by actions.model.state.collectAsState()
     val matched = state.merchant?.let { JSONObject(it).toMerchantSummary() }
     val merchant = matched
+    if (lockedMerchantId.isNotBlank() && (state.merchantLoading || merchant?.uid != lockedMerchantId)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (state.merchantLoading) CircularProgressIndicator(Modifier.size(24.dp))
+            Text(if (state.merchantLoading) "正在查询商户 $lockedMerchantId…" else state.merchantError ?: "商户信息不匹配，请重新查询", color = Muted)
+            if (!state.merchantLoading) OutlinedButton(onClick = { workflows.lookup("uid", lockedMerchantId, true, "会话快捷栏") }) { Text("重新查询") }
+        }
+        return
+    }
     var manual by remember(chat.key) { mutableStateOf(false) }
     var column by rememberSaveable { mutableStateOf("telegram_id") }
     var value by rememberSaveable(chat.key) { mutableStateOf(chat.telegramId) }
@@ -78,7 +84,6 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         PayCard(compact = true) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("PID ${merchant.uid} · ${merchant.username.ifBlank { "当前商户" }}", Modifier.weight(1f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                TextButton(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户", fontSize = 13.sp) }
                 IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "当前商户更多操作") }
             }
         }
@@ -109,8 +114,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 12.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
                 if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(enabled = !original.refreshing && !original.merchantEditorSaving, onClick = { actions.edit(merchant) }) { Text("编辑商户", fontSize = if (compact) 12.sp else 14.sp) }
-                    OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "商户操作", fontSize = if (compact) 12.sp else 14.sp) }
+                    OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "更多", fontSize = if (compact) 12.sp else 14.sp) }
                     if (compact) TextButton(onClick = { manual = true }) { Text("切换", fontSize = 12.sp) }
                 }
                 if (expanded) {
@@ -140,12 +144,12 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 }
             }
         }
-        if (!compact || merchant == null || state.manualMerchant) Row {
+        if (lockedMerchantId.isBlank() && (!compact || merchant == null || state.manualMerchant)) Row {
             if (!compact || merchant == null) TextButton(onClick = { manual = true }) { Text(if (merchant == null) "手动查询 TGID / PID" else "切换商户") }
             if (state.manualMerchant) TextButton(onClick = workflows::lookupAutomatic) { Text("恢复自动识别") }
         }
-        if (merchant != null && chat.dialog < 0 && chat.telegramId.isBlank()) TextButton(onClick = workflows::toggleGroupBinding, enabled = !state.localLoading) { Text(if (workflows.binding().isBlank()) "在本群记住此商户" else "解除本群商户绑定") }
-        TextButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp)); Text("商户开户") }
+        if (lockedMerchantId.isBlank() && merchant != null && chat.dialog < 0 && chat.telegramId.isBlank()) TextButton(onClick = workflows::toggleGroupBinding, enabled = !state.localLoading) { Text(if (workflows.binding().isBlank()) "在本群记住此商户" else "解除本群商户绑定") }
+        if (lockedMerchantId.isBlank()) TextButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp)); Text("商户开户") }
     }
     if (manual) PaySheet("手动查询商户", { manual = false }) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -93,7 +93,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     val link = state.link
     var page by remember { mutableStateOf(initial) }
     Column(Modifier.fillMaxSize().background(CardColor).imePadding()) {
-        if (page !in setOf("edit", "merchant-edit", "merchant-domains")) {
+        if (page !in setOf("edit", "merchant-domains")) {
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(when(page) { "orders" -> "通道订单"; "stats" -> "成功率"; "merchant-orders" -> "商户订单"; "merchant-settlements" -> "商户结算"; "merchant-select" -> "选择当前商户"; "edit-select" -> "选择要编辑的通道"; else -> "选择支付通道" }, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
@@ -261,20 +261,7 @@ private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
         CompositionLocalProvider(LocalPanelNavigation provides remember(view){shortcutNavigation(view)}){SettlementsScreen(original,vm)}
         BatchDialog(original.batch,vm::startBatch,vm::closeBatch,vm::retryBatch);return
     }
-    var loaded by remember{mutableStateOf(false)}
-    LaunchedEffect(vm){vm.setCurrentMerchant(merchant);vm.openMerchantEditor(merchant.uid)}
-    val form=original.merchantEditor
-    LaunchedEffect(form,original.merchantEditorLoading){
-        if(form!=null)loaded=true
-        if(loaded&&form==null&&!original.merchantEditorLoading&&!original.merchantEditorSaving){view.model.refreshMerchant();view.dismissAfterSave()}
-    }
-    SideEffect{
-        val baseline=original.merchantEditorOriginal?.fields.orEmpty().associate{it.name to it.value}
-        view.dirty=form?.fields.orEmpty().any{!it.readOnly&&it.type!="hidden"&&(!it.sensitive||it.value.isNotBlank())&&baseline[it.name]!=it.value}
-        view.busy=original.merchantEditorSaving
-        view.discardAction={vm.closeMerchantEditor()}
-    }
-    MerchantProfileScreen(original,{view.dismissAfterSave()},vm::editMerchantField,vm::saveMerchantEditor,{vm.openMerchantEditor(merchant.uid)})
+    Text("请从聊天快捷栏的更多打开商户操作", Modifier.padding(16.dp))
 }
 
 @Composable private fun ShortcutEditor(view:ChannelSheetView,link:ChannelLink){

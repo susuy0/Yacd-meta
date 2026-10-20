@@ -47,6 +47,13 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         reloadSettings()
         if (closed || sheet != null || !model.state.value.visible) return
         val state = model.state.value
+        if (kind == "merchant-more") {
+            val merchant = state.merchant ?: return
+            val scope = state.scope ?: return
+            runCatching { model.bridge.call("ui.channel.open", org.json.JSONObject().put("kind", kind).put("id", merchant.uid).put("dialog", scope.dialog).put("topic", scope.topic).toString()) }
+                .onFailure { Toast.makeText(context, it.message ?: "会话已变化，请重新打开", Toast.LENGTH_LONG).show() }
+            return
+        }
         val resolvedKind = when { kind.startsWith("merchant") -> kind; kind == "edit" && state.link == null && state.channels.isNotEmpty() -> "edit-select"; state.targets.isEmpty() && kind != "select" -> "select"; else -> kind }
         val view = ChannelSheetView(context, model, resolvedKind, host)
         sheet = view; host.showSheet(view, resolvedKind)
@@ -71,7 +78,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val column=LinearLayout(context).apply { orientation=VERTICAL }
         column.addView(text("${merchant.username.ifBlank { "当前商户" }} · ID ${merchant.uid} · TG ${state.telegramId}",13f).apply { setPadding(dp(10),0,dp(10),0);maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END;contentDescription="当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}" },LayoutParams(-1,dp(if(large)47 else 27)))
         val actions=LinearLayout(context).apply { orientation=HORIZONTAL;setPadding(dp(4),0,dp(4),0) }
-        listOf("编辑商户" to "merchant-edit", "商户订单" to "merchant-orders", "结算" to "merchant-settlements", "域名审核" to "merchant-domains").forEach { (label,kind) -> actions.addView(button(label,1f){open(kind)}) }
+        listOf("更多" to "merchant-more", "商户订单" to "merchant-orders", "结算" to "merchant-settlements", "域名审核" to "merchant-domains").forEach { (label,kind) -> actions.addView(button(label,1f){open(kind)}) }
         column.addView(actions,LayoutParams(-1,dp(height-if(large)47 else 27)))
         addView(column,LayoutParams(-1,dp(height)))
     }

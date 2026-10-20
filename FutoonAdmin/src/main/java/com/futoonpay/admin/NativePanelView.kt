@@ -149,6 +149,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     private fun navigatorEvidence(order: String, caption: String) { navigation.push(PanelRoute("evidence", module = JSONObject(order).put("_caption", caption).toString())) }
     fun openShortcutTarget(kind: String, id: String, order: String) {
         when (kind) {
+            "merchant-more" -> if (id.matches(Regex("[1-9][0-9]{0,18}"))) navigation.push(PanelRoute("merchant_more", merchantId = id, module = chat.key + "|" + chat.telegramId))
             "merchant" -> navigation.merchants(id)
             "merchant-orders" -> navigation.orders(merchantId = id)
             "merchant-settlements" -> navigation.settlements(id)
@@ -265,6 +266,37 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     val authState by auth.state.collectAsState()
     val modelKey = environment.adminBaseUrl + ":" + authState.accountName + ":" + route.id
     val owner = models.owner(modelKey)
+    if (route.kind == "merchant_more") {
+        if (route.module != chat.key + "|" + chat.telegramId) {
+            Column { PayTopBar("商户更多", back); Text("会话已变化，请返回当前会话重新打开", Modifier.padding(16.dp)) }
+            return
+        }
+        // Reuse the recognition card and its action dialogs, isolated from other panel lookups.
+        val scoped: PanelWorkflows = viewModel(viewModelStoreOwner = owner, key = "$modelKey:more", factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = PanelWorkflows(memory?.bridge ?: bridge) as T
+        })
+        val actionModel: AppViewModel = viewModel(viewModelStoreOwner = owner, key = "$modelKey:actions", factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(environment, loadOnStart = false, lockedMerchantId = route.merchantId) as T
+        })
+        val actions = remember(actionModel) { CurrentMerchantActions(actionModel) }
+        val scopedState by scoped.state.collectAsState()
+        LaunchedEffect(scopedState.notice) { scopedState.notice?.let { snackbar.showSnackbar(it); scoped.consumeNotice() } }
+        LaunchedEffect(scopedState.error) { scopedState.error?.let { snackbar.showSnackbar(it) } }
+        LaunchedEffect(scoped, chat.key, chat.telegramId) {
+            scoped.updateChat(chat)
+            scoped.lookup("uid", route.merchantId, true, "会话快捷栏").join()
+        }
+        CompositionLocalProvider(LocalPanelWorkflows provides scoped) {
+            Column(Modifier.fillMaxSize()) {
+                PayTopBar("商户更多", back)
+                LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(12.dp)) {
+                    item { CurrentMerchantCard(scoped, actions, chat, navigator, lockedMerchantId = route.merchantId) }
+                }
+            }
+            CurrentMerchantDialogs(actions, scoped, chat)
+        }
+        return
+    }
     if (route.kind == "recognition") { RecognitionScreen(workflows, merchantActions, chat, navigator, bridge); return }
     if (route.kind == "merchant_records") { MerchantRecordsScreen(route, workflows, back); return }
     if (route.kind == "merchant_opening") {

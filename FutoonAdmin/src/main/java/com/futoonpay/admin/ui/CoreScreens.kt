@@ -876,7 +876,6 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
             days = detailDays,
             error = state.merchantDetailError,
             onDays = { detailDays = it; viewModel.loadMerchantDetailFlow(merchant.uid, it) },
-            onEdit = { selectedMerchant = null; viewModel.openMerchantEditor(merchant.uid) },
             onResetKey = { selectedMerchant = null; viewModel.offerBatch(com.futoonpay.admin.data.merchantKeyRequest(listOf(merchant))) },
         )
     }
@@ -956,7 +955,6 @@ private fun MerchantCard(
             }
             HorizontalDivider(Modifier.padding(top = 11.dp), color = Line)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                item { TextButton(onClick = { onAction(MerchantAction("编辑商户", "edit", merchant)) }) { Text("编辑商户", fontSize = 12.sp) } }
                 item { TextButton(onClick = onDetail) { Text("运营概览", fontSize = 12.sp) } }
                 item {
                     TextButton(onClick = {

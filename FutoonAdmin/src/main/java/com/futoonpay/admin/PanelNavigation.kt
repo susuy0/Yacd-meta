@@ -51,7 +51,7 @@ internal class PanelNavigator : PanelNavigation {
             val saved = json.optJSONObject("stacks") ?: return@runCatching
             roots.keys.forEach { key -> val rows = saved.optJSONArray(key) ?: return@forEach
                 stacks[key] = (0 until minOf(rows.length(), 16)).mapNotNull { i -> val row = rows.getJSONObject(i); val kind = row.optString("kind")
-                    if (kind !in setOf("recognition", "orders", "merchants", "settlements", "more", "module", "domains", "settings", "evidence", "merchant_records")) null
+                    if (kind !in setOf("recognition", "orders", "merchants", "settlements", "more", "module", "domains", "settings", "evidence", "merchant_records", "merchant_more")) null
                     else PanelRoute(kind, row.optString("module"), row.optString("channelId"), row.optString("channelType"), row.optString("merchantId"), row.optString("id").ifBlank { UUID.randomUUID().toString() }, row.optString("orderId"), row.optString("queryColumn"), row.optString("queryValue"))
                 }
             }

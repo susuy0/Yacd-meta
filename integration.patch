@@ -14512,7 +14512,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..6c86541304b7b61b892491cec8dba92096450bd8 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..e25a16be2020f54f3bd53c817fa4c832040914ee 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
@@ -14520,7 +14520,7 @@ index 55d530f04eceaa33faa42b235a441f289255dbee..6c86541304b7b61b892491cec8dba920
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7195
++APP_VERSION_CODE=7196
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat

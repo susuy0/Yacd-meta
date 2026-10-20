@@ -112,7 +112,7 @@ with zipfile.ZipFile(path) as z:
     assert z.testzip() is None
     identity = manifest(z.read('AndroidManifest.xml'))
     assert identity['package'] == 'com.futoonpay.vinechat.beta'
-    assert identity['versionCode'] == 71959, identity
+    assert identity['versionCode'] == 71969, identity
     assert identity['application_label'] == '短信', identity
     assert identity['minSdkVersion'] == 23 and identity['targetSdkVersion'] == 36
     assert not identity.get('native_activities'), 'Standalone business activities must not return'
@@ -124,7 +124,7 @@ with zipfile.ZipFile(path) as z:
     dex = b''.join(z.read(n) for n in z.namelist() if n.endswith('.dex'))
     operations = ['chat.tools.read','ui.draft','local.read','local.write','delivery.read','orders.search','order.detail','merchant.lookup','merchant.balance','merchant.profile','form.save','evidence.draft','evidence.restore','ui.source','ocr.gallery','channel.test','module.editor','ui.channel.order','ui.channel.open','ui.channel.refresh']
     for operation in operations: assert operation.encode() + b'\0' in dex, operation
-    for label in ['通道订单', '选择支付通道', '全部关联通道 · 按通道分组分页', '仅本次使用', '会话快捷栏', '编辑商户', '商户订单', '域名审核']:
+    for label in ['通道订单', '选择支付通道', '全部关联通道 · 按通道分组分页', '仅本次使用', '会话快捷栏', '商户更多', '商户订单', '域名审核']:
         assert label.encode() + b'\0' in dex, 'Channel shortcuts missing: ' + label
     for descriptor in ['Lorg/telegram/ui/FutoonThemeBridge;', 'Lorg/telegram/ui/FutoonQuickReplies;', 'Lorg/telegram/ui/FutoonChatSettingsActivity;', 'Lorg/telegram/ui/FutoonSettingsHostActions;', 'Lorg/telegram/messenger/futoon/FutoonAutomation;']:
         assert descriptor.encode() + b'\0' in dex, descriptor

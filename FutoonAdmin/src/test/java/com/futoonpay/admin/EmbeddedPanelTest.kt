@@ -71,6 +71,57 @@ class EmbeddedPanelTest {
         screenshot("22-embedded-more")
         assertEquals(0, bridge.closed.get())
     }
+    @Test fun merchantMoreReusesRecognitionOperationsWithoutAnEditEntry() {
+        val fixture = WorkflowFixtureBridge()
+        val chat = ChatScope("私信", "5824870757", "私信", "fixture:5824870757:0", 5824870757)
+        navigator.push(PanelRoute("merchant_more", merchantId = "2806", module = chat.key + "|" + chat.telegramId))
+        screen { EmbeddedPanelRoot(environment(), fixture, navigator, chat, null, 0) }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("测试商户 · PID 2806").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("编辑商户").assertDoesNotExist()
+        compose.onNodeWithText("切换商户").assertDoesNotExist()
+        for (label in listOf("增加 CNY 余额", "扣除 CNY 余额", "封禁账号", "关闭支付", "关闭结算", "修改用户组", "重置密钥", "商户订单", "商户结算", "域名审核", "生成商户回复", "资金流水", "商户统计")) compose.onNodeWithText(label).assertExists()
+        screenshot("23-merchant-more-shared-operations")
+        compose.onNodeWithText("修改用户组").performScrollTo().performClick()
+        compose.onNodeWithText("商户 UID 2806", substring = true).assertExists()
+        assertTrue(fixture.calls.any { it.first == "merchant.lookup" && it.second.optString("column") == "uid" && it.second.optString("value") == "2806" })
+        assertFalse(fixture.calls.any { it.first in listOf("merchant.profile", "form.save", "merchant.balance") })
+        assertEquals(0, fixture.sent.get())
+    }
+    @Test fun merchantMoreRejectsAnotherMerchantReturnedByBackend() {
+        val fixture = WorkflowFixtureBridge { op, _ -> if (op == "merchant.lookup") """{"rows":[{"uid":"9999","username":"其他商户"}]}""" else null }
+        val chat = ChatScope("话题", "5824870757", "工单话题", "fixture:-100:12627", -100, 12627)
+        navigator.push(PanelRoute("merchant_more", merchantId = "2806", module = chat.key + "|" + chat.telegramId))
+        screen { EmbeddedPanelRoot(environment(), fixture, navigator, chat, null, 0) }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("商户信息不匹配，请重新查询").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("增加 CNY 余额").assertDoesNotExist()
+        compose.onNodeWithText("商户订单").assertDoesNotExist()
+        compose.onNodeWithText("重新查询").assertExists()
+    }
+    @Test fun merchantMoreBlocksAnOldConversationRoute() {
+        val fixture = WorkflowFixtureBridge()
+        val chat = ChatScope("其他话题", "5824870758", "工单话题", "fixture:-100:12628", -100, 12628)
+        navigator.push(PanelRoute("merchant_more", merchantId = "2806", module = "fixture:-100:12627|5824870757"))
+        screen { EmbeddedPanelRoot(environment(), fixture, navigator, chat, null, 0) }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("会话已变化，请返回当前会话重新打开").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("增加 CNY 余额").assertDoesNotExist()
+        assertFalse(fixture.calls.any { it.first == "merchant.lookup" && it.second.optString("column") == "uid" })
+    }
+    @Test fun compactRecognitionMerchantKeepsOnlyMoreAndOpensExistingOperations() {
+        val fixture = WorkflowFixtureBridge()
+        val workflows = PanelWorkflows(fixture)
+        val actions = CurrentMerchantActions(AppViewModel(environment(), loadOnStart = false))
+        val chat = ChatScope("私信", "5824870757", "私信", "fixture:5824870757:0", 5824870757)
+        screen {
+            androidx.compose.runtime.LaunchedEffect(Unit) { workflows.lookup("uid", "2806").join() }
+            PanelOverlayHost { androidx.compose.foundation.lazy.LazyColumn { item { CurrentMerchantCard(workflows, actions, chat, navigator, compact = true) } } }
+        }
+        compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("当前商户更多操作").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("编辑商户").assertDoesNotExist()
+        compose.onNodeWithContentDescription("当前商户更多操作").performClick()
+        compose.onNodeWithText("增加 CNY 余额").assertExists()
+        compose.onNodeWithText("编辑商户").assertDoesNotExist()
+        assertFalse(fixture.calls.any { it.first == "merchant.profile" })
+    }
     @Test fun viewOwnsLifecycleAndCanPauseReopenAndDestroy() {
         var panel: NativePanelView? = null
         screen { AndroidView(factory = { ctx -> NativePanelView(ctx, bridge).also { panel = it; it.onShown() } }, modifier = Modifier.fillMaxSize()) }
