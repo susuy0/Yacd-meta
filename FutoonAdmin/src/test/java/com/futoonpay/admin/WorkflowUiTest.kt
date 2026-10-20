@@ -62,29 +62,26 @@ class WorkflowUiTest {
             File("build/ui-screenshots/$name.png").apply { parentFile.mkdirs() }.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }; bitmap.recycle()
         }
     }
-    @Test fun allFiveTabsAreVisibleAndMerchantCanBeEditedImmediatelyAfterRecognition() {
+    @Test fun allFiveTabsRemainVisibleAndRecognizedMerchantUsesMoreWithoutEditing() {
         root()
         listOf("识别", "订单", "商户", "结算", "更多").forEach { compose.onNode(hasText(it) and hasClickAction()).assertIsDisplayed() }
         compose.onNode(hasText("识别") and hasClickAction()).performClick()
-        compose.waitUntil(5000) { compose.onAllNodesWithText("编辑商户").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("当前商户更多操作").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("截图 OCR / 二维码").assertIsDisplayed()
-        compose.onNodeWithText("编辑商户").assertIsDisplayed().performClick()
-        compose.waitUntil(5000) { compose.onAllNodesWithText("test@example.com").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("编辑商户 · PID 1011").assertIsDisplayed()
-        compose.onNodeWithText("test@example.com").performTextReplacement("new@example.com")
-        compose.onNodeWithText("保存资料").assertIsDisplayed().assertIsEnabled().performClick()
+        compose.onNodeWithText("编辑商户").assertDoesNotExist()
+        compose.onNodeWithContentDescription("当前商户更多操作").performClick()
+        compose.onNodeWithText("编辑商户").assertDoesNotExist()
+        compose.onNodeWithText("测试商户 · PID 1011").assertExists()
+        for (label in listOf("增加 CNY 余额", "扣除 CNY 余额", "修改用户组", "重置密钥", "商户订单", "商户结算", "域名审核")) compose.onNodeWithText(label).assertExists()
+        compose.onNodeWithText("修改用户组").performScrollTo().performClick()
+        compose.onNodeWithText("商户 UID 1011").assertIsDisplayed()
+        compose.onNodeWithText("用户组 GID").performTextInput("3")
+        compose.onNodeWithText("确认").assertIsEnabled()
+        compose.onNodeWithText("取消").performClick()
+        compose.onNodeWithText("商户 UID 1011").assertDoesNotExist()
         assertEquals(0, requests.count { it.url.queryParameter("act") == "editUser" })
-        compose.onNodeWithText("确认保存").performClick()
-        try { compose.waitUntil(5000) { compose.onAllNodesWithText("编辑商户 · PID 1011").fetchSemanticsNodes().isEmpty() } }
-        catch (error: Throwable) {
-            screenshot("failed-merchant-save")
-            println(compose.onRoot(useUnmergedTree = true).printToString())
-            println("Fixture requests: " + requests.map { it.url.toString() })
-            throw error
-        }
-        assertEquals(1, requests.count { it.url.queryParameter("act") == "editUser" })
-        assertEquals("1011", requests.first { it.url.queryParameter("act") == "editUser" }.url.queryParameter("uid"))
-        screenshot("23-recognition-and-direct-merchant-edit")
+        assertFalse(bridge.calls.any { it.first in listOf("merchant.profile", "form.save") })
+        screenshot("23-recognition-merchant-more")
     }
     @Test fun merchantTabHasBothCurrentConversationAndOriginalFullList() {
         root()
