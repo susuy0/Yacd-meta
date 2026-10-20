@@ -9214,7 +9214,7 @@ index 58ea803470b147c6bc8583d92548482d90b62f64..39a4ca1997c683686124cff69f759923
                      selectedParticipant = null;
                      return;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
-index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..6341daaf7bd302c6ba273a85ada97561ccdc7c60 100644
+index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..ec4c7e621f86e66c577d8ec87735fe271f204625 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 @@ -1212,6 +1212,8 @@ public class ChatActivity extends BaseFragment implements
@@ -9360,7 +9360,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..6341daaf7bd302c6ba273a85ada97561
          ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
          Timer.finish(t);
 +        if (currentEncryptedChat == null && chatMode == MODE_DEFAULT && !isInPreviewMode()) {
-+            futoonPanel = new FutoonPanel(this, contentView, currentAccount);
++            futoonPanel = new FutoonPanel(this, contentView, currentAccount, chatActivityEnterView);
 +            bindFutoonContext();
 +        }
  
@@ -9684,7 +9684,7 @@ index 88fe6a16845b615376d66c4e3dfa512d56e652ea..e44f701772efd6c9eafc7aded3e22a54
          }
          String fileName = FileLoader.getDocumentFileName(messageObject.getDocument());
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
-index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8ac51711e9 100644
+index a8f9973061553dce80d45a1c16984e7ff8145312..d8db4b293494d2e36acddcbfd2a7be8855776631 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 @@ -919,7 +919,7 @@ public class ChatActivityEnterView extends FrameLayout implements
@@ -9746,10 +9746,31 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8a
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4777,7 +4781,45 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -4777,7 +4781,66 @@ public class ChatActivityEnterView extends FrameLayout implements
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
++    private View futoonChannelBar;
++    private int futoonChannelBarHeight;
++    public void setFutoonChannelBar(View view) {
++        if (futoonChannelBar != null) removeView(futoonChannelBar);
++        futoonChannelBar = view;
++        addView(view, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, Gravity.TOP));
++        setClipToPadding(false);
++    }
++    public void setFutoonChannelBarHeight(int pixels) {
++        if (futoonChannelBarHeight == pixels) return;
++        futoonChannelBarHeight = Math.max(0, pixels);
++        setPadding(getPaddingLeft(), futoonChannelBarHeight, getPaddingRight(), getPaddingBottom());
++        if (futoonChannelBar != null) {
++            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams)futoonChannelBar.getLayoutParams();
++            lp.height = futoonChannelBarHeight;
++            lp.topMargin = -futoonChannelBarHeight;
++            futoonChannelBar.setLayoutParams(lp);
++        }
++        requestLayout();
++    }
++
 +    private boolean isFutoonComposer() {
 +        return org.telegram.messenger.BuildVars.FUTOON_LITE && parentFragment != null && !isStories && !isLiveComment;
 +    }
@@ -9792,7 +9813,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8a
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -8114,7 +8156,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8114,7 +8177,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                      }
                  }
              }
@@ -9801,7 +9822,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8a
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8167,14 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8125,14 +8188,14 @@ public class ChatActivityEnterView extends FrameLayout implements
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }
@@ -9818,7 +9839,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8a
                  if (animated) {
                      if (runningAnimationType == 1 && caption == null || runningAnimationType == 3 && caption != null) {
                          return;
-@@ -11578,20 +11620,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -11578,20 +11641,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  }, null);
              }
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_buttonTypeRequestGeoLocation.class)) {
@@ -9840,6 +9861,33 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..4e1ed1bdd32136fb76242842a3dd3f8a
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) {
              SendMessagesHelper.getInstance(currentAccount).sendCallback(true, messageObject, button, parentFragment);
          } else if (buttonTypeSwitchInline != null) {
+@@ -14564,7 +14614,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+             if (botCommandsMenuButton != null) {
+                 botWebViewButton.setMeasuredButtonWidth(botCommandsMenuButton.getMeasuredWidth());
+             }
+-            botWebViewButton.getLayoutParams().height = getMeasuredHeight() - dp(2);
++            botWebViewButton.getLayoutParams().height = getMeasuredHeight() - futoonChannelBarHeight - dp(2);
+             measureChild(botWebViewButton, widthMeasureSpec, heightMeasureSpec);
+         }
+ //        if (botWebViewMenuContainer != null) {
+@@ -15646,7 +15696,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+         if (topView != null) {
+             final float y = getMeasuredHeight() - animatorInputFieldHeight.getFactor();
+ 
+-            topView.setTranslationY(y - topView.getMeasuredHeight() * visibility);
++            topView.setTranslationY(y - topView.getMeasuredHeight() * visibility - futoonChannelBarHeight);
+             topView.setVisibility(visibility > 0 ? VISIBLE : GONE);
+         }
+ 
+@@ -15664,7 +15714,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+             (animatorTopViewVisibility.getValue() ? 1 : 0):
+             animatorTopViewVisibility.getFloatValue();
+ 
+-        return fieldHeight + (topView != null ? topView.getMeasuredHeight() : 0) * topViewVisibility;
++        return futoonChannelBarHeight + fieldHeight + (topView != null ? topView.getMeasuredHeight() : 0) * topViewVisibility;
+     }
+ 
+ 
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
 index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..61b96ab65d4cfd88eadc4bea358bc31bcacdb032 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
@@ -10991,10 +11039,10 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8c5ee34a383ff16a1e44dffc0fc6783f394b2b18
+index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a2957a25e00
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,71 @@
 +package org.telegram.ui;
 +
 +import android.content.Context;
@@ -11028,7 +11076,9 @@ index 0000000000000000000000000000000000000000..8c5ee34a383ff16a1e44dffc0fc6783f
 +        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() { @Override public void onItemClick(int id) { if (id == -1 && tools != null) tools.handleBack(); } });
 +        FutoonChatPreferences preferences = FutoonChatPreferences.get(currentAccount);
 +        actions = new FutoonSettingsHostActions(this, currentAccount, () -> { if (tools != null) tools.reloadSettings(); });
-+        tools = new ChatToolsView(context, new ChatToolsHostBridge() {
++        tools = new ChatToolsView(context, new com.futoonpay.admin.ChannelChatToolsHostBridge() {
++            public String channelAccountScope() { return currentAccount+":"+UserConfig.getInstance(currentAccount).getClientUserId(); }
++            public String channelBackendAddress() { return new org.telegram.messenger.futoon.FutoonStore(currentAccount).address(); }
 +            public String load() { return preferences.raw(); }
 +            public void save(String json) throws Exception { preferences.save(currentAccount, json); AndroidUtilities.runOnUIThread(() -> { if (tools != null) FutoonThemeBridge.refresh(tools); }); }
 +            public String accountLabel() { return "当前 Telegram 账号 · ID " + UserConfig.getInstance(currentAccount).getClientUserId(); }
@@ -11152,10 +11202,10 @@ index 0000000000000000000000000000000000000000..fae8d2ebe47e3e395f2db2372cb48389
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b977fb8302
+index 0000000000000000000000000000000000000000..ada07b89bc62f35b1e1091d17abc09bbdbd6af5a
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,324 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -11170,6 +11220,11 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +import android.widget.*;
 +import com.futoonpay.admin.NativePanelBridge;
 +import com.futoonpay.admin.NativePanelView;
++import com.futoonpay.admin.NativeChannelBarView;
++import com.futoonpay.admin.ChannelSheetView;
++import com.futoonpay.admin.ChannelSheetHost;
++import org.telegram.ui.ActionBar.BottomSheet;
++import org.telegram.ui.Components.ChatActivityEnterView;
 +import com.futoonpay.admin.NativePanelOptionsBridge;
 +import com.futoonpay.admin.ExtensionOptions;
 +import com.futoonpay.admin.PanelOptions;
@@ -11209,6 +11264,9 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +    private static final class PendingImage { final MessageObject message; final int generation; final String order; PendingImage(MessageObject message,int generation,String order){this.message=message;this.generation=generation;this.order=order;} }
 +    private final Map<String,PendingImage> downloading=new HashMap<>();
 +    private NativePanelView panel;
++    private NativeChannelBarView channelBar;
++    private BottomSheet channelSheet;
++    private ChannelSheetView channelSheetView;
 +    private FutoonApi api;
 +    private FutoonBusinessApi business;
 +    private JSONObject context=new JSONObject();
@@ -11229,7 +11287,7 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +                &&message.messageOwner.media.ttl_seconds==0&&!message.isSecretMedia();
 +    }
 +
-+    public FutoonPanel(ChatActivity host,FrameLayout parent,int account) {
++    public FutoonPanel(ChatActivity host,FrameLayout parent,int account,ChatActivityEnterView composer) {
 +        this.host=host;this.account=account;owner=UserConfig.getInstance(account).getClientUserId();store=new FutoonStore(account);deliveries=FutoonDeliveryTracker.get(account);
 +        Context c=parent.getContext();
 +        root=new FrameLayout(c);root.setClipChildren(true);root.setClipToPadding(true);parent.addView(root,new FrameLayout.LayoutParams(-1,-1));
@@ -11253,6 +11311,32 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +        });
 +        NotificationCenter nc=NotificationCenter.getInstance(account);nc.addObserver(this,NotificationCenter.fileLoaded);nc.addObserver(this,NotificationCenter.fileLoadFailed);nc.addObserver(this,NotificationCenter.updateInterfaces);
 +        applyOptions();
++        channelBar = new NativeChannelBarView(c, createBridge(), new ChannelSheetHost() {
++            public void heightChanged(int pixels) { composer.setFutoonChannelBarHeight(pixels); }
++            public void closeSheet() { if (channelSheet != null) channelSheet.dismiss(); }
++            public void showSheet(ChannelSheetView view, String kind) {
++                if (!valid() || paused || host.getParentActivity() == null || channelSheet != null) { view.forceClose(); channelBar.sheetDismissed(); return; }
++                boolean hadKeyboard = composer.isKeyboardVisible();
++                composer.hidePopup(false, false);
++                channelSheetView = view;
++                int height = (int)(AndroidUtilities.displaySize.y * (kind.equals("edit") ? .94f : kind.equals("orders") ? .64f : kind.equals("stats") ? .80f : .70f));
++                view.setPanelHeight(height);
++                FutoonThemeBridge.bind(view, view::setThemeColors, account);
++                BottomSheet sheet = new BottomSheet(host.getParentActivity(), true) {
++                    @Override public void dismiss() { if (view.requestClose()) super.dismiss(); }
++                    @Override public void onBackPressed() { view.handleBack(); }
++                };
++                sheet.setCustomView(view); sheet.setCanDismissWithSwipe(!kind.equals("edit"));
++                channelSheet = sheet;
++                if (host.showDialog(sheet, ignored -> {
++                    channelSheet = null; channelSheetView = null; channelBar.sheetDismissed();
++                    if (hadKeyboard && valid() && !paused && host.isLastFragment()) AndroidUtilities.runOnUIThread(composer::openKeyboard, 120);
++                }) == null) { view.forceClose(); sheet.dismiss(); channelBar.sheetDismissed(); channelSheet = null; channelSheetView = null; return; }
++                view.onShown();
++            }
++        });
++        composer.setFutoonChannelBar(channelBar);
++        FutoonThemeBridge.bind(channelBar, channelBar::setThemeColors, account);
 +    }
 +
 +    private int dp(float n){return AndroidUtilities.dp(n);}
@@ -11263,6 +11347,7 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +    private void savePanelState() { if (panel != null && options().getPanel().getRemember()) preferences().edit().putString(stateKey(),panel.navigationState()).putBoolean(stateKey()+":full",fullscreen).apply(); }
 +    private void releasePanel() { if (panel != null) { savePanelState(); panel.close(); root.removeView(panel); panel = null; } }
 +    private void applyOptions() {
++        if(channelBar!=null){channelBar.reloadSettings();FutoonThemeBridge.refresh(channelBar);}
 +        PanelOptions p = options().getPanel(); AppearanceOptions a = options().getAppearance();
 +        settingsRevision = FutoonChatPreferences.get(account).revision();
 +        ViewGroup.LayoutParams bp = ball.getLayoutParams(); bp.width = bp.height = dp(p.getEntrySize()); ball.setLayoutParams(bp); ball.setAlpha(p.getEntryOpacity()/100f);
@@ -11285,10 +11370,7 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +    private boolean valid(){return !destroyed&&owner==UserConfig.getInstance(account).getClientUserId()&&UserConfig.getInstance(account).isClientActivated();}
 +    private void toast(String s){Toast.makeText(root.getContext(),s,Toast.LENGTH_LONG).show();}
 +
-+    private void ensurePanel(){
-+        if(panel!=null)return;
-+        restoreDraftFiles();
-+        panel=new NativePanelView(root.getContext(),new NativePanelOptionsBridge(){
++    private NativePanelOptionsBridge createBridge() { return new NativePanelOptionsBridge(){
 +            public String settingsJson() { return FutoonChatPreferences.get(account).raw(); }
 +            public String address(){return store.address();}
 +            public String username(){return store.username();}
@@ -11299,7 +11381,7 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +            public android.graphics.Bitmap evidencePreview(String path){if(!valid()||!path.startsWith(root.getContext().getCacheDir().getAbsolutePath()+File.separator))return null;return ImageLoader.loadBitmap(path,null,320,320,true);}
 +            public void removeEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index>=0&&index<photos.size()){photos.remove(index);syncDraft();}});}
 +            public void editEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index<0||index>=photos.size())return;File original=photos.get(index);int gen=generation;new FutoonImageEditor(host.getParentActivity(),original,file->{if(valid()&&gen==generation&&index<photos.size()&&photos.get(index).equals(original)){photos.set(index,file);syncDraft();}},()->{}).show();});}
-+            public boolean hasSession(){try{ensureClient();return api.hasSession();}catch(Exception ignored){return false;}}
++            public boolean hasSession(){if(!valid())return false;try{ensureClient();return api.hasSession();}catch(Exception ignored){return false;}}
 +            public void configure(String address,String username)throws Exception{synchronized(FutoonPanel.this){String normalized=FutoonApi.normalizeAddress(address);store.address(normalized);store.username(username);api=new FutoonApi(normalized,store.session(normalized));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));generation++;}}
 +            public byte[] captcha()throws Exception{synchronized(FutoonPanel.this){ensureClient();return api.captcha();}}
 +            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);store.username(username);return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
@@ -11310,7 +11392,12 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +            public void selectEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->prepareEvidence(order,caption));}
 +            public void openGallery(){AndroidUtilities.runOnUIThread(FutoonPanel.this::openGallery);}
 +            public void sendEvidence(String order,String caption){AndroidUtilities.runOnUIThread(()->FutoonPanel.this.sendEvidence(order,caption));}
-+        }, dialogId+":"+topicId);
++        }; }
++
++    private void ensurePanel(){
++        if(panel!=null)return;
++        restoreDraftFiles();
++        panel=new NativePanelView(root.getContext(),createBridge(), dialogId+":"+topicId);
 +        fullscreen = options().getPanel().getRemember() ? preferences().getBoolean(stateKey()+":full",options().getPanel().getFull()) : options().getPanel().getFull();
 +        if (options().getPanel().getRemember()) panel.restoreNavigationState(preferences().getString(stateKey(),""));
 +        panel.setFullscreenHandler(()->{fullscreen=!fullscreen;resize();});
@@ -11337,7 +11424,7 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +
 +    public boolean isView(View view){return view==root;}
 +    public void onBottomInsetChanged(int inset){if(lastBottomInset==inset)return;lastBottomInset=inset;root.requestLayout();}
-+    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){applyContext();return;}boolean reopen=expanded;if(dialogId!=dialog||topicId!=topic)releasePanel();dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}if(reopen){ensurePanel();panel.setVisibility(View.VISIBLE);panel.onShown();}applyContext();if(panel!=null)panel.updateEvidenceCount(photos.size());}
++    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(channelBar!=null)channelBar.bindChat(label,dialog,topic);if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){applyContext();return;}boolean reopen=expanded;if(dialogId!=dialog||topicId!=topic)releasePanel();dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}if(reopen){ensurePanel();panel.setVisibility(View.VISIBLE);panel.onShown();}applyContext();if(panel!=null)panel.updateEvidenceCount(photos.size());}
 +    public void open(String text){if(destroyed)return;host.bindFutoonContext();ensurePanel();expanded=true;paused=false;ball.setVisibility(View.GONE);applyOptions();panel.setVisibility(View.VISIBLE);panel.onShown();resize();root.bringToFront();if(text!=null&&!text.isEmpty())panel.recognizeText(text,dialogId,topicId,sourceMessage,false);}
 +    public void recognizeSelected(String text,long messageId){sourceMessage=Math.max(0,messageId);open(text);}
 +    public void recognizeMessage(MessageObject message){if(message==null||message.messageOwner==null)return;ArrayList<MessageObject> messages=new ArrayList<>();messages.add(message);if(message.replyMessageObject!=null)messages.add(message.replyMessageObject);recognizeMessages(messages);}
@@ -11353,9 +11440,9 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +    public void collapse(){savePanelState();if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);if(!options().getPanel().getRemember())releasePanel();}
 +    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(240),fullscreen,keyboard,options().getPanel().getHeight());int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
-+    public void resume(){paused=false;applyOptions();if(expanded&&panel!=null)panel.onShown();}
-+    public void pause(){paused=true;savePanelState();if(panel!=null)panel.onHidden();}
-+    public void destroy(){if(destroyed)return;destroyed=true;generation++;NotificationCenter nc=NotificationCenter.getInstance(account);nc.removeObserver(this,NotificationCenter.fileLoaded);nc.removeObserver(this,NotificationCenter.fileLoadFailed);nc.removeObserver(this,NotificationCenter.updateInterfaces);releasePanel();ballImage.setImageDrawable(null);if(entryBitmap!=null){entryBitmap.recycle();entryBitmap=null;}if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);}
++    public void resume(){paused=false;if(channelBar!=null){host.bindFutoonContext();channelBar.onShown();}applyOptions();if(expanded&&panel!=null)panel.onShown();}
++    public void pause(){paused=true;if(channelBar!=null)channelBar.onHidden();savePanelState();if(panel!=null)panel.onHidden();}
++    public void destroy(){if(destroyed)return;destroyed=true;if(channelBar!=null){channelBar.close();channelBar=null;}generation++;NotificationCenter nc=NotificationCenter.getInstance(account);nc.removeObserver(this,NotificationCenter.fileLoaded);nc.removeObserver(this,NotificationCenter.fileLoadFailed);nc.removeObserver(this,NotificationCenter.updateInterfaces);releasePanel();ballImage.setImageDrawable(null);if(entryBitmap!=null){entryBitmap.recycle();entryBitmap=null;}if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);}
 +
 +    private void prepareEvidence(String raw,String caption){try{JSONObject order=new JSONObject(raw);String next=order.optString("trade_no");if(next.isEmpty())throw new IOException("缺少订单号");if(!activeOrder.isEmpty()&&!activeOrder.equals(next)){generation++;photos.clear();}activeOrder=next;JSONObject source=order.optJSONObject("_source");FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),caption,source==null?dialogId:source.optLong("dialog",dialogId));FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=source==null?sourceMessage:source.optLong("message");draft.sourceTopic=source==null?topicId:source.optLong("topic");syncDraft();}catch(Exception e){toast("订单凭证初始化失败："+e.getMessage());}}
 +    private void openGallery(){openImagePicker(false);}
@@ -11376,6 +11463,15 @@ index 0000000000000000000000000000000000000000..bcde74a585ae74f15aef1836392048b9
 +        if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");
 +        final String backend=store.address();final int requestGeneration=generation;
 +        if(operation.equals("chat.tools.read"))return FutoonChatPreferences.get(account).raw();
++        if(operation.equals("ui.channel.order") || operation.equals("ui.channel.open")) {
++            if(params.optLong("dialog")!=dialogId || params.optLong("topic")!=topicId) throw new IOException("会话已变化");
++            AndroidUtilities.runOnUIThread(()->{
++                if(!valid() || paused || requestGeneration!=generation || !backend.equals(store.address()) || params.optLong("dialog")!=dialogId || params.optLong("topic")!=topicId) return;
++                if(operation.equals("ui.channel.order")) { if(channelBar!=null)channelBar.fromOrder(params.optString("channel")); }
++                else { open(""); String kind=params.optString("kind"),order=params.optString("order"); if(kind.equals("evidence"))prepareEvidence(order,""); panel.openShortcutTarget(kind,params.optString("id"),order); }
++            },operation.equals("ui.channel.open") ? 180 : 0);
++            return "{}";
++        }
 +        if(operation.equals("ui.draft"))return onUi(requestGeneration,backend,()->{
 +            String key=account+":"+dialogId+":"+topicId+":"+context.optString("tgid");
 +            if(paused||!key.equals(params.optString("context"))||dialogId!=params.optLong("dialog")||topicId!=params.optLong("topic"))throw new IOException("当前会话已变化，请返回原会话填入文案");
@@ -14420,7 +14516,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..5f175d5d38293ef8ec259b69ba75af51e5869006 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..fc95e34edb4c3efaa2d2f6c26d36dc92ca3b2bf2 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
@@ -14428,7 +14524,7 @@ index 55d530f04eceaa33faa42b235a441f289255dbee..5f175d5d38293ef8ec259b69ba75af51
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7193
++APP_VERSION_CODE=7194
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat

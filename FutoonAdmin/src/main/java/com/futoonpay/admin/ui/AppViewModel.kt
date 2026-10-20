@@ -113,6 +113,7 @@ class AppViewModel(
     private val repositoryOverride: FutoonRepository? = null,
     loadOnStart: Boolean = true,
     initialAccountName: String = "管理员",
+    private val lockedChannelId: String = "",
 ) : ViewModel() {
     private val _state = MutableStateFlow(AppUiState(accountName = initialAccountName))
     val state: StateFlow<AppUiState> = _state.asStateFlow()
@@ -315,7 +316,9 @@ class AppViewModel(
         _state.update { it.copy(refreshing = false) }
     }
 
-    fun loadOrders(page: Int = 1, search: OrderSearchFilters = _state.value.orderSearch) = viewModelScope.launch {
+    fun loadOrders(page: Int = 1, search: OrderSearchFilters = _state.value.orderSearch) = loadScopedOrders(page, if (lockedChannelId.isBlank()) search else search.copy(channelId = lockedChannelId))
+
+    private fun loadScopedOrders(page: Int, search: OrderSearchFilters) = viewModelScope.launch {
         val generation = ++ordersGeneration
         orderChannelStatsGeneration += 1
         _state.update { it.copy(refreshing = true, ordersLoading = true, ordersError = null, message = null, orderSearch = search) }

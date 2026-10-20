@@ -188,7 +188,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
     }
     BackHandler(enabled = !picker || preview != null) { back() }
     val currentPreview = preview
-    val pageTitle = when (page) { "tags" -> "会话 Tag"; "replies", "categories", "replyList" -> "一键回复"; "opening" -> "开户文案"; "panel" -> "悬浮窗自定义"; "appearance" -> "外观"; "businessReplies" -> "业务回复模板"; "automation" -> "群自动化"; else -> "FutoonPay 设置" }
+    val pageTitle = when (page) { "tags" -> "会话 Tag"; "replies", "categories", "replyList" -> "一键回复"; "opening" -> "开户文案"; "channelShortcuts" -> "会话快捷栏"; "panel" -> "悬浮窗自定义"; "appearance" -> "外观"; "businessReplies" -> "业务回复模板"; "automation" -> "群自动化"; else -> "FutoonPay 设置" }
     LaunchedEffect(pageTitle) { (bridge as? ChatToolsHostBridge)?.settingsTitle(pageTitle) }
     if (picker) {
         if (currentPreview != null) {
@@ -264,7 +264,9 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             TextButton(shape = RoundedCornerShape(10.dp), onClick = { page = "categories" }, modifier = Modifier.weight(1f)) { Text(tab?.title ?: "Tab 已删除", maxLines = 1, overflow = TextOverflow.Ellipsis) }
             if (page == "replyList") Text(category?.title.orEmpty(), Modifier.weight(1f).align(Alignment.CenterVertically), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (data != null && page in setOf("panel", "appearance", "businessReplies", "automation")) {
+        if (data != null && page == "channelShortcuts") {
+            ChannelShortcutSettings(bridge as? ChannelChatToolsHostBridge, Modifier.weight(1f))
+        } else if (data != null && page in setOf("panel", "appearance", "businessReplies", "automation")) {
             // Host read/save errors and their retry action are rendered above once.
             // The extension page owns only its local form validation messages.
             ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, Modifier.weight(1f), ::back) { next, done -> save(data.copy(extensions = next), done) }
@@ -284,6 +286,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                     }
                 }
                 item { Text("Telegram 账号管理使用原版设置；付款后台连接、退出登录在悬浮窗「更多 › 后台设置」中操作。", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(4.dp)) }
+                item { ChatSettingRow("会话快捷栏", "通道关联、按会话开关与默认统计时间窗", Icons.Outlined.Tune, !loading && !saving) { page = "channelShortcuts" } }
                 item { ChatSettingRow("悬浮窗自定义", "高度、入口图片、Tab 顺序与状态记忆", Icons.Outlined.Tune, !loading && !saving) { page = "panel" } }
                 item { ChatSettingRow("外观", "主题、字号、圆角、透明度与遮罩", Icons.Outlined.Palette, !loading && !saving) { page = "appearance" } }
                 item { ChatSettingRow("业务回复模板", "${data?.extensions?.templates?.size ?: 0} 个模板 · 订单与商户变量", Icons.Outlined.Description, !loading && !saving) { page = "businessReplies" } }

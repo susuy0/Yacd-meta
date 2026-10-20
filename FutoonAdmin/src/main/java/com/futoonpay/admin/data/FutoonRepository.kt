@@ -252,6 +252,24 @@ class FutoonRepository(
         return json
     }
 
+    internal suspend fun shortcutChannel(id: String): ConfigurationChannel {
+        require(id.matches(Regex("[1-9][0-9]*")))
+        val json = api.jsonGet("ajax_pay.php?act=getChannel&id=$id", paymentPath("channels"))
+        val code = json.optInt("code", 0)
+        if (code !in setOf(0, 200)) throw ChannelUnavailableException(json.optString("msg", "通道不可用，请核对权限或重新选择"))
+        val data = json.optJSONObject("data") ?: json.takeIf { it.has("id") } ?: throw ChannelUnavailableException("通道不存在或无权限，请重新选择")
+        if (data.optString("id") != id) throw ChannelUnavailableException("后台返回的通道 ID 不一致")
+        return configurationChannel(data)
+    }
+
+    internal suspend fun shortcutSnapshot(id: String, window: MonitorWindow): ChannelSnapshot {
+        val json = requestChannelMonitor(id)
+        val candidates = json.rows().objectRows().ifEmpty { listOfNotNull(json.optJSONObject("data"), json.takeIf { it.has("id") || it.has("channel_id") }) }
+        val row = candidates.firstOrNull { it.optString("id", it.optString("channel_id")) == id }
+            ?: return ChannelSnapshot(window, null, null, null, null)
+        return parseChannelSnapshot(row, window)
+    }
+
     suspend fun channelStatistics(channelIds: Collection<String>): Map<String, OrderChannelStat> {
         val payload = requestChannelMonitor("")
         return mergeOrderChannelStats(channelIds, emptyMap(), parseOfficialChannelRates(payload)).stats

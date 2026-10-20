@@ -323,6 +323,17 @@ internal class PaymentAdminViewModel(
             .onFailure { error -> if (generation == loadGeneration) _state.update { it.copy(loading = false, loadError = error.message ?: "加载失败", message = error.message ?: "加载失败") } }
     }
 
+    fun openShortcutEditor(id: String) = viewModelScope.launch {
+        if (_state.value.loading) return@launch
+        _state.update { it.copy(loading = true, loadError = null, message = null) }
+        try {
+            val document = repository.paymentDocument("channels", query = id)
+            _state.update { it.copy(document = document, loading = false) }
+            openEditor(NativeAction("编辑通道", "ajax_pay.php?act=getChannel&id=$id")).join()
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) { _state.update { it.copy(loading = false, loadError = e.message ?: "无法读取通道配置") } }
+    }
+
     fun openAdd() {
         val document = _state.value.document ?: return
         val template = document.forms.filter { form ->

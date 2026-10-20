@@ -63,6 +63,8 @@ interface NativePanelBridge {
     fun sendEvidence(order: String, caption: String)
 }
 
+internal val LocalChannelOrderFound = staticCompositionLocalOf<((String) -> Unit)?> { null }
+
 internal data class RecognizedQuery(val value: String, val kind: String, val id: String = UUID.randomUUID().toString(), val source: MessageSource = MessageSource(), val ocr: Boolean = false, val error: String = "", val pointers: Map<String, MessageSource> = emptyMap())
 internal data class ChatScope(val label: String = "当前会话", val telegramId: String = "", val source: String = "", val key: String = "", val dialog: Long = 0, val topic: Long = 0, val ticket: String = "", val role: String = "")
 
@@ -145,6 +147,13 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     fun updateEvidenceCount(count: Int) { evidenceRevision++ }
     fun adoptEvidence(order: String, caption: String) { navigatorEvidence(order, caption) }
     private fun navigatorEvidence(order: String, caption: String) { navigation.push(PanelRoute("evidence", module = JSONObject(order).put("_caption", caption).toString())) }
+    fun openShortcutTarget(kind: String, id: String, order: String) {
+        when (kind) {
+            "merchant" -> navigation.merchants(id)
+            "channel" -> navigation.module("channels", channelId = id)
+            "evidence" -> navigatorEvidence(order, evidenceCaption(JSONObject(order)))
+        }
+    }
     fun handleBack(): Boolean { onBackPressedDispatcher.onBackPressed(); return true }
     fun onShown() { if (!closed) registry.currentState = Lifecycle.State.RESUMED }
     fun onHidden() { if (!closed) registry.currentState = Lifecycle.State.CREATED }
@@ -196,7 +205,8 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
         }
     } }
     BackHandler { if (!navigator.pop()) bridge.collapse() }
-    CompositionLocalProvider(LocalPanelNavigation provides navigation, LocalPanelWorkflows provides workflows, LocalWorkflowCopy provides bridge::copy) {
+    CompositionLocalProvider(LocalPanelNavigation provides navigation, LocalPanelWorkflows provides workflows, LocalWorkflowCopy provides bridge::copy,
+        LocalChannelOrderFound provides { channel: String -> bridge.call("ui.channel.order", JSONObject().put("channel", channel).put("dialog", chat.dialog).put("topic", chat.topic).toString()); Unit }) {
         PanelOverlayHost {
             Column(Modifier.fillMaxSize().background(Mist)) {
                 if (state.authStage != AuthStage.AUTHENTICATED) Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(CardColor).padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -448,6 +448,9 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     val workflows = com.futoonpay.admin.LocalPanelWorkflows.current
     if (detail != null) workflows?.rememberDetail(detail)
+    val channelFound = com.futoonpay.admin.LocalChannelOrderFound.current
+    LaunchedEffect(detail?.tradeNo, detail?.channelId) { detail?.channelId?.takeIf { it.isNotBlank() }?.let { channelFound?.invoke(it) } }
+
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             PayTopBar("订单详情", onDismiss)
