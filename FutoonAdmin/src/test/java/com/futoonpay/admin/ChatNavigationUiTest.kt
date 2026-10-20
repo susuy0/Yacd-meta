@@ -73,9 +73,11 @@ class ChatNavigationUiTest {
         compose.setContent { FutoonTheme { Column(Modifier.width(320.dp).height(200.dp).testTag("appearance-panel")) {
             PayTabs(options,selected){selected=it;calls+=it};Box(Modifier.weight(1f))
         } } }
-        compose.onNodeWithTag("chat-filter-refund").performScrollTo().performClick().assertIsSelected()
+        compose.onNodeWithTag("chat-filter-list").performScrollToNode(hasTestTag("chat-filter-refund"))
+        compose.onNodeWithTag("chat-filter-refund").performClick().assertIsSelected()
         assertEquals(listOf("refund"),calls)
-        compose.onNodeWithTag("chat-filter-all").performScrollTo().performClick().assertIsSelected()
+        compose.onNodeWithTag("chat-filter-list").performScrollToNode(hasTestTag("chat-filter-all"))
+        compose.onNodeWithTag("chat-filter-all").performClick().assertIsSelected()
         assertEquals(listOf("refund","all"),calls)
         screenshot("56-chat-filter-long-labels")
     }

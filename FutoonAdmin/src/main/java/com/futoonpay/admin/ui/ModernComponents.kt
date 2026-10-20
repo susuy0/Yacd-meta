@@ -71,7 +71,7 @@ internal fun ChatFilterTabs(options: List<Pair<String, String>>, selected: Strin
         val index = options.indexOfFirst { it.first == selected }
         if (index >= 0) scroll.animateScrollToItem(index)
     }
-    LazyRow(state = scroll, contentPadding = PaddingValues(horizontal = 12.dp), modifier = Modifier.fillMaxWidth().selectableGroup().background(CardColor), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    LazyRow(state = scroll, contentPadding = PaddingValues(horizontal = 12.dp), modifier = Modifier.fillMaxWidth().testTag("chat-filter-list").selectableGroup().background(CardColor), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         items(options, key = { it.first }) { (value, label) ->
             val active = selected == value
             Box(Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp, max = 240.dp).testTag("chat-filter-$value").selectable(active, role = Role.Tab, onClick = { onSelect(value) }), contentAlignment = Alignment.Center) {
