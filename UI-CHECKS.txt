@@ -1,28 +1,22 @@
-短信 / Futoon chat v0.8.5 商户与多通道快捷栏验证
-源码：47036d99d1dffedb15e62721aeef30c8eec0aea4
-GitHub Actions：39387033955
+短信 / Futoon chat v0.8.6 商户更多菜单验证
+源码：a640a2ff6756207dbbccf06155944b35e8171f57
+GitHub Actions：39394873477
 
-321 tests, 0 failures, 0 errors, 0 skipped; 48 suites
+326 tests, 0 failures, 0 errors, 0 skipped; 48 suites
 Android Lint: 0 errors, 37 warnings
-46 synthetic-fixture screenshots; narrow/regular merchant bars and dual merchant/channel bar visually inspected.
+47 synthetic-fixture screenshots.
 
-新增18项覆盖：
-- 私信TGID与工单话题身份接线，唯一匹配、多命中选择、错误TGID拒绝。
-- 话题切换、旧响应延迟和退出登录后的商户隔离。
-- 群多通道跨话题共用，账号/后台/群隔离。
-- 旧关联合并、重复ID去重、无效ID拒绝、显式清空不恢复旧记录。
-- 全部关联通道分页跨越边界，不查询未关联通道，不混入后台错误行。
-- 商户订单/结算筛选重置与翻页保持固定商户。
-- 域名列表与添加固定当前商户。
-- 编辑商户/商户订单/结算/域名审核四个按钮分别打开正确原生面板。
-- 320dp/390dp触控和文案，商户+多个通道同时可见，未关联工单话题仍保留通道管理。
+- 聊天栏“更多”传递正确商户/会话/话题，复用识别商户原操作菜单。
+- 保留商户订单、结算、域名审核三个独立原生入口。
+- 移除识别卡片、当前商户卡片、列表和详情中的直接编辑商户入口。
+- 更多菜单保留余额、账号/支付/结算开关、用户组、密钥、流水、统计和回复草稿。
+- 后台返回错误商户时不显示操作；会话变化时旧菜单不可操作。
+- 320dp/390dp四按钮与商户+多通道布局通过。
+- 原商户识别、多通道、订单/结算/域名固定商户、生命周期、发送/媒体/快速回复、凭证、开户、自动化和权限裁剪回归通过。
 
-原生命周期、发送/媒体/快速回复、商户编辑、凭证、开户、自动化和权限裁剪回归全部通过。
-完整Android构建、权限/组件/原生引擎审计通过。
-产物ZIP实际长度、SHA-256、CRC及CI APK/mapping校验值核验通过。
-APK v2签名与签名内容摘要、证书一致性、包名/版本/ABI及20个桥接操作核验通过。
+完整Android构建和权限/组件/原生引擎审计通过。
+APK与mapping CI校验值、ZIP长度/SHA-256/CRC、APK v2签名及内容摘要核验通过。
+APK：SMS-Futoon-v0.8.6-arm64.apk；40,961,858字节；71969；签名与v0.8.5一致。
+SHA-256：965b79cbe2a720629edf324a79265eeaf2a403a94261dca5329f0fcfeef24a0b
 
-APK：SMS-Futoon-v0.8.5-arm64.apk；40,959,928字节；71959；签名与v0.8.4一致。
-SHA-256：f6b9004f8b1a92bd77f2333bfeb2f32bd725fbb58d5dc34b873fd163e5a02e99
-
-仅Robolectric SDK35、合成数据与受控传输；未执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。Android17真机、系统键盘、相册裁剪、真实后台和FCM送达仍需实机联调。
+仅Robolectric SDK35、合成数据与受控传输；Android17真机、系统键盘、相册裁剪、真实后台和FCM送达未验证。
