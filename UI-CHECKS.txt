@@ -1,44 +1,28 @@
-短信 / Futoon chat v0.8.4 会话通道快捷栏验证
-源代码：55eda3173f0f438aef5d3e52f62da1abbdd37c6e
-构建：39373491768；独立安装包核验：39374718425
-两个工作流均已成功完成。
+短信 / Futoon chat v0.8.5 商户与多通道快捷栏验证
+源码：47036d99d1dffedb15e62721aeef30c8eec0aea4
+GitHub Actions：39387033955
 
-303 tests, 0 failures, 0 errors, 0 skipped; 46 suites
-Android Lint: 0 errors, 36 warnings
-43 synthetic-fixture screenshots
+321 tests, 0 failures, 0 errors, 0 skipped; 48 suites
+Android Lint: 0 errors, 37 warnings
+46 synthetic-fixture screenshots; narrow/regular merchant bars and dual merchant/channel bar visually inspected.
 
-本轮新增覆盖：
-- Telegram 账号 / 后台完整地址 / 会话 / 群话题隔离。
-- 记住关联优先、临时选择、订单上下文及切换时同步清除旧数据。
-- 原生登录 Cookie 保存/清除后，已打开会话中的入口即时更新。
-- 跨域、跨路径、过期 Cookie 与失效账号拒绝读取或写入。
-- 订单搜索、筛选重置、翻页仍锁定当前通道；真实假 HTTP 传输检查。
-- 仅使用目标通道监测行；错误 ID 拒绝、读取失败不伪装为零。
-- 五个统计时间范围；零值、空值和缺失值分开，不跨窗口借用数据。
-- 320dp / 390dp、深浅主题、大字体和横屏布局；真实 View 测量。
-- 输入框预留高度、回复栏位移及 ownerless BottomSheet 的测量/挂载生命周期。
-- 未保存编辑关闭确认、单项和批量写入期间关闭保护。
-- 原快速回复连续创建 Tab / 分类 / 文案及真实编辑器保存回归。
+新增18项覆盖：
+- 私信TGID与工单话题身份接线，唯一匹配、多命中选择、错误TGID拒绝。
+- 话题切换、旧响应延迟和退出登录后的商户隔离。
+- 群多通道跨话题共用，账号/后台/群隔离。
+- 旧关联合并、重复ID去重、无效ID拒绝、显式清空不恢复旧记录。
+- 全部关联通道分页跨越边界，不查询未关联通道，不混入后台错误行。
+- 商户订单/结算筛选重置与翻页保持固定商户。
+- 域名列表与添加固定当前商户。
+- 编辑商户/商户订单/结算/域名审核四个按钮分别打开正确原生面板。
+- 320dp/390dp触控和文案，商户+多个通道同时可见，未关联工单话题仍保留通道管理。
 
-继续通过：
-- 118 项已移除权限与图库访问行为检查。
-- 原发送键、媒体、快速回复、商户、开户草稿、凭证及后台契约。
-- 18 项群自动化调度，75 项悬浮窗几何。
-- 110 条 Android ICU 表达式和 5 个开户变量用例。
-- Java 编译、原生库和 APK 构建、移除组件/权限/引擎审计。
+原生命周期、发送/媒体/快速回复、商户编辑、凭证、开户、自动化和权限裁剪回归全部通过。
+完整Android构建、权限/组件/原生引擎审计通过。
+产物ZIP实际长度、SHA-256、CRC及CI APK/mapping校验值核验通过。
+APK v2签名与签名内容摘要、证书一致性、包名/版本/ABI及20个桥接操作核验通过。
 
-独立核验：
-- 原始 APK 和测试报告 ZIP 的实际长度、GitHub SHA-256、ZIP CRC。
-- 直接解析所有 JUnit XML、Lint XML 和截图数量。
-- CI SHA256SUMS 中 APK 和 mapping.txt 的校验值。
-- APK v2 签名、已签名内容摘要及上一版证书指纹。
-- 包名、71949、短信、ARM64、minSdk 23 / targetSdk 36。
-- 无独立业务 Activity、旧 HTML 资源和已移除的相机/录音/定位/视频库权限。
-- 20 个原生桥接操作及会话快捷栏关键文案。
-- 原生核心 9,893,208 字节；调用/录制引擎导出仍已移除。
+APK：SMS-Futoon-v0.8.5-arm64.apk；40,959,928字节；71959；签名与v0.8.4一致。
+SHA-256：f6b9004f8b1a92bd77f2333bfeb2f32bd725fbb58d5dc34b873fd163e5a02e99
 
-APK：SMS-Futoon-v0.8.4-arm64.apk；40,944,013 字节
-SHA-256：2df2821d4b8def7cfbfbcb9ed5af9512cd8fcbfac354298417eef030138e50e8
-签名与 v0.8.3 一致。核验由独立 GitHub Actions 执行；本地环境断开后未进行本地下载。
-
-范围：Robolectric SDK 35、合成数据及受控传输；没有执行真实开户、资金写入、密钥重置、Telegram 发送或机器人点击。Android 17 真机、系统键盘、相册裁剪、真实后台和 FCM 送达仍未实机联调。详细产物及作业信息见 BUILD.json。
+仅Robolectric SDK35、合成数据与受控传输；未执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。Android17真机、系统键盘、相册裁剪、真实后台和FCM送达仍需实机联调。

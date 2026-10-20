@@ -1,11 +1,12 @@
 {
-  "version": "0.8.4 conversation channel shortcuts",
-  "versionCode": 71949,
+  "version": "0.8.5 merchant shortcuts and group multi-channel associations",
+  "versionCode": 71959,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "source_baseline": "8f4892b6f64fffc0ec0899c6d653f88185aa6e60",
-  "source_commit": "55eda3173f0f438aef5d3e52f62da1abbdd37c6e",
-  "source_tree": "c5428ceac4a93dc0d32290da68624e50629ebdc0",
+  "patch_sha256": "8fbd5d64eca3d59c6d167144207349ab7f0a4e9eb1c191efe640807026e3089f",
+  "source_baseline": "9bce6fd16aa4c824bcc7241fe67381c60df2b872",
+  "source_commit": "47036d99d1dffedb15e62721aeef30c8eec0aea4",
+  "source_tree": "0bf511989f8170092c1526371842587a6f9ff6d0",
   "features": {
     "native_ui_only": true,
     "original_telegram_ui": "preserved except requested camera, location-sharing and video-editor controls",
@@ -49,59 +50,70 @@
     "conversation_channel_bar": true,
     "channel_orders_locked_to_selected_channel": true,
     "channel_success_rate_windows": 5,
-    "native_channel_editor": true,
+    "native_channel_editor": "choose a specific channel before editing",
     "account_backend_dialog_topic_isolation": true,
     "persistent_and_temporary_channel_selection": true,
     "real_native_cookie_session_refresh": true,
     "channel_sheet_dirty_and_mutation_close_guards": true,
-    "chat_bar_periodic_polling": false
+    "chat_bar_periodic_polling": false,
+    "automatic_peer_and_topic_merchant_lookup": true,
+    "merchant_shortcuts": [
+      "edit",
+      "orders",
+      "settlements",
+      "domain audit"
+    ],
+    "merchant_queries_pinned_after_filter_reset": true,
+    "manual_multi_channel_associations": true,
+    "group_channels_shared_by_topics": true,
+    "legacy_channel_links_merged": true,
+    "explicit_clear_does_not_resurrect_legacy_links": true,
+    "multi_channel_order_pagination": "grouped by associated channel; no unfiltered backend requests",
+    "multi_channel_rate_comparison": "per-channel values; no averaged percentages",
+    "long_stats_reads_not_restarted_by_timer": true
   },
   "previous_release": {
-    "version": "0.8.3 camera, location and video editor removal",
-    "versionCode": 71939,
-    "source_commit": "f71972b5607fe71cc5b95d7dada01c39f09b3ea8",
-    "apk_sha256": "c45d307bd339d598232012e4edf8b9e0b9dfed0f3bf8097235f65e755ad433c6",
+    "version": "0.8.4 conversation channel shortcuts",
+    "versionCode": 71949,
+    "source_commit": "55eda3173f0f438aef5d3e52f62da1abbdd37c6e",
+    "apk_sha256": "2df2821d4b8def7cfbfbcb9ed5af9512cd8fcbfac354298417eef030138e50e8",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
   },
   "validation": {
     "status": "apk_verified",
-    "workflow_run": 39373491768,
-    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39373491768",
+    "workflow_run": 39387033955,
+    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39387033955",
     "workflow_status": "completed",
     "workflow_conclusion": "success",
-    "verification_run": 39374718425,
-    "verification_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39374718425",
-    "verification_executor": "independent GitHub Actions job; local execution environment disconnected before final artifact download",
-    "core_checks": "passed",
-    "panel_audit": "passed",
     "native_tests": {
-      "tests": 303,
+      "tests": 321,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "suites": 46,
-      "screenshots": 43,
-      "lint_errors": 0,
-      "lint_warnings": 36,
-      "lint_hints": 0
+      "suites": 48,
+      "screenshots": 46,
+      "lint": {
+        "Error": 0,
+        "Fatal": 0,
+        "Warning": 37,
+        "Information": 0
+      },
+      "source_commit": "47036d99d1dffedb15e62721aeef30c8eec0aea4"
     },
     "jobs": {
-      "panel-ui": 118466522125,
-      "core-checks": 118466522424,
-      "native-admin": 118466522461,
-      "android": 118467850709
+      "native-admin": 118509347403,
+      "panel-ui": 118509347689,
+      "core-checks": 118509347885,
+      "android": 118511066882
     },
     "job_conclusions": {
+      "native-admin": "success",
       "panel-ui": "success",
       "core-checks": "success",
-      "native-admin": "success",
       "android": "success"
     },
-    "apk_component_native_engine_audit": "passed",
-    "apk_v2_signature_and_content_digest": "verified",
-    "ci_sha256sums": "APK and R8 mapping verified",
-    "test_environment": "Robolectric SDK 35, JVM Activity fakes and controlled synthetic Telegram/backend transport",
-    "device_backend": "Robolectric and controlled synthetic transport; Android 17 device, IME, live backend and FCM delivery not tested.",
+    "core_checks": "passed",
+    "panel_audit": "passed",
     "permission_dispatch_checks": 118,
     "automation_dispatch_checks": 18,
     "floating_geometry_checks": 75,
@@ -109,6 +121,12 @@
       "android_icu_patterns": 110,
       "opening_variable_cases": 5
     },
+    "apk_component_native_engine_audit": "passed",
+    "apk_v2_signature_and_content_digest": "verified",
+    "ci_sha256sums": "APK and R8 mapping verified",
+    "new_merchant_and_multi_channel_tests": 18,
+    "test_environment": "Robolectric SDK 35, JVM Activity fakes and controlled synthetic Telegram/backend transport",
+    "device_backend": "Android 17 device, IME, live backend and FCM delivery not tested",
     "no_live_test_actions": [
       "financial writes",
       "account creation",
@@ -118,8 +136,8 @@
     ]
   },
   "apk": {
-    "bytes": 40944013,
-    "sha256": "2df2821d4b8def7cfbfbcb9ed5af9512cd8fcbfac354298417eef030138e50e8",
+    "bytes": 40959928,
+    "sha256": "f6b9004f8b1a92bd77f2333bfeb2f32bd725fbb58d5dc34b873fd163e5a02e99",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -130,35 +148,28 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 20,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71949,
+    "versionCode": 71959,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.8.4-arm64.apk",
+    "filename": "SMS-Futoon-v0.8.5-arm64.apk",
     "same_signer_as_previous_release": true,
-    "push_mode": "development-no-fcm (existing build mode; push delivery not tested)",
-    "ci_sha256sums": "APK and R8 mapping verified"
+    "ci_sha256sums": "APK and R8 mapping verified",
+    "push_mode": "development-no-fcm (existing build mode; push delivery not tested)"
   },
   "artifacts": {
-    "apk": {
-      "id": 12242613720,
-      "name": "VineChat-Futoon-v0.8.4-native-development-no-fcm",
-      "zip_bytes": 60059485,
-      "zip_sha256": "65ab2e0069098e9c140371299110f6118aee6e058f4410c1c1b3c5600e1594cc"
-    },
     "native_reports": {
-      "id": 12242269522,
-      "name": "Futoon-v0.8.4-native-business-checks",
-      "zip_bytes": 3420973,
-      "zip_sha256": "a90d0f3e8e49edc7d51432d22829c52d8ab48b73bdd4af32dd38a3a8db21c11a"
+      "id": 12248216587,
+      "name": "Futoon-v0.8.5-native-business-checks",
+      "zip_bytes": 3466302,
+      "zip_sha256": "332fde0eb50d0516f1080693b978a520bcb14bf394478ce6bf2349b64fb50215"
     },
-    "verified_package": {
-      "id": 12242578744,
-      "name": "SMS-Futoon-v0.8.4-verified-arm64",
-      "zip_bytes": 39218852,
-      "zip_sha256": "30cf3dd2dbf51acfa3086e64c935bb4aed47d326ac0c5962b0e603803602e250",
-      "url": "https://github.com/susuy0/Yacd-meta/actions/runs/39374718425/artifacts/12242578744"
+    "apk": {
+      "id": 12247989032,
+      "name": "VineChat-Futoon-v0.8.5-native-development-no-fcm",
+      "zip_bytes": 60107496,
+      "zip_sha256": "835e53d64866502fc135fcd5e58763b9cafe37bac08cc86c349765efd8359730"
     }
   }
 }
