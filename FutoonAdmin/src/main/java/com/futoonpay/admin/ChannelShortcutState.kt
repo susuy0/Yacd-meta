@@ -23,7 +23,7 @@ internal class ChannelShortcutStore(context: Context, account: String) {
     var enabled: Boolean get() = prefs.getBoolean("enabled", true); set(v) { check(prefs.edit().putBoolean("enabled", v).commit()) }
     var window: MonitorWindow get() = MonitorWindow.entries.firstOrNull { it.key == prefs.getString("window", "5min") } ?: MonitorWindow.FIVE_MINUTES
         set(v) { check(prefs.edit().putString("window", v.key).commit()) }
-    fun hidden(scope: ChannelScope) = prefs.getBoolean("hidden:" + scope.key, false)
+    fun hidden(scope: ChannelScope) = prefs.getBoolean("hidden:" + scope.key, false) || (scope.association != scope && prefs.getBoolean("hidden:" + scope.association.key, false))
     fun hide(scope: ChannelScope, hidden: Boolean) { check(prefs.edit().putBoolean("hidden:" + scope.key, hidden).commit()) }
     fun link(scope: ChannelScope): ChannelLink? = prefs.getString("link:" + scope.key, null)?.let { runCatching { ChannelLink.parse(JSONObject(it)) }.getOrNull() }
     fun remember(scope: ChannelScope, value: ChannelLink) { check(prefs.edit().putString("link:" + scope.key, value.json().toString()).remove("hidden:" + scope.key).commit()) }

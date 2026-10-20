@@ -97,7 +97,8 @@ class ChannelSheetView internal constructor(context: Context, internal val model
             Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(when(page) { "orders" -> "通道订单"; "stats" -> "成功率"; "merchant-orders" -> "商户订单"; "merchant-settlements" -> "商户结算"; "merchant-select" -> "选择当前商户"; "edit-select" -> "选择要编辑的通道"; else -> "选择支付通道" }, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-                    if (link != null) Text("${link.name} #${link.id}", color = Muted, fontSize = 13.sp)
+                    if(page.startsWith("merchant")) Text(state.merchant?.let{"${it.username} · 商户 ${it.uid}"}?:"Telegram ID ${state.telegramId}",color=Muted,fontSize=13.sp)
+                    else if (link != null) Text("${link.name} #${link.id}", color = Muted, fontSize = 13.sp)
                 }
                 TextButton(onClick = close, modifier = Modifier.heightIn(min = 48.dp)) { Text("关闭") }
             }
@@ -273,7 +274,7 @@ private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
         view.busy=original.merchantEditorSaving
         view.discardAction={vm.closeMerchantEditor()}
     }
-    MerchantProfileScreen(original,{view.requestDismiss()},vm::editMerchantField,vm::saveMerchantEditor,{vm.openMerchantEditor(merchant.uid)})
+    MerchantProfileScreen(original,{view.dismissAfterSave()},vm::editMerchantField,vm::saveMerchantEditor,{vm.openMerchantEditor(merchant.uid)})
 }
 
 @Composable private fun ShortcutEditor(view:ChannelSheetView,link:ChannelLink){

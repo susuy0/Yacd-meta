@@ -83,7 +83,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val large = scale >= 1.3f
         val linked = state.targets.isNotEmpty()
         val merchantRow = state.telegramId.isNotBlank()
-        val showChannels = linked || !merchantRow
+        val showChannels = linked || !merchantRow || (state.scope?.dialog ?: 0) < 0
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
         val channelHeight = if (!showChannels) 0 else if (!linked || compact) 48 else if (large) (48 * scale).toInt() + 47 else 75
         val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) 48 else if (large) (48 * scale).toInt() + 47 else 75

@@ -59,7 +59,7 @@ class ConversationShortcutsTest {
         val s=resolved(model);assertEquals("2806",s.merchant?.uid);assertEquals("5824870757",s.merchant?.telegramId);assertEquals(listOf("5824870757"),seen);model.close()
     }
     @Test fun topicSwitchClearsOldMerchantAndRetainsTheGroupsChannelSet()=runBlocking{
-        val model=ChannelShortcutModel(context,bridge{id->rows(merchant(id,if(id=="111")"2806"else"2807"))})
+        val model=ChannelShortcutModel(context,bridge{id->rows(merchant(id,if(id=="111")"2806" else "2807"))})
         model.store.prefs.edit().clear().commit();model.store.replaceChannels(key(),listOf(ChannelLink("12","A"),ChannelLink("13","B")))
         model.bind("工单 A",-100,1,"111","话题");model.resume();assertEquals("2806",resolved(model).merchant?.uid)
         model.bind("工单 B",-100,2,"222","话题");assertNull(model.state.value.merchant);val s=resolved(model)
@@ -67,7 +67,7 @@ class ConversationShortcutsTest {
     }
     @Test fun delayedResponseFromAnOldTopicCannotPopulateTheNewTopic()=runBlocking{
         val started=CountDownLatch(1);val release=CountDownLatch(1)
-        val model=ChannelShortcutModel(context,bridge{id->if(id=="111"){started.countDown();check(release.await(5,TimeUnit.SECONDS))};rows(merchant(id,if(id=="111")"2806"else"2807"))})
+        val model=ChannelShortcutModel(context,bridge{id->if(id=="111"){started.countDown();check(release.await(5,TimeUnit.SECONDS))};rows(merchant(id,if(id=="111")"2806" else "2807"))})
         try{model.store.prefs.edit().clear().commit();model.bind("A",-100,1,"111");model.resume();assertTrue(started.await(3,TimeUnit.SECONDS))
             model.bind("B",-100,2,"222");assertEquals("2807",resolved(model).merchant?.uid);release.countDown();delay(100);assertEquals("2807",model.state.value.merchant?.uid)
         }finally{release.countDown();model.close()}
@@ -104,7 +104,7 @@ class ConversationShortcutsTest {
     }
     @Test fun unrelatedChannelFiltersAndBackendRowsAreRejected()=runBlocking{
         var calls=0;val repo=FutoonRepository(fixtureClient({calls++;200 to """{"total":1,"rows":[{"trade_no":"a","channel":"99"}]}"""}))
-        try{repo.associatedOrders(1,mapOf("channel"to"99"),setOf("12"));fail()}catch(_:IllegalArgumentException){};assertEquals(0,calls)
+        try{repo.associatedOrders(1,mapOf("channel" to "99"),setOf("12"));fail()}catch(_:IllegalArgumentException){};assertEquals(0,calls)
         try{repo.associatedOrders(1,emptyMap(),setOf("12"));fail()}catch(e:IllegalStateException){assertTrue(e.message.orEmpty().contains("其他通道"))}
     }
     @Test fun merchantOrdersAndSettlementsRemainPinnedAfterResetSearchAndPagination()=runBlocking{
@@ -114,8 +114,8 @@ class ConversationShortcutsTest {
         assertEquals(4,seen.size);assertTrue(seen.all{it["uid"]=="2806"})
     }
     @Test fun domainAuditFiltersAndAddUseTheRecognizedMerchantEvenAfterChangingSearch()=runBlocking{
-        val seen=mutableListOf<Pair<String,Map<String,String>>>();val repo=FutoonRepository(fixtureClient({request->seen+=request.url.queryParameter("act").orEmpty() to params(request.body);200 to """{"total":0,"rows":[]}"""}))
-        val vm=DomainAuditViewModel(repo,"2806",true);withTimeout(5000){vm.state.first{!it.loading}};vm.load(2,merchantId="999").join()
-        assertTrue(seen.isNotEmpty());assertTrue(seen.all{it.second["uid"]=="2806"});assertEquals("2806",vm.state.value.merchantId)
+        val seen=mutableListOf<Pair<String,Map<String,String>>>();val repo=FutoonRepository(fixtureClient({request->seen+=request.url.queryParameter("act").orEmpty() to params(request.body);200 to """{"code":0,"total":0,"rows":[]}"""}))
+        val vm=DomainAuditViewModel(repo,"2806",true);withTimeout(5000){vm.state.first{!it.loading}};vm.load(2,merchantId="999").join();vm.add("999","fixture.invalid").join()
+        assertTrue(seen.isNotEmpty());assertTrue(seen.all{it.second["uid"]=="2806"});assertEquals("2806",vm.state.value.merchantId);assertTrue(seen.any{it.first=="addDomain"})
     }
 }
