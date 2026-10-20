@@ -8433,6 +8433,122 @@ index a01edcfb8c34dc13cbe874b1c37fa124b34b253d..ee4dfd703d2a61a225488132ae6464df
  
  	private boolean isFinished() {
  		return currentState == STATE_ENDED || currentState == STATE_FAILED;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/ActionBarPopupWindow.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/ActionBarPopupWindow.java
+index 6a9dc814bbfdd56f36ac4e5f8ab70fe179b231ea..970a896211cfd1936a9ec26e2928bef772c4b40b 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/ActionBarPopupWindow.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/ActionBarPopupWindow.java
+@@ -162,7 +162,7 @@ public class ActionBarPopupWindow extends PopupWindow {
+             this.resourcesProvider = resourcesProvider;
+ 
+             if (resId != 0) {
+-                backgroundDrawable = getResources().getDrawable(resId).mutate();
++                backgroundDrawable = resId == R.drawable.popup_fixed_alert2 ? Theme.createRoundRectDrawable(dp(14), getThemedColor(Theme.key_actionBarDefaultSubmenuBackground)) : getResources().getDrawable(resId).mutate();
+                 setPadding(dp(8), dp(8), dp(8), dp(8));
+             }
+             if (backgroundDrawable != null) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java
+index 92421054b07a1f1e32e00edb22dfe55789251cab..dbdfd4056ec28e345dcc9393d9776cb37d920264 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java
+@@ -332,7 +332,7 @@ public class MessageDrawable extends Drawable {
+         } else if (overrideRounding > 0) {
+             newRad = 0;
+         } else {
+-            newRad = dp(SharedConfig.bubbleRadius);
++            newRad = dp(com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS);
+         }
+         int idx;
+         if (isTopNear && isBottomNear) {
+@@ -452,7 +452,7 @@ public class MessageDrawable extends Drawable {
+         if (gradientShader == null && !isSelected && crossfadeFromDrawable == null) {
+             return null;
+         }
+-        int newRad = dp(SharedConfig.bubbleRadius);
++        int newRad = dp(com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS);
+         int idx;
+         if (isTopNear && isBottomNear) {
+             idx = 3;
+@@ -575,14 +575,14 @@ public class MessageDrawable extends Drawable {
+             rad = overrideRoundRadius;
+             nearRad = overrideRoundRadius;
+         } else if (overrideRounding > 0) {
+-            rad = AndroidUtilities.lerp(dp(SharedConfig.bubbleRadius), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
+-            nearRad = AndroidUtilities.lerp(dp(Math.min(6, SharedConfig.bubbleRadius)), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
++            rad = AndroidUtilities.lerp(dp(com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
++            nearRad = AndroidUtilities.lerp(dp(Math.min(6, com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS)), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
+         } else if (currentType == TYPE_PREVIEW) {
+             rad = dp(6);
+             nearRad = dp(6);
+         } else {
+-            rad = dp(SharedConfig.bubbleRadius);
+-            nearRad = dp(Math.min(6, SharedConfig.bubbleRadius));
++            rad = dp(com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS);
++            nearRad = dp(Math.min(6, com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS));
+         }
+         int smallRad = dp(6);
+ 
+@@ -638,14 +638,14 @@ public class MessageDrawable extends Drawable {
+             rad = overrideRoundRadius;
+             nearRad = overrideRoundRadius;
+         } else if (overrideRounding > 0) {
+-            rad = AndroidUtilities.lerp(dp(SharedConfig.bubbleRadius), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
+-            nearRad = AndroidUtilities.lerp(dp(Math.min(6, SharedConfig.bubbleRadius)), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
++            rad = AndroidUtilities.lerp(dp(com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
++            nearRad = AndroidUtilities.lerp(dp(Math.min(6, com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS)), Math.min(bounds.width(), bounds.height()) / 2, overrideRounding);
+         } else if (currentType == TYPE_PREVIEW) {
+             rad = dp(6);
+             nearRad = dp(6);
+         } else {
+-            rad = dp(SharedConfig.bubbleRadius);
+-            nearRad = dp(Math.min(6, SharedConfig.bubbleRadius));
++            rad = dp(com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS);
++            nearRad = dp(Math.min(6, com.futoonpay.admin.appearance.ChatLook.BUBBLE_RADIUS));
+         }
+         int smallRad = dp(6);
+         int top = Math.max(bounds.top, 0);
+@@ -673,6 +673,11 @@ public class MessageDrawable extends Drawable {
+     }
+ 
+     private void generatePath(Path path, Rect bounds, int padding, int rad, int smallRad, int nearRad, int top, boolean drawFullBottom, boolean drawFullTop, boolean customPaint) {
++        if (currentType == TYPE_TEXT && overrideRoundRadius == 0 && overrideRounding <= 0) {
++            rect.set(bounds.left + (isOut ? padding : dp(8)), bounds.top + padding, bounds.right - (isOut ? dp(8) : padding), bounds.bottom - padding);
++            com.futoonpay.admin.appearance.ChatLook.bubblePath(path, rect, Math.min(rad, rect.height() / 2f), isOut, isTopNear, isBottomNear || botButtonsBottom);
++            return;
++        }
+         path.rewind();
+         int heightHalf = (bounds.height() - padding) >> 1;
+         if (rad > heightHalf) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
+index b56ee0d84558b738144f16961eeaec8b767bb993..08815091737653a546fd063a8450f8ed61ab8eea 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
+@@ -8979,6 +8979,7 @@ public class Theme {
+     }
+ 
+     public static int getCurrentColor(int key) {
++        if (currentTheme != null) { Integer nativeColor = org.telegram.ui.FutoonChatAppearance.color(key, currentTheme.isDark()); if (nativeColor != null) return nativeColor; }
+         return currentColors.get(key);
+     }
+ 
+@@ -8991,6 +8992,10 @@ public class Theme {
+     }
+ 
+     public static int getColor(int key, boolean[] isDefault, boolean ignoreAnimation) {
++        if (currentTheme != null) {
++            Integer nativeColor = org.telegram.ui.FutoonChatAppearance.color(key, currentTheme.isDark());
++            if (nativeColor != null) { if (isDefault != null) isDefault[0] = false; return nativeColor; }
++        }
+         if (!ignoreAnimation && animatingColors != null) {
+             int index = animatingColors.indexOfKey(key);
+             if (index >= 0) {
+@@ -9838,6 +9843,7 @@ public class Theme {
+     }
+ 
+     public static Drawable getCachedWallpaperNonBlocking() {
++        if (currentTheme != null) return org.telegram.ui.FutoonChatAppearance.wallpaper();
+         if (themedWallpaper != null) {
+             return themedWallpaper;
+         } else {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionIntroActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionIntroActivity.java
 index 7c3e4eb5b601aa1e732b82cd47f8e78fcac2265d..31698f2d5067d48e7fd10ef47be94134158a986b 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ActionIntroActivity.java
@@ -9088,9 +9204,18 @@ index 4e91bfd3457ff17f058d401f0cd4e6bdfa5356b7..4e1575019cb5da541ef366deb64f6c0b
              QrResult qrResult = new QrResult();
              if (bounds != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
-index 0fae7fdda99102496683e4c1cf866df7cf156a93..a7371e110e6b8310a2c36b92a8e481ac7abb1ef6 100644
+index 0fae7fdda99102496683e4c1cf866df7cf156a93..a4f72f8352b30b1690487a0ed5ed9ce30ecb519d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
+@@ -169,7 +169,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+     public ShareDialogCell.RepostStoryDrawable repostStoryDrawable;
+     public int avatarStart = 11;
+     public int messagePaddingStart = 72;
+-    public int heightDefault = 70;
++    public int heightDefault = com.futoonpay.admin.appearance.ChatLook.ROW_HEIGHT;
+     public int heightThreeLines = 76;
+     public int addHeightForTags = 3;
+     public int addForumHeightForTags = 11;
 @@ -537,6 +537,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
      public int nameAdditionalsForChannelSubscriber;
      public boolean channelShouldUseLineWidth;
@@ -9119,6 +9244,15 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..a7371e110e6b8310a2c36b92a8e481ac
          boolean requestLayout = false;
          boolean rebuildLayout = false;
          boolean invalidate = false;
+@@ -4820,7 +4827,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+             canvas.restore();
+         }
+ 
+-        if (useSeparator) {
++        if (false && useSeparator) {
+             int left;
+             if (fullSeparator || currentDialogFolderId != 0 && archiveHidden && !fullSeparator2 || fullSeparator2 && !archiveHidden) {
+                 left = 0;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
 index 5d4d97c4a538bfbe85a67e48008254b067ee889a..233e00c815629f8943424f02944de81000a9932d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextSelectionHelper.java
@@ -9684,7 +9818,7 @@ index 88fe6a16845b615376d66c4e3dfa512d56e652ea..e44f701772efd6c9eafc7aded3e22a54
          }
          String fileName = FileLoader.getDocumentFileName(messageObject.getDocument());
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
-index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85d16d4136 100644
+index a8f9973061553dce80d45a1c16984e7ff8145312..45173b7ba70d2a9b7e46f5c4d22a92a7bcd09e4d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 @@ -919,7 +919,7 @@ public class ChatActivityEnterView extends FrameLayout implements
@@ -9705,7 +9839,15 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
                      return;
                  }
  
-@@ -2980,7 +2980,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2699,6 +2699,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+             }
+         };
+         frameLayout.setClipChildren(false);
++        frameLayout.setBackground(Theme.createRoundRectDrawable(dp(com.futoonpay.admin.appearance.ChatLook.INPUT_RADIUS), com.futoonpay.admin.appearance.ChatLook.incoming(org.telegram.ui.FutoonChatAppearance.dark())));
+         textFieldContainer.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 0, 0, DEFAULT_HEIGHT, 0));
+ 
+         emojiButton = new ChatActivityEnterViewAnimatedIconView(context) {
+@@ -2980,7 +2981,7 @@ public class ChatActivityEnterView extends FrameLayout implements
  
              @Override
              public void setVisibility(int visibility) {
@@ -9714,7 +9856,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
              }
  
              @Override
-@@ -2991,6 +2991,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2991,6 +2992,7 @@ public class ChatActivityEnterView extends FrameLayout implements
  
              @Override
              public boolean onTouchEvent(MotionEvent motionEvent) {
@@ -9722,7 +9864,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
                  if (isLiveComment) return false;
                  createRecordCircle();
                  if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-@@ -3251,6 +3252,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -3251,6 +3253,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  super.dispatchDraw(canvas);
              }
          };
@@ -9730,7 +9872,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
          audioVideoButtonContainer.setSoundEffectsEnabled(false);
          sendButtonContainer.addView(audioVideoButtonContainer, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.RIGHT | Gravity.BOTTOM));
          audioVideoButtonContainer.setFocusable(true);
-@@ -3516,6 +3518,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -3516,6 +3519,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              if ((messageSendPreview != null && messageSendPreview.isShowing()) || (runningAnimationAudio != null && runningAnimationAudio.isRunning()) || moveToSendStateRunnable != null) {
                  return;
              }
@@ -9738,7 +9880,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
              sendMessage();
          });
          sendButton.setOnLongClickListener(this::onSendLongClick);
-@@ -3555,6 +3558,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -3555,6 +3559,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              }
          });
          slowModeButton.setOnLongClickListener(v -> {
@@ -9746,7 +9888,19 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4777,7 +4781,58 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -4725,6 +4730,11 @@ public class ChatActivityEnterView extends FrameLayout implements
+     }
+ 
+     public void drawBackground(Canvas canvas, boolean withComposeShadowDrawable) {
++        if (isFutoonComposer()) {
++            backgroundPaint.setColor(com.futoonpay.admin.appearance.ChatLook.wallpaper(org.telegram.ui.FutoonChatAppearance.dark()));
++            canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint);
++            return;
++        }
+         if (!shouldDrawBackground) {
+             return;
+         }
+@@ -4777,7 +4787,58 @@ public class ChatActivityEnterView extends FrameLayout implements
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
@@ -9805,7 +9959,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -8114,7 +8169,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8114,7 +8175,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                      }
                  }
              }
@@ -9814,7 +9968,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8180,14 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8125,14 +8186,14 @@ public class ChatActivityEnterView extends FrameLayout implements
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }
@@ -9831,7 +9985,15 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
                  if (animated) {
                      if (runningAnimationType == 1 && caption == null || runningAnimationType == 3 && caption != null) {
                          return;
-@@ -11578,20 +11633,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -10371,6 +10432,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+ 
+     @Override
+     public void updateColors() {
++        if (messageEditTextContainer != null) messageEditTextContainer.setBackground(Theme.createRoundRectDrawable(dp(com.futoonpay.admin.appearance.ChatLook.INPUT_RADIUS), com.futoonpay.admin.appearance.ChatLook.incoming(org.telegram.ui.FutoonChatAppearance.dark())));
+         if (messageSendPreview != null) {
+             messageSendPreview.updateColors();
+         }
+@@ -11578,20 +11640,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  }, null);
              }
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_buttonTypeRequestGeoLocation.class)) {
@@ -9853,7 +10015,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) {
              SendMessagesHelper.getInstance(currentAccount).sendCallback(true, messageObject, button, parentFragment);
          } else if (buttonTypeSwitchInline != null) {
-@@ -14564,7 +14606,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14564,7 +14613,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              if (botCommandsMenuButton != null) {
                  botWebViewButton.setMeasuredButtonWidth(botCommandsMenuButton.getMeasuredWidth());
              }
@@ -9862,7 +10024,27 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
              measureChild(botWebViewButton, widthMeasureSpec, heightMeasureSpec);
          }
  //        if (botWebViewMenuContainer != null) {
-@@ -15646,7 +15688,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14944,8 +14993,8 @@ public class ChatActivityEnterView extends FrameLayout implements
+             priceText.setCallback(this);
+             priceText.setOverrideFullWidth(AndroidUtilities.displaySize.x);
+ 
+-            drawable = context.getResources().getDrawable(resId).mutate();
+-            inactiveDrawable = context.getResources().getDrawable(resId).mutate();
++            drawable = isNewDesignSendButton && resId == R.drawable.send_plane_24 ? com.futoonpay.admin.appearance.ChatLook.icon("send", 0xffffffff, AndroidUtilities.density) : context.getResources().getDrawable(resId).mutate();
++            inactiveDrawable = isNewDesignSendButton && resId == R.drawable.send_plane_24 ? com.futoonpay.admin.appearance.ChatLook.icon("send", 0xffffffff, AndroidUtilities.density) : context.getResources().getDrawable(resId).mutate();
+             drawableInverse = context.getResources().getDrawable(resId).mutate();
+             emojiDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(14));
+ 
+@@ -15172,7 +15221,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+             updateColors();
+             checkBackgroundRect();
+             if (isNewDesignSendButton) {
+-                canvas.drawRoundRect(backgroundRect, dp(RADIUS), dp(RADIUS), backgroundPaint);
++                canvas.drawRoundRect(backgroundRect, backgroundRect.height() / 2f, backgroundRect.height() / 2f, backgroundPaint);
+             }
+ 
+             final boolean inactive = isInactive();
+@@ -15646,7 +15695,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          if (topView != null) {
              final float y = getMeasuredHeight() - animatorInputFieldHeight.getFactor();
  
@@ -9871,7 +10053,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
              topView.setVisibility(visibility > 0 ? VISIBLE : GONE);
          }
  
-@@ -15664,7 +15706,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15664,7 +15713,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              (animatorTopViewVisibility.getValue() ? 1 : 0):
              animatorTopViewVisibility.getFloatValue();
  
@@ -9881,9 +10063,18 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..69439542fc30371fbd171e10e9b73f85
  
  
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
-index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..61b96ab65d4cfd88eadc4bea358bc31bcacdb032 100644
+index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..97c83852b2f1793cda7f9f38b5310e7c8dec2f8d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
+@@ -2760,7 +2760,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
+         BlurredBackgroundDrawable tabsViewBackground = iBlur3FactoryLiquidGlass.create(buttonsRecyclerViewWrapper, BlurredBackgroundProviderImpl.mainTabs(resourcesProvider));
+         tabsViewBackground.setRadius(dp(56 / 2f));
+         tabsViewBackground.setPadding(dp(7));
+-        buttonsRecyclerViewWrapper.setBackground(tabsViewBackground);
++        buttonsRecyclerViewWrapper.setBackgroundColor(com.futoonpay.admin.appearance.ChatLook.surface(org.telegram.ui.FutoonChatAppearance.dark()));
+         buttonsRecyclerView.setPadding(dp(11), dp(11), dp(11), dp(11));
+         buttonsRecyclerView.setClipToOutline(true);
+         buttonsRecyclerView.setOutlineProvider(ViewOutlineProviderImpl.boundsWithPaddingRoundRect(dp(11), dp(56 / 2f)));
 @@ -2809,11 +2809,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                      }
                      if (Build.VERSION.SDK_INT >= 33) {
@@ -10458,6 +10649,103 @@ index 1238632a08d6ebcf76987ad098449209589010e6..14121758d6046896fdb2578e2ec5917a
          titleTextView.setText(value);
          rightDrawableIsScam = false;
          if (scam || fake) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentFloatingButton.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentFloatingButton.java
+index ce63f668e24b30be0dab697e6a1573e7351a9243..feffb594cd9af1bc88a97eb71735390b47e52479 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentFloatingButton.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentFloatingButton.java
+@@ -70,7 +70,9 @@ public class FragmentFloatingButton extends FrameLayout implements FactorAnimato
+ 
+         ScaleStateListAnimator.apply(this);
+         if (!isSubButton) {
+-            setOutlineProvider(ViewOutlineProviderImpl.BOUNDS_OVAL);
++            setOutlineProvider(new android.view.ViewOutlineProvider() {
++                @Override public void getOutline(View view, android.graphics.Outline outline) { outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), dp(16)); }
++            });
+             setTranslationZ(dpf2(0.5f));
+         }
+ 
+@@ -163,7 +165,7 @@ public class FragmentFloatingButton extends FrameLayout implements FactorAnimato
+         } else {
+             imageView.setColorFilter(Theme.getColor(Theme.key_chats_actionIcon, resourcesProvider), PorterDuff.Mode.SRC_IN);
+             progressView.setProgressColor(Theme.getColor(Theme.key_chats_actionIcon, resourcesProvider));
+-            setBackground(Theme.createSimpleSelectorCircleDrawable(dp(48),
++            setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(16),
+                 Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider),
+                 Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)
+             ));
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
+index 9274278b46bdfd9e151a421afbce85e06b6d3599..671480cfe037fd1432e6c6dd10248f4ea40b7d0b 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
+@@ -94,7 +94,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+                 return super.onKeyDown(keyCode, event);
+             }
+         };
+-        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
++        editText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+         editText.setCursorWidth(1.5f);
+         editText.setInputType(editText.getInputType() | InputType.TYPE_TEXT_VARIATION_FILTER);
+         editText.setSingleLine(true);
+@@ -128,7 +128,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+ 
+         searchIcon = new ImageView(context);
+         searchIcon.setScaleType(ImageView.ScaleType.CENTER);
+-        searchIcon.setImageResource(R.drawable.outline_search_1_24);
++        searchIcon.setImageDrawable(org.telegram.ui.FutoonChatAppearance.icon("search"));
+         addView(searchIcon, LayoutHelper.createFrame(24, 24, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 12, 0, 12, 0));
+ 
+         additionalIconsLayout = new LinearLayout(context);
+@@ -182,7 +182,23 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+         additionalIconsLayout.addView(icon);
+     }
+ 
++    public void setChatFilters(String[] labels, int selected, java.util.function.IntConsumer callback) {
++        if (chatFilters != null) return;
++        chatFilters = new com.futoonpay.admin.appearance.ChatFilterBar(getContext(), labels, org.telegram.ui.FutoonChatAppearance.dark(), callback);
++        chatFilters.select(selected);
++        addView(chatFilters, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, 4, 52, 4, 0));
++        for (View v : new View[]{editText, searchIcon, closeIcon, additionalIconsLayout, searchFilterLayout}) {
++            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
++            lp.gravity = Gravity.TOP | (v == editText ? Gravity.FILL_HORIZONTAL : (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT));
++            if (v == editText) { lp.height=dp(48);lp.topMargin=dp(4); }
++            else if (v == searchIcon || v == closeIcon) { lp.topMargin=dp(16);if(v==closeIcon)lp.gravity=Gravity.TOP | (LocaleController.isRTL?Gravity.LEFT:Gravity.RIGHT); }
++            else {lp.height=dp(40);lp.topMargin=dp(8);}
++            v.setLayoutParams(lp);
++        }
++    }
++
+     private Drawable bg;
++    private com.futoonpay.admin.appearance.ChatFilterBar chatFilters;
+ 
+     @Override
+     protected void dispatchDraw(@NonNull Canvas canvas) {
+@@ -192,11 +208,11 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+                 getPaddingLeft(),
+                 getPaddingTop(),
+                 getWidth() - getPaddingRight(),
+-                getHeight() - getPaddingBottom()
++                (chatFilters == null ? getHeight() : dp(52)) - getPaddingBottom()
+             );
+             bg.draw(canvas);
+         }
+-        if (blurredBackgroundDrawable != null) {
++        if (false && blurredBackgroundDrawable != null) {
+             blurredBackgroundDrawable.setBounds(
+                     getPaddingLeft() - dp(4),
+                     getPaddingTop() - dp(4),
+@@ -273,10 +289,12 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+ 
+     @Override
+     public void updateColors() {
++        if (chatFilters != null) chatFilters.setDark(org.telegram.ui.FutoonChatAppearance.dark());
+         final boolean isDark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
+         bg = isSectionBackground ?
+             Theme.createRoundRectDrawableShadowed(dp(20), getThemedColor(Theme.key_windowBackgroundWhite)) :
+             Theme.createRoundRectDrawable(dp(20), isWhiteBackground ? getThemedColor(Theme.key_windowBackgroundWhite) : getThemedColor(Theme.key_windowBackgroundWhiteBlackText, isDark ? 0.07f : 0.05f));
++        bg = Theme.createRoundRectDrawable(dp(24), com.futoonpay.admin.appearance.ChatLook.field(isDark));
+         searchIcon.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
+         closeIcon.setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
+         closeIcon.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), 1, dp(17)));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/FutoonPermissionRequests.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/FutoonPermissionRequests.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..8f09f525f6d5070caeb6a842dc0f5592f871fe75
@@ -10784,6 +11072,50 @@ index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef8
                          return;
                      }
                  }
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
+index 44295250c3685eed39aaec116dc062b21d0a3f05..2628ba3f4678b3641e14eb24f122556e0b54aa19 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
+@@ -72,6 +72,7 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+     private int colorDefault;
+     private boolean usePremiumCounter;
+ 
++    private String chatAppearanceGlyph;
+     private TabAnimation tabAnimation;
+     private TLRPC.TL_attachMenuBot tabAnimationBot;
+ 
+@@ -154,8 +155,8 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+         if (selectedFactor > 0 && !skipDrawSelector) {
+             final float alpha = AnimatorUtils.DECELERATE_INTERPOLATOR.getInterpolation(selectedFactor);
+ 
+-            paintCounterBackground.setColor(Theme.multAlpha(colorSelected, 0.09f * alpha));
+-            tmpRectF.set(0, 0, viewWidth, getHeight());
++            paintCounterBackground.setColor(Theme.multAlpha(com.futoonpay.admin.appearance.ChatLook.selected(org.telegram.ui.FutoonChatAppearance.dark()), alpha));
++            tmpRectF.set(viewWidth / 2f - dp(30), 0, viewWidth / 2f + dp(30), dp(32));
+             final float r = Math.min(tmpRectF.width(), tmpRectF.height()) / 2f;
+             final float s = lerp(0.6f, 1, selectedFactor) * MathUtils.clamp(attachScale, 0, 1);
+             canvas.save();
+@@ -237,6 +238,20 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+         textView.setTypeface(selected ? AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_EXTRA_BOLD) : AndroidUtilities.bold());
+     }
+ 
++    public void setChatAppearance(String glyph) {
++        chatAppearanceGlyph = glyph;
++        tabAnimation = null;
++        imageView.clearAnimationDrawable();
++        imageView.setVisibility(VISIBLE);
++        if (backupImageView != null) backupImageView.setVisibility(GONE);
++        imageView.setImageDrawable(org.telegram.ui.FutoonChatAppearance.icon(glyph));
++        imageView.setLayoutParams(LayoutHelper.createFrame(24, 24, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 4, 0, 0));
++        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 38, 0, 0));
++        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
++        textView.setTypeface(AndroidUtilities.bold());
++        invalidate();
++    }
++
+     public boolean isTabSelected() {
+         return isSelectedAnimator.getValue();
+     }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
 index 1c4f424ad7329a371dd04c42cf99cea28e2bf999..8bbaa169ba12a6674ebe0b8971227ef1ba8a8d91 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/voip/VoIPHelper.java
@@ -10953,10 +11285,28 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10fe804957 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..8b15e494ddfdeac40ed9b36dcbf18427b64334cc 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-@@ -651,6 +651,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+ 
+     private static final boolean TMP_DISABLE_TOPICS_TWO_COLUMNS = false;
+ 
+-    public static final int MAIN_TABS_HEIGHT = 56;
+-    public static final int MAIN_TABS_MARGIN = 8;
++    public static final int MAIN_TABS_HEIGHT = com.futoonpay.admin.appearance.ChatLook.NAV_HEIGHT;
++    public static final int MAIN_TABS_MARGIN = 0;
+     public static final int MAIN_TABS_HEIGHT_WITH_MARGINS = MAIN_TABS_HEIGHT + MAIN_TABS_MARGIN * 2;
+     public static final int FILTER_TABS_HEIGHT = 36;
+     public static final int SEARCH_TABS_HEIGHT = 36 + 7 + 7;
+     public static final int SEARCH_FIELD_HEIGHT = 48;
++    private int chatQuickFilter;
++    private boolean hasChatQuickFilters() { return initialDialogsType == DIALOGS_TYPE_DEFAULT && !onlySelect && folderId == 0 && communityId == 0; }
++    private int getChatSearchHeight() { return hasChatQuickFilters() ? 104 : SEARCH_FIELD_HEIGHT; }
+ 
+     private static final int ANIMATOR_ID_SEARCH_VISIBLE = 1;
+     private static final int ANIMATOR_ID_DONE_BUTTON_VISIBLE = 2;
+@@ -651,6 +654,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
      private boolean searching;
      private boolean searchWas;
      private boolean onlySelect;
@@ -10965,7 +11315,103 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
      private boolean canSelectTopics;
      private String searchString;
      private String initialSearchString;
-@@ -2969,7 +2971,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -868,7 +873,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 h += storiesHeight * (1f - searchAnimationProgress) * (1f - rightSlidingProgress) * (1f - progressToActionMode);
+             }
+             h += storiesOverscroll;
+-            h += dp(SEARCH_FIELD_HEIGHT) * (1f - progressToActionMode) * (1f - searchAnimationProgress) * (1f - rightSlidingProgress);
++            h += dp(getChatSearchHeight()) * (1f - progressToActionMode) * (1f - searchAnimationProgress) * (1f - rightSlidingProgress);
+ 
+             return (int) h;
+         }
+@@ -1046,8 +1051,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             tabsYOffset = 0;
+             storiesYOffset = 0;
+             tabsYOffset -= Math.min(
+-                dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + dp(SEARCH_FIELD_HEIGHT) + scrollYOffset,
+-                progressToActionMode * (dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + dp(SEARCH_FIELD_HEIGHT))
++                dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + dp(getChatSearchHeight()) + scrollYOffset,
++                progressToActionMode * (dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + dp(getChatSearchHeight()))
+             );
+             storiesYOffset = tabsYOffset;
+             if ((rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
+@@ -1073,7 +1078,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 if (hasStories) {
+                     addH += dp(DialogStoriesCell.HEIGHT_IN_DP);
+                 }
+-                addH += dp(SEARCH_FIELD_HEIGHT);
++                addH += dp(getChatSearchHeight());
+                 addH *= rightSlidingDialogContainer.openedProgress;
+ 
+                 viewPages[0].setTranslationY(rightFragmentOffset - addH);
+@@ -1081,7 +1086,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 if (fragmentSearchField != null) {
+                     fragmentSearchField.setTranslationY(lerp(
+                         scrollYOffset + tabsYOffset + storiesOverscroll - dp(4),
+-                        -dp(SEARCH_FIELD_HEIGHT + (hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)),
++                        -dp(getChatSearchHeight() + (hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)),
+                         searchAnimationProgress
+                     ));
+                 }
+@@ -1172,7 +1177,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                         if (hasStories) {
+                             h += dp(DialogStoriesCell.HEIGHT_IN_DP);
+                         }
+-                        h += dp(SEARCH_FIELD_HEIGHT);
++                        h += dp(getChatSearchHeight());
+                     }
+                     h += actionModeAdditionalHeight;
+                     if (actionBarColorAnimator == null) {
+@@ -1286,10 +1291,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 if (child == fragmentSearchField || child == searchTabsAndFiltersLayout || child == dialogStoriesCell) {
+                     childTop = actionBar.getMeasuredHeight();
+                     if (child != fragmentSearchField && child != dialogStoriesCell && child != searchTabsAndFiltersLayout) {
+-                        childTop += dp(SEARCH_FIELD_HEIGHT);
++                        childTop += dp(getChatSearchHeight());
+                     }
+                     //if (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment() && (child == searchTabsView || child == filtersView)) {
+-                    //    childTop -= dp(SEARCH_FIELD_HEIGHT);
++                    //    childTop -= dp(getChatSearchHeight());
+                     //}
+                     if (hasStories && child == fragmentSearchField) {
+                         childTop += dp(DialogStoriesCell.HEIGHT_IN_DP);
+@@ -1311,7 +1316,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                     childTop = 0;
+                 } else if (child == topPanelLayout || child == topBubblesFadeView || child == filterTabsView) {
+                     childTop += actionBar.getMeasuredHeight();
+-                    childTop += dp(SEARCH_FIELD_HEIGHT);
++                    childTop += dp(getChatSearchHeight());
+                 } else if (dialogStoriesCell != null && dialogStoriesCell.getPremiumHint() == child) {
+                     continue;
+                 }
+@@ -1623,7 +1628,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+     }
+ 
+     private float getSearchFieldAdditionOffset() {
+-        return -lerp(dp(4), dp(SEARCH_FIELD_HEIGHT), animatorSearchVisible.getFloatValue());
++        return -lerp(dp(4), dp(getChatSearchHeight()), animatorSearchVisible.getFloatValue());
+     }
+ 
+     private void updateStoriesViewAlpha(float alpha) {
+@@ -2067,7 +2072,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 t += dp(DialogStoriesCell.HEIGHT_IN_DP);
+             }
+             if (!actionModeFullyShowed) {
+-                t += dp(SEARCH_FIELD_HEIGHT);
++                t += dp(getChatSearchHeight());
+             }
+             additionalPadding = 0;
+ 
+@@ -2378,7 +2383,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                         offset += dp(DialogStoriesCell.HEIGHT_IN_DP);
+                     }
+                     if (backward) {
+-                        offset += dp(SEARCH_FIELD_HEIGHT);
++                        offset += dp(getChatSearchHeight());
+                         // offset += canShowFilterTabsView ? dp(50) : 0;
+                     }
+                     if (p >= 0) {
+@@ -2969,7 +2974,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
          getContactsController().loadGlobalPrivacySetting();
  
@@ -10974,7 +11420,21 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
              getMessagesController().getSavedMessagesController().preloadDialogs(true);
          }
  
-@@ -3515,8 +3517,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3287,6 +3292,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             }
+         };
+         fragmentSearchField.setPadding(dp(4), dp(4), dp(4), dp(4));
++        if (hasChatQuickFilters()) fragmentSearchField.setChatFilters(new String[]{getString(R.string.AllChats), getString(R.string.FilterNameUnread), getString(R.string.FilterGroups)}, chatQuickFilter, value -> {
++            chatQuickFilter = value;
++            if (viewPages != null) for (ViewPage page : viewPages) if (page != null && page.dialogsAdapter != null) {
++                page.dialogsAdapter.notifyDataSetChanged();
++                page.layoutManager.scrollToPositionWithOffset(0, 0);
++            }
++        });
+         fragmentSearchField.setPivotX(0);
+         fragmentSearchField.setPivotY(0);
+         if (initialDialogsType == DIALOGS_TYPE_DEFAULT) {
+@@ -3515,9 +3527,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  logoDrawable = context.getResources().getDrawable(R.drawable.telegram_logo_2).mutate();
                  logoDrawable.setBounds(0, dp(2), logoDrawable.getIntrinsicWidth(), dp(2) + logoDrawable.getIntrinsicHeight());
                  logoDrawable.setColorFilter(getThemedColor(Theme.key_telegram_color_dialogsLogo), PorterDuff.Mode.MULTIPLY);
@@ -10982,9 +11442,67 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
 -                ssb.setSpan(new ImageSpan(logoDrawable), 0, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 +                SpannableStringBuilder ssb = new SpannableStringBuilder("Futoon chat");
                  actionBar.setTitle(ssb, statusDrawable);
++                if (actionBar.getTitleTextView() != null) actionBar.getTitleTextView().setTextSize(24);
++                actionBar.setTitleColor(com.futoonpay.admin.appearance.ChatLook.accent(FutoonChatAppearance.dark()));
                  updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
              }
-@@ -7071,7 +7072,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             if (folderId == 0) {
+@@ -4209,13 +4222,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                                 }
+                                 int canScrollDy = -(view.getTop() - pTop) + viewsH;
+                                 if (!rightSlidingDialogContainer.hasFragment() && !(actionBar != null && actionBar.isActionModeShowed())) {
+-                                    canScrollDy -= dp(SEARCH_FIELD_HEIGHT);
++                                    canScrollDy -= dp(getChatSearchHeight());
+                                 }
+                                 if (hasStories && (viewPage.scroller.isRunning() || dialogStoriesCell.isExpanded()) && !rightSlidingDialogContainer.hasFragment() && !fixScrollYAfterArchiveOpened) {
+                                     canScrollDy += dp(DialogStoriesCell.HEIGHT_IN_DP);
+                                 }
+                                 if ((viewPage.scroller.isRunning() || dialogStoriesCell.isExpanded()) && !rightSlidingDialogContainer.hasFragment() && !fixScrollYAfterArchiveOpened && !(actionBar != null && actionBar.isActionModeShowed())) {
+-                                    canScrollDy += dp(SEARCH_FIELD_HEIGHT);
++                                    canScrollDy += dp(getChatSearchHeight());
+                                 }
+                                 int positiveDy = Math.abs(dy);
+                                 if (canScrollDy < positiveDy) {
+@@ -4578,7 +4591,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                         if (applyScrollY) {
+                             int maxScrollYOffset = getMaxScrollYOffset();
+                             if (!(filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && animatorFilterTabsVisible.getValue())) {
+-                                maxScrollYOffset = dp(SEARCH_FIELD_HEIGHT);
++                                maxScrollYOffset = dp(getChatSearchHeight());
+                             }
+                             if (newTranslation < -maxScrollYOffset) {
+                                 newTranslation = -maxScrollYOffset;
+@@ -5336,7 +5349,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
+         }
+         if (fragmentSearchField != null) {
+-            contentView.addView(fragmentSearchField, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, 7, -2, 7, 0));
++            contentView.addView(fragmentSearchField, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, getChatSearchHeight(), Gravity.TOP, 7, -2, 7, 0));
+         }
+ 
+ 
+@@ -5713,7 +5726,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 }
+ 
+                 if (actionBarHeightNoSearch < scrollY && scrollY < actionBarHeight) {
+-                    int h = dp(SEARCH_FIELD_HEIGHT);
++                    int h = dp(getChatSearchHeight());
+                     int s = scrollY - actionBarHeightNoSearch;
+                     if (s < h / 2) {
+                         viewPage.scroller.smoothScrollBy(-s);
+@@ -5751,9 +5764,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+ 
+     private int getMaxScrollYOffset() {
+         if (hasStories) {
+-            return dp(DialogStoriesCell.HEIGHT_IN_DP) + dp(SEARCH_FIELD_HEIGHT);
++            return dp(DialogStoriesCell.HEIGHT_IN_DP) + dp(getChatSearchHeight());
+         } else {
+-            return dp(SEARCH_FIELD_HEIGHT);
++            return dp(getChatSearchHeight());
+         }
+     }
+ 
+@@ -7071,7 +7084,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                          if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                              PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                                          } else {
@@ -10993,7 +11511,70 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
                                          }
                                      }));
                                  }
-@@ -10350,7 +10351,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7182,7 +7195,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                     (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0) +
+                     (topPanelLayout != null ? topPanelLayout.getHeight() : 0) +
+                     (dialogStoriesCell != null && dialogStoriesCellVisible ? (int) ((1f - dialogStoriesCell.getCollapsedProgress()) * dp(DialogStoriesCell.HEIGHT_IN_DP)) : 0) +
+-                    (dp(SEARCH_FIELD_HEIGHT))
++                    (dp(getChatSearchHeight()))
+                 );
+             }
+ 
+@@ -7561,7 +7574,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             if (searchViewPager != null) {
+                 animators.add(ObjectAnimator.ofFloat(searchViewPager, View.ALPHA, show ? 1.0f : 0.0f));
+                 if (hasStories) {
+-                    float translationY = dp(DialogStoriesCell.HEIGHT_IN_DP) + scrollYOffset + dp(SEARCH_FIELD_HEIGHT);
++                    float translationY = dp(DialogStoriesCell.HEIGHT_IN_DP) + scrollYOffset + dp(getChatSearchHeight());
+                     animators.add(ObjectAnimator.ofFloat(searchViewPager, SEARCH_TRANSLATION_Y, show ? translationY : 0, show ? 0 : translationY));
+                 }
+                 if (!budget) {
+@@ -8889,7 +8902,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             floatingButton3.setImageResource(R.drawable.floating_check);
+             floatingButton3.setContentDescription(LocaleController.getString(R.string.Done));
+         } else {
+-            floatingButton3.setImageResource(R.drawable.filled_fab_compose_32);
++            floatingButton3.imageView.setImageDrawable(com.futoonpay.admin.appearance.ChatLook.icon("compose", 0xffffffff, AndroidUtilities.density));
+             floatingButton3.setContentDescription(LocaleController.getString(R.string.NewMessageTitle));
+         }
+     }
+@@ -9037,7 +9050,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 viewPages[i].listView.cancelClickRunnables(true);
+             }
+         }
+-        translateListHeight = Math.max(0, dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + SEARCH_FIELD_HEIGHT) + scrollYOffset);
++        translateListHeight = Math.max(0, dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + getChatSearchHeight()) + scrollYOffset);
+         float finalTranslateListHeight = translateListHeight;
+         actionBarColorAnimator = ValueAnimator.ofFloat(progressToActionMode, 0);
+         actionBarColorAnimator.addUpdateListener(valueAnimator -> {
+@@ -9063,7 +9076,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 invalidateScrollY = true;
+                 fixScrollYAfterArchiveOpened = true;
+                 fragmentView.invalidate();
+-                scrollAdditionalOffset = -(dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + SEARCH_FIELD_HEIGHT) - finalTranslateListHeight);
++                scrollAdditionalOffset = -(dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + getChatSearchHeight()) - finalTranslateListHeight);
+                 viewPages[0].setTranslationY(0);
+                 for (int i = 0; i < viewPages.length; i++) {
+                     if (viewPages[i] != null) {
+@@ -10051,7 +10064,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                     viewPages[i].listView.cancelClickRunnables(true);
+                 }
+             }
+-            translateListHeight = Math.max(0, dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + SEARCH_FIELD_HEIGHT) + scrollYOffset);
++            translateListHeight = Math.max(0, dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + getChatSearchHeight()) + scrollYOffset);
+             if (translateListHeight != 0) {
+                 actionModeAdditionalHeight = (int) translateListHeight;
+                 fragmentView.requestLayout();
+@@ -10078,7 +10091,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                     actionBarColorAnimator = null;
+                     actionModeAdditionalHeight = 0;
+                     actionModeFullyShowed = true;
+-                    scrollAdditionalOffset = dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + SEARCH_FIELD_HEIGHT) - finalTranslateListHeight;
++                    scrollAdditionalOffset = dp((hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0) + getChatSearchHeight()) - finalTranslateListHeight;
+                     viewPages[0].setTranslationY(0);
+                     for (int i = 0; i < viewPages.length; i++) {
+                         if (viewPages[i] != null) {
+@@ -10350,7 +10363,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                          PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                      } else {
@@ -11002,7 +11583,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
                      }
                  }));
                  return;
-@@ -10375,9 +10376,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10375,9 +10388,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.READ_MEDIA_IMAGES);
              }
@@ -11013,7 +11594,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
              if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
              }
-@@ -10394,7 +10393,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10394,7 +10405,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          String[] items = permissons.toArray(new String[0]);
          try {
@@ -11022,12 +11603,194 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..06acda08401fece3e902e812de408c10
          } catch (Exception ignore) {
          }
      }
-@@ -14434,4 +14433,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10993,7 +11004,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+         }
+         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
+         if (dialogsType == DIALOGS_TYPE_DEFAULT) {
+-            return messagesController.getDialogs(folderId);
++            ArrayList<TLRPC.Dialog> source = messagesController.getDialogs(folderId);
++            if (!hasChatQuickFilters() || chatQuickFilter == 0 || folderId != 0 || source == null) return source;
++            ArrayList<TLRPC.Dialog> filtered = new ArrayList<>();
++            for (TLRPC.Dialog dialog : source) {
++                if (dialog instanceof TLRPC.TL_dialogFolder) continue;
++                if (chatQuickFilter == 1 && (dialog.unread_count > 0 || dialog.unread_mark)) filtered.add(dialog);
++                if (chatQuickFilter == 2 && DialogObject.isChatDialog(dialog.id)) {
++                    TLRPC.Chat chat = messagesController.getChat(-dialog.id);
++                    if (chat != null && (!ChatObject.isChannel(chat) || chat.megagroup)) filtered.add(dialog);
++                }
++            }
++            return filtered;
+         } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
+             return messagesController.dialogsServerOnly;
+         } else if (dialogsType == DIALOGS_TYPE_ADD_USERS_TO) {
+@@ -14039,7 +14061,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+         }
+ 
+         final int maxScrollWithoutSearch = getMaxScrollYOffsetWithoutSearch();
+-        final float alphaByScrollOffset = 1f - MathUtils.clamp((-scrollYOffset - maxScrollWithoutSearch) / dp(SEARCH_FIELD_HEIGHT), 0, 1);
++        final float alphaByScrollOffset = 1f - MathUtils.clamp((-scrollYOffset - maxScrollWithoutSearch) / dp(getChatSearchHeight()), 0, 1);
+ 
+         final float actionModeVisible = Math.max(progressToActionMode, animatorActionModeVisible.getFloatValue());
+         final float searchFieldVisible = animatorSearchVisible.getFloatValue();
+@@ -14177,7 +14199,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+         final int mainTabTop = mainTabBottom - dp(DialogsActivity.MAIN_TABS_HEIGHT);
+ 
+         final int actionBarHeight = actionBar.getMeasuredHeight()
+-            + dp(DialogsActivity.SEARCH_FIELD_HEIGHT)
++            + dp(getChatSearchHeight())
+             + dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)
+             + (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0)
+             + (topPanelLayout != null && topPanelLayout.getVisibility() == View.VISIBLE ? topPanelLayout.getSumHeightOfAllVisibleChild() : 0)
+@@ -14434,4 +14456,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          return true;
      }
  
 -}
 \ No newline at end of file
++}
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..84c5d0930e506977d8bdfab190f9b837b385e1e0
+--- /dev/null
++++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
+@@ -0,0 +1,138 @@
++package org.telegram.ui;
++
++import android.graphics.drawable.Drawable;
++import android.util.SparseArray;
++import com.futoonpay.admin.appearance.ChatLook;
++import org.telegram.messenger.AndroidUtilities;
++import org.telegram.ui.ActionBar.Theme;
++
++/** Cached native appearance adapter. Does not read or mutate conversations or business settings. */
++public final class FutoonChatAppearance {
++    private FutoonChatAppearance() {}
++    private static final class Colors {
++        static final SparseArray<Integer> light = new SparseArray<>(), dark = new SparseArray<>();
++        static {
++            put("key_actionBarDefault", Theme.key_actionBarDefault);
++            put("key_actionBarDefaultArchived", Theme.key_actionBarDefaultArchived);
++            put("key_actionBarDefaultIcon", Theme.key_actionBarDefaultIcon);
++            put("key_actionBarDefaultSearch", Theme.key_actionBarDefaultSearch);
++            put("key_actionBarDefaultSearchPlaceholder", Theme.key_actionBarDefaultSearchPlaceholder);
++            put("key_actionBarDefaultSelector", Theme.key_actionBarDefaultSelector);
++            put("key_actionBarDefaultSubmenuBackground", Theme.key_actionBarDefaultSubmenuBackground);
++            put("key_actionBarDefaultSubmenuItem", Theme.key_actionBarDefaultSubmenuItem);
++            put("key_actionBarDefaultSubmenuItemIcon", Theme.key_actionBarDefaultSubmenuItemIcon);
++            put("key_actionBarDefaultSubmenuSeparator", Theme.key_actionBarDefaultSubmenuSeparator);
++            put("key_actionBarDefaultSubtitle", Theme.key_actionBarDefaultSubtitle);
++            put("key_actionBarDefaultTitle", Theme.key_actionBarDefaultTitle);
++            put("key_avatar_backgroundActionBarBlue", Theme.key_avatar_backgroundActionBarBlue);
++            put("key_avatar_subtitleInProfileBlue", Theme.key_avatar_subtitleInProfileBlue);
++            put("key_chat_inBubble", Theme.key_chat_inBubble);
++            put("key_chat_inBubbleSelected", Theme.key_chat_inBubbleSelected);
++            put("key_chat_inBubbleShadow", Theme.key_chat_inBubbleShadow);
++            put("key_chat_inReplyLine", Theme.key_chat_inReplyLine);
++            put("key_chat_inReplyMediaMessageText", Theme.key_chat_inReplyMediaMessageText);
++            put("key_chat_inReplyMessageText", Theme.key_chat_inReplyMessageText);
++            put("key_chat_inReplyNameText", Theme.key_chat_inReplyNameText);
++            put("key_chat_inSiteNameText", Theme.key_chat_inSiteNameText);
++            put("key_chat_inTimeText", Theme.key_chat_inTimeText);
++            put("key_chat_messagePanelBackground", Theme.key_chat_messagePanelBackground);
++            put("key_chat_messagePanelHint", Theme.key_chat_messagePanelHint);
++            put("key_chat_messagePanelIcons", Theme.key_chat_messagePanelIcons);
++            put("key_chat_messagePanelSend", Theme.key_chat_messagePanelSend);
++            put("key_chat_messagePanelText", Theme.key_chat_messagePanelText);
++            put("key_chat_messagePanelVoiceBackground", Theme.key_chat_messagePanelVoiceBackground);
++            put("key_chat_messagePanelVoicePressed", Theme.key_chat_messagePanelVoicePressed);
++            put("key_chat_messageTextIn", Theme.key_chat_messageTextIn);
++            put("key_chat_messageTextOut", Theme.key_chat_messageTextOut);
++            put("key_chat_outBubble", Theme.key_chat_outBubble);
++            put("key_chat_outBubbleGradient1", Theme.key_chat_outBubbleGradient1);
++            put("key_chat_outBubbleGradient2", Theme.key_chat_outBubbleGradient2);
++            put("key_chat_outBubbleGradient3", Theme.key_chat_outBubbleGradient3);
++            put("key_chat_outBubbleGradientAnimated", Theme.key_chat_outBubbleGradientAnimated);
++            put("key_chat_outBubbleSelected", Theme.key_chat_outBubbleSelected);
++            put("key_chat_outBubbleShadow", Theme.key_chat_outBubbleShadow);
++            put("key_chat_outReplyLine", Theme.key_chat_outReplyLine);
++            put("key_chat_outReplyMediaMessageText", Theme.key_chat_outReplyMediaMessageText);
++            put("key_chat_outReplyMessageText", Theme.key_chat_outReplyMessageText);
++            put("key_chat_outReplyNameText", Theme.key_chat_outReplyNameText);
++            put("key_chat_outSentCheck", Theme.key_chat_outSentCheck);
++            put("key_chat_outSentCheckRead", Theme.key_chat_outSentCheckRead);
++            put("key_chat_outSentCheckReadSelected", Theme.key_chat_outSentCheckReadSelected);
++            put("key_chat_outSentCheckSelected", Theme.key_chat_outSentCheckSelected);
++            put("key_chat_outSiteNameText", Theme.key_chat_outSiteNameText);
++            put("key_chat_outTimeText", Theme.key_chat_outTimeText);
++            put("key_chat_selectedBackground", Theme.key_chat_selectedBackground);
++            put("key_chat_serviceBackground", Theme.key_chat_serviceBackground);
++            put("key_chat_serviceIcon", Theme.key_chat_serviceIcon);
++            put("key_chat_serviceLink", Theme.key_chat_serviceLink);
++            put("key_chat_serviceText", Theme.key_chat_serviceText);
++            put("key_chat_topPanelBackground", Theme.key_chat_topPanelBackground);
++            put("key_chat_wallpaper", Theme.key_chat_wallpaper);
++            put("key_chat_wallpaper_gradient_to1", Theme.key_chat_wallpaper_gradient_to1);
++            put("key_chat_wallpaper_gradient_to2", Theme.key_chat_wallpaper_gradient_to2);
++            put("key_chat_wallpaper_gradient_to3", Theme.key_chat_wallpaper_gradient_to3);
++            put("key_chats_actionBackground", Theme.key_chats_actionBackground);
++            put("key_chats_actionIcon", Theme.key_chats_actionIcon);
++            put("key_chats_date", Theme.key_chats_date);
++            put("key_chats_message", Theme.key_chats_message);
++            put("key_chats_message_threeLines", Theme.key_chats_message_threeLines);
++            put("key_chats_name", Theme.key_chats_name);
++            put("key_chats_nameMessage", Theme.key_chats_nameMessage);
++            put("key_chats_unreadCounter", Theme.key_chats_unreadCounter);
++            put("key_chats_unreadCounterText", Theme.key_chats_unreadCounterText);
++            put("key_checkbox", Theme.key_checkbox);
++            put("key_checkboxCheck", Theme.key_checkboxCheck);
++            put("key_dialogBackground", Theme.key_dialogBackground);
++            put("key_dialogButton", Theme.key_dialogButton);
++            put("key_dialogInputField", Theme.key_dialogInputField);
++            put("key_dialogTextBlack", Theme.key_dialogTextBlack);
++            put("key_dialogTextBlue", Theme.key_dialogTextBlue);
++            put("key_dialogTextBlue2", Theme.key_dialogTextBlue2);
++            put("key_dialogTextBlue4", Theme.key_dialogTextBlue4);
++            put("key_divider", Theme.key_divider);
++            put("key_featuredStickers_addButton", Theme.key_featuredStickers_addButton);
++            put("key_featuredStickers_buttonText", Theme.key_featuredStickers_buttonText);
++            put("key_glass_defaultIcon", Theme.key_glass_defaultIcon);
++            put("key_glass_tabSelected", Theme.key_glass_tabSelected);
++            put("key_glass_tabSelectedText", Theme.key_glass_tabSelectedText);
++            put("key_glass_tabUnselected", Theme.key_glass_tabUnselected);
++            put("key_listSelector", Theme.key_listSelector);
++            put("key_profile_actionBackground", Theme.key_profile_actionBackground);
++            put("key_profile_actionIcon", Theme.key_profile_actionIcon);
++            put("key_profile_status", Theme.key_profile_status);
++            put("key_profile_title", Theme.key_profile_title);
++            put("key_profile_verifiedBackground", Theme.key_profile_verifiedBackground);
++            put("key_profile_verifiedCheck", Theme.key_profile_verifiedCheck);
++            put("key_switch2TrackChecked", Theme.key_switch2TrackChecked);
++            put("key_switchTrackChecked", Theme.key_switchTrackChecked);
++            put("key_telegram_color_dialogsLogo", Theme.key_telegram_color_dialogsLogo);
++            put("key_windowBackgroundGray", Theme.key_windowBackgroundGray);
++            put("key_windowBackgroundGrayShadow", Theme.key_windowBackgroundGrayShadow);
++            put("key_windowBackgroundWhite", Theme.key_windowBackgroundWhite);
++            put("key_windowBackgroundWhiteBlackText", Theme.key_windowBackgroundWhiteBlackText);
++            put("key_windowBackgroundWhiteBlueButton", Theme.key_windowBackgroundWhiteBlueButton);
++            put("key_windowBackgroundWhiteBlueHeader", Theme.key_windowBackgroundWhiteBlueHeader);
++            put("key_windowBackgroundWhiteBlueIcon", Theme.key_windowBackgroundWhiteBlueIcon);
++            put("key_windowBackgroundWhiteBlueText", Theme.key_windowBackgroundWhiteBlueText);
++            put("key_windowBackgroundWhiteBlueText2", Theme.key_windowBackgroundWhiteBlueText2);
++            put("key_windowBackgroundWhiteBlueText3", Theme.key_windowBackgroundWhiteBlueText3);
++            put("key_windowBackgroundWhiteBlueText4", Theme.key_windowBackgroundWhiteBlueText4);
++            put("key_windowBackgroundWhiteBlueText5", Theme.key_windowBackgroundWhiteBlueText5);
++            put("key_windowBackgroundWhiteBlueText6", Theme.key_windowBackgroundWhiteBlueText6);
++            put("key_windowBackgroundWhiteBlueText7", Theme.key_windowBackgroundWhiteBlueText7);
++            put("key_windowBackgroundWhiteGrayIcon", Theme.key_windowBackgroundWhiteGrayIcon);
++            put("key_windowBackgroundWhiteGrayText", Theme.key_windowBackgroundWhiteGrayText);
++            put("key_windowBackgroundWhiteGrayText2", Theme.key_windowBackgroundWhiteGrayText2);
++            put("key_windowBackgroundWhiteGrayText3", Theme.key_windowBackgroundWhiteGrayText3);
++            put("key_windowBackgroundWhiteGrayText4", Theme.key_windowBackgroundWhiteGrayText4);
++            put("key_windowBackgroundWhiteGreenText", Theme.key_windowBackgroundWhiteGreenText);
++            put("key_windowBackgroundWhiteGreenText2", Theme.key_windowBackgroundWhiteGreenText2);
++        }
++        private static void put(String name,int key) { Integer a=ChatLook.color(name,false),b=ChatLook.color(name,true);if(a!=null)light.put(key,a);if(b!=null)dark.put(key,b); }
++    }
++    public static Integer color(int key,boolean dark){return (dark?Colors.dark:Colors.light).get(key);}
++    public static boolean dark(){return Theme.getActiveTheme()!=null && Theme.isCurrentThemeDark();}
++    public static Drawable icon(String glyph){return ChatLook.icon(glyph,ChatLook.text(dark()),AndroidUtilities.density);}
++    private static Drawable paperLight,paperDark;
++    public static Drawable wallpaper(){if(dark()){if(paperDark==null)paperDark=ChatLook.wallpaperDrawable(true,AndroidUtilities.density);return paperDark;}if(paperLight==null)paperLight=ChatLook.wallpaperDrawable(false,AndroidUtilities.density);return paperLight;}
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
@@ -11687,7 +12450,7 @@ index 0000000000000000000000000000000000000000..cad4a649ce32cd23b9eb572a3757f3a7
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonThemeBridge.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonThemeBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f101af2e8ca501aaa21aa86e87a98a5d0142d597
+index 0000000000000000000000000000000000000000..97d1561331f3336135158425281c1c0a87bd6606
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonThemeBridge.java
 @@ -0,0 +1,62 @@
@@ -11735,9 +12498,9 @@ index 0000000000000000000000000000000000000000..f101af2e8ca501aaa21aa86e87a98a5d
 +            com.futoonpay.admin.AppearanceOptions appearance = org.telegram.messenger.futoon.FutoonChatPreferences.get(currentAccount).options().getAppearance();
 +            if (!appearance.getTheme().equals("telegram")) {
 +                boolean dark = appearance.getTheme().equals("dark");
-+                colors.put("dark", dark).put("surface", dark ? 0xff202b36 : 0xffffffff).put("background", dark ? 0xff17212b : 0xfff1f3f5)
-+                    .put("text", dark ? 0xfff0f4f7 : 0xff17212b).put("secondaryText", dark ? 0xffa3b5c3 : 0xff657580)
-+                    .put("divider", dark ? 0xff384757 : 0xffe1e5e9).put("accent", dark ? 0xff64b5ef : 0xff2481cc).put("accentText", dark ? 0xff88c9ff : 0xff1671b8);
++                colors.put("dark", dark).put("surface", dark ? 0xff111b21 : 0xffffffff).put("background", dark ? 0xff0b141a : 0xfff0f2f5)
++                    .put("text", dark ? 0xffe9edef : 0xff0b141a).put("secondaryText", dark ? 0xff8696a0 : 0xff667781)
++                    .put("divider", dark ? 0xff202c33 : 0xfff0f2f5).put("accent", dark ? 0xff21c063 : 0xff008069).put("accentText", dark ? 0xff21c063 : 0xff008069);
 +            }
 +            if (!appearance.getAccent().isEmpty()) { int accent = android.graphics.Color.parseColor(appearance.getAccent()); colors.put("accent", accent).put("accentText", accent); }
 +            colors.put("fontScale", appearance.getFont() / 100f);
@@ -12157,7 +12920,7 @@ index fd968804eb422b343d9da54876d710193e2e1e23..b7ef9ddd9a2436c4d1e43bcba3c4d388
                                  };
                                  if (isAnimatingIntro) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
-index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc5e0ad483 100644
+index 8f1a10be39797dcaa3b15fd19a514651d43960c3..897fdf3584ff08144f6765db08333c90b82ea2f3 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 @@ -90,11 +90,11 @@ import me.vkryl.android.animator.FactorAnimator;
@@ -12185,7 +12948,14 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
      }
  
      private static final int ANIMATOR_ID_TABS_VISIBLE = 0;
-@@ -313,22 +313,17 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -308,27 +308,25 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+ 
+         tabsView = new MainTabsLayout(context, resourceProvider);
+         tabsView.setClipChildren(false);
+-        tabsView.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4));
+-        tabsView.setMaxWidth(dp(328 + DialogsActivity.MAIN_TABS_MARGIN * 2));
++        tabsView.setPadding(dp(8), dp(8), dp(8), dp(4));
++        tabsView.setMaxWidth(0);
  
          tabs = new GlassTabView[5];
          tabs[INDEX_CHATS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CHATS, R.string.MainTabsChats);
@@ -12193,6 +12963,9 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
          tabs[INDEX_SETTINGS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.SETTINGS, R.string.Settings);
 -        tabs[INDEX_CALLS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CALLS, R.string.MainTabsCalls);
          tabs[INDEX_PROFILE] = GlassTabView.createAvatar(context, resourceProvider, currentAccount, R.string.MainTabsProfile);
++        tabs[INDEX_CHATS].setChatAppearance("chat");
++        tabs[INDEX_SETTINGS].setChatAppearance("settings");
++        tabs[INDEX_PROFILE].setChatAppearance("profile");
          tabs[INDEX_CHATS].setOnLongClickListener(this::openFoldersSelector);
 -        tabs[INDEX_CONTACTS].setOnLongClickListener(this::openContactsSelector);
 -        tabs[INDEX_CALLS].setOnLongClickListener(this::openCallsSelector);
@@ -12209,7 +12982,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
  
              final int position = indexToPosition(index);
              tabs[index].setOnClickListener(v -> {
-@@ -349,7 +344,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -349,7 +347,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
              });
  
              tabsView.addView(tabs[index]);
@@ -12218,7 +12991,25 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
          }
          checkUi_callTabVisible(getUserConfig().showCallsTab, false);
  
-@@ -412,50 +407,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -366,7 +364,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+         tabsViewBackground = iBlur3FactoryGlass.create(tabsView, BlurredBackgroundProviderImpl.mainTabs(resourceProvider));
+         tabsViewBackground.setRadius(dp(DialogsActivity.MAIN_TABS_HEIGHT / 2f));
+         tabsViewBackground.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN - 0.334f));
+-        tabsView.setBackground(tabsViewBackground);
++        tabsView.setBackgroundColor(com.futoonpay.admin.appearance.ChatLook.surface(FutoonChatAppearance.dark()));
+ 
+         BlurredBackgroundDrawableViewFactory iBlur3FactoryFade = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
+         iBlur3FactoryFade.setSourceRootView(viewPositionWatcher, contentView);
+@@ -379,6 +377,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+         contentView.addView(fadeView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 0, Gravity.BOTTOM));
+ 
+         tabsViewWrapper = new FrameLayout(context);
++        tabsViewWrapper.setBackgroundColor(com.futoonpay.admin.appearance.ChatLook.surface(FutoonChatAppearance.dark()));
++        fadeView.setVisibility(View.GONE);
+         tabsViewWrapper.setOnClickListener(v -> {});
+         tabsViewWrapper.addView(tabsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, DialogsActivity.MAIN_TABS_HEIGHT_WITH_MARGINS, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL));
+         tabsViewWrapper.setClipToPadding(false);
+@@ -412,50 +412,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      }
  
      public boolean openContactsSelector(View anchor) {
@@ -12271,7 +13062,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
      }
  
      private Integer pendingFolderId;
-@@ -807,19 +763,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -807,19 +768,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
  
      @Override
      protected BaseFragment createBaseFragmentAt(int position) {
@@ -12292,7 +13083,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
              Bundle args = new Bundle();
              args.putBoolean("hasMainTabs", true);
              return new SettingsActivity(args);
-@@ -851,12 +795,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -851,12 +800,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      public void selectTab(int position, boolean animated) {
          for (int a = 0; a < tabs.length; a++) {
              GlassTabView tab = tabs[a];
@@ -12307,7 +13098,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
              final int position = indexToPosition(index);
              final float visibility = Math.max(0, 1f - Math.abs(position - animatedPosition));
              tabs[index].setGestureSelectedOverride(visibility, allow);
-@@ -1087,9 +1033,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -1087,9 +1038,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      }
  
      private void checkUi_callTabVisible(boolean callTabsVisible, boolean animated) {
@@ -12318,7 +13109,16 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
          }
      }
  
-@@ -1226,6 +1172,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -1216,6 +1167,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+         blur3_updateFadeColors();
+         if (tabsViewBackground != null) {
+             tabsViewBackground.updateColors();
++            tabsView.setBackgroundColor(com.futoonpay.admin.appearance.ChatLook.surface(FutoonChatAppearance.dark()));
++            if (tabsViewWrapper != null) tabsViewWrapper.setBackgroundColor(com.futoonpay.admin.appearance.ChatLook.surface(FutoonChatAppearance.dark()));
+         }
+         blur3_invalidateBlur();
+         if (fadeView != null) {
+@@ -1226,6 +1179,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
          }
          if (tabs != null) {
              for (GlassTabView tabView : tabs) {
@@ -12327,6 +13127,28 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..f05c53e94ed2c5a80be0d40e47eaa6dc
                  tabView.updateColorsLottie();
              }
          }
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsLayout.java b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsLayout.java
+index 5667c3986d1c34d6a2158053043008aed7d35f37..cfc1c69667f14219e756e6986a11946cdd36f69d 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsLayout.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsLayout.java
+@@ -66,7 +66,7 @@ public class MainTabsLayout extends AnimatedLinearLayout {
+         }
+ 
+         final int maxTotalWidthForTabs = width - getPaddingLeft() - getPaddingRight();
+-        final int minTotalWidthForTabs = Math.min(dp(320), maxTotalWidthForTabs);
++        final int minTotalWidthForTabs = maxTotalWidthForTabs;
+ 
+         int chosenPass = PASS_TEXT_SIZES_DP.length - 1;
+         float lastMeasuredTextSize = -1;
+@@ -104,7 +104,7 @@ public class MainTabsLayout extends AnimatedLinearLayout {
+                 continue;
+             }
+ 
+-            tabsTextWidthWithMargin[a] = tabsTextWidth[a] + tabPadding * 2;
++            tabsTextWidthWithMargin[a] = maxTotalWidthForTabs / (float) Math.max(1, visibleChildCount);
+             tabsWeight[a] = tabsTextWidthWithMargin[a] > (maxTabTextWidthIfEq + tabPadding * 2) ? 0 : 1;
+ 
+             totalWidth += tabsTextWidthWithMargin[a];
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/PassportActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/PassportActivity.java
 index b7eb4d4996065373e450e8d05878a4963184d0a9..fd319713023e3616d0e28f6d4d618f5c2f88de55 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/PassportActivity.java
@@ -12728,7 +13550,7 @@ index 9ab26df3ac49dd83ab70fe19f1bb321e43959321..35a26fa65d0bc448eb8386adceedc923
          if (requestCode == 3) {
              if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
-index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..00e0b7021b2163afb0b8aca8dbf30b12886ea60d 100644
+index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..d6be582865b3886847405b76b13a4eb08c8c9a0d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 @@ -654,6 +654,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
@@ -12757,6 +13579,18 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..00e0b7021b2163afb0b8aca8dbf30b12
                          return;
                      }
                      ImageLocation location = avatarsViewPager.getImageLocation(avatarsViewPager.getRealPosition());
+@@ -6029,9 +6030,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+ 
+     private int getHeaderOnlyExtraHeight() {
+         if (getActionsExtraHeight() == 0) {
+-            return dp(168f);
++            return dp(184f);
+         }
+-        return dp(152f);
++        return dp(168f);
+     }
+ 
+     private int getActionsExtraHeight() {
 @@ -7293,6 +7294,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
      }
  
@@ -12785,7 +13619,23 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..00e0b7021b2163afb0b8aca8dbf30b12
                  if (userInfo != null) {
                      if (userInfo.birthday != null) {
                          birthdayRow = rowCount++;
-@@ -12353,6 +12361,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+@@ -11313,6 +11321,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+                 final MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
+                 peerColor = peerColors == null ? null : peerColors.getColor(colorId);
+             }
++            peerColor = null; // Neutral profile header in the unified chat appearance.
+             if (wasPeerColor != peerColor) {
+                 updatedPeerColor();
+             }
+@@ -11628,6 +11637,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+                 MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
+                 peerColor = peerColors == null ? null : peerColors.getColor(colorId);
+             }
++            peerColor = null; // Neutral profile header in the unified chat appearance.
+             if (wasPeerColor != peerColor) {
+                 updatedPeerColor();
+             }
+@@ -12353,6 +12363,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
              otherItem.hideSubItem(delete_avatar);
          }
  
@@ -12799,7 +13649,7 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..00e0b7021b2163afb0b8aca8dbf30b12
          isCallAvailable = callItemVisible;
  
          if (actionsView != null) {
-@@ -13490,6 +13505,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+@@ -13490,6 +13507,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
  
                              containsGift = !myProfile && today && !getMessagesController().premiumPurchaseBlocked();
                          }
@@ -12808,7 +13658,7 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..00e0b7021b2163afb0b8aca8dbf30b12
                      } else if (position == phoneRow) {
                          String text;
                          TLRPC.User user = getMessagesController().getUser(userId);
-@@ -14321,7 +14338,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+@@ -14321,7 +14340,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
              if (position == infoHeaderRow || position == membersHeaderRow || position == settingsSectionRow2 ||
                      position == numberSectionRow || position == helpHeaderRow || position == debugHeaderRow || position == botPermissionsHeader) {
                  return VIEW_TYPE_HEADER;
@@ -12817,7 +13667,7 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..00e0b7021b2163afb0b8aca8dbf30b12
                  return VIEW_TYPE_TEXT_DETAIL;
              } else if (position == usernameRow || position == setUsernameRow) {
                  return VIEW_TYPE_TEXT_DETAIL_MULTILINE;
-@@ -15720,6 +15737,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+@@ -15720,6 +15739,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
              put(++pointer, infoHeaderRowEmpty, sparseIntArray);
              put(++pointer, infoEndRowEmpty, sparseIntArray);
              put(++pointer, phoneRow, sparseIntArray);
@@ -14512,7 +15362,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..e25a16be2020f54f3bd53c817fa4c832040914ee 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..af0e298ddee4b10569cac5514a3790af58ce1fec 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
@@ -14520,7 +15370,7 @@ index 55d530f04eceaa33faa42b235a441f289255dbee..e25a16be2020f54f3bd53c817fa4c832
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7196
++APP_VERSION_CODE=7197
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
