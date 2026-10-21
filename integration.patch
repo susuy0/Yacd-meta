@@ -11892,10 +11892,10 @@ index 0000000000000000000000000000000000000000..5bd42f92d8956fbcc931488d4114a9b3
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2613c8fba72a445bee1d5334174d5401f1625803
+index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a2957a25e00
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,71 @@
 +package org.telegram.ui;
 +
 +import android.content.Context;
@@ -11924,7 +11924,6 @@ index 0000000000000000000000000000000000000000..2613c8fba72a445bee1d5334174d5401
 +    public String selectedCategory() { return selectedCategory; }
 +    @Override public View createView(Context context) {
 +        actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-+        actionBar.setTitleSize(20);
 +        actionBar.setTitle("FutoonPay 设置");
 +        actionBar.setAllowOverlayTitle(true);
 +        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() { @Override public void onItemClick(int id) { if (id == -1 && tools != null) tools.handleBack(); } });
@@ -13834,18 +13833,10 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..a7a37009cdf86b64df95fd9479e1118b8b0d7dc8 100644
+index 693df7877dde165920833faafae227cf60679d29..cbd4930ecb4775fc833c898d6f6769006a21529a 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-@@ -296,6 +296,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
-         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
-         actionBar.setAllowOverlayTitle(true);
-         actionBar.setUseContainerForTitles();
-+        actionBar.setTitleSize(20);
-         actionBar.setTitle(getString(R.string.Settings));
-         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
-             @Override
-@@ -698,6 +699,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -698,6 +698,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          }
  
          items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
@@ -13853,7 +13844,7 @@ index 693df7877dde165920833faafae227cf60679d29..a7a37009cdf86b64df95fd9479e1118b
          items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
          items.add(SettingCell.Factory.of(3, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_privacy, getString(R.string.SettingsPrivacySecurity), getString(R.string.SettingsPrivacySecurityInfo)));
          items.add(SettingCell.Factory.of(5, IconBackgroundColors.RED.top, IconBackgroundColors.RED.bottom, R.drawable.settings_sounds, getString(R.string.SettingsNotifications), getString(R.string.SettingsNotificationsInfo)));
-@@ -817,6 +819,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -817,6 +818,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              return;
          }
          switch (item.id) {
