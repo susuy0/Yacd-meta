@@ -1,21 +1,22 @@
-短信 / Futoon chat v0.9.0 原生外观验证
-源码：c768f26b4a2e7ab61522814be960e78bc7800fa4
-GitHub Actions：39456208769
+短信 / Futoon chat v0.9.1 全局导航与业务外观验证
+源码：a67d31c5d3986e06ac5e3892aabdcb7ad027d643
+GitHub Actions：39535368802
 
-335 tests, 0 failures, 0 errors, 0 skipped; 49 suites
-Android Lint: 0 errors, 38 warnings
-53 synthetic-fixture screenshots, including 6 new shared native component geometry screenshots.
+339 tests, 0 failures, 0 errors, 0 skipped; 50 suites
+Android Lint: 0 errors, 39 warnings
+57 synthetic-fixture screenshots; 4 new shared navigation/filter screenshots.
 
-- 原生底部三栏、搜索与真实未读/群组筛选、气泡、图案背景、输入区、圆形发送键、菜单及明暗配色。
-- 外观新增9项测试，115个真实Theme键、无反射缓存适配器与绘制期间无背景重建审计通过。
-- 明暗色文本对比、语义状态颜色保留、透明度、气泡连排尾角、48dp按钮、320/390/640dp及RTL共享组件几何验证通过。
-- Futoon扩展、原商户更多、识别、多通道、商户固定查询、发送/媒体/快速回复、凭证、开户和按群自动化回归通过。
-- 不恢复联系人、通话、拍照、语音、定位或视频编辑权限。
+- 主导航与悬浮窗五Tab胶囊选中态、轮廓图标、文字权重，原排序/状态/回调保留。
+- 分类/筛选标签可横滑，保留选中稳定键与原搜索条件。
+- 订单、商户、结算、更多、设置、快速回复的共用卡片/按钮/输入框/标题栏统一。
+- 320dp重排五Tab路由、RTL下150%字号、长标签滚动、三Tab导航真实交互检查通过。
+- 140个真实Theme键、原生文件/联系人/转发与普通引用配色、资料/设置排版统一。
+- 原商户识别/更多、多通道、固定商户查询、发送/媒体/快速回复、凭证、开户、群自动化及权限裁剪回归通过。
 
-完整Android构建和权限/组件/原生引擎审计通过。
-APK与mapping CI校验值、ZIP长度/SHA-256/CRC、APK v2签名及内容摘要核验通过。
-APK：SMS-Futoon-v0.9.0-arm64.apk；40,966,432字节；71979；签名与v0.8.6一致。
-SHA-256：37183f82c7a6f53f6103daa161e0f92b515e02d2cd0953570e4b3da9c96550f7
+完整Android构建与组件/权限/原生引擎审计通过。
+ZIP长度/SHA-256/CRC、APK与mapping CI校验值、APK v2签名及内容摘要核验通过。
+APK：SMS-Futoon-v0.9.1-arm64.apk；40,971,248字节；71989；签名与v0.9.0一致。
+SHA-256：0888397450d7bfaad07d0300048eaf2431b36cbfc775d7c2e92dde64a8bd3b1f
 
-仅Robolectric SDK35、合成数据与受控传输；不是全屏像素一致性验证。
-Android17真机、系统键盘、相册裁剪、真实后台、全屏截图对比和FCM送达未验证。
+测试使用Robolectric SDK35、合成数据与受控传输。
+Android17真机、系统键盘、相册裁剪、真实后台、全屏像素对比和FCM送达未验证。
