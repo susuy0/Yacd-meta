@@ -1,26 +1,27 @@
-短信 / Futoon chat v0.9.3 原生界面与本地构建验证
-源码：29a5e17ec166984851c4b4ed76393f7ff3a43845
+短信 / Futoon chat v0.10.0 全界面整合与本地构建验证
+源码：adfcb37bbcc479e79adb8ad7ad28a4033bceac1a
 上游：f32ffeec763f0bdbf4bec25b52d654f77bff733d
-构建：本地Gradle8.13 / JDK17 / SDK36；GitHub没有产生新工作流。
+构建：本地Gradle8.13 / JDK17 / SDK36；该GitHub提交没有产生新工作流。
 
-346 tests, 0 failures, 0 errors, 0 skipped; 51 suites
-Android Lint: 0 errors, 32 warnings, 3 hints
-65 synthetic-fixture screenshots
+355 tests, 0 failures, 0 errors, 0 skipped; 52 suites
+Android Lint: 0 errors, 34 warnings, 3 hints
+67 synthetic-fixture screenshots, all refreshed in this final run
 
-- 设置页64dp头像、19/14sp文字、独立二维码和资料操作；24dp灰色设置图标、16/14sp两级文字与上下留白。
-- 宿主关闭系统RTL镜像，新增组件跟随Telegram方向显式排列；280/320/390dp、100/150/200%字体回归。
-- 设置标题附着到实际Activity窗口后检查文字绘制，避免未附着TextView的RTL滚动位置使测试截图缺字。
-- 会话列表48dp头像、80dp文字起点，媒体预览与RTL同步；资料页120dp正常头像，原生折叠、头像查看和Telegram ID保留。
-- 附件原生网格最多4列；窄屏重排、长文字、滚动、取消、重复点击和机器人长按回归。
-- 入口来自原适配器，选择后调用原分发器；原权限/限制判断不变，后台/离开/旋转时清理菜单。
-- 参考涂鸦PNG为灰度遮罩，将亮度转为覆盖率；按APK实际明暗色值着色、共享缓存、不在绘制中解码。
+- 相册/文件、资料/群成员/共享媒体、二级设置、复杂消息和机器人键盘均覆盖。
+- 长按菜单、多选、转发、确认弹窗、登录/验证码/搜索/群话题控件使用统一原生规则。
+- Futoon业务统一按钮、字段、详情、弹层和导航；331段原点击表达式、17个文件逐一核对不变。
+- 快捷回复保存分类后隔离旧页列表内容；新增Tab→分类→文案完整测试通过，保持只填入草稿。
+- 原生资料行保留原TextView、span、监听；说明文字自然测量，回收为空说明时重新布局；240/280/390/640dp、100/150/200%字体与RTL回归。
+- 弹窗24dp、底部弹层顶角28dp、菜单12dp、搜索24dp；短转场遵循系统减少动画。
+- 宽度响应式相册网格与间距；两类机器人键盘按钮保留原点击、状态及滚动，回复键盘最小48dp。
+- 244个原生主题键缓存；搜索背景可切换明暗；删除/错误/资金状态色保持原义。
 - 原生业务、发送/媒体/快捷回复、商户/通道、凭证/开户/按群自动化、权限裁剪及ICU检查通过。
-- 完整宿主与125个模块文件和发布源码一致；客户端Java与APK编译通过。
-- C++复用已核验v0.9.2原生库，打包后哈希一致；APK v2签名/内容摘要、ZIP CRC、身份/ABI/权限/业务标识通过。
+- 完整宿主与132个模块文件和发布源码一致；客户端Java与APK编译通过，冻结源码未变化。
+- C++复用已核验v0.9.3原生库，打包后哈希一致；APK v2签名/内容摘要、ZIP CRC、身份/ABI/权限/业务标识通过。
 
-APK：SMS-Futoon-v0.9.3-arm64.apk；41,029,761字节；72009。
-SHA-256：05548422e041c52feb2ddf2fb40be53134de4c0d51bb69fded308e1fec83ef46
-映射SHA-256：2560aa41b6e9e64753e932f058d0c616d6bdad4501f400db24896de9782c049c
-构建记录：SMS-Futoon-v0.9.3-build-records.zip
+APK：SMS-Futoon-v0.10.0-arm64.apk；41,039,463字节；72019。
+SHA-256：e01107ae4078ffb0e3141433644079ac7f39e0fd7eb7baf59b8f80941e7b78e6
+映射SHA-256：07d846e72eeca8f08eceacbd544f20860c34c44561ca77cdc4ca536bb814bc87
+构建记录：SMS-Futoon-v0.10.0-build-records.zip
 
-限制：Robolectric SDK35合成数据，非已登录WhatsApp或Android17真机截图；未验证完整逐页像素一致、动画、系统选择器/键盘、真实业务与FCM送达。
+限制：Robolectric SDK35合成数据，非已登录WhatsApp或Android17真机截图；未验证完整逐页像素一致、真机动画、系统选择器/键盘、真实业务与FCM送达。
