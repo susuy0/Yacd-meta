@@ -83,6 +83,9 @@ public final class ChatLook {
             case "key_telegram_color_dialogsLogo":
             case "key_chat_outReplyLine": case "key_chat_inReplyLine": return accent(dark);
             case "key_chat_outReplyNameText": case "key_chat_inReplyNameText": return selectedText(dark);
+            case "key_chat_topPanelTitle": return accentText(dark);
+            case "key_chat_topPanelLine": return accent(dark);
+            case "key_chat_topPanelMessage": case "key_chat_topPanelClose": return secondary(dark);
             case "key_chats_unreadCounterText": case "key_featuredStickers_buttonText": case "key_chat_messagePanelVoicePressed":
             case "key_checkboxCheck": case "key_chats_actionIcon": case "key_profile_actionIcon": case "key_profile_verifiedCheck": return 0xffffffff;
             case "key_chat_outSentCheck": case "key_chat_outSentCheckSelected": return secondary(dark);

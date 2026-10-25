@@ -18,6 +18,9 @@ public class ChatInboxHeader extends FrameLayout {
     public static int homeHeight(float scale){return titleBand(scale)+searchBand(scale)+filterBand(scale);}
     private int dp(float value){return ChatChrome.dp(getContext(),value);}
     public void bindHome(String title,View filters,View editor,View search,View close,View extras,View tokens){
+        // The compact native search field has its own inset. Our three bands already
+        // include their spacing, so inheriting that padding clips the filter viewport.
+        setPadding(0,0,0,0);
         this.filters=filters;this.editor=editor;this.search=search;this.close=close;this.extras=extras;this.tokens=tokens;
         if(largeTitle==null){largeTitle=new TextView(getContext());largeTitle.setTextSize(34);largeTitle.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));largeTitle.setIncludeFontPadding(false);largeTitle.setSingleLine(true);largeTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);largeTitle.setGravity(Gravity.CENTER_VERTICAL);largeTitle.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);addView(largeTitle,new LayoutParams(-1,-2));}
         largeTitle.setText(title);requestLayout();

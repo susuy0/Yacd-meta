@@ -14004,7 +14004,7 @@ index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef8
                      }
                  }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
-index 44295250c3685eed39aaec116dc062b21d0a3f05..c793bf851c3607e07332dc3eaf697691ecf0e20e 100644
+index 44295250c3685eed39aaec116dc062b21d0a3f05..676785948eea546fb32f1a18e826d0d552f7fc24 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
 @@ -72,6 +72,7 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
@@ -14035,7 +14035,7 @@ index 44295250c3685eed39aaec116dc062b21d0a3f05..c793bf851c3607e07332dc3eaf697691
              final float r = Math.min(tmpRectF.width(), tmpRectF.height()) / 2f;
              final float s = lerp(0.6f, 1, selectedFactor) * MathUtils.clamp(attachScale, 0, 1);
              canvas.save();
-@@ -234,7 +240,23 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+@@ -234,7 +240,25 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
          isSelectedAnimator.setValue(selected, animated);
          checkPlayAnimation(animated);
  
@@ -14052,34 +14052,46 @@ index 44295250c3685eed39aaec116dc062b21d0a3f05..c793bf851c3607e07332dc3eaf697691
 +        if (backupImageView != null) backupImageView.setVisibility(GONE);
 +        imageView.setImageDrawable(org.telegram.ui.FutoonChatAppearance.icon(glyph + (isTabSelected() ? "_selected" : "")));
 +        imageView.setLayoutParams(LayoutHelper.createFrame(28, 28, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 5, 0, 0));
-+        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 12 * getResources().getConfiguration().fontScale, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, getResources().getConfiguration().fontScale > 1.5f ? 32 : 36, 0, 0));
++        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
 +        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
 +        textView.setIncludeFontPadding(false);
++        textView.setHorizontallyScrolling(false);
++        textView.scrollTo(0, 0);
 +        textView.setTypeface(AndroidUtilities.bold());
 +        invalidate();
      }
  
      public boolean isTabSelected() {
-@@ -524,15 +546,15 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+@@ -504,6 +528,9 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+ 
+     @Override
+     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
++        if (chatAppearanceGlyph != null) {
++            com.futoonpay.admin.appearance.ChatTabGeometry.prepare(imageView, textView, MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(heightMeasureSpec));
++        }
+         if (selfMeasure) {
+             final int width = (int) (measureAttachTabWidth()) + additionalWidth;
+             super.onMeasure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), heightMeasureSpec);
+@@ -524,15 +551,15 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
          if (scaledTextPaint == null) {
              scaledTextPaint = new TextPaint(defaultTextPaint);
          }
 -        scaledTextPaint.setTextSize(dp(textSizeDp));
-+        scaledTextPaint.setTextSize(chatAppearanceGlyph == null ? dp(textSizeDp) : TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics()));
++        scaledTextPaint.setTextSize(chatAppearanceGlyph == null ? dp(textSizeDp) : TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, com.futoonpay.admin.appearance.ChatTabGeometry.LABEL_SP, getResources().getDisplayMetrics()));
          return scaledTextPaint.measureText(textView.getText().toString());
      }
  
      @Override
      public void setTextSizeDp(float textSizeDp) {
 -        final float px = dp(textSizeDp);
-+        final float px = chatAppearanceGlyph == null ? dp(textSizeDp) : TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics());
++        final float px = chatAppearanceGlyph == null ? dp(textSizeDp) : TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, com.futoonpay.admin.appearance.ChatTabGeometry.LABEL_SP, getResources().getDisplayMetrics());
          if (textView.getTextSize() != px) {
 -            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSizeDp);
 +            textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, px);
              defaultTextPaint.setTextSize(px);
          }
      }
-@@ -622,6 +644,8 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
+@@ -622,6 +649,8 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
          checkPlayAnimation(false);
      }
  
@@ -14769,10 +14781,10 @@ index f7c1592923f81072f03f0341d469b24cb1571656..e1bab116a8873adb6df8582806641205
              noTag.setGravity(Gravity.RIGHT);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4f553f19c5b6e607a2b65e8b5c5ced887491b6fd
+index 0000000000000000000000000000000000000000..42cb9b4dd5858898859a6351ec083f97e7ba0e20
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,276 @@
 +package org.telegram.ui;
 +
 +import android.graphics.drawable.Drawable;
@@ -14868,6 +14880,10 @@ index 0000000000000000000000000000000000000000..4f553f19c5b6e607a2b65e8b5c5ced88
 +            put("key_chat_serviceLink", Theme.key_chat_serviceLink);
 +            put("key_chat_serviceText", Theme.key_chat_serviceText);
 +            put("key_chat_topPanelBackground", Theme.key_chat_topPanelBackground);
++            put("key_chat_topPanelTitle", Theme.key_chat_topPanelTitle);
++            put("key_chat_topPanelLine", Theme.key_chat_topPanelLine);
++            put("key_chat_topPanelMessage", Theme.key_chat_topPanelMessage);
++            put("key_chat_topPanelClose", Theme.key_chat_topPanelClose);
 +            put("key_chat_wallpaper", Theme.key_chat_wallpaper);
 +            put("key_chat_wallpaper_gradient_to1", Theme.key_chat_wallpaper_gradient_to1);
 +            put("key_chat_wallpaper_gradient_to2", Theme.key_chat_wallpaper_gradient_to2);
@@ -16783,7 +16799,7 @@ index fd968804eb422b343d9da54876d710193e2e1e23..225364b8257cd561c4aa2e5c648bb92a
              textView.setGravity(Gravity.CENTER);
              topView.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 16, 152, 16, 0));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
-index 8f1a10be39797dcaa3b15fd19a514651d43960c3..897fdf3584ff08144f6765db08333c90b82ea2f3 100644
+index 8f1a10be39797dcaa3b15fd19a514651d43960c3..dced7971a347f1efc052010e7b4ea46d7bac5a8c 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 @@ -90,11 +90,11 @@ import me.vkryl.android.animator.FactorAnimator;
@@ -16817,7 +16833,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..897fdf3584ff08144f6765db08333c90
          tabsView.setClipChildren(false);
 -        tabsView.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4));
 -        tabsView.setMaxWidth(dp(328 + DialogsActivity.MAIN_TABS_MARGIN * 2));
-+        tabsView.setPadding(dp(8), dp(8), dp(8), dp(4));
++        tabsView.setPadding(dp(8), 0, dp(8), 0);
 +        tabsView.setMaxWidth(0);
  
          tabs = new GlassTabView[5];
@@ -17720,18 +17736,45 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827a89919e9 100644
+index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda9cf46296 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-@@ -176,6 +176,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -175,7 +175,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+     private TLRPC.FileLocation avatarBig;
      private ImageLocation uploadingImageLocation;
  
++    private boolean settingsViewsReady;
      private FrameLayout topView;
 +    private com.futoonpay.admin.appearance.ChatSettingsIntro iosSettingsIntro;
      private FrameLayout avatarContainer;
      private AvatarDrawable avatarDrawable;
      private BackupImageView avatarView;
-@@ -351,8 +352,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -227,11 +229,16 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+     @Override
+     public void clearViews() {
+         if (ignoreClearViews) return;
++        settingsViewsReady = false;
++        iosSettingsIntro = null;
+         super.clearViews();
+     }
+ 
+     @Override
+     public View createView(Context context) {
++        settingsViewsReady = false;
++        iosSettingsIntro = null;
++        topView = null;
+         contentView = new SizeNotifierFrameLayout(context) {
+             @Override
+             protected void dispatchDraw(Canvas canvas) {
+@@ -344,15 +351,15 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+         search = new ProfileActivity.SearchAdapter(this, context) {
+             @Override
+             public void notifyDataSetChanged() {
+-                listView.adapter.update(true);
++                if (settingsViewsReady && listView != null) listView.adapter.update(true);
+             }
+         };
+         search.loadFaqWebPage();
  
          listView = new UniversalRecyclerView(this, this::fillItems, this::onClick, this::onLongClick);
          listView.adapter.setApplyBackground(false);
@@ -17742,7 +17785,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          listView.setClipToPadding(false);
          listView.addOnScrollListener(new RecyclerView.OnScrollListener() {
              @Override
-@@ -379,7 +380,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -379,7 +386,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                  int top = actionBar.getHeight();
                  AndroidUtilities.rectTmp2.set(0, 0, getMeasuredWidth(), top);
                  blurScrimPaint.setColor(Theme.getColor(Theme.key_actionBarDefault, resourceProvider));
@@ -17751,7 +17794,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
                  if (getParentLayout() != null) {
                      getParentLayout().drawHeaderShadow(canvas, top);
                  }
-@@ -393,10 +394,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -393,10 +400,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          imageUpdater.parentFragment = this;
          imageUpdater.setDelegate(this);
  
@@ -17765,7 +17808,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          avatarContainer.setOnClickListener(v -> {
              TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).getClientUserId());
              if (user == null) {
-@@ -415,8 +417,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -415,8 +423,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
  
          avatarDrawable = new AvatarDrawable();
          avatarView = new BackupImageView(context);
@@ -17776,7 +17819,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
  
          avatarProgressView = new RadialProgressView(context) {
              private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-@@ -437,7 +439,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -437,7 +445,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          avatarProgressView.setSize(AndroidUtilities.dp(26));
          avatarProgressView.setProgressColor(0xffffffff);
          avatarProgressView.setNoProgress(false);
@@ -17785,7 +17828,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          showAvatarProgress(false, false);
  
          cameraButton = new FrameLayout(context);
-@@ -447,10 +449,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -447,10 +455,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          cameraBackground.setBackground(Theme.createCircleDrawable(dp(30), getThemedColor(Theme.key_featuredStickers_addButton)));
          cameraImageView = new ImageView(context);
          cameraImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -17800,7 +17843,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          ScaleStateListAnimator.apply(cameraButton);
  
          titleView = new TextView(context);
-@@ -462,12 +464,28 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -462,12 +470,28 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          topView.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 16, 138.333f - 12, 16, 0));
  
          subtitleView = new TextView(context);
@@ -17830,7 +17873,23 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          versionView = new TextView(context);
          versionView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
          versionView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText4));
-@@ -561,6 +579,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -490,6 +514,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+         navigationBar = new View(context);
+ //        fragmentView.addView(navigationBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 0, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
+ 
++        settingsViewsReady = true;
+         updateActionBarVisible(true, false);
+         listView.adapter.update(false);
+         setInfo();
+@@ -502,6 +527,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+ 
+     @Override
+     public void onFragmentDestroy() {
++        settingsViewsReady = false;
+         super.onFragmentDestroy();
+ 
+         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
+@@ -561,6 +587,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          final int navigationBarColor = getThemedColor(Theme.key_windowBackgroundWhite);
          navigationBar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { Theme.multAlpha(navigationBarColor, 0.0f), navigationBarColor }));
  
@@ -17839,7 +17898,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          actionBarBackground.invalidate();
          listView.invalidate();
      }
-@@ -580,39 +600,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -580,50 +608,32 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          updateActionBarVisible(false, true);
      }
      private void updateActionBarVisible(boolean force, boolean animated) {
@@ -17887,7 +17946,13 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
      }
  
      private ArrayList<Integer> accountNumbers = new ArrayList<>();
-@@ -623,7 +618,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
++        // UniversalAdapter fills synchronously in its constructor, before the
++        // account card and the rest of this view tree have been created.
++        if (!settingsViewsReady) return;
+         if (searchItem.isSearchFieldVisible2()) {
+             items.add(UItem.asSpace(ActionBar.getCurrentActionBarHeight()));
+             search.fillItems(items);
              return;
          }
  
@@ -17900,7 +17965,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
  
          accountNumbers.clear();
          for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-@@ -698,6 +697,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -698,6 +708,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          }
  
          items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
@@ -17908,7 +17973,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
          items.add(SettingCell.Factory.of(3, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_privacy, getString(R.string.SettingsPrivacySecurity), getString(R.string.SettingsPrivacySecurityInfo)));
          items.add(SettingCell.Factory.of(5, IconBackgroundColors.RED.top, IconBackgroundColors.RED.bottom, R.drawable.settings_sounds, getString(R.string.SettingsNotifications), getString(R.string.SettingsNotificationsInfo)));
-@@ -817,6 +817,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -817,6 +828,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              return;
          }
          switch (item.id) {
@@ -17918,7 +17983,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
              case 1:
                  presentSettingFragment(new UserInfoActivity());
                  break;
-@@ -972,7 +975,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -972,7 +986,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          final Insets systemInsets = AndroidUtilities.getDefaultWindowInsets(insets, false);
          navigationBarHeight = systemInsets.bottom;
          final int statusBarHeight = systemInsets.top;
@@ -17927,7 +17992,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
          return WindowInsetsCompat.CONSUMED;
      }
  
-@@ -1167,7 +1170,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1167,7 +1181,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              setOrientation(HORIZONTAL);
  
              iconLayout = new FrameLayout(context);
@@ -17936,7 +18001,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
  
              iconView = new ImageView(context);
              iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-@@ -1177,24 +1180,26 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1177,24 +1191,26 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              textLayout.setOrientation(VERTICAL);
  
              titleView = new TextView(context);
@@ -17971,7 +18036,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
              updateColors();
          }
  
-@@ -1203,6 +1208,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1203,6 +1219,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
              subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, resourcesProvider));
              valueView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
@@ -17979,7 +18044,7 @@ index 693df7877dde165920833faafae227cf60679d29..d820abc8153ec740c4dc727e3c1b0827
              iconBackground.setDrawBorder(hasBackground && (resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark()));
          }
  
-@@ -1235,10 +1241,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1235,10 +1252,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
  
          @Override
          protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -19849,7 +19914,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..7baabd448a84124ad21bd30c7facacce06962eba 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..e8558e23fe1ceff71c74e3175e0d4c450088fb0b 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
@@ -19857,7 +19922,7 @@ index 55d530f04eceaa33faa42b235a441f289255dbee..7baabd448a84124ad21bd30c7facacce
  # org.gradle.parallel=true
  #Sat Mar 12 05:53:50 MSK 2016
 -APP_VERSION_CODE=7175
-+APP_VERSION_CODE=7202
++APP_VERSION_CODE=7203
  APP_VERSION_NAME=13.0.2
 -APP_PACKAGE=org.telegram.messenger
 +APP_PACKAGE=com.futoonpay.vinechat
