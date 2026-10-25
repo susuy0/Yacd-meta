@@ -1,15 +1,15 @@
 {
-  "version": "0.9.1 unified native navigation, panels and forms",
-  "versionCode": 71989,
+  "version": "0.9.2 measured APK chat chrome and readable text roles",
+  "versionCode": 71999,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "641722fdf84c5717ff84f9cda92278e780538054d2a24558674db7ba64ad6dae",
-  "source_baseline": "c768f26b4a2e7ab61522814be960e78bc7800fa4",
-  "source_commit": "a67d31c5d3986e06ac5e3892aabdcb7ad027d643",
-  "source_tree": "76fa233c07de59b603da7fd193463f8b58416230",
+  "patch_sha256": "64feadb0bdbd3f0658b6096d9c7cf07175b74e7e006b584aacc7d1ea03534c1d",
+  "source_baseline": "a67d31c5d3986e06ac5e3892aabdcb7ad027d643",
+  "source_commit": "f82f08abb2c3caa2f427a29b473bc0377be07988",
+  "source_tree": "aef33c00d0f34d709d7f20c46fecce43ff7ecfea",
   "features": {
     "native_ui_only": true,
-    "original_telegram_ui": "native WhatsApp-style visual adaptation; existing Futoon operations and requested trim preserved",
+    "original_telegram_ui": "Native visual adaptation using static measurements from WhatsApp 2.26.42.71; full pixel equivalence not claimed",
     "internal_notes_removed": true,
     "business_reply_templates": true,
     "manual_send_only_for_reply_drafts": true,
@@ -94,82 +94,88 @@
     "file_contact_forward_message_palette": true,
     "native_profile_and_settings_typography": true,
     "native_folder_filter_capsules": true,
-    "native_quote_palette": "normal reply, quote, link, contact; code/sponsored/collectible-specific paths retained"
+    "native_quote_palette": "normal reply, quote, link, contact; code/sponsored/collectible-specific paths retained",
+    "measured_reference_apk": true,
+    "reference_nav_height_dp": 80,
+    "reference_nav_indicator_dp": [
+      64,
+      32
+    ],
+    "reference_nav_label_sp": 14,
+    "reference_nav_label_line_sp": 20,
+    "reference_composer_action_dp": 48,
+    "reference_input_radius_dp": 24,
+    "reference_popup_radius_dp": 12,
+    "separate_action_and_readable_text_roles": true
   },
   "previous_release": {
-    "version": "0.9.0 native WhatsApp-style appearance",
-    "versionCode": 71979,
-    "source_commit": "c768f26b4a2e7ab61522814be960e78bc7800fa4",
-    "apk_sha256": "37183f82c7a6f53f6103daa161e0f92b515e02d2cd0953570e4b3da9c96550f7",
-    "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab"
+    "version": "0.9.1",
+    "versionCode": 71989,
+    "source_commit": "a67d31c5d3986e06ac5e3892aabdcb7ad027d643",
+    "apk_sha256": "0888397450d7bfaad07d0300048eaf2431b36cbfc775d7c2e92dde64a8bd3b1f",
+    "workflow_run": 39535368802
   },
   "validation": {
-    "status": "apk_verified",
-    "workflow_run": 39535368802,
-    "workflow_url": "https://github.com/susuy0/Yacd-meta/actions/runs/39535368802",
-    "workflow_status": "completed",
-    "workflow_conclusion": "success",
+    "status": "passed locally; Android17 and live backend/device flows unverified",
+    "executor": "local",
+    "github_actions_run": null,
+    "github_actions_note": "No new workflow run was created for these pushes; the build and tests were completed locally.",
     "native_tests": {
-      "tests": 339,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0,
-      "suites": 50,
-      "screenshots": 57,
-      "lint": {
-        "Error": 0,
-        "Fatal": 0,
-        "Warning": 39,
-        "Information": 0,
-        "Hint": 3
+      "junit": {
+        "tests": 340,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
       },
-      "source_commit": "a67d31c5d3986e06ac5e3892aabdcb7ad027d643"
+      "suites": 50,
+      "lint": {
+        "Warning": 28,
+        "Hint": 2
+      },
+      "screenshots": 57
     },
-    "jobs": {
-      "panel-ui": 119010673893,
-      "native-admin": 119010674069,
-      "core-checks": 119010674083,
-      "android": 119012124495
-    },
-    "job_conclusions": {
-      "panel-ui": "success",
-      "native-admin": "success",
-      "core-checks": "success",
-      "android": "success"
-    },
-    "core_checks": "passed",
-    "panel_audit": "passed",
+    "core_checks": [
+      "startup negative control",
+      "AndroidX callback compatibility",
+      "send and media entry / quick reply draft / branding",
+      "opening draft account/conversation guards",
+      "group automation and deduplication",
+      "native appearance and 36 production send-circle geometry scenarios",
+      "ICU4C Android-compatible pattern gate",
+      "native composition audit",
+      "capture-permission and gallery regression",
+      "original Java recognition/HTTP/business/configuration/panel geometry contracts"
+    ],
     "permission_dispatch_checks": 118,
     "automation_dispatch_checks": 18,
     "floating_geometry_checks": 75,
     "regex": {
-      "android_icu_patterns": 110,
-      "opening_variable_cases": 5
+      "icu_version": 74,
+      "patterns": 113,
+      "opening_variable_cases": 5,
+      "invalid_original_pattern_rejected": true
     },
-    "apk_component_native_engine_audit": "passed",
-    "apk_v2_signature_and_content_digest": "verified",
-    "ci_sha256sums": "APK and R8 mapping verified",
-    "new_merchant_and_multi_channel_tests": 18,
-    "test_environment": "Robolectric SDK 35, JVM Activity fakes and controlled synthetic Telegram/backend transport",
-    "device_backend": "Android 17 device, IME, live backend and FCM delivery not tested",
-    "no_live_test_actions": [
-      "financial writes",
-      "account creation",
-      "key reset",
-      "Telegram send",
-      "bot callbacks"
-    ],
-    "new_merchant_more_tests": 5,
-    "updated_merchant_bar_route_test": true,
-    "new_native_appearance_tests": 9,
     "native_appearance_theme_keys": 140,
-    "full_screen_pixel_parity": "not verified; no authenticated Android 17 device comparison",
-    "component_geometry_screenshots": "4 new shared Compose navigation/filter screenshots; reordered 5 tabs, RTL at 150% font, long labels, 3 tabs",
-    "new_shared_navigation_tests": 4
+    "source_worktree_matches_published_patch": true,
+    "workflow_test_scope_cleanup": "cancel and join each ViewModel scope before resetting Dispatchers.Main",
+    "manual_screenshot_review": [
+      "54-chat-navigation-320-reordered.png",
+      "55-chat-navigation-dark-rtl-font150.png",
+      "20-embedded-orders-default.png"
+    ],
+    "apk_v2_signature_and_content_digest": "verified",
+    "packaged_manifest_permissions_abi_and_business_markers": "verified",
+    "full_screen_pixel_parity": false,
+    "no_live_test_actions": true,
+    "limits": [
+      "Robolectric SDK35 synthetic fixtures; not an Android17 device test",
+      "No authenticated WhatsApp runtime capture or full pixel equivalence",
+      "Live backend operations, recipient delivery, gallery/keyboard device behavior and FCM delivery were not exercised"
+    ]
   },
   "apk": {
-    "bytes": 40971248,
-    "sha256": "0888397450d7bfaad07d0300048eaf2431b36cbfc775d7c2e92dde64a8bd3b1f",
+    "bytes": 40971931,
+    "sha256": "14e1fed452bfa900bdaee0219983da6cb7a261b0e3f0f62a185207266ecced30",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -180,28 +186,36 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 20,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 71989,
+    "versionCode": 71999,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.9.1-arm64.apk",
+    "filename": "SMS-Futoon-v0.9.2-arm64.apk",
     "same_signer_as_previous_release": true,
-    "ci_sha256sums": "APK and R8 mapping verified",
-    "push_mode": "development-no-fcm (existing build mode; push delivery not tested)"
+    "push_mode": "development-no-fcm"
+  },
+  "native_library": {
+    "method": "reuse of unchanged verified v0.9.1 binary; C++ was not recompiled",
+    "source_apk_sha256": "0888397450d7bfaad07d0300048eaf2431b36cbfc775d7c2e92dde64a8bd3b1f",
+    "source_artifact": 12318021420,
+    "sha256": "b9371dc7147f557eee08b7058d1fb6f141ca45a01715fc6248598668bea1798c"
+  },
+  "mapping": {
+    "bytes": 228140027,
+    "sha256": "c5ff1ac678e2532445525613fbc3923d5bc286e279537e6bad2c25f6d83a6ceb",
+    "saved_in": "SMS-Futoon-v0.9.2-build-records.zip"
   },
   "artifacts": {
-    "native_reports": {
-      "id": 12316969394,
-      "name": "Futoon-v0.9.1-native-business-checks",
-      "zip_bytes": 3697069,
-      "zip_sha256": "292774850795f4bcb11dfaae84febd1e31d37d2c9ecb543ff978dc1a3e64126e"
+    "build_records": {
+      "filename": "SMS-Futoon-v0.9.2-build-records.zip",
+      "bytes": 22734000,
+      "sha256": "15fa417abfa26110cd64a0593b9ff2c0046e7e89566aa39aff6d6712dfded7de"
     },
-    "apk": {
-      "id": 12318021420,
-      "name": "VineChat-Futoon-v0.9.1-native-development-no-fcm",
-      "zip_bytes": 60132957,
-      "zip_sha256": "986cb221ec4c17329f41419e6e89874170780f823d30d84e6ae7a6f4cda74f7f"
+    "reference_apk": {
+      "filename": "WhatsApp-2.26.42.71-reference.apk",
+      "bytes": 153441879,
+      "sha256": "528113bcfcfd3c4686a77bffa8a0b5db890c11b8362bfecbc441844c595bb671"
     }
   }
 }
