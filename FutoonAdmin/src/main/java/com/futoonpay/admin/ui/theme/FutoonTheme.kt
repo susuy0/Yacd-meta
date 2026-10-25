@@ -49,6 +49,7 @@ val Danger: Color @Composable get() = MaterialTheme.colorScheme.error
 // Pending/uncertain states also carry explicit text and icons; no fixed amber overrides a custom theme.
 val Warning: Color @Composable get() = LocalFutoonPalette.current.accentText
 val GreenTint: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
+val SelectedInk: Color @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
 val CardColor: Color @Composable get() = MaterialTheme.colorScheme.surface
 val FieldColor: Color @Composable get() = MaterialTheme.colorScheme.surfaceContainerHighest
 val ButtonText: Color @Composable get() = MaterialTheme.colorScheme.onPrimary
@@ -64,7 +65,7 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
     val colors = remember(palette) {
         val base = if (palette.dark) darkColorScheme() else lightColorScheme()
         base.copy(primary = palette.accent, onPrimary = readableButtonText(palette.accent, palette.buttonText),
-            primaryContainer = if (palette.accent == Color(com.futoonpay.admin.appearance.ChatLook.accent(palette.dark))) Color(com.futoonpay.admin.appearance.ChatLook.selected(palette.dark)) else lerp(palette.surface, palette.accent, if (palette.dark) .20f else .10f), onPrimaryContainer = palette.text,
+            primaryContainer = if (palette.accent == Color(com.futoonpay.admin.appearance.ChatLook.accent(palette.dark))) Color(com.futoonpay.admin.appearance.ChatLook.selected(palette.dark)) else lerp(palette.surface, palette.accent, if (palette.dark) .20f else .10f), onPrimaryContainer = if (palette.accent == Color(com.futoonpay.admin.appearance.ChatLook.accent(palette.dark))) Color(com.futoonpay.admin.appearance.ChatLook.selectedText(palette.dark)) else palette.text,
             secondary = palette.accent, onSecondary = readableButtonText(palette.accent, palette.buttonText),
             secondaryContainer = lerp(palette.surface, palette.accent, if (palette.dark) .22f else .12f), onSecondaryContainer = palette.text,
             background = palette.background, onBackground = palette.text, surface = palette.surface, onSurface = palette.text,

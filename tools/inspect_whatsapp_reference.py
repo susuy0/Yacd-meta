@@ -71,7 +71,7 @@ palettes = {}
 for night in [False, True]:
     table, palette_styles = values(night)
     node = palette_styles['APKTOOL_RENAMED_0x7f150546']
-    roles = {'accent': '9ad', 'selection': '9ae', 'accent_text': '9ca', 'secondary_text': '9cb', 'primary_text': '9cc', 'outgoing_bubble': '9c1'}
+    roles = {'accent': '9ad', 'selection': '9ae', 'selection_text': '9af', 'accent_text': '9ca', 'secondary_text': '9cb', 'primary_text': '9cc', 'outgoing_bubble': '9c1'}
     palettes['dark' if night else 'light'] = {
         name: resolve(next(i.text for i in node if i.get('name') == 'APKTOOL_RENAMED_0x7f040' + suffix), table)
         for name, suffix in roles.items()

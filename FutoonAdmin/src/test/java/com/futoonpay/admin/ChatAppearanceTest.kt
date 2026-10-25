@@ -31,6 +31,9 @@ class ChatAppearanceTest {
             assertTrue(ColorUtils.calculateContrast(ChatLook.secondary(dark),bg)>=3.0)
         }
     }
+    @Test fun selectedFilterTextStaysReadableOnItsActualTint() {
+        for(dark in listOf(false,true)) assertTrue(ColorUtils.calculateContrast(ChatLook.selectedText(dark),ChatLook.selected(dark))>=4.5)
+    }
     @Test fun semanticErrorAndFinancialStatusColorsAreNeverReplacedByAppearance() {
         for(key in listOf("key_text_RedRegular","key_dialogTextRed","key_text_RedBold","key_chat_mediaTimeText","key_statisticChartLine_orange"))
             for(dark in listOf(false,true))assertNull(key,ChatLook.color(key,dark))
@@ -75,7 +78,7 @@ class ChatAppearanceTest {
         bar.measure(View.MeasureSpec.makeMeasureSpec(320,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(48,View.MeasureSpec.EXACTLY));bar.layout(0,0,320,48)
         val nodes=buttons(bar);assertEquals(3,nodes.size);nodes.forEach{assertTrue(it.width>=48);assertTrue(it.height>=48);assertEquals(16,it.paddingLeft);assertEquals(16,it.paddingRight);assertTrue(it.width>=it.paint.measureText(it.text.toString())+32)}
         nodes[2].performClick();assertEquals(listOf(2),calls);assertEquals(2,bar.selectedFilter());assertTrue(nodes[2].isSelected);assertFalse(nodes[0].isSelected)
-        bar.setDark(true);nodes.forEach{assertEquals(16,it.paddingLeft);assertEquals(16,it.paddingRight)};assertEquals(2,bar.selectedFilter());assertEquals(listOf(2),calls);assertEquals(ChatLook.accent(true),nodes[2].currentTextColor)
+        bar.setDark(true);nodes.forEach{assertEquals(16,it.paddingLeft);assertEquals(16,it.paddingRight)};assertEquals(2,bar.selectedFilter());assertEquals(listOf(2),calls);assertEquals(ChatLook.selectedText(true),nodes[2].currentTextColor)
         bar.select(0);assertEquals(listOf(2),calls)
     }
     @Test fun narrowWideAndRtlAppearanceGeometryRendersWithoutClipping() {

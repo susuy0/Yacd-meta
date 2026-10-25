@@ -11255,7 +11255,7 @@ index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef8
                      }
                  }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
-index 44295250c3685eed39aaec116dc062b21d0a3f05..f4cef401a95f24d20e88de892a20344038740265 100644
+index 44295250c3685eed39aaec116dc062b21d0a3f05..34357fefade02ba88ccb0e57e7f3d635225a231c 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/glass/GlassTabView.java
 @@ -72,6 +72,7 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
@@ -11294,7 +11294,7 @@ index 44295250c3685eed39aaec116dc062b21d0a3f05..f4cef401a95f24d20e88de892a203440
 +        if (backupImageView != null) backupImageView.setVisibility(GONE);
 +        imageView.setImageDrawable(org.telegram.ui.FutoonChatAppearance.icon(glyph + (isTabSelected() ? "_selected" : "")));
 +        imageView.setLayoutParams(LayoutHelper.createFrame(24, 24, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 16, 0, 0));
-+        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 48, 0, 0));
++        textView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 20 * getResources().getConfiguration().fontScale, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 48, 0, 0));
 +        textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
 +        textView.setIncludeFontPadding(false);
 +        textView.setTypeface(AndroidUtilities.bold());

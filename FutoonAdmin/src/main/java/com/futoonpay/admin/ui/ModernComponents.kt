@@ -76,7 +76,7 @@ internal fun ChatFilterTabs(options: List<Pair<String, String>>, selected: Strin
             val active = selected == value
             Box(Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp, max = 240.dp).testTag("chat-filter-$value").selectable(active, role = Role.Tab, onClick = { onSelect(value) }), contentAlignment = Alignment.Center) {
                 Surface(color = if (active) GreenTint else FieldColor, shape = RoundedCornerShape(50)) {
-                    Text(label, color = if (active) GreenDark else Muted, fontSize = 14.sp, lineHeight = 20.sp,
+                    Text(label, color = if (active) SelectedInk else Muted, fontSize = 14.sp, lineHeight = 20.sp,
                         fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 }
@@ -100,7 +100,7 @@ internal fun ChatNavigationBar(items: List<ChatNavItem>, selected: String?, onSe
                     .selectable(active, role = Role.Tab, onClick = { onSelect(item.id) }).padding(horizontal = 4.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
                     Box(Modifier.widthIn(max = 64.dp).fillMaxWidth().height(32.dp).background(if (active) GreenTint else Color.Transparent, RoundedCornerShape(50)), contentAlignment = Alignment.Center) {
-                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(24.dp), tint = Ink)
+                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(24.dp), tint = if (active) SelectedInk else Ink)
                     }
                     Text(item.title, color = Ink, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }

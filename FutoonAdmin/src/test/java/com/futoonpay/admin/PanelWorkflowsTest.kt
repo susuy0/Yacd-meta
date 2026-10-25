@@ -1,6 +1,7 @@
 package com.futoonpay.admin
 
 import android.app.Application
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
@@ -18,14 +19,22 @@ import java.util.concurrent.TimeUnit
 @Config(sdk = [35], application = Application::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class PanelWorkflowsTest {
+    private val models = mutableListOf<PanelWorkflows>()
+    private fun workflow(bridge: NativePanelBridge) = PanelWorkflows(bridge).also(models::add)
     @Before fun before() { Dispatchers.setMain(UnconfinedTestDispatcher()) }
-    @After fun after() { Dispatchers.resetMain() }
+    @After fun after() = runBlocking {
+        // Queries also queue local-history saves; joining the query alone does
+        // not finish these sibling jobs. Drain their cancellation before Main
+        // is reset so no test can resume into the next test's dispatcher.
+        models.forEach { it.viewModelScope.coroutineContext[Job]?.cancelAndJoin() }
+        Dispatchers.resetMain()
+    }
     private suspend fun ready(vm: PanelWorkflows) { withTimeout(5000) { vm.state.first { !it.localLoading } } }
     private suspend fun extracted(vm: PanelWorkflows) { withTimeout(5000) { vm.state.first { it.candidates.isNotEmpty() && !it.extracting } } }
 
     @Test fun messageKeepsEveryCandidateAndOnlyQueriesCheckedRows() = runBlocking {
         val bridge = WorkflowFixtureBridge()
-        val vm = PanelWorkflows(bridge); ready(vm)
+        val vm = workflow(bridge); ready(vm)
         vm.receive(RecognizedQuery("系统订单号 S1000001\n商户订单号 M2000002", "AUTO", source = MessageSource(-100, 12627, 19)))
         extracted(vm); assertEquals(2, vm.state.value.candidates.size)
         vm.editCandidate(vm.state.value.candidates.last().id, selected = false)
@@ -38,7 +47,7 @@ class PanelWorkflowsTest {
     @Test fun cancelStopsQueuedQueriesAfterTheCurrentRead() = runBlocking {
         val entered = CountDownLatch(1); val release = CountDownLatch(1)
         val bridge = WorkflowFixtureBridge { op, _ -> if (op == "orders.search") { entered.countDown(); release.await(5, TimeUnit.SECONDS) }; null }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.receive(RecognizedQuery("two", "AUTO")); extracted(vm)
+        val vm = workflow(bridge); ready(vm); vm.receive(RecognizedQuery("two", "AUTO")); extracted(vm)
         val job = vm.runQueries()
         try { assertTrue(entered.await(5, TimeUnit.SECONDS)); vm.stopQueries() } finally { release.countDown() }
         job.join()
@@ -49,7 +58,7 @@ class PanelWorkflowsTest {
     @Test fun retriesOnlyExplicitQueryFailures() = runBlocking {
         var second = 0
         val bridge = WorkflowFixtureBridge { op, p -> if (op == "orders.search" && p.optString("text") == "M2000002" && ++second == 1) "{\"rows\":[]}" else null }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.receive(RecognizedQuery("two", "AUTO")); extracted(vm)
+        val vm = workflow(bridge); ready(vm); vm.receive(RecognizedQuery("two", "AUTO")); extracted(vm)
         vm.runQueries().join(); assertEquals("failed", vm.state.value.candidates.last().phase)
         vm.runQueries(onlyFailed = true).join()
         assertTrue(vm.state.value.candidates.all { it.phase == "ok" })
@@ -59,7 +68,7 @@ class PanelWorkflowsTest {
     @Test fun oldQueryResponseCannotReplaceANewerMessage() = runBlocking {
         val entered = CountDownLatch(1); val release = CountDownLatch(1)
         val bridge = WorkflowFixtureBridge { op, _ -> if (op == "orders.search") { entered.countDown(); release.await(5, TimeUnit.SECONDS) }; null }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.receive(RecognizedQuery("old", "AUTO")); extracted(vm)
+        val vm = workflow(bridge); ready(vm); vm.receive(RecognizedQuery("old", "AUTO")); extracted(vm)
         val job = vm.runQueries()
         try { assertTrue(entered.await(5, TimeUnit.SECONDS)); vm.receive(RecognizedQuery("new", "PID")); extracted(vm) } finally { release.countDown() }
         job.join(); assertEquals("new", vm.state.value.text)
@@ -68,7 +77,7 @@ class PanelWorkflowsTest {
     @Test fun openingHistoryDuringAQueryReplacesTheInputAndAllowsAnotherQuery() = runBlocking {
         val entered = CountDownLatch(1); val release = CountDownLatch(1)
         val bridge = WorkflowFixtureBridge { op, _ -> if (op == "orders.search") { entered.countDown(); release.await(5, TimeUnit.SECONDS) }; null }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.receive(RecognizedQuery("old", "AUTO")); extracted(vm)
+        val vm = workflow(bridge); ready(vm); vm.receive(RecognizedQuery("old", "AUTO")); extracted(vm)
         val job = vm.runQueries()
         try {
             assertTrue(entered.await(5, TimeUnit.SECONDS))
@@ -84,7 +93,7 @@ class PanelWorkflowsTest {
         assertTrue(vm.state.value.candidates.all { it.phase == "ok" })
     }
     @Test fun automaticAndManualMerchantLookupsKeepTheirIdentitySeparate() = runBlocking {
-        val bridge = WorkflowFixtureBridge(); val vm = PanelWorkflows(bridge); ready(vm)
+        val bridge = WorkflowFixtureBridge(); val vm = workflow(bridge); ready(vm)
         vm.updateChat(ChatScope("工单", "5824870757", "来自话题末尾 TGID", "-100:12627", -100, 12627, "12627", "游客"))
         withTimeout(5000) { vm.state.first { it.merchant != null } }
         vm.lookup("uid", "2022").join(); assertEquals("2022", JSONObject(vm.state.value.merchant!!).getString("uid"))
@@ -96,7 +105,7 @@ class PanelWorkflowsTest {
     }
     @Test fun duplicateTgidBindingNeverChoosesAMerchant() = runBlocking {
         val bridge = WorkflowFixtureBridge { op, _ -> if (op == "merchant.lookup") "{\"rows\":[{\"uid\":\"1\"},{\"uid\":\"2\"}]}" else null }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.lookup("telegram_id", "5824870757").join()
+        val vm = workflow(bridge); ready(vm); vm.lookup("telegram_id", "5824870757").join()
         assertNull(vm.state.value.merchant); assertEquals(2, vm.state.value.merchantCandidates.size)
         vm.chooseMerchant("999"); assertNull(vm.state.value.merchant)
         vm.chooseMerchant("2"); assertEquals("2", JSONObject(vm.state.value.merchant!!).getString("uid")); assertTrue(vm.state.value.manualMerchant)
@@ -105,7 +114,7 @@ class PanelWorkflowsTest {
     }
     @Test fun legacyGroupBindingHistoryFavoritesAndDraftsRemainReadable() = runBlocking {
         val bridge = WorkflowFixtureBridge().apply { saved = """{"groups":{"0:-100:0:":"2022"},"history":[{"text":"S0","kind":"AUTO"}],"favorites":[{"trade_no":"S0"}],"drafts":{"S0":{"order":{"trade_no":"S0"},"caption":"凭证","updated":1}},"futureKey":"keep"}""" }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.updateChat(ChatScope("群", "", "", "0:-100:0:", -100))
+        val vm = workflow(bridge); ready(vm); vm.updateChat(ChatScope("群", "", "", "0:-100:0:", -100))
         withTimeout(5000) { vm.state.first { it.merchant != null } }
         assertEquals("2022", JSONObject(vm.state.value.merchant!!).optString("uid"))
         assertEquals(1, vm.array("history").size); assertTrue(vm.isFavorite("S0")); assertEquals("凭证", vm.drafts().single().optString("caption"))
@@ -118,7 +127,7 @@ class PanelWorkflowsTest {
         assertEquals("2022", persisted.getJSONObject("groups").getString("0:-100:0:"))
     }
     @Test fun receiptDraftAndSupplementTemplateDoNotMutateOrderStatus() = runBlocking {
-        val bridge = WorkflowFixtureBridge(); val vm = PanelWorkflows(bridge); ready(vm)
+        val bridge = WorkflowFixtureBridge(); val vm = workflow(bridge); ready(vm)
         val order = JSONObject(WorkflowFixtureBridge.order).put("api_trade_no", "C3000003").put("_source", MessageSource(-100, 12627, 19).json())
         val caption = evidenceCaption(order, "补单")
         assertTrue(caption.contains("请协助补单")); assertTrue(caption.contains("C3000003")); assertTrue(caption.contains("1011"))
@@ -131,7 +140,7 @@ class PanelWorkflowsTest {
         assertEquals(0, bridge.sent.get())
     }
     @Test fun ocrCancellationKeepsTheExistingTextAndCandidates() = runBlocking {
-        val vm = PanelWorkflows(WorkflowFixtureBridge()); ready(vm); vm.receive(RecognizedQuery("two", "AUTO")); extracted(vm)
+        val vm = workflow(WorkflowFixtureBridge()); ready(vm); vm.receive(RecognizedQuery("two", "AUTO")); extracted(vm)
         vm.receive(RecognizedQuery("", "AUTO", error = "取消识别"))
         assertEquals("two", vm.state.value.text); assertEquals(2, vm.state.value.candidates.size)
     }
@@ -142,13 +151,13 @@ class PanelWorkflowsTest {
     }
     @Test fun deliveryStatusComesFromTelegramAcknowledgementsWithoutSendingAgain() = runBlocking {
         val bridge = WorkflowFixtureBridge { op, _ -> if (op == "delivery.read") """{"S1000001":{"sent":2,"failed":1,"pending":0,"dialog":"-100","message":88}}""" else null }
-        val vm = PanelWorkflows(bridge); ready(vm); vm.refreshDeliveries().join()
+        val vm = workflow(bridge); ready(vm); vm.refreshDeliveries().join()
         assertTrue(vm.case("S1000001").optString("sendState").contains("Telegram 已确认 2 张凭证"))
         assertTrue(vm.case("S1000001").optString("sendState").contains("1 张发送失败"))
         assertEquals(0, bridge.sent.get())
     }
     @Test fun batchCandidatesRememberTheirOwnMessages() = runBlocking {
-        val vm = PanelWorkflows(WorkflowFixtureBridge()); ready(vm)
+        val vm = workflow(WorkflowFixtureBridge()); ready(vm)
         vm.receive(RecognizedQuery("two", "AUTO", pointers = mapOf("SYSTEM_ORDER:S1000001" to MessageSource(-100, 1, 11), "MERCHANT_ORDER:M2000002" to MessageSource(-100, 1, 22))))
         extracted(vm)
         assertEquals(listOf(11L, 22L), vm.state.value.candidates.map { it.source.message })

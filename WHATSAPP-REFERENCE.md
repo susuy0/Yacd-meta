@@ -19,7 +19,7 @@ Apktool 3.0.3 decoded the resource table and XML layouts. JADX 1.5.6 traced `Con
 | New conversation button | Larger native FAB slot | 48dp | 56dp, existing 16dp corners retained |
 | Popup | `drawable/wds_popup_menu` → 12dp corner / vertical inset | 14dp corner, 8dp vertical inset | 12dp corner and vertical inset |
 | Row | `layout/0x7f0e06c8` → 76dp minimum, 80dp avatar slot | 76dp, Telegram positions | Height retained; avatar/content positioning still needs device comparison |
-| WDS colors | `style/0x7f150546` and its night override | Older palette values | Actual primary/secondary text and accent roles, distinct accent text role |
+| WDS colors | `style/0x7f150546` and its night override | Older palette values | Actual primary/secondary text and accent roles, distinct accent text and selection foreground roles (`res/color/0x7f0602ff` selects attribute `0x7f0409af` for the active icon) |
 
 The Futoon panel retains its five configurable destinations, recognition and merchant actions, draft insertion and manual recipient selection. The host keeps Chats / Settings / Profile; removed calls and capture capabilities are not restored for visual imitation.
 

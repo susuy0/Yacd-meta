@@ -23,6 +23,7 @@
     "light": {
       "accent": "#ff1daa61",
       "selection": "#ffd9fdd3",
+      "selection_text": "#ff15603e",
       "accent_text": "#ff1b8755",
       "secondary_text": "#ff5b6368",
       "primary_text": "#ff0a1014",
@@ -31,6 +32,7 @@
     "dark": {
       "accent": "#ff21c063",
       "selection": "#ff103529",
+      "selection_text": "#ffd9fdd3",
       "accent_text": "#ff21c063",
       "secondary_text": "#ff8d9599",
       "primary_text": "#fff7f8fa",

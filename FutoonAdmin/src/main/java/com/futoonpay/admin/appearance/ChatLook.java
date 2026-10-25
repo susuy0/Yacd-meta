@@ -17,6 +17,7 @@ public final class ChatLook {
     public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff5b6368; }
     public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1daa61; }
     public static int accentText(boolean dark) { return dark ? 0xff21c063 : 0xff1b8755; }
+    public static int selectedText(boolean dark) { return dark ? 0xffd9fdd3 : 0xff15603e; }
     public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd9fdd3; }
     public static int incoming(boolean dark) { return dark ? 0xff20272b : 0xffffffff; }
     public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd9fdd3; }
@@ -52,10 +53,12 @@ public final class ChatLook {
             case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return accentText(dark);
             case "key_actionBarTabUnactiveText": return secondary(dark);
             case "key_actionBarTabSelector": return selected(dark);
-            case "key_glass_tabUnselected": case "key_glass_tabSelected": case "key_glass_tabSelectedText": return text(dark);
+            case "key_glass_tabUnselected": case "key_glass_tabSelectedText": return text(dark);
+            case "key_glass_tabSelected": return selectedText(dark);
+            case "key_dialogButton": return accentText(dark);
             case "key_chat_messagePanelSend": return accent(dark);
             case "key_chats_unreadCounter": case "key_featuredStickers_addButton":
-            case "key_switch2TrackChecked": case "key_switchTrackChecked": case "key_checkbox": case "key_dialogButton": case "key_chats_actionBackground": case "key_profile_actionBackground": case "key_profile_verifiedBackground":
+            case "key_switch2TrackChecked": case "key_switchTrackChecked": case "key_checkbox": case "key_chats_actionBackground": case "key_profile_actionBackground": case "key_profile_verifiedBackground":
             case "key_telegram_color_dialogsLogo":
             case "key_chat_outReplyLine": case "key_chat_inReplyLine": case "key_chat_outReplyNameText": case "key_chat_inReplyNameText": return accent(dark);
             case "key_chats_unreadCounterText": case "key_featuredStickers_buttonText": case "key_chat_messagePanelVoicePressed":

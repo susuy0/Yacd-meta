@@ -23,7 +23,7 @@ public final class ChatFilterBar extends HorizontalScrollView {
         }select(0);
     }
     private int dp(float x){return Math.round(x*getResources().getDisplayMetrics().density);}
-    public void select(int value){selected=value;for(int i=0;i<row.getChildCount();i++){TextView b=(TextView)row.getChildAt(i);boolean active=i==value;b.setSelected(active);b.setTextColor(active?ChatLook.accent(dark):ChatLook.secondary(dark));GradientDrawable bg=new GradientDrawable();bg.setColor(active?ChatLook.selected(dark):ChatLook.field(dark));bg.setCornerRadius(dp(18));b.setBackground(new InsetDrawable(bg,0,dp(6),0,dp(6)));b.setPadding(dp(16),0,dp(16),0);}}
+    public void select(int value){selected=value;for(int i=0;i<row.getChildCount();i++){TextView b=(TextView)row.getChildAt(i);boolean active=i==value;b.setSelected(active);b.setTextColor(active?ChatLook.selectedText(dark):ChatLook.secondary(dark));GradientDrawable bg=new GradientDrawable();bg.setColor(active?ChatLook.selected(dark):ChatLook.field(dark));bg.setCornerRadius(dp(18));b.setBackground(new InsetDrawable(bg,0,dp(6),0,dp(6)));b.setPadding(dp(16),0,dp(16),0);}}
     public void setDark(boolean value){dark=value;select(selected);}
     public int selectedFilter(){return selected;}
 }
