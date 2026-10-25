@@ -43,7 +43,7 @@ jobs:
         run: python3 ci/test_opening_draft.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test group automation callback dispatch and draft isolation
         run: python3 ci/test_group_automation.py "$RUNNER_TEMP/vinechat-tests"
-      - name: Test native chat appearance and business boundaries
+      - name: Test APK-based chat geometry and business boundaries
         run: python3 ci/test_chat_appearance.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test business regexes using Android's ICU engine
         run: python3 ci/test_android_regex.py "$RUNNER_TEMP/vinechat-tests"
