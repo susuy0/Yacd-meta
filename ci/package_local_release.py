@@ -9,7 +9,7 @@ def git(*args):return subprocess.check_output(['git',*args],cwd=repo,text=True).
 for action in ['tests','client','apk']:
  result=json.loads((state/(action+'-result.json')).read_text());assert result['completed']and all(x['exit_code']==0 for x in result['commands']),action
 results=state/'native-tests/FutoonAdmin/build/test-results/testDebugUnitTest';suites=[ET.parse(f).getroot()for f in results.glob('TEST-*.xml')];counts={k:sum(int(s.get(k,0))for s in suites)for k in ['tests','failures','errors','skipped']};assert counts['tests']>=340 and all(counts[k]==0 for k in ['failures','errors','skipped']),counts
-lint=state/'native-tests/FutoonAdmin/build/reports/lint-results-debug.xml';issues=ET.parse(lint).getroot().findall('issue');lint_counts={level:sum(i.get('severity')==level for i in issues)for level in ['Fatal','Error','Warning','Information']};assert not lint_counts['Fatal']and not lint_counts['Error'],lint_counts
+lint=state/'native-tests/FutoonAdmin/build/reports/lint-results-debug.xml';issues=ET.parse(lint).getroot().findall('issue');lint_counts={level:sum(i.get('severity')==level for i in issues)for level in ['Fatal','Error','Warning','Hint','Information']};assert not lint_counts['Fatal']and not lint_counts['Error'],lint_counts
 # Compare the complete host against a fresh application of the source patch.
 with tempfile.TemporaryDirectory(prefix='futoon-source-proof-')as folder:
  env=dict(os.environ,GIT_INDEX_FILE=str(Path(folder)/'index'))

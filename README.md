@@ -80,12 +80,12 @@ FutoonPay 设置 → 开户文案支持整段编辑与恢复默认。变量为 `
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `71999`，ARM64，minSdk 23 / targetSdk 36。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `72009`，ARM64，minSdk23 / targetSdk36。
 
-代码 `f82f08abb2c3caa2f427a29b473bc0377be07988` 的340项原生业务与界面测试全部通过，0失败、0错误、0跳过，50个套件、57张合成数据截图。Lint 0错误、28警告、2提示。已检查窄屏重排、深色RTL大字号导航和订单页截图；这些是Robolectric SDK35测试，不是已登录真机的全屏像素对比。
+代码 `29a5e17ec166984851c4b4ed76393f7ff3a43845` 的346项原生业务与界面测试全部通过，0失败、0错误、0跳过，51个套件、65张合成数据截图。Lint0错误、32警告、3提示。已人工查看窄屏附件网格、RTL设置标题及明暗涂鸦背景；设置标题测试附着在真正的Activity窗口中，验证文字绘制和独立二维码/资料点击。测试使用Robolectric SDK35，未进行Android17真机和完整逐页像素对比。
 
-这次推送没有创建新的GitHub Actions任务，测试与构建在本地完成。完整客户端Java编译及APK打包通过。C++未修改，使用v0.9.1已验证APK中未改变的原生引擎；打包后再次核对原生库哈希相同。签名、APK v2内容摘要、ZIP CRC、包名/版本/ABI、移除权限、原生业务入口及20个业务操作标识已核验。
+本次GitHub推送未产生工作流，测试与构建在本地完成。完整客户端Java编译与APK打包通过。C++未修改，沿用v0.9.2核验过的原生引擎，打包后再次确认哈希相同。APK v2签名和内容摘要、ZIP CRC、包名/版本/ABI、裁剪权限及20个业务操作标识全部核验。完整宿主与125个模块文件和发布源码逐一比较一致。
 
-APK：`SMS-Futoon-v0.9.2-arm64.apk`，`40,971,931`字节，签名与v0.9.1一致。SHA-256：`14e1fed452bfa900bdaee0219983da6cb7a261b0e3f0f62a185207266ecced30`。`SMS-Futoon-v0.9.2-build-records.zip`保留该包的R8映射、校验结果及合成界面测试记录。完整信息见 [BUILD.json](BUILD.json)。
+APK：`SMS-Futoon-v0.9.3-arm64.apk`，`41,029,761`字节，签名与上一版一致。SHA-256：`05548422e041c52feb2ddf2fb40be53134de4c0d51bb69fded308e1fec83ef46`。`SMS-Futoon-v0.9.3-build-records.zip`保留该包的R8映射、校验结果、测试和合成截图。完整信息见 [BUILD.json](BUILD.json)。
 
-未执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。资料与附件页结构、壁纸及动画仍需逐页对照；Android17真机、系统键盘、相册裁剪、真实后台和FCM送达未验证。保留development-no-fcm构建模式。
+未执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。系统相册/文件页仍使用宿主选择流程；完整运行时像素一致、动画、Android17真机、系统键盘、相册裁剪、真实后台和FCM送达尚未验证。保留development-no-fcm构建模式。
