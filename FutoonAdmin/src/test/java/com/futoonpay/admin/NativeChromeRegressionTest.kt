@@ -76,6 +76,8 @@ class NativeChromeRegressionTest {
             val height=ChatInboxHeader.homeHeight(scale)
             root.addView(header,FrameLayout.LayoutParams(-1,height).apply{topMargin=70;leftMargin=7;rightMargin=7})
             layout(root,393,852)
+            val title=(0 until header.childCount).map{header.getChildAt(it)}.filterIsInstance<TextView>().single{it.text.toString()=="Futoon chat"}
+            assertEquals("Native inbox keeps its 16dp horizontal inset",16,header.left+title.left)
             val row=filter.getChildAt(0)as LinearLayout
             assertTrue(header.top+filter.bottom<=header.bottom)
             for(i in 0 until row.childCount){val button=row.getChildAt(i);if(button.left>=filter.width)continue
