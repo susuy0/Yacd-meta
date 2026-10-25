@@ -22,14 +22,14 @@ with zipfile.ZipFile(apk)as z:native_sha=hashlib.sha256(z.read('lib/arm64-v8a/li
 assert native_sha=='b9371dc7147f557eee08b7058d1fb6f141ca45a01715fc6248598668bea1798c',native_sha
 mapping=host/'TMessagesProj_App/build/outputs/mapping/afatDebug/mapping.txt';mapping_record={'bytes':mapping.stat().st_size,'sha256':sha(mapping)}
 images=sorted((state/'native-tests/FutoonAdmin/build/ui-screenshots').glob('*.png'))
-record={'version':a.version,'source_commit':git('rev-parse','HEAD'),'source_tree':git('rev-parse','HEAD^{tree}'),'patch_sha256':sha(repo/'integration.patch'),'apk':verified,'tests':dict(counts,suites=len(suites)),'lint':lint_counts,'synthetic_screenshots':len(images),'module_files_compared':len(module_files),'full_host_matches_patch':True,'native_library_sha256':native_sha,'mapping':mapping_record,'build':'Local Gradle8.13 / JDK17 / SDK36; verified unchanged native library reused','limits':['Robolectric SDK35 synthetic fixtures, not an Android17 device test','No authenticated WhatsApp runtime capture or complete pixel parity','Live backend mutations, recipient delivery, gallery/keyboard device behavior and FCM delivery were not exercised']}
+record={'version':a.version,'source_commit':git('rev-parse','HEAD'),'source_tree':git('rev-parse','HEAD^{tree}'),'patch_sha256':sha(repo/'integration.patch'),'apk':verified,'tests':dict(counts,suites=len(suites)),'lint':lint_counts,'synthetic_screenshots':len(images),'module_files_compared':len(module_files),'full_host_matches_patch':True,'native_library_sha256':native_sha,'mapping':mapping_record,'build':'Local Gradle8.13 / JDK17 / SDK36; verified unchanged native library reused','limits':['Robolectric SDK35 synthetic fixtures, not an Android17 device test','No authenticated WhatsApp runtime capture or full runtime pixel parity against the supplied iOS PDF','Live backend mutations, recipient delivery, gallery/keyboard device behavior and FCM delivery were not exercised']}
 (state/'release-verification.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
 archive=out/f'SMS-Futoon-v{a.version}-build-records.zip'
 with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6)as z:
  z.write(mapping,'mapping.txt');z.write(state/'release-verification.json','release-verification.json');z.write(lint,'lint-results-debug.xml')
  for f in results.glob('TEST-*.xml'):z.write(f,'test-results/'+f.name)
  for f in images:z.write(f,'synthetic-ui/'+f.name)
- for name in ['tests-result.json','client-result.json','apk-result.json','core-checks.json','tests.log','client.log','apk.log','ui-coverage.log','v010-frozen-sources.json','v010-pipeline.json']:
+ for name in ['tests-result.json','client-result.json','apk-result.json','core-checks.json','tests.log','client.log','apk.log','ui-coverage.log','v011-frozen-sources.json','v011-pipeline.json','ios-pdf-measurements.json','ios-core-checks.json']:
   if(state/name).exists():z.write(state/name,'checks/'+name)
 record['build_records']={'filename':archive.name,'bytes':archive.stat().st_size,'sha256':sha(archive)}
 (out/'release-summary.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n');print(json.dumps(record,ensure_ascii=False,indent=2))

@@ -34,7 +34,7 @@ internal val LocalPayPanelChrome = staticCompositionLocalOf<PayPanelChrome?> { n
 
 @Composable
 internal fun PayCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = CardColor, border = BorderStroke(.5.dp, Line)) {
+    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), color = CardColor) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 10.dp), content = content)
     }
 }
@@ -99,10 +99,10 @@ internal fun ChatNavigationBar(items: List<ChatNavItem>, selected: String?, onSe
                 Column(Modifier.weight(1f).heightIn(min = (com.futoonpay.admin.appearance.ChatLook.NAV_HEIGHT * scale).dp).testTag("chat-nav-${item.id}")
                     .selectable(active, role = Role.Tab, onClick = { onSelect(item.id) }).padding(horizontal = 4.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
-                    Box(Modifier.widthIn(max = 64.dp).fillMaxWidth().height(32.dp).background(if (active) GreenTint else Color.Transparent, RoundedCornerShape(50)), contentAlignment = Alignment.Center) {
-                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(24.dp), tint = if (active) SelectedInk else Ink)
+                    Box(Modifier.widthIn(max = 64.dp).fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
+                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(28.dp), tint = if (active) Ink else Muted)
                     }
-                    Text(item.title, color = Ink, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(item.title, color = if (active) Ink else Muted, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

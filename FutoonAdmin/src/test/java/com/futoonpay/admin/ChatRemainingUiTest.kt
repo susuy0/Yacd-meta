@@ -34,7 +34,7 @@ class ChatRemainingUiTest {
             qr.setOnClickListener{scans++};activity.get().setContentView(header);org.robolectric.shadows.ShadowLooper.idleMainLooper();layout(header,width,300)
             assertTrue("Title must have a visible line: ${title.textSize}px ${title.width}x${title.height}",title.width>0 && title.height>0 && title.textSize>0)
             assertTrue("Status must have a visible line: ${subtitle.textSize}px ${subtitle.width}x${subtitle.height}",subtitle.width>0 && subtitle.height>0 && subtitle.textSize>0)
-            assertEquals(64,avatar.width);assertEquals(64,avatar.height);assertEquals(56,qr.width);assertTrue(header.height>=104)
+            assertEquals(56,avatar.width);assertEquals(56,avatar.height);assertEquals(56,qr.width);assertTrue(header.height>=104)
             for(child in listOf(avatar,title,subtitle,qr)){assertTrue(child.left>=0);assertTrue(child.right<=width);assertTrue(child.top>=0);assertTrue(child.bottom<=header.height)}
             val geometry="w=$width scale=$scale rtl=$rtl actual=${header.layoutDirection}: avatar=${avatar.left}..${avatar.right}, title=${title.left}..${title.right}, qr=${qr.left}..${qr.right}"
             assertTrue(geometry+" vertical",title.bottom<=subtitle.top);if(rtl){assertTrue(geometry+" avatar",title.right<=avatar.left);assertTrue(geometry+" qr",qr.right<=title.left)}else{assertTrue(geometry+" avatar",avatar.right<=title.left);assertTrue(geometry+" qr",title.right<=qr.left)}

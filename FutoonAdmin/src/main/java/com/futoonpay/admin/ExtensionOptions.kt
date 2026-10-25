@@ -10,7 +10,7 @@ val panelTabNames = mapOf("recognition" to "识别", "orders" to "订单", "merc
 data class PanelOptions(
     val height: Int = 85, val defaultTab: String = "orders", val tabOrder: List<String> = panelTabIds,
     val remember: Boolean = true, val full: Boolean = false,
-    val image: String = "", val entrySize: Int = 52, val entryRadius: Int = 24, val entryOpacity: Int = 100,
+    val image: String = "", val entrySize: Int = 40, val entryRadius: Int = 20, val entryOpacity: Int = 100,
 )
 data class AppearanceOptions(val theme: String = "telegram", val accent: String = "", val font: Int = 100,
     val radius: Int = 18, val opacity: Int = 100, val dim: Int = 0)
@@ -46,7 +46,7 @@ data class ExtensionOptions(val panel: PanelOptions = PanelOptions(), val appear
             val order = p.optJSONArray("tabOrder")?.let { r -> (0 until r.length()).map { r.getString(it) } } ?: panelTabIds
             require(order.size == 5 && order.toSet() == panelTabIds.toSet()) { "业务 Tab 必须完整且不能重复" }
             val panel = PanelOptions(p.optInt("height", 85), p.optString("defaultTab", "orders"), order, p.optBoolean("remember", true), p.optBoolean("full"),
-                p.optString("image"), p.optInt("entrySize", 52), p.optInt("entryRadius", 24), p.optInt("entryOpacity", 100))
+                p.optString("image"), p.optInt("entrySize", 40), p.optInt("entryRadius", 20), p.optInt("entryOpacity", 100))
             require(panel.height in 50..100 && panel.defaultTab in panelTabIds && panel.entrySize in 40..96 && panel.entryRadius in 0..48 && panel.entryOpacity in 25..100) { "悬浮窗尺寸或透明度不正确" }
             require(panel.image.length <= 1024) { "图片路径过长" }
             val appearance = AppearanceOptions(a.optString("theme", "telegram"), a.optString("accent"), a.optInt("font", 100), a.optInt("radius", 18), a.optInt("opacity", 100), a.optInt("dim"))

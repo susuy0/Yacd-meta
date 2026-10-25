@@ -1,0 +1,18 @@
+{
+  "pdf_sha256": "dffac59a08cd0c58073b6da6097687934d1a414cb802bcfbab3b9f7c11e552c4",
+  "canvas_points": [
+    4194.0,
+    15240.5
+  ],
+  "reference_viewport_width": 393,
+  "observed_vector_fill_colors": [
+    "#FFFFFF",
+    "#F4F4F4",
+    "#0A0A0A",
+    "#767779",
+    "#1DAB61",
+    "#D0FECF",
+    "#F5F2EB"
+  ],
+  "notes": "Palette read from supplied Figma PDF vector fills. Text includes Type3 glyphs; typography sizes are layout targets, not a complete font extraction. Android system status/navigation bars and keyboard remain system-owned."
+}

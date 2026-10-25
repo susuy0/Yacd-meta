@@ -8,17 +8,17 @@ import androidx.annotation.Nullable;
 /** Shared Android chat design tokens and vector artwork, independent of business state. */
 public final class ChatLook {
     private ChatLook() {}
-    public static final int ROW_HEIGHT = 76, NAV_HEIGHT = 80, BUBBLE_RADIUS = 10, INPUT_RADIUS = 24;
+    public static final int ROW_HEIGHT = 76, NAV_HEIGHT = 56, BUBBLE_RADIUS = 12, INPUT_RADIUS = 18;
     public static int surface(boolean dark) { return dark ? 0xff12181c : 0xffffffff; }
-    public static int background(boolean dark) { return dark ? 0xff0a1014 : 0xffffffff; }
-    public static int field(boolean dark) { return dark ? 0xff20272b : 0xfff1f2f4; }
-    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xfff5f1eb; }
-    public static int text(boolean dark) { return dark ? 0xfff7f8fa : 0xff0a1014; }
-    public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff5b6368; }
-    public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1daa61; }
+    public static int background(boolean dark) { return dark ? 0xff0a1014 : 0xfff4f4f4; }
+    public static int field(boolean dark) { return dark ? 0xff20272b : 0xfff4f4f4; }
+    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xfff5f2eb; }
+    public static int text(boolean dark) { return dark ? 0xfff7f8fa : 0xff0a0a0a; }
+    public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff767779; }
+    public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1dab61; }
     public static int accentText(boolean dark) { return dark ? 0xff21c063 : 0xff1b8755; }
     public static int selectedText(boolean dark) { return dark ? 0xffd9fdd3 : 0xff15603e; }
-    public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd9fdd3; }
+    public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd0fecf; }
     public static int incoming(boolean dark) { return dark ? 0xff20272b : 0xffffffff; }
     public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd9fdd3; }
     public static Integer color(String key, boolean dark) {
@@ -73,8 +73,9 @@ public final class ChatLook {
             case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return accentText(dark);
             case "key_actionBarTabUnactiveText": return secondary(dark);
             case "key_actionBarTabSelector": return selected(dark);
-            case "key_glass_tabUnselected": case "key_glass_tabSelectedText": return text(dark);
-            case "key_glass_tabSelected": return selectedText(dark);
+            case "key_glass_tabUnselected": return secondary(dark);
+            case "key_glass_tabSelectedText": return text(dark);
+            case "key_glass_tabSelected": return text(dark);
             case "key_dialogButton": return accentText(dark);
             case "key_chat_messagePanelSend": return accent(dark);
             case "key_chats_unreadCounter": case "key_featuredStickers_addButton":
@@ -109,7 +110,7 @@ public final class ChatLook {
         if(joinedTop){int at=outgoing?2:0;corners[at]=corners[at+1]=tight;}
         if(joinedBottom){int at=outgoing?4:6;corners[at]=corners[at+1]=tight;}
         path.addRoundRect(body,corners,Path.Direction.CW);
-        if(!joinedTop){float tail=radius*.7f;if(outgoing){path.moveTo(body.right-radius,body.top);path.lineTo(body.right+tail,body.top);path.quadTo(body.right+tail,body.top+tail*.3f,body.right,body.top+radius);path.close();}else{path.moveTo(body.left+radius,body.top);path.lineTo(body.left-tail,body.top);path.quadTo(body.left-tail,body.top+tail*.3f,body.left,body.top+radius);path.close();}}
+        if(!joinedBottom){float tail=radius*.65f;if(outgoing){path.moveTo(body.right-radius,body.bottom);path.lineTo(body.right+tail,body.bottom);path.quadTo(body.right,body.bottom-tail*.4f,body.right,body.bottom-radius);path.close();}else{path.moveTo(body.left+radius,body.bottom);path.lineTo(body.left-tail,body.bottom);path.quadTo(body.left,body.bottom-tail*.4f,body.left,body.bottom-radius);path.close();}}
     }
     public static Drawable icon(String glyph, int color, float density) { return new Glyph(glyph, color, density); }
     public static Drawable wallpaperDrawable(boolean dark, float density) { return new Paper(dark, density); }
@@ -182,7 +183,9 @@ public final class ChatLook {
                 case "reply": path.moveTo(10,5);path.lineTo(3,11);path.lineTo(10,17);path.moveTo(3,11);path.cubicTo(17,8,21,12,21,20);c.drawPath(path,p);break;
                 case "app": for(int y=4;y<20;y+=10)for(int x=4;x<20;x+=10)c.drawRoundRect(x,y,x+6,y+6,1,1,p);break;
                 case "money": c.drawRoundRect(2,5,22,19,2,2,p);c.drawCircle(12,12,4,p);c.drawLine(5,12,6,12,p);c.drawLine(18,12,19,12,p);break;
-                case "back": c.drawLine(19,12,5,12,p);c.drawLine(5,12,11,6,p);c.drawLine(5,12,11,18,p);break;
+                case "plus": c.drawLine(12,3,12,21,p);c.drawLine(3,12,21,12,p);break;
+                case "more": p.setStyle(Paint.Style.FILL);c.drawCircle(5,12,1.5f,p);c.drawCircle(12,12,1.5f,p);c.drawCircle(19,12,1.5f,p);break;
+                case "back": c.drawLine(8,12,15,5,p);c.drawLine(8,12,15,19,p);break;
                 default: c.drawCircle(12,12,8,p);
             }
             c.restoreToCount(save);

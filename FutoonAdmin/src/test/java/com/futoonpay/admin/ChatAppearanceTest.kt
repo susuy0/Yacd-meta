@@ -48,7 +48,7 @@ class ChatAppearanceTest {
             assertNotEquals(ChatLook.color("key_chat_outSentCheck",dark),ChatLook.color("key_chat_outSentCheckRead",dark))
         }
     }
-    @Test fun bubbleTailsStayAtTheTopAndJoinedBubblesRemoveTheirTail() {
+    @Test fun bubbleTailsStayWithinVerticalBoundsAndJoinedBubblesRemoveTheirTail() {
         for(out in listOf(false,true)){
             val body=RectF(12f,4f,200f,70f);val path=Path();val bounds=RectF()
             ChatLook.bubblePath(path,body,10f,out,false,false);path.computeBounds(bounds,true)

@@ -18,7 +18,7 @@ assert 'POSITION_CONTACTS = -1' in main and 'TABS_COUNT = 3' in main
 assert 'setChatAppearance("chat")' in main
 view=(src/'DialogsActivity.java').read_text();assert 'hasChatQuickFilters()' in view and '!onlySelect && folderId == 0 && communityId == 0' in view
 assert 'dialog.unread_count > 0 || dialog.unread_mark' in view and 'chat.megagroup' in view
-assert 'getChatSearchHeight()' in view and 'R.string.FilterNameUnread' in view
+assert 'getChatSearchHeight()' in view and '"未读"' in view
 assert 'new ArrayList<>()' in view and 'return filtered;' in view
 assert 'FutoonPanel' in (src/'ChatActivity.java').read_text()
 assert 'ChatLook.bubblePath' in (src/'ActionBar/MessageDrawable.java').read_text()
@@ -94,10 +94,10 @@ assert 'if (chatAttachAlert != null) chatAttachAlert.dismissAttachmentChooser();
 settings=(src/'SettingsActivity.java').read_text()
 assert '.setParts(avatarContainer, titleView, subtitleView, qrButton)' in settings
 assert 'new QrActivity(args)' in settings and 'new ProfileActivity(args)' in settings
-assert 'actionBarVisible = true;' in settings
+assert 'first.itemView.getY() + dp(56) <= actionBar.getBottom()' in settings
 assert 'setRtl(LocaleController.isRTL)' in settings and 'grid.setRtl(LocaleController.isRTL)' in attach
 row=(src/'Cells/DialogCell.java').read_text()
-assert 'public int avatarStart = 16;' in row and 'avatarLeft + dp(48), avatarTop + dp(48)' in row
+assert 'public int avatarStart = 16;' in row and 'avatarLeft + dp(56), avatarTop + dp(56)' in row
 profile=(src/'ProfileActivity.java').read_text()
 assert 'lerp(intoSize, 120, diff)' in profile and 'Telegram ID' in profile
-print('PASS: native grid uses allowed host choices and original handlers; lifecycle cleanup, bot long press, separate QR/profile routes, 48dp list and 120dp profile avatars')
+print('PASS: native grid uses allowed host choices and original handlers; lifecycle cleanup, bot long press, separate QR/profile routes, 56dp list and 120dp profile avatars')
