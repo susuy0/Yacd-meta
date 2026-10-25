@@ -86,12 +86,12 @@ FutoonPay 设置 → 开户文案支持整段编辑与恢复默认。变量为 `
 
 ## 构建与验证
 
-上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `72019`，ARM64，minSdk23 / targetSdk36。v0.10.0一次整合交付，没有中间APK。
+上游固定为 `f32ffeec763f0bdbf4bec25b52d654f77bff733d`，包名 `com.futoonpay.vinechat.beta`，版本代码 `72029`，ARM64，minSdk23 / targetSdk36。本轮按iOS PDF做原生结构调整，统一交付一个v0.11.0安装包。
 
-代码 `adfcb37bbcc479e79adb8ad7ad28a4033bceac1a` 的355项原生业务与界面测试全部通过，0失败、0错误、0跳过，52个套件、67张本轮合成数据截图。Lint0错误、34警告、3提示。人工查看了快捷回复保存结果、Futoon设置、付款凭证手选收件人和大字体RTL资料行。修复新增分类后列表错误沿用旧分类，导致新增文案置灰的问题；所有331段原业务点击逻辑保持一致。
+编译源码 `ebb67dae5d5775ddd3e97755d29bd7014cd0fd03`。359项测试全部通过，0失败、0错误、0跳过，53个套件、68张合成数据图片。Lint0错误、37警告、3提示。全部12项核心门禁通过，包括原启动崩溃、AndroidX回调、发送/媒体入口、草稿隔离、群自动化、ICU、权限裁剪、331段原业务点击表达式，以及新增的原生标题滚动/搜索/回收/初始化检查。
 
-GitHub源码已推送；该源码提交未产生工作流，测试与构建在本地完成。完整客户端Java编译与APK打包通过。C++未修改，沿用v0.9.3核验过的原生引擎，打包后再次确认哈希相同。APK v2签名和内容摘要、ZIP CRC、包名/版本/ABI、裁剪权限及20个业务操作标识全部核验。完整宿主与132个模块文件和发布源码逐一比较一致，构建前后冻结哈希不变。
+客户端Java和最终APK构建通过；完整宿主及135个模块文件与发布源码逐一比较一致。构建前后冻结哈希不变。C++没有修改，原生引擎哈希与上一版一致。APK v2签名/内容摘要、ZIP CRC、身份/ABI/权限及20个业务操作标识核验通过。签名与上一版一致。
 
-APK：`SMS-Futoon-v0.10.0-arm64.apk`，`41,039,463`字节，签名与上一版一致。SHA-256：`e01107ae4078ffb0e3141433644079ac7f39e0fd7eb7baf59b8f80941e7b78e6`。`SMS-Futoon-v0.10.0-build-records.zip`保留该包的R8映射、校验结果、测试和合成截图。完整信息见 [BUILD.json](BUILD.json)。
+APK：`SMS-Futoon-v0.11.0-arm64.apk`，41,038,019字节；SHA-256：`50b0dd1e2ba8ab15f2d3390cd76f862eb2538bc7757128fe288f144f56a35447`。构建记录：`SMS-Futoon-v0.11.0-build-records.zip`，保留对应R8映射、测试结果、原生组件/业务合成截图、Lint、构建日志和冻结证明。详见 [BUILD.json](BUILD.json)。GitHub源码已推送，本次测试与构建在本地完成。
 
-测试使用Robolectric SDK35；未进行Android17真机或已登录WhatsApp的完整逐页像素对比。未执行真实开户、资金写入、密钥重置、Telegram发送或机器人点击。系统键盘、相册/文件选择器、真实后台及FCM送达仍需设备验证。保留development-no-fcm构建模式。
+测试采用Robolectric SDK35和隔离样例。完整Android17真机、系统键盘/选择器、真实后台写入、Telegram送达和FCM尚未实测；未执行真实开户、资金操作或机器人点击。PDF的颜色和原生组件几何已核对，完整运行时逐页像素一致尚未认证。保留development-no-fcm构建模式。

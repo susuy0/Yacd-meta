@@ -1,12 +1,12 @@
 {
-  "version": "0.10.0 integrated native and Futoon UI coverage",
-  "versionCode": 72019,
+  "version": "0.11.0 native iOS PDF layouts",
+  "versionCode": 72029,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "7df0aee328ffdbd6bf558e4f8e9526efd74f6fc42358abfd4026bc1749726330",
-  "source_baseline": "0e78ea94a1bd2a53606f11cf8c6c94f80eec45c6",
-  "source_commit": "adfcb37bbcc479e79adb8ad7ad28a4033bceac1a",
-  "source_tree": "101f21a05847a15e2bf1a82e6051f62b58d0e1fa",
+  "patch_sha256": "9b63652db309fd6d37dd2806fdc7b7cb9212243a7f333ff0be44094bd7240099",
+  "source_baseline": "6c06b535551e9f6770c2040ad57dad2b7809741b",
+  "source_commit": "ebb67dae5d5775ddd3e97755d29bd7014cd0fd03",
+  "source_tree": "76f59e282e46afb8ac959d0cabb13d83be642d4e",
   "features": {
     "native_ui_only": true,
     "original_telegram_ui": "Native visual adaptation using static measurements from WhatsApp 2.26.42.71; full pixel equivalence not claimed",
@@ -96,15 +96,12 @@
     "native_folder_filter_capsules": true,
     "native_quote_palette": "normal reply, quote, link, contact; code/sponsored/collectible-specific paths retained",
     "measured_reference_apk": true,
-    "reference_nav_height_dp": 80,
-    "reference_nav_indicator_dp": [
-      64,
-      32
-    ],
-    "reference_nav_label_sp": 14,
-    "reference_nav_label_line_sp": 20,
+    "reference_nav_height_dp": 56,
+    "reference_nav_indicator_dp": null,
+    "reference_nav_label_sp": 10,
+    "reference_nav_label_line_sp": 12,
     "reference_composer_action_dp": 48,
-    "reference_input_radius_dp": 24,
+    "reference_input_radius_dp": 18,
     "reference_popup_radius_dp": 12,
     "separate_action_and_readable_text_roles": true,
     "native_attachment_grid": true,
@@ -144,51 +141,69 @@
     "quick_reply_list_scoped_to_selected_hierarchy": true,
     "business_click_expressions_unchanged": 331,
     "business_click_files_compared": 17,
-    "system_reduced_motion_honored": true
+    "system_reduced_motion_honored": true,
+    "visual_baseline": "User supplied WhatsApp Screens 2025 iOS Community PDF",
+    "ios_reference_document": "IOS-REFERENCE.md",
+    "reference_toolbar_height_dp": 44,
+    "reference_inbox_title_sp": 34,
+    "reference_inbox_avatar_dp": 56,
+    "reference_settings_avatar_dp": 56,
+    "reference_bubble_radius_dp": 12,
+    "reference_settings_group_radius_dp": 10,
+    "large_title_and_native_search": true,
+    "single_filter_row_and_native_folder_chooser": true,
+    "folder_lock_transition_and_cancel_preserved": true,
+    "continuous_chat_toolbar": true,
+    "inline_attachment_plus": true,
+    "bottom_group_bubble_tails": true,
+    "neutral_inline_bot_button_text": true,
+    "grouped_native_profile_rows": true,
+    "native_compact_title_after_scroll": true,
+    "liquid_glass_dependency": false,
+    "configured_entry_image_size_preserved": true,
+    "new_entry_default_dp": 40
   },
   "previous_release": {
-    "version": "0.9.3",
-    "versionCode": 72009,
-    "source_commit": "29a5e17ec166984851c4b4ed76393f7ff3a43845",
-    "apk_sha256": "05548422e041c52feb2ddf2fb40be53134de4c0d51bb69fded308e1fec83ef46"
+    "version": "0.10.0",
+    "versionCode": 72019,
+    "source_commit": "adfcb37bbcc479e79adb8ad7ad28a4033bceac1a",
+    "apk_sha256": "e01107ae4078ffb0e3141433644079ac7f39e0fd7eb7baf59b8f80941e7b78e6"
   },
   "validation": {
-    "status": "passed locally; Android17 and live backend/device flows unverified",
+    "status": "passed locally; full runtime pixel equivalence and Android17 device flows unverified",
     "executor": "local",
     "github_actions_run": null,
-    "github_actions_note": "No new workflow run was created for these pushes; the build and tests were completed locally.",
+    "github_actions_note": "Tests and builds completed locally; no workflow run was observed for the compiled source commit.",
     "native_tests": {
       "junit": {
-        "tests": 355,
+        "tests": 359,
         "failures": 0,
         "errors": 0,
         "skipped": 0
       },
-      "suites": 52,
+      "suites": 53,
       "lint": {
         "Fatal": 0,
         "Error": 0,
-        "Warning": 34,
+        "Warning": 37,
         "Hint": 3,
         "Information": 0
       },
-      "screenshots": 67
+      "screenshots": 68
     },
     "core_checks": [
-      "startup negative control",
-      "AndroidX callback compatibility",
-      "send and media entry / quick reply draft / branding",
-      "opening draft account/conversation guards",
-      "group automation and deduplication",
-      "native appearance and 36 production send-circle geometry scenarios",
-      "ICU4C Android-compatible pattern gate",
-      "native composition audit",
-      "capture-permission and gallery regression",
-      "original Java recognition/HTTP/business/configuration/panel geometry contracts",
-      "eight UI families and 331 original business click expressions",
-      "real null-background callback detach and crashing negative control",
-      "inline bot button geometry at three densities",
-      "reply keyboard minimum target at four densities and 1..30 rows"
+      "test_startup_colors.py",
+      "test_activity_callbacks.py",
+      "test_chat_tools.py",
+      "test_opening_draft.py",
+      "test_group_automation.py",
+      "test_chat_appearance.py",
+      "test_media_trim.py",
+      "test_android_regex.py",
+      "test_ui_coverage.py",
+      "test_ios_native.py",
+      "test_native_panel.py",
+      "original_java_contracts"
     ],
     "permission_dispatch_checks": 118,
     "automation_dispatch_checks": 18,
@@ -203,10 +218,8 @@
     "source_worktree_matches_published_patch": true,
     "workflow_test_scope_cleanup": "cancel and join each ViewModel scope before resetting Dispatchers.Main",
     "manual_screenshot_review": [
-      "all-ui-preference-rtl-font150.png",
-      "27-futoon-quick-reply-settings.png",
-      "33-custom-settings-home.png",
-      "25-receipt-supplement-manual-preview.png"
+      "settings-native-ltr.png",
+      "ios-settings-large-title.png"
     ],
     "apk_v2_signature_and_content_digest": "verified",
     "packaged_manifest_permissions_abi_and_business_markers": "verified",
@@ -214,25 +227,22 @@
     "no_live_test_actions": true,
     "limits": [
       "Robolectric SDK35 synthetic fixtures, not an Android17 device test",
-      "No authenticated WhatsApp runtime capture or complete pixel parity",
+      "No authenticated WhatsApp runtime capture or full runtime pixel parity against the supplied iOS PDF",
       "Live backend mutations, recipient delivery, gallery/keyboard device behavior and FCM delivery were not exercised"
     ],
-    "module_files_compared": 132,
+    "module_files_compared": 135,
     "new_ui_checks": [
-      "Natural native preference heights and 240/280/390/640dp widths; fonts1/1.5/2; explicit RTL, preserved spans, clicks and recycled empty details",
-      "Native two-line check/radio detail layout and old overlap negative control",
-      "Gallery column and gutter geometry",
-      "Checked, selection, bot and search palette plus preserved destructive/status colors",
-      "Dynamic search drawing in light/dark, alpha and bounded shape",
-      "Real menu animation XML and system reduced-motion setting",
-      "Real Compose action minimum48dp, disabled state and click delivery",
-      "Context glyph bounded rendering",
-      "Create Tab/category/reply, edit and persist exact draft with no send; lazy list content isolated by navigation hierarchy"
+      "Production large-title/search/filter geometry at280/320/393/640dp and fonts1/1.5/2; real native input text and filter action retained",
+      "Native settings intro search callback and theme",
+      "Bottom bubble tails and grouped-bubble suppression",
+      "Neutral selected navigation icons, bot label contrast and read-state distinction",
+      "Actual compact-title source execution through empty, visible-large-title, scrolled, search, recycle and pre-create states; old forced-title negative control rejected",
+      "Native inline attachment dispatcher, original new-chat handler, original folder lock/selection/transition machinery and dismissal selection restore"
     ]
   },
   "apk": {
-    "bytes": 41039463,
-    "sha256": "e01107ae4078ffb0e3141433644079ac7f39e0fd7eb7baf59b8f80941e7b78e6",
+    "bytes": 41038019,
+    "sha256": "50b0dd1e2ba8ab15f2d3390cd76f862eb2538bc7757128fe288f144f56a35447",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -243,36 +253,41 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 20,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 72019,
+    "versionCode": 72029,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.10.0-arm64.apk",
+    "filename": "SMS-Futoon-v0.11.0-arm64.apk",
     "same_signer_as_previous_release": true,
     "push_mode": "development-no-fcm"
   },
   "native_library": {
-    "method": "reuse of unchanged verified v0.9.3 binary; C++ was not recompiled",
-    "source_apk_sha256": "05548422e041c52feb2ddf2fb40be53134de4c0d51bb69fded308e1fec83ef46",
-    "source_filename": "SMS-Futoon-v0.9.3-arm64.apk",
+    "method": "unchanged native binary, verified against v0.10.0; C++ not recompiled",
+    "source_apk_sha256": "e01107ae4078ffb0e3141433644079ac7f39e0fd7eb7baf59b8f80941e7b78e6",
+    "source_filename": "SMS-Futoon-v0.10.0-arm64.apk",
     "sha256": "b9371dc7147f557eee08b7058d1fb6f141ca45a01715fc6248598668bea1798c"
   },
   "mapping": {
-    "bytes": 228138634,
-    "sha256": "07d846e72eeca8f08eceacbd544f20860c34c44561ca77cdc4ca536bb814bc87",
-    "saved_in": "SMS-Futoon-v0.10.0-build-records.zip"
+    "bytes": 228132766,
+    "sha256": "687fa083063db6b34d5096be4c01ae47c55f8a26c96962d8d95d5c129b9d4968",
+    "saved_in": "SMS-Futoon-v0.11.0-build-records.zip"
   },
   "artifacts": {
     "build_records": {
-      "filename": "SMS-Futoon-v0.10.0-build-records.zip",
-      "bytes": 23815832,
-      "sha256": "77cceea8e020ad0b33ae16ee811147d6914793733133e46d958967f3364d654d"
+      "filename": "SMS-Futoon-v0.11.0-build-records.zip",
+      "bytes": 23662886,
+      "sha256": "e2db1ed0c7f8f80373a03f3aab5cf56a5dabcbb42d71914c43c2476b827a8baf"
     },
     "reference_apk": {
       "filename": "WhatsApp-2.26.42.71-reference.apk",
       "bytes": 153441879,
       "sha256": "528113bcfcfd3c4686a77bffa8a0b5db890c11b8362bfecbc441844c595bb671"
+    },
+    "ios_reference": {
+      "filename": "WhatsApp Screens 2025 with Meta AI - UI for iOS (Community).pdf",
+      "sha256": "dffac59a08cd0c58073b6da6097687934d1a414cb802bcfbab3b9f7c11e552c4",
+      "redistributed": false
     }
   }
 }
