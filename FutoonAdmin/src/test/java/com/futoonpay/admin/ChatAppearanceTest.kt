@@ -31,8 +31,11 @@ class ChatAppearanceTest {
             assertTrue(ColorUtils.calculateContrast(ChatLook.secondary(dark),bg)>=3.0)
         }
     }
-    @Test fun selectedFilterTextStaysReadableOnItsActualTint() {
+    @Test fun selectedAndReplyTextStaysReadableOnItsActualTint() {
         for(dark in listOf(false,true)) assertTrue(ColorUtils.calculateContrast(ChatLook.selectedText(dark),ChatLook.selected(dark))>=4.5)
+        for(dark in listOf(false,true)) for(bg in listOf(ChatLook.incoming(dark),ChatLook.outgoing(dark)))
+            for(key in listOf("key_chat_inReplyNameText","key_chat_outReplyNameText","key_chat_inReplyMediaMessageText","key_chat_outReplyMediaMessageText"))
+                assertTrue(key,ColorUtils.calculateContrast(ChatLook.color(key,dark)!!,bg)>=4.5)
     }
     @Test fun semanticErrorAndFinancialStatusColorsAreNeverReplacedByAppearance() {
         for(key in listOf("key_text_RedRegular","key_dialogTextRed","key_text_RedBold","key_chat_mediaTimeText","key_statisticChartLine_orange"))

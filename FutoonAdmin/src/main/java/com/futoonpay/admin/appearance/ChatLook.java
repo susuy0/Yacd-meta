@@ -60,13 +60,14 @@ public final class ChatLook {
             case "key_chats_unreadCounter": case "key_featuredStickers_addButton":
             case "key_switch2TrackChecked": case "key_switchTrackChecked": case "key_checkbox": case "key_chats_actionBackground": case "key_profile_actionBackground": case "key_profile_verifiedBackground":
             case "key_telegram_color_dialogsLogo":
-            case "key_chat_outReplyLine": case "key_chat_inReplyLine": case "key_chat_outReplyNameText": case "key_chat_inReplyNameText": return accent(dark);
+            case "key_chat_outReplyLine": case "key_chat_inReplyLine": return accent(dark);
+            case "key_chat_outReplyNameText": case "key_chat_inReplyNameText": return selectedText(dark);
             case "key_chats_unreadCounterText": case "key_featuredStickers_buttonText": case "key_chat_messagePanelVoicePressed":
             case "key_checkboxCheck": case "key_chats_actionIcon": case "key_profile_actionIcon": case "key_profile_verifiedCheck": return 0xffffffff;
             case "key_chat_outSentCheck": case "key_chat_outSentCheckSelected": return secondary(dark);
             case "key_chat_outSentCheckRead": case "key_chat_outSentCheckReadSelected": return 0xff53bdeb;
             case "key_chat_inReplyMessageText": case "key_chat_outReplyMessageText": return secondary(dark);
-            case "key_chat_inReplyMediaMessageText": case "key_chat_outReplyMediaMessageText": return accent(dark);
+            case "key_chat_inReplyMediaMessageText": case "key_chat_outReplyMediaMessageText": return selectedText(dark);
             case "key_dialogInputField": case "key_chat_messagePanelVoiceBackground": return field(dark);
             case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff20272b : 0xfff1f2f4;
             case "key_listSelector": case "key_actionBarDefaultSelector": return dark ? 0x1fe9edef : 0x12111b21;
