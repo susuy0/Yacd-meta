@@ -43,11 +43,11 @@ internal fun MultiSelectBar(selection: RecordSelection, visibleIds: List<String>
     val selected = selection.selected.intersect(ids)
     Column {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { if (selection.active) selection.clear() else selection.active = true }, enabled = !busy && (selection.active || ids.isNotEmpty())) { Text(if (selection.active) "完成多选" else "多选") }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { if (selection.active) selection.clear() else selection.active = true }, enabled = !busy && (selection.active || ids.isNotEmpty())) { Text(if (selection.active) "完成多选" else "多选") }
             if (selection.active) {
                 Text("已选 ${selected.size} 条", color = GreenDark, fontSize = 12.sp, modifier = Modifier.weight(1f))
                 Box {
-                    Button(onClick = { expanded = true }, enabled = !busy && selected.isNotEmpty() && options.any { it.commands.any { command -> command.skipReason.isBlank() } }) { Text("批量操作") }
+                    com.futoonpay.admin.ui.ChatButton(onClick = { expanded = true }, enabled = !busy && selected.isNotEmpty() && options.any { it.commands.any { command -> command.skipReason.isBlank() } }) { Text("批量操作") }
                     DropdownMenu(expanded, { expanded = false }) { options.forEach { request ->
                         val count = request.commands.count { it.skipReason.isBlank() }
                         DropdownMenuItem(text = { Text("${request.title} · $count 条可执行") }, enabled = count > 0, onClick = { expanded = false; onRequest(request.copy(commands = request.commands.toList())) })
@@ -59,7 +59,7 @@ internal fun MultiSelectBar(selection: RecordSelection, visibleIds: List<String>
             Checkbox(ids.isNotEmpty() && selected == ids, { selection.selected = if (it) ids else emptySet() }, enabled = !busy && ids.isNotEmpty())
             Text("全选当前页", fontSize = 12.sp)
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = { selection.selected = emptySet() }, enabled = !busy && selected.isNotEmpty()) { Text("清空") }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { selection.selected = emptySet() }, enabled = !busy && selected.isNotEmpty()) { Text("清空") }
         }
     }
 }
@@ -110,13 +110,13 @@ internal fun BatchDialog(progress: BatchProgress?, onConfirm: () -> Unit, onClos
             }
         } },
         confirmButton = {
-            if (!progress.started) Button(onClick = onConfirm, enabled = request.commands.any { it.skipReason.isBlank() }) { Text("确认执行") }
-            else if (!progress.running) TextButton(onClick = onClose) { Text("关闭") }
+            if (!progress.started) com.futoonpay.admin.ui.ChatButton(onClick = onConfirm, enabled = request.commands.any { it.skipReason.isBlank() }) { Text("确认执行") }
+            else if (!progress.running) com.futoonpay.admin.ui.ChatTextButton(onClick = onClose) { Text("关闭") }
             else Text("正在逐条执行…", color = Muted)
         },
         dismissButton = {
-            if (!progress.started) TextButton(onClick = onClose) { Text("取消") }
-            else if (!progress.running && progress.retryable.isNotEmpty()) TextButton(onClick = onRetry) { Text("重试失败/未执行项") }
+            if (!progress.started) com.futoonpay.admin.ui.ChatTextButton(onClick = onClose) { Text("取消") }
+            else if (!progress.running && progress.retryable.isNotEmpty()) com.futoonpay.admin.ui.ChatTextButton(onClick = onRetry) { Text("重试失败/未执行项") }
         },
     )
 }
@@ -129,8 +129,8 @@ private fun KeyResult(uid: String, key: String) {
     var copied by remember(uid, key) { mutableStateOf(false) }
     Text(if (visible) key else "••••••••••••••••••••••••••••••••", fontSize = 12.sp)
     Row {
-        TextButton(onClick = { visible = !visible }) { Text(if (visible) "隐藏密钥" else "查看密钥", fontSize = 12.sp) }
-        TextButton(onClick = {
+        com.futoonpay.admin.ui.ChatTextButton(onClick = { visible = !visible }) { Text(if (visible) "隐藏密钥" else "查看密钥", fontSize = 12.sp) }
+        com.futoonpay.admin.ui.ChatTextButton(onClick = {
             val clip = ClipData.newPlainText("商户 $uid 新密钥", key)
             val sensitiveExtra = if (Build.VERSION.SDK_INT >= 33) ClipDescription.EXTRA_IS_SENSITIVE else "android.content.extra.IS_SENSITIVE"
             if (Build.VERSION.SDK_INT >= 24) {

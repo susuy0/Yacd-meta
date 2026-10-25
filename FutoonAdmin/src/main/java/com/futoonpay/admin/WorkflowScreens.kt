@@ -70,7 +70,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (state.merchantLoading) CircularProgressIndicator(Modifier.size(24.dp))
             Text(if (state.merchantLoading) "正在查询商户 $lockedMerchantId…" else state.merchantError ?: "商户信息不匹配，请重新查询", color = Muted)
-            if (!state.merchantLoading) OutlinedButton(onClick = { workflows.lookup("uid", lockedMerchantId, true, "会话快捷栏") }) { Text("重新查询") }
+            if (!state.merchantLoading) com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { workflows.lookup("uid", lockedMerchantId, true, "会话快捷栏") }) { Text("重新查询") }
         }
         return
     }
@@ -95,7 +95,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
     PayCard(compact = compact) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(if (compact && merchant != null) "PID ${merchant.uid} · ${merchant.username.ifBlank { "当前商户" }}" else "当前会话商户", Modifier.weight(1f), color = if (compact) Ink else Muted, fontSize = if (compact) 14.sp else 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            TextButton(onClick = workflows::refreshMerchant, enabled = !state.merchantLoading) { Text(if (compact) "刷新" else "重新识别", fontSize = 12.sp) }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = workflows::refreshMerchant, enabled = !state.merchantLoading) { Text(if (compact) "刷新" else "重新识别", fontSize = 12.sp) }
         }
         when {
             state.merchantLoading -> Row(verticalAlignment = Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Text(" 正在查询商户…") }
@@ -103,7 +103,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 Text("同一 Telegram ID 对应 ${state.merchantCandidates.size} 个商户，请选择本次操作对象。", color = Warning, fontSize = 13.sp)
                 state.merchantCandidates.forEach { candidate ->
                     val row = JSONObject(candidate).toMerchantSummary()
-                    OutlinedButton(onClick = { workflows.chooseMerchant(row.uid) }, modifier = Modifier.fillMaxWidth()) {
+                    com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { workflows.chooseMerchant(row.uid) }, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.fillMaxWidth()) { Text("${row.username.ifBlank { "商户" }} · PID ${row.uid}"); Text("TGID ${row.telegramId.ifBlank { "未绑定" }}", fontSize = 12.sp) }
                     }
                 }
@@ -114,8 +114,8 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 Text("TGID ${merchant.telegramId.ifBlank { "未绑定" }} · ${state.merchantSource}", color = Muted, fontSize = 12.sp, maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
                 if (!compact && chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "更多", fontSize = if (compact) 12.sp else 14.sp) }
-                    if (compact) TextButton(onClick = { manual = true }) { Text("切换", fontSize = 12.sp) }
+                    com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起操作" else "更多", fontSize = if (compact) 12.sp else 14.sp) }
+                    if (compact) com.futoonpay.admin.ui.ChatTextButton(onClick = { manual = true }) { Text("切换", fontSize = 12.sp) }
                 }
                 if (expanded) {
                     merchant.balances.ifEmpty { mapOf("CNY" to merchant.balance) }.forEach { (currency, amount) -> DataRow("$currency 可用", amount) }
@@ -126,36 +126,36 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                         listOf("增加 CNY 余额" to "add", "扣除 CNY 余额" to "reduce"),
                         listOf((if (merchant.status == 1) "封禁账号" else "解封账号") to "toggleAccount", (if (merchant.paymentEnabled) "关闭支付" else "开启支付") to "togglePay"),
                         listOf((if (merchant.settlementEnabled) "关闭结算" else "开启结算") to "toggleSettle", "修改用户组" to "group"),
-                    ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> OutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
+                    ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { actions.model.offerBatch(merchantKeyRequest(listOf(merchant))) }) { Text("重置密钥") }
-                        TextButton(onClick = { actions.showDetail(merchant) }) { Text("详情与流水曲线") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { actions.model.offerBatch(merchantKeyRequest(listOf(merchant))) }) { Text("重置密钥") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { actions.showDetail(merchant) }) { Text("详情与流水曲线") }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { navigator.orders(merchantId = merchant.uid) }) { Text("商户订单") }
-                        TextButton(onClick = { navigator.settlements(merchant.uid) }) { Text("商户结算") }
-                        TextButton(onClick = { navigator.domains(merchant.uid) }) { Text("域名审核") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.orders(merchantId = merchant.uid) }) { Text("商户订单") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.settlements(merchant.uid) }) { Text("商户结算") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.domains(merchant.uid) }) { Text("域名审核") }
                     }
                     Row {
-                        TextButton(onClick = { merchantReply = true }) { Text("生成商户回复") }
-                        TextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "flow", merchantId = merchant.uid)) }) { Text("资金流水") }
-                        TextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "stats", merchantId = merchant.uid)) }) { Text("商户统计") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { merchantReply = true }) { Text("生成商户回复") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "flow", merchantId = merchant.uid)) }) { Text("资金流水") }
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "stats", merchantId = merchant.uid)) }) { Text("商户统计") }
                     }
                 }
             }
         }
         if (lockedMerchantId.isBlank() && (!compact || merchant == null || state.manualMerchant)) Row {
-            if (!compact || merchant == null) TextButton(onClick = { manual = true }) { Text(if (merchant == null) "手动查询 TGID / PID" else "切换商户") }
-            if (state.manualMerchant) TextButton(onClick = workflows::lookupAutomatic) { Text("恢复自动识别") }
+            if (!compact || merchant == null) com.futoonpay.admin.ui.ChatTextButton(onClick = { manual = true }) { Text(if (merchant == null) "手动查询 TGID / PID" else "切换商户") }
+            if (state.manualMerchant) com.futoonpay.admin.ui.ChatTextButton(onClick = workflows::lookupAutomatic) { Text("恢复自动识别") }
         }
-        if (lockedMerchantId.isBlank() && merchant != null && chat.dialog < 0 && chat.telegramId.isBlank()) TextButton(onClick = workflows::toggleGroupBinding, enabled = !state.localLoading) { Text(if (workflows.binding().isBlank()) "在本群记住此商户" else "解除本群商户绑定") }
-        if (lockedMerchantId.isBlank()) TextButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp)); Text("商户开户") }
+        if (lockedMerchantId.isBlank() && merchant != null && chat.dialog < 0 && chat.telegramId.isBlank()) com.futoonpay.admin.ui.ChatTextButton(onClick = workflows::toggleGroupBinding, enabled = !state.localLoading) { Text(if (workflows.binding().isBlank()) "在本群记住此商户" else "解除本群商户绑定") }
+        if (lockedMerchantId.isBlank()) com.futoonpay.admin.ui.ChatTextButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp)); Text("商户开户") }
     }
     if (manual) PaySheet("手动查询商户", { manual = false }) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PayPills(listOf("telegram_id" to "TGID", "uid" to "商户 PID"), column) { column = it }
             OutlinedTextField(value, { value = it.take(19) }, label = { Text("完整 TGID 或 PID") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
-            Button(enabled = value.matches(Regex("[0-9]{1,19}")), onClick = { workflows.lookup(column, value); manual = false }, modifier = Modifier.fillMaxWidth()) { Text("查询商户") }
+            com.futoonpay.admin.ui.ChatButton(enabled = value.matches(Regex("[0-9]{1,19}")), onClick = { workflows.lookup(column, value); manual = false }, modifier = Modifier.fillMaxWidth()) { Text("查询商户") }
         }
     }
 }
@@ -175,7 +175,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 item { CurrentMerchantCard(workflows, actions, chat, navigator, compact = true) }
                 item { OutlinedTextField(state.text, workflows::setText, label = { Text(if (state.ocr) "图片识别结果，请先校对" else "粘贴消息、订单号或商户 PID") }, modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4 , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
                 item { Row {
-                    TextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = { workflows.requestOcr() }, enabled = !state.running) { Icon(Icons.Default.ImageSearch, null, Modifier.size(18.dp)); Text("截图 OCR / 二维码") }
                     if (state.ocr) Text("先校对 O/0、I/1", color = Warning, fontSize = 12.sp)
                 } }
                 item { PayPills(queryKinds, state.queryKind, workflows::setKind) }
@@ -197,25 +197,25 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                         Text(when (candidate.phase) { "ok" -> "查询完成 · 共 ${candidate.total} 笔"; "failed" -> "查询失败"; "loading" -> "查询中…"; else -> "等待查询" }, color = if (candidate.phase == "failed") Danger else Muted, fontSize = 12.sp)
                         if (candidate.error.isNotBlank()) Text(candidate.error, color = Warning, fontSize = 12.sp)
                         candidate.orders.forEach { raw -> val order = JSONObject(raw); OrderResultCard(order) { openOrder(order) } }
-                        if (candidate.total > candidate.orders.size) TextButton(onClick = {
+                        if (candidate.total > candidate.orders.size) com.futoonpay.admin.ui.ChatTextButton(onClick = {
                             val column = when (candidate.matchedKind.ifBlank { candidate.kind }) { "PID" -> "uid"; "MERCHANT_ORDER" -> "out_trade_no"; "CHANNEL_ORDER" -> "api_trade_no"; else -> "trade_no" }
                             navigator.push(PanelRoute("orders", queryColumn = column, queryValue = candidate.value))
                         }) { Text("查看全部结果") }
                     } }
                     item { Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        TextButton(enabled = !state.running, onClick = { workflows.runQueries(onlyFailed = true) }) { Text("重试失败项") }
-                        TextButton(enabled = !state.running, onClick = { workflows.runQueries(refresh = true) }) { Text("批量刷新") }
-                        TextButton(enabled = !state.running, onClick = { summary = workflows.abnormalSummary() }) { Text("异常汇总") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = !state.running, onClick = { workflows.runQueries(onlyFailed = true) }) { Text("重试失败项") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = !state.running, onClick = { workflows.runQueries(refresh = true) }) { Text("批量刷新") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = !state.running, onClick = { summary = workflows.abnormalSummary() }) { Text("异常汇总") }
                     } }
                     item { Row {
                         val rows = workflows.selectedOrders()
-                        TextButton(enabled = rows.isNotEmpty() && !state.running, onClick = { workflows.exportOrders(rows) }) { Text("导出清单") }
-                        TextButton(enabled = rows.isNotEmpty() && !state.running, onClick = { actions.model.offerBatch(orderBatchOptions(rows.map { it.toOrderSummary() }).first { it.title == "补发通知" }) }) { Text("批量补发通知") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = rows.isNotEmpty() && !state.running, onClick = { workflows.exportOrders(rows) }) { Text("导出清单") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = rows.isNotEmpty() && !state.running, onClick = { actions.model.offerBatch(orderBatchOptions(rows.map { it.toOrderSummary() }).first { it.title == "补发通知" }) }) { Text("批量补发通知") }
                     } }
                 }
             } else if (state.localLoading) item { CircularProgressIndicator() }
             else if (page == "history") {
-                items(workflows.array("history"), key = { it.optString("text") }) { row -> PayCard { TextButton(onClick = { workflows.queryHistory(row); page = "recognize" }) { Text("${queryKindLabel(row.optString("kind"))} · ${row.optString("text")}") } } }
+                items(workflows.array("history"), key = { it.optString("text") }) { row -> PayCard { com.futoonpay.admin.ui.ChatTextButton(onClick = { workflows.queryHistory(row); page = "recognize" }) { Text("${queryKindLabel(row.optString("kind"))} · ${row.optString("text")}") } } }
                 if (workflows.array("history").isEmpty()) item { Text("暂无查询记录", color = Muted) }
             } else if (page == "favorites") {
                 items(workflows.array("favorites"), key = { it.optString("trade_no") }) { row -> OrderResultCard(row) { openOrder(row) } }
@@ -224,15 +224,15 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 items(workflows.drafts(), key = { it.getJSONObject("order").optString("trade_no") }) { draft -> PayCard {
                     Text("订单 ${draft.getJSONObject("order").optString("trade_no")}")
                     Text(draft.optString("caption"), color = Muted, maxLines = 3, fontSize = 12.sp)
-                    TextButton(onClick = { workflows.restoreDraft(draft) }) { Text("恢复付款凭证草稿") }
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = { workflows.restoreDraft(draft) }) { Text("恢复付款凭证草稿") }
                 } }
                 if (workflows.drafts().isEmpty()) item { Text("暂无凭证草稿", color = Muted) }
             }
         }
         if (page == "recognize") Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(enabled = !state.running && !state.extracting && state.text.isNotBlank(), onClick = { workflows.extract() }, modifier = Modifier.weight(1f)) { Text(if (state.extracting) "提取中…" else "提取编号") }
-            if (state.running) Button(onClick = workflows::stopQueries, modifier = Modifier.weight(1f)) { Text("停止未执行项") }
-            else Button(enabled = !state.extracting && state.candidates.any { it.selected }, onClick = { workflows.runQueries() }, modifier = Modifier.weight(1f)) { Text("查询所选") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !state.running && !state.extracting && state.text.isNotBlank(), onClick = { workflows.extract() }, modifier = Modifier.weight(1f)) { Text(if (state.extracting) "提取中…" else "提取编号") }
+            if (state.running) com.futoonpay.admin.ui.ChatButton(onClick = workflows::stopQueries, modifier = Modifier.weight(1f)) { Text("停止未执行项") }
+            else com.futoonpay.admin.ui.ChatButton(enabled = !state.extracting && state.candidates.any { it.selected }, onClick = { workflows.runQueries() }, modifier = Modifier.weight(1f)) { Text("查询所选") }
         }
     }
     summary?.let { text -> EditableWorkflowText("异常订单汇总", text, { summary = null }, bridge::copy) }
@@ -257,11 +257,11 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         val merchant = state.merchant?.let { JSONObject(it).optString("uid") }
         if (merchant != null && merchant != detail.merchantId) Text("此订单属于 PID ${detail.merchantId}，与当前会话商户 PID $merchant 不同；请核对操作对象。", color = Warning, fontSize = 12.sp)
         Row {
-            TextButton(enabled = !state.localLoading, onClick = { workflows.favorite(row) }) { Text(if (workflows.isFavorite(detail.tradeNo)) "取消收藏" else "收藏订单") }
-            TextButton(onClick = { workflows.jumpToSource(row) }, enabled = MessageSource.from(row.optJSONObject("_source")).message > 0) { Text("回到原消息") }
+            com.futoonpay.admin.ui.ChatTextButton(enabled = !state.localLoading, onClick = { workflows.favorite(row) }) { Text(if (workflows.isFavorite(detail.tradeNo)) "取消收藏" else "收藏订单") }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { workflows.jumpToSource(row) }, enabled = MessageSource.from(row.optJSONObject("_source")).message > 0) { Text("回到原消息") }
         }
         Row {
-            TextButton(onClick = { dialog = "reply" }) { Text("生成回复草稿") }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { dialog = "reply" }) { Text("生成回复草稿") }
         }
     }
     if (dialog.isNotBlank()) {
@@ -278,7 +278,7 @@ internal val LocalWorkflowCopy = staticCompositionLocalOf<(String) -> Unit> { {}
         Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val limit = 8000
             OutlinedTextField(value, { value = it }, modifier = Modifier.fillMaxWidth().weight(1f), label = { Text("可编辑内容") }, isError = value.length > limit, supportingText = { Text("${value.length} / $limit") } , colors = com.futoonpay.admin.ui.ChatFieldColors())
-            Button(enabled = value.length <= limit, onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text("复制草稿") }
+            com.futoonpay.admin.ui.ChatButton(enabled = value.length <= limit, onClick = { onSave(value); onClose() }, modifier = Modifier.fillMaxWidth()) { Text("复制草稿") }
         }
     }
 }
@@ -301,18 +301,18 @@ internal val LocalWorkflowCopy = staticCompositionLocalOf<(String) -> Unit> { {}
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (route.module == "stats") item { Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(day, { day = it }, modifier = Modifier.weight(1f), label = { Text("日期 YYYY-MM-DD") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
-                TextButton(onClick = { runCatching { LocalDate.parse(day) }.onSuccess { queryDay = day; revision++ }.onFailure { error = "日期格式不正确" } }) { Text("查询") }
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { runCatching { LocalDate.parse(day) }.onSuccess { queryDay = day; revision++ }.onFailure { error = "日期格式不正确" } }) { Text("查询") }
             } }
             if (loading) item { CircularProgressIndicator() }
-            error?.let { item { Text(it, color = Danger); TextButton(onClick = { revision++ }) { Text("重试") } } }
+            error?.let { item { Text(it, color = Danger); com.futoonpay.admin.ui.ChatTextButton(onClick = { revision++ }) { Text("重试") } } }
             val rows = result?.optJSONArray("rows").objects()
             if (!loading && error == null && rows.isEmpty()) item { Text("暂无记录", color = Muted) }
             items(rows) { row -> PayCard { row.keys().asSequence().filterNot { it.contains("token", true) || it == "key" || it.contains("password", true) }.forEach { field -> DataRow(when (field) { "uid" -> "商户 PID"; "money" -> "金额"; "addtime" -> "时间"; "type" -> "类型"; "action" -> "操作"; "remark" -> "备注"; "total" -> "流水"; "balance" -> "余额"; else -> field }, row.optString(field)) } } }
         }
         if (route.module != "stats") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(enabled = page > 1 && !loading, onClick = { page-- }) { Text("上一页") }
+            com.futoonpay.admin.ui.ChatTextButton(enabled = page > 1 && !loading, onClick = { page-- }) { Text("上一页") }
             Text("第 $page 页", Modifier.padding(12.dp), fontSize = 12.sp)
-            TextButton(enabled = !loading && (result?.optJSONArray("rows")?.length() ?: 0) >= 25, onClick = { page++ }) { Text("下一页") }
+            com.futoonpay.admin.ui.ChatTextButton(enabled = !loading && (result?.optJSONArray("rows")?.length() ?: 0) >= 25, onClick = { page++ }) { Text("下一页") }
         }
     }
 }

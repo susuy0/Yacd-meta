@@ -139,14 +139,14 @@ internal class MerchantOpeningViewModel(
                 when (state.stage) {
                     OpeningStage.FORM -> {
                         if (missing.isNotEmpty()) Text("还差 ${missing.size} 项：${missing.joinToString("、") { it.label }}", color = Muted, fontSize = 12.sp)
-                        Button(onClick = model::review, enabled = valid && !state.loading && sameChat, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("下一步 · 核对开户") }
+                        com.futoonpay.admin.ui.ChatButton(onClick = model::review, enabled = valid && !state.loading && sameChat, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("下一步 · 核对开户") }
                     }
                     OpeningStage.REVIEW, OpeningStage.SUBMITTING -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = model::backToForm, enabled = !busy, modifier = Modifier.weight(1f)) { Text("返回修改") }
-                        Button(onClick = { model.create() }, enabled = !busy && sameChat, modifier = Modifier.weight(1f)) { Text(if (busy) "开户中…" else "确认开户") }
+                        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = model::backToForm, enabled = !busy, modifier = Modifier.weight(1f)) { Text("返回修改") }
+                        com.futoonpay.admin.ui.ChatButton(onClick = { model.create() }, enabled = !busy && sameChat, modifier = Modifier.weight(1f)) { Text(if (busy) "开户中…" else "确认开户") }
                     }
-                    OpeningStage.RESULT -> if (!state.draftInserted && state.binding.isNotBlank()) Button(onClick = { model.insert() }, enabled = !busy && sameChat && state.result?.key?.isNotBlank() == true, modifier = Modifier.fillMaxWidth()) { Text(if (state.inserting) "填入中…" else "填入当前会话输入框") }
-                    OpeningStage.UNCERTAIN -> OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("返回查询商户") }
+                    OpeningStage.RESULT -> if (!state.draftInserted && state.binding.isNotBlank()) com.futoonpay.admin.ui.ChatButton(onClick = { model.insert() }, enabled = !busy && sameChat && state.result?.key?.isNotBlank() == true, modifier = Modifier.fillMaxWidth()) { Text(if (state.inserting) "填入中…" else "填入当前会话输入框") }
+                    OpeningStage.UNCERTAIN -> com.futoonpay.admin.ui.ChatOutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("返回查询商户") }
                 }
             }
         }
@@ -166,7 +166,7 @@ internal class MerchantOpeningViewModel(
             if (state.loading || busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             state.error?.let { error -> item { PayCard { Text(error, color = Danger) } } }
             if (state.stage == OpeningStage.FORM) {
-                if (state.form == null && !state.loading) item { TextButton(onClick = { model.load() }) { Text("重新加载开户资料") } }
+                if (state.form == null && !state.loading) item { com.futoonpay.admin.ui.ChatTextButton(onClick = { model.load() }) { Text("重新加载开户资料") } }
                 val groups = state.form?.fields.orEmpty().filter { it.type != "hidden" }.groupBy { field -> openingFieldGroup(field.name) }
                 groups.forEach { (title, fields) -> item(key = title) {
                     OpeningFieldGroup(title, fields, !state.loading && sameChat) { name, value -> model.edit(name, value) }
@@ -186,8 +186,8 @@ internal class MerchantOpeningViewModel(
                     DataRow("商户 ID", result?.uid.orEmpty())
                     DataRow("结算周期", model.cycle())
                     Text(if (state.draftInserted) "文案已填入输入框，请校对后手动发送。" else "开户已完成，后续操作不会再次提交开户。", color = Muted, fontSize = 12.sp)
-                    TextButton(enabled = !busy, onClick = { result?.let { onMerchant(it.uid) } }) { Text("查看商户") }
-                    if (state.binding.isBlank()) OutlinedButton(enabled = !busy, onClick = { model.retryBinding() }) { Text(if (state.linkLoading) "获取链接中…" else "重取绑定链接") }
+                    com.futoonpay.admin.ui.ChatTextButton(enabled = !busy, onClick = { result?.let { onMerchant(it.uid) } }) { Text("查看商户") }
+                    if (state.binding.isBlank()) com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !busy, onClick = { model.retryBinding() }) { Text(if (state.linkLoading) "获取链接中…" else "重取绑定链接") }
                 } }
             }
         }
@@ -195,7 +195,7 @@ internal class MerchantOpeningViewModel(
     if (discard) PaySheet("放弃修改？", { discard = false }) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("开户尚未提交，离开后本次填写内容将丢失。")
-            Row { TextButton(onClick = { discard = false }) { Text("继续填写") }; TextButton(onClick = { discard = false; onBack() }) { Text("放弃", color = Danger) } }
+            Row { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续填写") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false; onBack() }) { Text("放弃", color = Danger) } }
         }
     }
 
@@ -224,7 +224,7 @@ private fun openingFieldGroup(name: String): String = when (name) {
                     var reveal by remember { mutableStateOf(false) }
                     OutlinedTextField(field.value, { onField(field.name, it) }, label = { Text(field.label) }, enabled = enabled,
                         visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(), singleLine = true,
-                        trailingIcon = { TextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示") } },
+                        trailingIcon = { com.futoonpay.admin.ui.ChatTextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示") } },
                         supportingText = { Text("留空则只能使用密钥登录") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 }
                 "settle" -> Column {

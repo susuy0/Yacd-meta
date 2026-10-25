@@ -157,9 +157,9 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
     LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             if (showSearchEntry) Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { advanced = true }) { Icon(Icons.Default.Search, null, Modifier.size(16.dp)); Text("完整搜索", fontSize = 12.sp) }
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Icon(Icons.Default.Search, null, Modifier.size(16.dp)); Text("完整搜索", fontSize = 12.sp) }
                 Spacer(Modifier.weight(1f))
-                if (state.orderSearch != OrderSearchFilters(status = state.orderSearch.status)) TextButton(onClick = { viewModel.loadOrders(1, OrderSearchFilters(status = state.orderSearch.status)) }) { Text("重置") }
+                if (state.orderSearch != OrderSearchFilters(status = state.orderSearch.status)) com.futoonpay.admin.ui.ChatTextButton(onClick = { viewModel.loadOrders(1, OrderSearchFilters(status = state.orderSearch.status)) }) { Text("重置") }
             }
             AppliedChips(state.orderSearch.activeChips(),
                 { viewModel.loadOrders(1, state.orderSearch.withoutChip(it)) },
@@ -193,14 +193,14 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
             item { ChoicePicker("支付方式", filters.paymentType, ORDER_PAYMENT_TYPES) { filters = filters.copy(paymentType = it) } }
             item { OutlinedTextField(filters.channelId, { filters = filters.copy(channelId = it) }, label = { Text("通道 ID") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { DatePreset.entries.forEach { preset ->
-                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = filters.withPreset(preset, java.time.LocalDate.now()) }, modifier = Modifier.weight(1f)) { Text(preset.label, fontSize = 12.sp) }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = filters.withPreset(preset, java.time.LocalDate.now()) }, modifier = Modifier.weight(1f)) { Text(preset.label, fontSize = 12.sp) }
             } } }
             item { OutlinedTextField(filters.startDate, { filters = filters.copy(startDate = it) }, label = { Text("开始日期 YYYY-MM-DD") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { OutlinedTextField(filters.endDate, { filters = filters.copy(endDate = it) }, label = { Text("结束日期 YYYY-MM-DD") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         }
             Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = OrderSearchFilters(status = filters.status) }, modifier = Modifier.weight(1f)) { Text("重置") }
-                Button(shape = RoundedCornerShape(24.dp), onClick = { viewModel.loadOrders(1, filters); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = OrderSearchFilters(status = filters.status) }, modifier = Modifier.weight(1f)) { Text("重置") }
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { viewModel.loadOrders(1, filters); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
             }
     }
     pending?.let { action -> OrderActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.order.tradeNo in state.uncertainOrders, onVerify = { pending = null; actionError = null; viewModel.loadOrderDetail(action.order.tradeNo) }) { amount, password, remark ->
@@ -414,17 +414,17 @@ private fun ChannelHealthDialog(
                                 Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                                     item {
-                                        TextButton(onClick = {
+                                        com.futoonpay.admin.ui.ChatTextButton(onClick = {
                                             navigation.orders(channelId = channelId)
                                         }) { Text("该通道订单") }
                                     }
                                     item {
-                                        TextButton(onClick = {
+                                        com.futoonpay.admin.ui.ChatTextButton(onClick = {
                                             navigation.module("channels", channelId = channelId)
                                         }) { Text("通道详情") }
                                     }
                                     item {
-                                        TextButton(onClick = {
+                                        com.futoonpay.admin.ui.ChatTextButton(onClick = {
                                             navigation.module("channel_monitor")
                                         }) { Text("通道监测") }
                                     }
@@ -491,17 +491,17 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         } }
                         item { DetailBlock("时间 · 通知", listOf("创建时间" to detail.createdAt, "支付时间" to detail.completedAt, "回调通知" to notifyLabel(detail))) }
                         item { DetailBlock("请求信息", listOf("商品信息" to detail.name, "支付账号" to detail.buyer, "网站域名" to detail.domain, "请求 IP" to detail.ip, "附加参数" to detail.parameter)) }
-                        item { OutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("选择付款凭证") } }
+                        item { com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("选择付款凭证") } }
                         item { com.futoonpay.admin.OrderWorkflowTools(detail) }
                         item { Text("其他操作", color = Muted, fontSize = 12.sp) }
                         items(actions.filterNot { it.action == "notify" || it.action == "refund" }) { action ->
-                            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(action.label) }
+                            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(action.label) }
                         }
                     }
                     if (detail.status == 1 || detail.status == 2 || detail.status == 3) Row(
                         Modifier.fillMaxWidth().background(CardColor).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        actions.firstOrNull { it.action == "notify" }?.let { action -> OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("重新通知") } }
-                        actions.firstOrNull { it.action == "refund" }?.let { action -> Button(shape = RoundedCornerShape(24.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("退款") } }
+                        actions.firstOrNull { it.action == "notify" }?.let { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("重新通知") } }
+                        actions.firstOrNull { it.action == "refund" }?.let { action -> com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("退款") } }
                     }
                 }
             }
@@ -615,8 +615,8 @@ private fun OrderActionDialog(
                 if (pending.amountRequired && !validRefundAmount(amount, pending.order.amount)) Text("请输入不超过订单金额的正数，最多两位小数", color = Danger, fontSize = 12.sp)
                 error?.let { Text(it, color = Danger, fontSize = 12.sp) }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-                    Button(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, paymentPassword, remark) },
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, paymentPassword, remark) },
                         enabled = !loading && (!pending.amountRequired || validRefundAmount(amount, pending.order.amount)) && (!pending.passwordRequired || paymentPassword.isNotBlank()),
                         modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对订单" else if (error != null) "重试" else "确认") }
                 }
@@ -639,13 +639,13 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
         item { StatusFilters(listOf(-1 to "全部", 0 to "待结算", 2 to "正在结算", 1 to "已完成", 3 to "结算失败"), state.settlementSearch.status) { viewModel.loadSettlements(1, state.settlementSearch.copy(status = it)) } }
         item { Row(verticalAlignment = Alignment.CenterVertically) {
             Text("共 ${state.settlementTotal} 笔 · 服务器查询", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-            TextButton(onClick = { advanced = true }) { Text("完整搜索") }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Text("完整搜索") }
         } }
         if (state.settlementSearch.value.isNotBlank() || state.settlementSearch.merchantId.isNotBlank() || state.settlementSearch.settlementType != "0" || state.settlementSearch.usdtRate.isNotBlank()) item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(listOfNotNull(state.settlementSearch.value.takeIf(String::isNotBlank), state.settlementSearch.merchantId.takeIf(String::isNotBlank)?.let { "商户 #$it" },
                     state.settlementSearch.settlementType.takeIf { it != "0" }?.let { "方式 $it" }, state.settlementSearch.usdtRate.takeIf(String::isNotBlank)?.let { "汇率 $it" }).joinToString(" · "), color = GreenDark, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                TextButton(onClick = { viewModel.loadSettlements(1, SettlementSearchFilters(status = state.settlementSearch.status)) }) { Text("重置") }
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { viewModel.loadSettlements(1, SettlementSearchFilters(status = state.settlementSearch.status)) }) { Text("重置") }
             }
         }
         item { ListFeedback(state.settlementsLoading && state.settlements.isEmpty(), state.settlementsError, !state.settlementsLoading && state.settlements.isEmpty(), { viewModel.loadSettlements(state.settlementPage) }) }
@@ -660,8 +660,8 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
             item { ChoicePicker("结算方式", filters.settlementType, SETTLEMENT_TYPES) { filters = filters.copy(settlementType = it) } }
             item { OutlinedTextField(filters.usdtRate, { filters = filters.copy(usdtRate = it) }, label = { Text("USDT 汇率") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = SettlementSearchFilters(status = filters.status) }, modifier = Modifier.weight(1f)) { Text("重置") }
-                Button(shape = RoundedCornerShape(24.dp), onClick = { viewModel.loadSettlements(1, filters); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = SettlementSearchFilters(status = filters.status) }, modifier = Modifier.weight(1f)) { Text("重置") }
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { viewModel.loadSettlements(1, filters); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
             } }
         }
     }
@@ -669,7 +669,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
         LazyColumn(Modifier.heightIn(max = 580.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { DetailBlock("结算信息", listOf("状态" to settlementStatusLabel(row.status), "商户" to "${row.username} · UID ${row.merchantId}", "申请金额" to money(row.amount), "实际金额" to money(row.actualAmount), "USDT" to row.usdtAmount, "汇率" to row.usdtRate)) }
             item { DetailBlock("收款资料", listOf("结算方式" to row.chain.ifBlank { row.payType }, "账号 / 地址" to row.account, "申请时间" to row.createdAt, "完成时间" to row.completedAt, "处理结果" to row.result)) }
-            items(settlementActions(row)) { action -> OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
+            items(settlementActions(row)) { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
         }
     } }
     pending?.let { action -> SettlementActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.item.id in state.uncertainSettlements, onVerify = { pending = null; actionError = null; viewModel.loadSettlements(state.settlementPage) }) { result, type, account, name ->
@@ -723,7 +723,7 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
             Text("申请 ${item.createdAt}", color = Muted, fontSize = 12.sp)
             if (item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
             if (item.merchantId.isNotBlank()) {
-                TextButton(onClick = {
+                com.futoonpay.admin.ui.ChatTextButton(onClick = {
                     navigation.merchants(merchantId = item.merchantId)
                 }) { Text("查看关联商户", fontSize = 12.sp) }
             }
@@ -764,7 +764,7 @@ private fun SettlementActionDialog(
                 OutlinedTextField(result, { result = it }, label = { Text("处理结果") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
             if ((pending.item.status == 3 || pending.status == 3) && (pending.resultInput || pending.resultPreset.isNotBlank())) item {
-                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { result = SETTLEMENT_CHECKED_RESULT }) { Text("检查完成 · 填写 checked") }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { result = SETTLEMENT_CHECKED_RESULT }) { Text("检查完成 · 填写 checked") }
             }
             if (pending.accountInput) {
                 item { OutlinedTextField(payType, { payType = it }, label = { Text("支付类型/链") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
@@ -776,8 +776,8 @@ private fun SettlementActionDialog(
             }
         }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            Button(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null) "重试" else "确认") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null) "重试" else "确认") }
         }
     }
 }
@@ -805,7 +805,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${state.merchantTotal} 个商户 · 服务器查询", color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
-            TextButton(onClick = { advanced = true }) { Text("完整搜索") }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Text("完整搜索") }
         } }
         if (state.merchantSearch.value.isNotBlank() || state.merchantSearch.groupId.isNotBlank() || state.merchantSearch.status != "0") item {
             Text("已筛选：${state.merchantSearch.value} · 用户组 ${state.merchantSearch.groupId.ifBlank { "全部" }} · ${MERCHANT_STATUSES.firstOrNull { it.first == state.merchantSearch.status }?.second ?: state.merchantSearch.status}", color = GreenDark, fontSize = 12.sp)
@@ -819,7 +819,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
                     Text("${state.merchantTotal} 个商户", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                     Text(if (state.merchantFlowLoading) "正在统计7日流水" else "余额、权限与7日流水", color = Muted, fontSize = 12.sp)
                 }
-                TextButton(onClick = { viewModel.loadMerchantFlows() }, enabled = !state.merchantFlowLoading) { Text("刷新流水") }
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { viewModel.loadMerchantFlows() }, enabled = !state.merchantFlowLoading) { Text("刷新流水") }
             }
         }
         state.merchantFlowError?.let { error -> item { Text(error, color = Danger, fontSize = 12.sp) } }
@@ -842,8 +842,8 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
             item { ChoicePicker("用户组", groupId, MERCHANT_GROUPS) { groupId = it } }
             item { ChoicePicker("用户状态", status, MERCHANT_STATUSES) { status = it } }
             item { Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { column = "uid"; query = ""; groupId = ""; status = "0" }, modifier = Modifier.weight(1f)) { Text("重置") }
-                Button(shape = RoundedCornerShape(24.dp), onClick = { search(); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { column = "uid"; query = ""; groupId = ""; status = "0" }, modifier = Modifier.weight(1f)) { Text("重置") }
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { search(); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
             } }
         }
     }
@@ -953,19 +953,19 @@ private fun MerchantCard(
             }
             HorizontalDivider(Modifier.padding(top = 11.dp), color = Line)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                item { TextButton(onClick = onDetail) { Text("运营概览", fontSize = 12.sp) } }
+                item { com.futoonpay.admin.ui.ChatTextButton(onClick = onDetail) { Text("运营概览", fontSize = 12.sp) } }
                 item {
-                    TextButton(onClick = {
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = {
                         navigation.orders(merchantId = merchant.uid)
                     }) { Text("订单", fontSize = 12.sp) }
                 }
                 item {
-                    TextButton(onClick = {
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = {
                         navigation.settlements(merchantId = merchant.uid)
                     }) { Text("结算", fontSize = 12.sp) }
                 }
                 item {
-                    TextButton(onClick = {
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = {
                         navigation.domains(merchantId = merchant.uid)
                     }) { Text("域名", fontSize = 12.sp) }
                 }
@@ -1065,7 +1065,7 @@ internal fun MerchantDetailDialog(
                 item { SectionLabel("经营数据 · 流水") }
                 item { PayTabs(listOf("1" to "今日", "7" to "近7天", "30" to "30天"), days.toString()) { onDays(it.toInt()) } }
                 item { PayTabs((listOf("CNY") + amounts.keys).distinct().map { it to it }, currency) { currency = it } }
-                error?.let { item { Text(it, color = Danger); TextButton(onClick = { onDays(days) }) { Text("重试") } } }
+                error?.let { item { Text(it, color = Danger); com.futoonpay.admin.ui.ChatTextButton(onClick = { onDays(days) }) { Text("重试") } } }
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
                         Column(Modifier.padding(14.dp)) {
@@ -1115,20 +1115,20 @@ internal fun MerchantDetailDialog(
                         Column(Modifier.padding(14.dp)) {
                             Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                                if (onEdit != null) item { TextButton(onClick = onEdit) { Text("编辑商户") } }
-                                if (onResetKey != null) item { TextButton(onClick = onResetKey) { Text("重置密钥") } }
+                                if (onEdit != null) item { com.futoonpay.admin.ui.ChatTextButton(onClick = onEdit) { Text("编辑商户") } }
+                                if (onResetKey != null) item { com.futoonpay.admin.ui.ChatTextButton(onClick = onResetKey) { Text("重置密钥") } }
                                 item {
-                                    TextButton(onClick = {
+                                    com.futoonpay.admin.ui.ChatTextButton(onClick = {
                                         navigation.orders(merchantId = merchant.uid)
                                     }) { Text("商户订单") }
                                 }
                                 item {
-                                    TextButton(onClick = {
+                                    com.futoonpay.admin.ui.ChatTextButton(onClick = {
                                         navigation.settlements(merchantId = merchant.uid)
                                     }) { Text("结算记录") }
                                 }
                                 item {
-                                    TextButton(onClick = {
+                                    com.futoonpay.admin.ui.ChatTextButton(onClick = {
                                         navigation.domains(merchantId = merchant.uid)
                                     }) { Text("域名审核") }
                                 }
@@ -1165,7 +1165,7 @@ internal fun MerchantActionDialog(
     val operation = com.futoonpay.admin.data.MerchantBalanceOperation.fromAction(pending.action)
     val isBalance = operation != null
     val parsedAmount = com.futoonpay.admin.data.merchantBalanceAmount(amount)
-    com.futoonpay.admin.PanelAlertDialog(shape = RoundedCornerShape(20.dp),
+    com.futoonpay.admin.PanelAlertDialog(shape = RoundedCornerShape(24.dp),
         onDismissRequest = { if (!busy) onDismiss() }, title = { Text(pending.label) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1192,7 +1192,7 @@ internal fun MerchantActionDialog(
             }
         },
         confirmButton = {
-            Button(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null),
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null),
                 colors = ButtonDefaults.buttonColors(containerColor = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT) Danger else Green)) {
                 Text(if (busy) "提交中…" else if (uncertain) "重新读取商户" else when (operation) {
                     com.futoonpay.admin.data.MerchantBalanceOperation.ADD -> "确认增加"
@@ -1201,7 +1201,7 @@ internal fun MerchantActionDialog(
                 })
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("取消") } },
+        dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = onDismiss, enabled = !busy) { Text("取消") } },
     )
 }
 
@@ -1271,7 +1271,7 @@ internal fun MoreScreen(onLogout: () -> Unit) {
             }
         }
         item {
-            OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) {
+            com.futoonpay.admin.ui.ChatOutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(24.dp)) {
                 Text("退出登录", color = Danger)
             }
         }
@@ -1311,7 +1311,7 @@ private val MERCHANT_STATUSES = listOf(
 private fun ChoicePicker(label: String, value: String, options: List<Pair<String, String>>, onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(options.firstOrNull { it.first == value }?.second ?: value.ifBlank { "请选择" }, color = Ink)
@@ -1343,11 +1343,11 @@ private fun StatusFilters(items: List<Pair<Int, String>>, selected: Int, onSelec
 private fun PaginationBar(page: Int, total: Int, currentSize: Int, onPage: (Int) -> Unit) {
     val hasNext = page * 30 < total && currentSize > 0
     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onPage(page - 1) }, enabled = page > 1) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onPage(page - 1) }, enabled = page > 1) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null); Text("上一页")
         }
         Text("第 $page 页", color = Muted, fontSize = 12.sp)
-        OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onPage(page + 1) }, enabled = hasNext) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onPage(page + 1) }, enabled = hasNext) {
             Text("下一页"); Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
         }
     }

@@ -79,7 +79,7 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
     CompositionLocalProvider(LocalFutoonPalette provides safePalette, androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * palette.fontScale)) {
         MaterialTheme(colorScheme = colors,
             typography = Typography(titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp), titleMedium = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
-            shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(28.dp)),
+            shapes = Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(24.dp)),
             content = { CompositionLocalProvider(LocalContentColor provides colors.onSurface) { content() } })
     }
 }

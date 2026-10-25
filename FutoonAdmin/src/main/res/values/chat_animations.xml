@@ -1,0 +1,1 @@
+<resources><style name="ChatMenuAnimation"><item name="android:windowEnterAnimation">@anim/chat_menu_enter</item><item name="android:windowExitAnimation">@anim/chat_menu_exit</item></style></resources>

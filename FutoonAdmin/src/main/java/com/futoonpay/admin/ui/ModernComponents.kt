@@ -34,15 +34,15 @@ internal val LocalPayPanelChrome = staticCompositionLocalOf<PayPanelChrome?> { n
 
 @Composable
 internal fun PayCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = CardColor) {
+    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = CardColor, border = BorderStroke(.5.dp, Line)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 10.dp), content = content)
     }
 }
 
 @Composable
 internal fun SectionLabel(text: String) {
-    Text(text, color = GreenDark, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-        modifier = Modifier.padding(top = 6.dp, bottom = 2.dp))
+    Text(text, color = GreenDark, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
 }
 
 @Composable
@@ -157,7 +157,7 @@ internal fun AppliedChips(chips: List<Pair<String, String>>, onRemove: (String) 
                 }
             }
         }
-        item { TextButton(onClick = onReset) { Text("重置", fontSize = 13.sp) } }
+        item { com.futoonpay.admin.ui.ChatTextButton(onClick = onReset) { Text("重置", fontSize = 13.sp) } }
     }
 }
 
@@ -165,10 +165,10 @@ internal fun AppliedChips(chips: List<Pair<String, String>>, onRemove: (String) 
 @Composable
 internal fun PaySheet(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     com.futoonpay.admin.PanelDialog(onDismiss) {
-        Surface(Modifier.fillMaxSize(), color = Mist, shape = RoundedCornerShape(16.dp)) {
+        Surface(Modifier.fillMaxSize(), color = CardColor, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
             Column(Modifier.fillMaxSize()) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(title, Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                     IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "关闭") }
                 }
                 Column(Modifier.fillMaxWidth().weight(1f).imePadding(), content = content)
@@ -184,7 +184,7 @@ internal fun ListFeedback(loading: Boolean, error: String?, empty: Boolean, onRe
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when {
                 loading -> { CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp); Text("正在加载…", color = Muted) }
-                error != null -> { Text(if (error.contains("权限")) "没有查看权限" else "加载失败", fontWeight = FontWeight.SemiBold); Text(error, color = Muted, fontSize = 13.sp); OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onRetry) { Text("重试") } }
+                error != null -> { Text(if (error.contains("权限")) "没有查看权限" else "加载失败", fontWeight = FontWeight.SemiBold); Text(error, color = Muted, fontSize = 13.sp); com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onRetry) { Text("重试") } }
                 else -> { Text("没有找到记录", fontWeight = FontWeight.SemiBold); Text("调整筛选条件后再试", color = Muted, fontSize = 13.sp) }
             }
         }

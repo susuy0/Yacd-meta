@@ -397,7 +397,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
             Text("商户 PID ${order.optString("uid")} · ${order.optString("currency", "CNY")} ${order.optString("money")}", color = Muted, fontSize = 13.sp)
         }
         LazyColumn(Modifier.weight(1f).testTag("receipt-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册 / 文件") }; OutlinedButton(onClick = { if (caption.length <= 1024) workflows?.saveDraft(order, caption, status); bridge.pickEvidenceFromChat() }, modifier = Modifier.weight(1f)) { Text("从聊天选图") } } }
+            item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { com.futoonpay.admin.ui.ChatOutlinedButton(onClick = bridge::openGallery, modifier = Modifier.weight(1f)) { Text("相册 / 文件") }; com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { if (caption.length <= 1024) workflows?.saveDraft(order, caption, status); bridge.pickEvidenceFromChat() }, modifier = Modifier.weight(1f)) { Text("从聊天选图") } } }
             item { Text("付款凭证图片 · ${paths.size} / 10 · 每张最多 25 MB", color = Muted, fontSize = 12.sp) }
             if (paths.isEmpty()) item { PayCard { Text("还没有付款凭证"); Text("可从相册、文件或聊天中选择图片。", color = Muted, fontSize = 13.sp) } }
             paths.chunked(3).forEachIndexed { rowIndex, images -> item(key = "images-$rowIndex") {
@@ -411,7 +411,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
             item { PayPills(listOf("查单", "补单协助", "回调异常", "退款核实").map { it to it }, "") { caption = evidenceCaption(order, it) } }
             item { PayPills(listOf("待处理", "已发出", "等待回复", "已解决").map { it to it }, status) { status = it } }
             item { Text("发送对象由你下一步手动选择，商户 TGID 和支付通道不会决定收件人。", color = Muted, fontSize = 12.sp) }
-            item { TextButton(onClick = { workflows?.saveDraft(order, caption, status) }) { Text("保存凭证草稿及处理状态") } }
+            item { com.futoonpay.admin.ui.ChatTextButton(onClick = { workflows?.saveDraft(order, caption, status) }) { Text("保存凭证草稿及处理状态") } }
             if (localState != null && workflows != null) {
                 val record = workflows.case(order.optString("trade_no"))
                 if (record.optString("sendState").isNotBlank()) item { Text(record.optString("sendState"), color = GreenDark, fontSize = 12.sp) }
@@ -421,7 +421,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
         }
         Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp)) {
             if (paths.isEmpty() || caption.length > 1024) Text(if (paths.isEmpty()) "先选择至少一张图片" else "凭证说明超过 1024 字，请缩短后再发送", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 6.dp))
-            Button(enabled = paths.isNotEmpty() && caption.length <= 1024, onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("选择收件人并预览") }
+            com.futoonpay.admin.ui.ChatButton(enabled = paths.isNotEmpty() && caption.length <= 1024, onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("选择收件人并预览") }
         }
     }
 }
@@ -461,7 +461,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                 Surface(Modifier.align(Alignment.TopStart).padding(4.dp), color = CardColor, shape = androidx.compose.foundation.shape.CircleShape) { Text("${index + 1}", color = Ink, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)) }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { bridge.editEvidence(index) }, modifier = Modifier.weight(1f)) { Text("编辑", fontSize = 12.sp) }
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { bridge.editEvidence(index) }, modifier = Modifier.weight(1f)) { Text("编辑", fontSize = 12.sp) }
                 Box {
                     IconButton(onClick = { menu = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "凭证 ${index + 1} 更多操作") }
                     DropdownMenu(menu, { menu = false }) { DropdownMenuItem(text = { Text("移除", color = Danger) }, onClick = { menu = false; bridge.removeEvidence(index) }) }

@@ -43,6 +43,8 @@ jobs:
         run: python3 ci/test_opening_draft.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test group automation callback dispatch and draft isolation
         run: python3 ci/test_group_automation.py "$RUNNER_TEMP/vinechat-tests"
+      - name: Test complete native UI coverage and preserved business actions
+        run: python3 ci/test_ui_coverage.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test APK-based chat geometry and business boundaries
         run: python3 ci/test_chat_appearance.py "$RUNNER_TEMP/vinechat-tests"
       - name: Test business regexes using Android's ICU engine
@@ -86,7 +88,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Futoon-v0.9.3-native-business-checks
+          name: Futoon-v0.10.0-native-business-checks
           path: |
             ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/ui-screenshots/*
             ${{ runner.temp }}/futoon-native-tests/FutoonAdmin/build/reports/*
@@ -159,14 +161,14 @@ jobs:
       - name: Collect APK and checksum
         run: |
           mkdir -p output
-          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.9.3-native-test.apk
+          cp upstream/TMessagesProj_App/build/outputs/apk/afat/debug/app.apk output/VineChat-Futoon-v0.10.0-native-test.apk
           cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/usage.txt output/REMOVED-JAVA.txt
           cp upstream/TMessagesProj_App/build/outputs/mapping/afatDebug/mapping.txt output/mapping.txt
           cd output
-          sha256sum VineChat-Futoon-v0.9.3-native-test.apk mapping.txt > SHA256SUMS
+          sha256sum VineChat-Futoon-v0.10.0-native-test.apk mapping.txt > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: VineChat-Futoon-v0.9.3-native-${{ steps.config.outputs.push_mode }}
+          name: VineChat-Futoon-v0.10.0-native-${{ steps.config.outputs.push_mode }}
           path: output/*
           if-no-files-found: error
           retention-days: 30

@@ -58,8 +58,8 @@ class ChannelSheetView internal constructor(context: Context, internal val model
         compose.setContent { CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) { FutoonTheme(palette) { PanelOverlayHost {
             ShortcutSheet(this, kind) { requestDismiss() }
             if (discard) AlertDialog(onDismissRequest = { discard = false }, title = { Text("放弃未保存的修改？") }, text = { Text("已保存的部分不会撤销；其余修改和本机表单草稿将被清除。") },
-                confirmButton = { TextButton(onClick = { discardAction(); dirty = false; discard = false; allowClose = true; host.closeSheet() }) { Text("放弃修改", color = Danger) } },
-                dismissButton = { TextButton(onClick = { discard = false }) { Text("继续编辑") } })
+                confirmButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { discardAction(); dirty = false; discard = false; allowClose = true; host.closeSheet() }) { Text("放弃修改", color = Danger) } },
+                dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") } })
         } } } }
         addView(compose, LayoutParams(-1,-1))
     }
@@ -100,7 +100,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
                     if(page.startsWith("merchant")) Text(state.merchant?.let{"${it.username} · 商户 ${it.uid}"}?:"Telegram ID ${state.telegramId}",color=Muted,fontSize=13.sp)
                     else if (link != null) Text("${link.name} #${link.id}", color = Muted, fontSize = 13.sp)
                 }
-                TextButton(onClick = close, modifier = Modifier.heightIn(min = 48.dp)) { Text("关闭") }
+                com.futoonpay.admin.ui.ChatTextButton(onClick = close, modifier = Modifier.heightIn(min = 48.dp)) { Text("关闭") }
             }
             HorizontalDivider(color = Line)
         }
@@ -142,7 +142,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
         OutlinedTextField(query,{query=it},placeholder={Text("搜索通道名称或 ID")},singleLine=true,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
         LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             if(loading)item{CircularProgressIndicator()}
-            error?.let{item{Text(it,color=Danger);TextButton(onClick={retry++}){Text("重试")}}}
+            error?.let{item{Text(it,color=Danger);com.futoonpay.admin.ui.ChatTextButton(onClick={retry++}){Text("重试")}}}
             val rows=choices.filter{query.isBlank()||it.id.contains(query,true)||it.name.contains(query,true)}
             items(rows,key={it.id}){row->
                 fun toggle(){selected=if(row.id in selected)selected-row.id else selected+row.id}
@@ -150,17 +150,17 @@ class ChannelSheetView internal constructor(context: Context, internal val model
                     Checkbox(row.id in selected,{toggle()});Column{Text(row.name);Text("#${row.id} · ${row.typeId}",color=Muted,fontSize=12.sp)}
                 }
             }
-            original.filter{old->choices.none{it.id==old.id}&&old.id in selected}.forEach{old->item(key="missing:"+old.id){Row(verticalAlignment=Alignment.CenterVertically){Text("${old.name} #${old.id} · 后台未返回",Modifier.weight(1f),color=Warning);TextButton(onClick={selected=selected-old.id}){Text("移除")}}}}
+            original.filter{old->choices.none{it.id==old.id}&&old.id in selected}.forEach{old->item(key="missing:"+old.id){Row(verticalAlignment=Alignment.CenterVertically){Text("${old.name} #${old.id} · 后台未返回",Modifier.weight(1f),color=Warning);com.futoonpay.admin.ui.ChatTextButton(onClick={selected=selected-old.id}){Text("移除")}}}}
             if(!loading&&error==null&&rows.isEmpty())item{Text("没有匹配的通道",color=Muted)}
             failure?.let{item{Text(it,color=Danger)}}
         }
         Row(Modifier.fillMaxWidth().padding(16.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
             val allowed=!loading&&error==null
-            OutlinedButton(enabled=allowed&&selected.size==1,onClick={
+            com.futoonpay.admin.ui.ChatOutlinedButton(enabled=allowed&&selected.size==1,onClick={
                 val row=choices.firstOrNull{it.id in selected}
                 if(row!=null){model.select(ChannelLink(row.id,row.name),false);view.dismissAfterSave()}
             },modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("仅本次使用")}
-            Button(enabled=allowed,onClick={try{
+            com.futoonpay.admin.ui.ChatButton(enabled=allowed,onClick={try{
                 val saved=selected.mapNotNull{id->choices.firstOrNull{it.id==id}?.let{ChannelLink(it.id,it.name)}?:original.firstOrNull{it.id==id}}
                 model.associate(saved);view.dismissAfterSave()
             }catch(e:Exception){failure=e.message?:"保存关联失败"}},modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("保存关联（${selected.size}）")}
@@ -171,7 +171,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
 @Composable private fun ChannelEditorChoice(channels:List<ChannelLink>,choose:(ChannelLink)->Unit){
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
         item{Text("编辑前请选择具体通道",color=Muted)}
-        items(channels,key={it.id}){row->OutlinedButton(onClick={choose(row)},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)){Text("${row.name} #${row.id}")}}
+        items(channels,key={it.id}){row->com.futoonpay.admin.ui.ChatOutlinedButton(onClick={choose(row)},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)){Text("${row.name} #${row.id}")}}
     }
 }
 
@@ -205,7 +205,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
             item{Text("最近订单",fontWeight=FontWeight.Medium);Text("请从通道订单查看；不以当前页样本代替整个时间窗。",color=Muted)}
             item{Text(data?.updated?.let{"更新于 "+java.text.SimpleDateFormat("HH:mm:ss",java.util.Locale.getDefault()).format(java.util.Date(it))}?:"缺失字段显示 —；未以 0% 或 100% 代替。",color=Muted,fontSize=12.sp)}
         }
-        TextButton(onClick={model.refresh(all=true)},enabled=!state.loading,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("刷新统计 · 面板内每30秒更新")}
+        com.futoonpay.admin.ui.ChatTextButton(onClick={model.refresh(all=true)},enabled=!state.loading,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text("刷新统计 · 面板内每30秒更新")}
     }
 }
 @OptIn(ExperimentalLayoutApi::class)
@@ -242,7 +242,7 @@ private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
     if(kind=="merchant-select"){
         LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(16.dp)){
             item{Text("TG ${state.telegramId} 对应多个商户，请核对后选择。",color=Warning)}
-            items(state.merchantCandidates,key={it.uid}){row->OutlinedButton(onClick={view.model.chooseMerchant(row.uid);view.dismissAfterSave()},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)){Text("${row.username} · 商户 ${row.uid}")}}
+            items(state.merchantCandidates,key={it.uid}){row->com.futoonpay.admin.ui.ChatOutlinedButton(onClick={view.model.chooseMerchant(row.uid);view.dismissAfterSave()},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)){Text("${row.username} · 商户 ${row.uid}")}}
         };return
     }
     if(merchant==null){Text(state.merchantError?:"正在识别商户…",Modifier.padding(16.dp));return}
@@ -291,7 +291,7 @@ private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
         if(state.primarySaved)Text("基本信息已保存；只重试账户配置",Modifier.padding(horizontal=16.dp),color=Warning)
         if(state.writeUncertain)Text("保存结果未知，请先核对后台配置，勿重复提交。密钥状态无法从掩码判断。",Modifier.padding(16.dp),color=Warning)
         state.message?.let{Text(it,Modifier.padding(horizontal=16.dp),color=Danger)}
-        if(state.writeUncertain) TextButton(enabled=!verifying,onClick={scope.launch {
+        if(state.writeUncertain) com.futoonpay.admin.ui.ChatTextButton(enabled=!verifying,onClick={scope.launch {
             verifying=true
             try {
                 val document=state.document ?: error("请关闭后重新读取通道配置")
@@ -310,7 +310,7 @@ private fun shortcutNavigation(view:ChannelSheetView)=object:PanelNavigation{
         when{
             form!=null->Box(Modifier.weight(1f)){PaymentEditorScreen(form.copy(fields=form.fields.map{if(state.loading||(state.primarySaved&&!it.name.startsWith("account::")))it.copy(readOnly=true)else it}),state.loading||state.pluginLoading||state.accountLoading,{view.requestDismiss()},vm::updateEditorField,{f,v->submittedName=v["name"].orEmpty().ifBlank{submittedName};submitted=true;vm.submit(f,v)}, {},snackbar,state.routeChannels,state.routeStats,vm::appendRoute,uncertain=state.writeUncertain)}
             state.loading->Box(Modifier.weight(1f).fillMaxWidth(),contentAlignment=Alignment.Center){CircularProgressIndicator()}
-            else->Column(Modifier.padding(16.dp)){Text(state.loadError?:"无法读取通道编辑表单",color=Danger);TextButton(onClick={vm.openShortcutEditor(link.id)}){Text("重试")};TextButton(onClick={view.requestDismiss()}){Text("关闭")}}
+            else->Column(Modifier.padding(16.dp)){Text(state.loadError?:"无法读取通道编辑表单",color=Danger);com.futoonpay.admin.ui.ChatTextButton(onClick={vm.openShortcutEditor(link.id)}){Text("重试")};com.futoonpay.admin.ui.ChatTextButton(onClick={view.requestDismiss()}){Text("关闭")}}
         }
     }
 }

@@ -73,7 +73,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 Text("包含 https://，不带路径", color = Muted, fontSize = 12.sp)
                 LoginField("后台路径", path, { path = it; error = null }, "/admin", KeyboardType.Uri)
                 Text("以 / 开头，可修改，保存在本机", color = Muted, fontSize = 12.sp)
-                if (!connected) OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = {
+                if (!connected) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = {
                     runCatching { composeBackendAddress(origin, path) }.onSuccess(onConnect).onFailure { error = it.message }
                 }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(if (busy) "正在连接…" else "连接后台") }
             }
@@ -104,7 +104,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
         (error ?: state.message)?.let { item { Text(it, color = Danger, fontSize = 13.sp) } }
     }
         Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Button(shape = RoundedCornerShape(24.dp), onClick = { onLogin(username, password, captcha) },
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onLogin(username, password, captcha) },
                 enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = ButtonText, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
@@ -196,8 +196,8 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
     BackHandler { if (edit) edit = false else onBack() }
     Scaffold(containerColor = Mist, topBar = { PayTopBar(if (edit) "更换后台地址" else "设置", { if (edit) edit = false else onBack() }) }, bottomBar = {
         if (edit) Surface(color = CardColor) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            Button(shape = RoundedCornerShape(24.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
         } }
     }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -217,15 +217,15 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                 item { PayCard {
                     DataRow("官网地址", backend.origin); DataRow("后台路径", backend.path)
                     HorizontalDivider(color = Line)
-                    TextButton(onClick = { edit = true }, modifier = Modifier.fillMaxWidth()) { Text("更换后台地址 ›") }
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = { edit = true }, modifier = Modifier.fillMaxWidth()) { Text("更换后台地址 ›") }
                     Text("更换后需要重新登录", color = Muted, fontSize = 12.sp)
                 } }
                 item { SectionLabel("版本信息") }
                 item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", "com.futoonpay.vinechat.beta") } }
-                item { OutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
+                item { com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
             }
         }
     }
     if (logout) AlertDialog(shape = RoundedCornerShape(20.dp), onDismissRequest = { logout = false }, title = { Text("退出登录") }, text = { Text("后台地址保留在本机，下次登录无需重复填写。") },
-        confirmButton = { TextButton(onClick = onLogout) { Text("退出登录", color = Danger) } }, dismissButton = { TextButton(onClick = { logout = false }) { Text("取消") } })
+        confirmButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = onLogout) { Text("退出登录", color = Danger) } }, dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { logout = false }) { Text("取消") } })
 }

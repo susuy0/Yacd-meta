@@ -35,12 +35,12 @@ internal fun MerchantProfileScreen(state: AppUiState, onClose: () -> Unit, onFie
     Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), containerColor = MaterialTheme.colorScheme.background,
         topBar = { PayTopBar("编辑商户 · PID ${state.merchantEditorUid}", ::close) },
         bottomBar = { Surface(shadowElevation = 6.dp) { Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = ::close, shape = RoundedCornerShape(24.dp), enabled = !state.merchantEditorSaving, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            Button(onClick = { if (state.merchantEditorUncertain) onRetry() else confirm = true }, shape = RoundedCornerShape(24.dp), enabled = (valid || state.merchantEditorUncertain) && !busy, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (state.merchantEditorSaving) "保存中…" else if (state.merchantEditorUncertain) "重新读取资料并对比" else "保存资料") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(onClick = ::close, shape = RoundedCornerShape(24.dp), enabled = !state.merchantEditorSaving, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            com.futoonpay.admin.ui.ChatButton(onClick = { if (state.merchantEditorUncertain) onRetry() else confirm = true }, shape = RoundedCornerShape(24.dp), enabled = (valid || state.merchantEditorUncertain) && !busy, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (state.merchantEditorSaving) "保存中…" else if (state.merchantEditorUncertain) "重新读取资料并对比" else "保存资料") }
         } } }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (state.merchantEditorLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-            state.merchantEditorError?.let { error -> item { PayCard { Text(error, color = Danger); if (form == null) TextButton(onClick = onRetry) { Text("重新加载资料") } } } }
+            state.merchantEditorError?.let { error -> item { PayCard { Text(error, color = Danger); if (form == null) com.futoonpay.admin.ui.ChatTextButton(onClick = onRetry) { Text("重新加载资料") } } } }
             val groups = form?.fields.orEmpty().filter { it.type != "hidden" && it.name !in setOf("pwd", "key", "apikey") }.groupBy { field -> when (field.name) {
                 "gid", "status", "pay", "settle", "mode", "open_code", "upid" -> "业务设置"
                 "account", "username", "settle_id" -> "结算收款信息"
@@ -69,15 +69,15 @@ internal fun MerchantProfileScreen(state: AppUiState, onClose: () -> Unit, onFie
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { confirm = false }, modifier = Modifier.weight(1f)) { Text("返回修改") }
-                Button(onClick = { confirm = false; onSave() }, modifier = Modifier.weight(1f)) { Text("确认保存") }
+                com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { confirm = false }, modifier = Modifier.weight(1f)) { Text("返回修改") }
+                com.futoonpay.admin.ui.ChatButton(onClick = { confirm = false; onSave() }, modifier = Modifier.weight(1f)) { Text("确认保存") }
             }
         }
     }
     if (discard) PaySheet("放弃修改？", { discard = false }) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("未保存的商户资料将丢失。")
-            Row { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(onClick = { discard = false; onClose() }) { Text("放弃修改") } }
+            Row { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false; onClose() }) { Text("放弃修改") } }
         }
     }
 

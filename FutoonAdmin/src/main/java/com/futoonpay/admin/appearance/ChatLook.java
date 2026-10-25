@@ -23,6 +23,26 @@ public final class ChatLook {
     public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd9fdd3; }
     public static Integer color(String key, boolean dark) {
         switch (key) {
+            case "key_checkboxSquareUnchecked": case "key_radioBackground": return secondary(dark);
+            case "key_chat_emojiPanelBackground": case "key_player_background": return surface(dark);
+            case "key_chat_emojiSearchBackground": case "key_chat_emojiPanelShadowLine": case "key_player_progressBackground": return field(dark);
+            case "key_chat_emojiSearchIcon": case "key_chat_emojiPanelEmptyText": case "key_chat_emojiPanelIcon": case "key_chat_emojiBottomPanelIcon": case "key_chat_emojiPanelBackspace": case "key_chat_emojiPanelStickerSetName": case "key_chat_emojiPanelStickerSetNameIcon": case "key_chat_emojiPanelTrendingDescription": case "key_player_actionBarSubtitle": case "key_player_time": case "key_player_button": case "key_windowBackgroundWhiteInputField": return secondary(dark);
+            case "key_chat_emojiPanelTrendingTitle": case "key_player_actionBarTitle": case "key_player_actionBarItems": return text(dark);
+            case "key_chat_emojiPanelIconSelected": case "key_chat_emojiPanelStickerPackSelectorLine": case "key_chat_emojiPanelNewTrending": case "key_player_progress": case "key_player_buttonActive": case "key_checkboxSquareBackground": case "key_radioBackgroundChecked": case "key_windowBackgroundWhiteInputFieldActivated": return accent(dark);
+            case "key_chat_emojiPanelStickerPackSelector": case "key_player_actionBarSelector": return selected(dark);
+            case "key_chat_emojiPanelStickerSetNameHighlight": return accentText(dark);
+            case "key_checkboxSquareCheck": return 0xffffffff;
+            case "key_graySection": return surface(dark);
+            case "key_graySectionText": return secondary(dark);
+            case "key_actionBarActionModeDefault": case "key_actionBarActionModeDefaultTop": case "key_dialogTopBackground": return surface(dark);
+            case "key_dialogBackgroundGray": case "key_dialogSearchBackground": case "key_chat_botKeyboardButtonBackground": case "key_chat_inFileBackground": case "key_sharedMedia_linkPlaceholder": case "key_sharedMedia_photoPlaceholder": case "key_chat_inAudioSeekbar": case "key_chat_outAudioSeekbar": case "key_dialogLineProgressBackground": case "key_dialog_inlineProgressBackground": return field(dark);
+            case "key_chat_outFileBackground": return outgoing(dark);
+            case "key_dialogButtonSelector": case "key_actionBarActionModeDefaultSelector": case "key_profile_tabSelector": case "key_chat_botKeyboardButtonBackgroundPressed": case "key_chat_inFileBackgroundSelected": case "key_chat_outFileBackgroundSelected": case "key_dialogLinkSelection": return selected(dark);
+            case "key_actionBarActionModeDefaultIcon": case "key_dialogSearchText": case "key_chat_botKeyboardButtonText": case "key_sharedMedia_linkPlaceholderText": return text(dark);
+            case "key_dialogTextGray": case "key_dialogTextGray2": case "key_dialogTextGray3": case "key_dialogTextGray4": case "key_dialogTextHint": case "key_dialogIcon": case "key_dialogSearchHint": case "key_dialogSearchIcon": case "key_dialogEmptyText": case "key_windowBackgroundWhiteValueText": case "key_profile_tabText": case "key_chat_inAudioPerformerSelectedText": case "key_chat_outAudioPerformerSelectedText": case "key_chat_inAudioDurationSelectedText": case "key_chat_outAudioDurationSelectedText": return secondary(dark);
+            case "key_dialogTextLink": case "key_profile_tabSelectedText": case "key_chat_inPreviewInstantText": case "key_chat_outPreviewInstantText": return accentText(dark);
+            case "key_dialogInputFieldActivated": case "key_dialogCheckboxSquareBackground": case "key_dialogRoundCheckBox": case "key_dialogRadioBackgroundChecked": case "key_dialogLineProgress": case "key_dialog_inlineProgress": case "key_profile_tabSelectedLine": case "key_chat_inFileProgress": case "key_chat_outFileProgress": case "key_chat_inFileProgressSelected": case "key_chat_outFileProgressSelected": case "key_chat_inAudioProgress": case "key_chat_outAudioProgress": case "key_chat_inAudioSelectedProgress": case "key_chat_outAudioSelectedProgress": case "key_chat_inAudioSeekbarFill": case "key_chat_outAudioSeekbarFill": case "key_chat_inPreviewLine": case "key_chat_outPreviewLine": case "key_sharedMedia_startStopLoadIcon": case "key_switchTrackBlueChecked": case "key_switchTrackBlueThumbChecked": return accent(dark);
+            case "key_dialogCheckboxSquareCheck": case "key_dialogRoundCheckBoxCheck": return 0xffffffff;
             case "key_chat_wallpaper": return wallpaper(dark);
             case "key_chat_wallpaper_gradient_to1": case "key_chat_wallpaper_gradient_to2": case "key_chat_wallpaper_gradient_to3":
             case "key_chat_outBubbleGradient1": case "key_chat_outBubbleGradient2": case "key_chat_outBubbleGradient3": case "key_chat_outBubbleGradientAnimated": return 0;
@@ -131,6 +151,10 @@ public final class ChatLook {
         @Override public void draw(@NonNull Canvas c) {
             int save=c.save();Rect b=getBounds();c.translate(b.left,b.top);c.scale(b.width()/24f,b.height()/24f);p.setColor(color);p.setAlpha(alpha);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.8f);path.rewind();
             switch(glyph) {
+                case "copy": c.drawRoundRect(8,7,21,21,2,2,p);path.moveTo(16,3);path.lineTo(5,3);path.quadTo(3,3,3,5);path.lineTo(3,16);c.drawPath(path,p);break;
+                case "forward": path.moveTo(14,4);path.lineTo(22,11);path.lineTo(14,18);path.lineTo(14,13);path.cubicTo(7,13,4,16,2,20);path.cubicTo(2,10,6,8,14,8);path.close();c.drawPath(path,p);break;
+                case "delete": c.drawLine(3,6,21,6,p);path.moveTo(8,6);path.lineTo(8,3);path.lineTo(16,3);path.lineTo(16,6);path.moveTo(5,6);path.lineTo(6,21);path.lineTo(18,21);path.lineTo(19,6);c.drawPath(path,p);c.drawLine(10,10,10,17,p);c.drawLine(14,10,14,17,p);break;
+                case "download": c.drawLine(12,3,12,16,p);c.drawLine(7,11,12,16,p);c.drawLine(12,16,17,11,p);path.moveTo(4,17);path.lineTo(4,21);path.lineTo(20,21);path.lineTo(20,17);c.drawPath(path,p);break;
                 case "search": c.drawCircle(10.5f,10.5f,6.5f,p);c.drawLine(15.5f,15.5f,21,21,p);break;
                 case "menu": p.setStyle(Paint.Style.FILL);for(int y=5;y<=19;y+=7)c.drawCircle(12,y,1.6f,p);break;
                 case "send": p.setStyle(Paint.Style.FILL);path.moveTo(4,3);path.lineTo(22,12);path.lineTo(4,21);path.lineTo(7,13.2f);path.lineTo(16,12);path.lineTo(7,10.8f);path.close();c.drawPath(path,p);break;

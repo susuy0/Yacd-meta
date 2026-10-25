@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.window.DialogProperties
 import java.util.UUID
 
@@ -27,8 +28,11 @@ private val LocalOverlays = staticCompositionLocalOf<PanelOverlayStore?> { null 
             content()
             store.order.toList().mapNotNull { id -> store.items[id]?.let { id to it } }.forEach { (id, entry) -> key(id) {
                 BackHandler { entry.dismiss() }
+                val motionEnabled = com.futoonpay.admin.appearance.ChatChrome.animationsEnabled(androidx.compose.ui.platform.LocalContext.current)
+                val reveal = remember(id) { androidx.compose.animation.core.Animatable(if (motionEnabled) 0f else 1f) }
+                LaunchedEffect(id, motionEnabled) { if (motionEnabled) reveal.animateTo(1f, androidx.compose.animation.core.tween(150)) else reveal.snapTo(1f) }
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .28f)).pointerInput(id) { detectTapGestures(onTap = { entry.dismiss() }) }, contentAlignment = Alignment.Center) {
-                    Box(Modifier.fillMaxSize().pointerInput(id) { detectTapGestures(onTap = {}) }) { CompositionLocalProvider(com.futoonpay.admin.ui.LocalPayPanelChrome provides null) { entry.content() } }
+                    Box(Modifier.fillMaxSize().graphicsLayer { alpha = reveal.value; scaleX = .98f + .02f * reveal.value; scaleY = scaleX }.pointerInput(id) { detectTapGestures(onTap = {}) }) { CompositionLocalProvider(com.futoonpay.admin.ui.LocalPayPanelChrome provides null) { entry.content() } }
                 }
             } }
         }

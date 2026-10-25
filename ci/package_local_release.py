@@ -29,7 +29,7 @@ with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=
  z.write(mapping,'mapping.txt');z.write(state/'release-verification.json','release-verification.json');z.write(lint,'lint-results-debug.xml')
  for f in results.glob('TEST-*.xml'):z.write(f,'test-results/'+f.name)
  for f in images:z.write(f,'synthetic-ui/'+f.name)
- for name in ['tests-result.json','client-result.json','apk-result.json','core-checks.json','tests.log','client.log','apk.log']:
+ for name in ['tests-result.json','client-result.json','apk-result.json','core-checks.json','tests.log','client.log','apk.log','ui-coverage.log','v010-frozen-sources.json','v010-pipeline.json']:
   if(state/name).exists():z.write(state/name,'checks/'+name)
 record['build_records']={'filename':archive.name,'bytes':archive.stat().st_size,'sha256':sha(archive)}
 (out/'release-summary.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n');print(json.dumps(record,ensure_ascii=False,indent=2))

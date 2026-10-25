@@ -46,7 +46,7 @@ internal fun ConfigurationListScreen(state: PaymentAdminState, modifier: Modifie
         item { OutlinedTextField(query, onQuery, placeholder = { Text(if (module == "proxies") "搜索代理名称、ID、地址" else "搜索支付方式、调用值、ID") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
         item { MultiSelectBar(selection, visible.map { it.id }, paymentBatchOptions(module, visible.filter { it.id in selection.selected }), state.loading, onBatch) }
         if (state.configurationLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        state.configurationError?.let { error -> item { PayCard { Text(error, color = Danger); TextButton(onClick = onReloadContext) { Text("重新加载关联通道") } } } }
+        state.configurationError?.let { error -> item { PayCard { Text(error, color = Danger); com.futoonpay.admin.ui.ChatTextButton(onClick = onReloadContext) { Text("重新加载关联通道") } } } }
         state.document?.tables.orEmpty().forEach { table ->
             itemsIndexed(table.rows) { index, row ->
                 if (query.isBlank() || row.any { it.contains(query.trim(), true) }) {
@@ -74,7 +74,7 @@ internal fun ConfigurationListScreen(state: PaymentAdminState, modifier: Modifie
                         }, color = Muted, fontSize = 12.sp)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             actions.filterNot { it.endpoint.startsWith("futoon://channels") || it == enable || it == disable }.forEach { action ->
-                                TextButton(onClick = { onAction(action) }, enabled = !state.loading) { Text(action.label, color = if (action.destructive) Danger else GreenDark, fontSize = 12.sp) }
+                                com.futoonpay.admin.ui.ChatTextButton(onClick = { onAction(action) }, enabled = !state.loading) { Text(action.label, color = if (action.destructive) Danger else GreenDark, fontSize = 12.sp) }
                             }
                         }
                     }
@@ -88,7 +88,7 @@ internal fun ConfigurationListScreen(state: PaymentAdminState, modifier: Modifie
 
 @Composable
 private fun AssociationLinks(channels: List<ConfigurationChannel>, onOpen: (String) -> Unit) {
-    channels.forEach { channel -> TextButton(onClick = { onOpen(channel.id) }, contentPadding = PaddingValues(0.dp)) { Text("${channel.name} #${channel.id} →", fontSize = 12.sp) } }
+    channels.forEach { channel -> com.futoonpay.admin.ui.ChatTextButton(onClick = { onOpen(channel.id) }, contentPadding = PaddingValues(0.dp)) { Text("${channel.name} #${channel.id} →", fontSize = 12.sp) } }
 }
 
 @Composable
@@ -117,7 +117,7 @@ internal fun ConfigurationEditorFields(form: NativeForm, module: String, channel
         }
         SectionLabel(if (bindings != null) "关联通道 · 已选 ${selected.size} 个" else "关联通道")
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-        if (error != null) PayCard { Text(error, color = Danger); TextButton(onClick = onRetry) { Text("重新加载关联通道") } }
+        if (error != null) PayCard { Text(error, color = Danger); com.futoonpay.admin.ui.ChatTextButton(onClick = onRetry) { Text("重新加载关联通道") } }
         if (bindings != null) {
             OutlinedTextField(query, { query = it }, placeholder = { Text("搜索通道名称或 ID") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
             val options = (channels.map { NativeOption(it.id, it.name) } + bindings.options + selected.map { NativeOption(it, "原有通道 #$it") }).distinctBy { it.value }

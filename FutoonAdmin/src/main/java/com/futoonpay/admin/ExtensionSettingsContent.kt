@@ -62,8 +62,8 @@ import java.util.UUID
                 working.panel.tabOrder.forEachIndexed { i, id ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(panelTabNames.getValue(id), Modifier.weight(1f))
-                        TextButton(enabled = i > 0 && !saving, onClick = { val order = working.panel.tabOrder.toMutableList(); java.util.Collections.swap(order, i, i - 1); working = working.copy(panel = working.panel.copy(tabOrder = order)) }) { Text("上移") }
-                        TextButton(enabled = i < 4 && !saving, onClick = { val order = working.panel.tabOrder.toMutableList(); java.util.Collections.swap(order, i, i + 1); working = working.copy(panel = working.panel.copy(tabOrder = order)) }) { Text("下移") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = i > 0 && !saving, onClick = { val order = working.panel.tabOrder.toMutableList(); java.util.Collections.swap(order, i, i - 1); working = working.copy(panel = working.panel.copy(tabOrder = order)) }) { Text("上移") }
+                        com.futoonpay.admin.ui.ChatTextButton(enabled = i < 4 && !saving, onClick = { val order = working.panel.tabOrder.toMutableList(); java.util.Collections.swap(order, i, i + 1); working = working.copy(panel = working.panel.copy(tabOrder = order)) }) { Text("下移") }
                     }
                 }
             } }
@@ -72,11 +72,11 @@ import java.util.UUID
                 Text(if (working.panel.image.isBlank()) "当前使用默认图标" else "当前使用自定义图片")
                 val image = remember(working.panel.image) { if (working.panel.image.isBlank()) null else runCatching { android.graphics.BitmapFactory.decodeFile(working.panel.image, android.graphics.BitmapFactory.Options().apply { inSampleSize = 4 }) }.getOrNull() }
                 image?.let { Image(it.asImageBitmap(), "入口图片预览", Modifier.size(72.dp)) }
-                Button(enabled = !saving && host != null, onClick = { host?.pickEntryImage() }) { Text("从相册选择并裁剪图片") }
+                com.futoonpay.admin.ui.ChatButton(enabled = !saving && host != null, onClick = { host?.pickEntryImage() }) { Text("从相册选择并裁剪图片") }
                 ExtensionSlider("入口大小", working.panel.entrySize, 40..96, "dp") { working = working.copy(panel = working.panel.copy(entrySize = it)) }
                 ExtensionSlider("入口圆角", working.panel.entryRadius, 0..48, "dp") { working = working.copy(panel = working.panel.copy(entryRadius = it)) }
                 ExtensionSlider("入口不透明度", working.panel.entryOpacity, 25..100, "%") { working = working.copy(panel = working.panel.copy(entryOpacity = it)) }
-                TextButton(enabled = !saving, onClick = { working = working.copy(panel = working.panel.copy(image = "", entrySize = 52, entryRadius = 24, entryOpacity = 100)); host?.resetEntryPosition() }) { Text("恢复默认入口与位置") }
+                com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { working = working.copy(panel = working.panel.copy(image = "", entrySize = 52, entryRadius = 24, entryOpacity = 100)); host?.resetEntryPosition() }) { Text("恢复默认入口与位置") }
             } }
         } else if (page == "appearance") {
             item { PayCard {
@@ -96,19 +96,19 @@ import java.util.UUID
                 ExtensionToggle("背景遮罩", working.appearance.dim > 0) { working = working.copy(appearance = working.appearance.copy(dim = if (it) 25 else 0)) }
                 if (working.appearance.dim > 0) ExtensionSlider("遮罩深度", working.appearance.dim, 1..60, "%") { working = working.copy(appearance = working.appearance.copy(dim = it)) }
                 Text("遮罩默认关闭。字号比例在系统字号基础上调整。", color = Muted, fontSize = 13.sp)
-                TextButton(enabled = !saving, onClick = { working = working.copy(appearance = AppearanceOptions()) }) { Text("恢复默认外观") }
+                com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { working = working.copy(appearance = AppearanceOptions()) }) { Text("恢复默认外观") }
             } }
         } else if (page == "businessReplies") {
             item { Text("订单和商户信息可生成可编辑草稿，填入当前聊天后由你手动发送。", color = Muted, fontSize = 13.sp) }
-            item { Button(enabled = !saving, onClick = { editTemplate = BusinessReplyTemplate(title = "", body = "") }) { Text("新增业务回复模板") } }
+            item { com.futoonpay.admin.ui.ChatButton(enabled = !saving, onClick = { editTemplate = BusinessReplyTemplate(title = "", body = "") }) { Text("新增业务回复模板") } }
             items(working.templates, key = { it.id }) { template -> PayCard {
                 Text(template.title, fontWeight = FontWeight.Medium); Text(template.body, color = Muted, maxLines = 3, fontSize = 13.sp)
-                Row { TextButton(enabled = !saving, onClick = { editTemplate = template }) { Text("编辑") }; TextButton(enabled = !saving, onClick = { deleteTemplate = template }) { Text("删除", color = Danger) } }
+                Row { com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { editTemplate = template }) { Text("编辑") }; com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { deleteTemplate = template }) { Text("删除", color = Danger) } }
             } }
-            item { TextButton(enabled = !saving, onClick = { working = working.copy(templates = (working.templates + defaultBusinessTemplates.filter { d -> working.templates.none { it.id == d.id } })) }) { Text("补回缺少的默认模板") } }
+            item { com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { working = working.copy(templates = (working.templates + defaultBusinessTemplates.filter { d -> working.templates.none { it.id == d.id } })) }) { Text("补回缺少的默认模板") } }
         } else if (page == "automation") {
             item { Text("每个群单独开启；可再限定话题与发送者。只处理 5 分钟内、启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
-            item { Row { Button(enabled = !saving, onClick = { editRule = GroupAutomationRule(dialog = -1, sender = 0) }) { Text("新增群规则") }; TextButton(onClick = { log = host?.automationLog() ?: "暂无执行记录" }) { Text("执行记录") } } }
+            item { Row { com.futoonpay.admin.ui.ChatButton(enabled = !saving, onClick = { editRule = GroupAutomationRule(dialog = -1, sender = 0) }) { Text("新增群规则") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { log = host?.automationLog() ?: "暂无执行记录" }) { Text("执行记录") } } }
             working.rules.groupBy { it.dialog }.forEach { (_, rules) ->
                 item { PayCard {
                     Text(rules.first().groupName.ifBlank { "群 ${rules.first().dialog}" }, fontWeight = FontWeight.Medium)
@@ -118,7 +118,7 @@ import java.util.UUID
                         HorizontalDivider(color = Line)
                         ExtensionToggle(rule.title, rule.enabled) { enabled -> val now = System.currentTimeMillis() / 1000; working = working.copy(rules = working.rules.map { if (it.id == rule.id) it.copy(enabled = enabled, since = if (enabled) now else it.since) else it }) }
                         Text("发送者 ${rule.sender} · ${if (rule.topic == 0L) "全部话题" else "话题 ${rule.topic}"}\n${if (rule.action == "click") "点击「${rule.button}」" else "生成回复草稿"}", color = Muted, fontSize = 12.sp)
-                        Row { TextButton(onClick = { editRule = rule }) { Text("编辑规则") }; TextButton(onClick = { deleteRule = rule }) { Text("删除", color = Danger) } }
+                        Row { com.futoonpay.admin.ui.ChatTextButton(onClick = { editRule = rule }) { Text("编辑规则") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { deleteRule = rule }) { Text("删除", color = Danger) } }
                     }
                 } }
             }
@@ -127,11 +127,11 @@ import java.util.UUID
         }
     }
     HorizontalDivider(color = Line)
-    Button(enabled = dirty && !saving, onClick = { persist(working) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) { Text(if (saving) "正在保存…" else "保存设置") }
+    com.futoonpay.admin.ui.ChatButton(enabled = dirty && !saving, onClick = { persist(working) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) { Text(if (saving) "正在保存…" else "保存设置") }
     }
     if (discard) PaySheet("尚有未保存的设置", { discard = false }) { Column(Modifier.padding(16.dp)) {
         Text("保存后再离开，或放弃本页的修改。")
-        Row { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(enabled = !saving, onClick = { working = options; discard = false; onBack() }) { Text("放弃修改") }; TextButton(enabled = !saving, onClick = { persist(working) { discard = false; onBack() } }) { Text("保存") } }
+        Row { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { working = options; discard = false; onBack() }) { Text("放弃修改") }; com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { persist(working) { discard = false; onBack() } }) { Text("保存") } }
     } }
     editTemplate?.let { template -> BusinessTemplateEditor(template, { editTemplate = null }) { edited ->
         working = working.copy(templates = if (working.templates.any { it.id == edited.id }) working.templates.map { if (it.id == edited.id) edited else it } else working.templates + edited); editTemplate = null
@@ -152,7 +152,7 @@ import java.util.UUID
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { change(!value) }, verticalAlignment = Alignment.CenterVertically) { Text(title, Modifier.weight(1f), fontSize = 14.sp); Switch(value, change) }
 }
 @Composable private fun ConfirmExtensionDelete(title: String, close: () -> Unit, confirm: () -> Unit) {
-    PaySheet("确认删除", close) { Column(Modifier.padding(16.dp)) { Text("删除「$title」？保存设置后生效。"); Row { TextButton(onClick = close) { Text("取消") }; TextButton(onClick = confirm) { Text("删除", color = Danger) } } } }
+    PaySheet("确认删除", close) { Column(Modifier.padding(16.dp)) { Text("删除「$title」？保存设置后生效。"); Row { com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("取消") }; com.futoonpay.admin.ui.ChatTextButton(onClick = confirm) { Text("删除", color = Danger) } } } }
 }
 
 @Composable private fun BusinessTemplateEditor(initial: BusinessReplyTemplate, close: () -> Unit, save: (BusinessReplyTemplate) -> Unit) {
@@ -165,12 +165,12 @@ import java.util.UUID
         OutlinedTextField(title, { title = it }, label = { Text("模板名称") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(body, { body = it }, label = { Text("模板正文") }, minLines = 6, supportingText = { Text("${body.length} / 4096") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Text("插入变量", fontWeight = FontWeight.Medium)
-        businessReplyVariables.chunked(3).forEach { row -> Row { row.forEach { variable -> TextButton(onClick = { body += "{$variable}" }) { Text(variable, fontSize = 12.sp) } } } }
+        businessReplyVariables.chunked(3).forEach { row -> Row { row.forEach { variable -> com.futoonpay.admin.ui.ChatTextButton(onClick = { body += "{$variable}" }) { Text(variable, fontSize = 12.sp) } } } }
         Text("变量在生成草稿时替换；缺失信息显示为“未提供”。", color = Muted, fontSize = 12.sp)
         error?.let { Text(it, color = Danger) }
-        Row { TextButton(onClick = ::back) { Text("取消") }; Button(onClick = { try { val next = initial.copy(title = title.trim(), body = body); validateBusinessTemplate(next); save(next) } catch (e: Exception) { error = e.message } }) { Text("确定") } }
+        Row { com.futoonpay.admin.ui.ChatTextButton(onClick = ::back) { Text("取消") }; com.futoonpay.admin.ui.ChatButton(onClick = { try { val next = initial.copy(title = title.trim(), body = body); validateBusinessTemplate(next); save(next) } catch (e: Exception) { error = e.message } }) { Text("确定") } }
     } }
-    if (discard) PaySheet("放弃修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(onClick = close) { Text("放弃修改") } } }
+    if (discard) PaySheet("放弃修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("放弃修改") } } }
 }
 
 @Composable private fun AutomationRuleEditor(initial: GroupAutomationRule, host: ChatToolsHostBridge?, revision: Int, close: () -> Unit, save: (GroupAutomationRule) -> Unit) {
@@ -192,7 +192,7 @@ import java.util.UUID
     LaunchedEffect(revision) { if (awaitingPick) { val picked = runCatching { JSONObject(host?.selectedGroup().orEmpty()) }.getOrNull(); if (picked != null && picked.optLong("dialog") < 0) { dialog = picked.optString("dialog"); groupName = picked.optString("title"); topic = picked.optString("topic", "0"); awaitingPick = false } } }
     PaySheet("群自动化规则", ::back) { Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text("规则名称") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        Button(enabled = host != null, onClick = { awaitingPick = true; host?.pickAutomationGroup() }) { Text("选择群组") }
+        com.futoonpay.admin.ui.ChatButton(enabled = host != null, onClick = { awaitingPick = true; host?.pickAutomationGroup() }) { Text("选择群组") }
         Text(groupName.ifBlank { "尚未选择群组" }, color = Muted)
         OutlinedTextField(dialog, { dialog = it }, label = { Text("客户端群 ID（选择群组自动填写）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(topic, { topic = it }, label = { Text("话题 ID；0 表示全部话题") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
@@ -204,10 +204,10 @@ import java.util.UUID
         OutlinedTextField(cooldown, { cooldown = it }, label = { Text("执行间隔（2～3600 秒）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Text("新增规则默认关闭，保存规则后再按群开启。点击只执行指定按钮，不延伸到后续确认。", color = Muted, fontSize = 12.sp)
         error?.let { Text(it, color = Danger) }
-        Row { TextButton(onClick = ::back) { Text("取消") }; Button(onClick = { try {
+        Row { com.futoonpay.admin.ui.ChatTextButton(onClick = ::back) { Text("取消") }; com.futoonpay.admin.ui.ChatButton(onClick = { try {
             val edited = initial.copy(title = title.trim(), dialog = dialog.trim().toLong(), groupName = groupName, topic = topic.trim().toLong(), sender = sender.trim().toLong(), keyword = keyword, button = button, action = action, draft = draft, cooldown = cooldown.trim().toInt(), since = if (initial.enabled) System.currentTimeMillis() / 1000 else initial.since)
             ExtensionOptions.parse(ExtensionOptions(rules = listOf(edited)).json()); save(edited)
         } catch (e: Exception) { error = e.message ?: "请检查群 ID、发送者 ID 和规则内容" } }) { Text("确定规则") } }
     } }
-    if (discard) PaySheet("放弃规则修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(onClick = close) { Text("放弃修改") } } }
+    if (discard) PaySheet("放弃规则修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("放弃修改") } } }
 }

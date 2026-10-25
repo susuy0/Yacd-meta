@@ -67,11 +67,23 @@ class ChatToolsUiTest {
         root()
         compose.onNodeWithText("一键回复").performClick(); compose.onNodeWithText("新增 Tab").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("查单"); save()
-        compose.onNodeWithText("新增分类").performClick(); compose.onNode(hasSetTextAction()).performTextInput("付款凭证"); save()
+        // The updated 48dp actions can be below the list viewport after saving a Tab.
+        // Scroll the actual action into view and wait for the owned editor to attach.
+        compose.onNodeWithTag("chat-tools-list").performScrollToNode(hasText("新增分类"))
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("新增分类") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("新增分类").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
+        compose.waitUntil(5000) { compose.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction()).performTextInput("付款凭证"); save()
         assertEquals("付款凭证", ChatToolsConfig.parse(bridge.saved).tabs.single().categories.single().title)
         // The IO save can finish after the editor overlay is removed. Wait for
         // the category selection and saving state before asserting the actual button.
-        compose.waitUntil(5000) { compose.onAllNodes(hasText("新增文案") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("chat-tools-list").performScrollToNode(hasText("新增文案"))
+        try { compose.waitUntil(5000) { compose.onAllNodes(hasText("新增文案") and isEnabled()).fetchSemanticsNodes().isNotEmpty() } }
+        catch (e: Throwable) {
+            println("Synthetic quick-reply configuration: " + bridge.saved)
+            println(compose.onRoot(useUnmergedTree = true).printToString())
+            throw e
+        }
         compose.onNodeWithText("新增文案").performScrollTo().assertIsDisplayed().assertIsEnabled().performClick()
         // The panel inserts its dialog through a DisposableEffect; wait for that next
         // composition before asking for a field in the newly attached editor.

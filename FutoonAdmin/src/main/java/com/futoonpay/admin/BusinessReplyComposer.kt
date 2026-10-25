@@ -57,14 +57,14 @@ internal fun businessReplyValues(order: OrderDetail?, merchant: MerchantSummary?
             error?.let { Text(it, color = Danger, fontSize = 13.sp) }
             Text("核对变量与内容后填入当前会话，由你手动发送。", color = Muted, fontSize = 12.sp)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(enabled = body.isNotBlank() && !inserting, onClick = { copy(body) }) { Text("复制") }
-                Button(enabled = body.isNotBlank() && body.length <= 4096 && !loading && !inserting, modifier = Modifier.weight(1f), onClick = {
+                com.futoonpay.admin.ui.ChatOutlinedButton(enabled = body.isNotBlank() && !inserting, onClick = { copy(body) }) { Text("复制") }
+                com.futoonpay.admin.ui.ChatButton(enabled = body.isNotBlank() && body.length <= 4096 && !loading && !inserting, modifier = Modifier.weight(1f), onClick = {
                     inserting = true; error = null
                     scope.launch { try { workflows.insertReply(body, target); close() } catch (e: Exception) { error = e.message ?: "填入失败，草稿已保留" } finally { inserting = false } }
                 }) { Text(if (inserting) "正在填入…" else "填入聊天输入框") }
             }
         }
     }
-    replacing?.let { template -> PaySheet("替换当前草稿？", { replacing = null }) { Row(Modifier.padding(16.dp)) { TextButton(onClick = { replacing = null }) { Text("继续编辑") }; TextButton(onClick = { choose(template); replacing = null }) { Text("使用新模板") } } } }
-    if (discard) PaySheet("放弃草稿修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { TextButton(onClick = { discard = false }) { Text("继续编辑") }; TextButton(onClick = close) { Text("放弃修改") } } }
+    replacing?.let { template -> PaySheet("替换当前草稿？", { replacing = null }) { Row(Modifier.padding(16.dp)) { com.futoonpay.admin.ui.ChatTextButton(onClick = { replacing = null }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { choose(template); replacing = null }) { Text("使用新模板") } } } }
+    if (discard) PaySheet("放弃草稿修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("放弃修改") } } }
 }
