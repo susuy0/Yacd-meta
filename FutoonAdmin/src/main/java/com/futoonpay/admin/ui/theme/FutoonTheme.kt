@@ -15,13 +15,13 @@ import org.json.JSONObject
 data class FutoonPalette(
     val dark: Boolean = false,
     val surface: Color = Color(0xFFFFFFFF),
-    val background: Color = Color(0xFFF0F2F5),
-    val text: Color = Color(0xFF111B21),
-    val secondaryText: Color = Color(0xFF667781),
-    val accent: Color = Color(0xFF008069),
-    val accentText: Color = Color(0xFF008069),
+    val background: Color = Color(0xFFF1F2F4),
+    val text: Color = Color(0xFF0A1014),
+    val secondaryText: Color = Color(0xFF5B6368),
+    val accent: Color = Color(0xFF1DAA61),
+    val accentText: Color = Color(0xFF1B8755),
     val buttonText: Color = Color.White,
-    val divider: Color = Color(0xFFF0F2F5),
+    val divider: Color = Color(0xFFF1F2F4),
     val error: Color = Color(0xFFCF3434),
     val success: Color = Color(0xFF26844B),
     val fontScale: Float = 1f,
@@ -64,7 +64,7 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
     val colors = remember(palette) {
         val base = if (palette.dark) darkColorScheme() else lightColorScheme()
         base.copy(primary = palette.accent, onPrimary = readableButtonText(palette.accent, palette.buttonText),
-            primaryContainer = lerp(palette.surface, palette.accent, if (palette.dark) .20f else .10f), onPrimaryContainer = palette.text,
+            primaryContainer = if (palette.accent == Color(com.futoonpay.admin.appearance.ChatLook.accent(palette.dark))) Color(com.futoonpay.admin.appearance.ChatLook.selected(palette.dark)) else lerp(palette.surface, palette.accent, if (palette.dark) .20f else .10f), onPrimaryContainer = palette.text,
             secondary = palette.accent, onSecondary = readableButtonText(palette.accent, palette.buttonText),
             secondaryContainer = lerp(palette.surface, palette.accent, if (palette.dark) .22f else .12f), onSecondaryContainer = palette.text,
             background = palette.background, onBackground = palette.text, surface = palette.surface, onSurface = palette.text,

@@ -56,7 +56,7 @@ class ChatAppearanceTest {
         val bitmap=Bitmap.createBitmap(64,64,Bitmap.Config.ARGB_8888);drawable.setBounds(8,8,56,56);drawable.alpha=alpha;drawable.draw(Canvas(bitmap));return bitmap
     }
     @Test fun vectorIconsRespectBoundsAndAlphaForEveryAction() {
-        for(name in listOf("chat","compose","profile","settings","search","menu","send","clip","emoji","back")){
+        for(name in listOf("chat","chat_selected","compose","profile","profile_selected","settings","settings_selected","search","menu","send","clip","emoji","back")){
             val d=ChatLook.icon(name,Color.BLACK,2f);val bitmap=render(d)
             assertEquals(48,d.intrinsicWidth);assertTrue((8..55).any{x->(8..55).any{y->Color.alpha(bitmap.getPixel(x,y))>0}})
             assertEquals(0,bitmap.getPixel(0,0));val hidden=render(d,0);assertTrue((0..63).all{x->(0..63).all{y->Color.alpha(hidden.getPixel(x,y))==0}})
@@ -86,7 +86,7 @@ class ChatAppearanceTest {
             val paper=ChatLook.wallpaperDrawable(dark,1f);paper.setBounds(0,52,width,300);paper.draw(canvas)
             val paint=Paint(3);val path=Path();ChatLook.bubblePath(path,RectF(16f,78f,width-96f,130f),10f,false,false,false);paint.color=ChatLook.incoming(dark);canvas.drawPath(path,paint)
             ChatLook.bubblePath(path,RectF(82f,150f,width-16f,204f),10f,true,false,false);paint.color=ChatLook.outgoing(dark);canvas.drawPath(path,paint)
-            val send=ChatLook.icon("send",Color.WHITE,1f);paint.color=0xff008069.toInt();canvas.drawCircle(width-30f,265f,24f,paint);send.setBounds(width-42,253,width-18,277);send.draw(canvas)
+            val send=ChatLook.icon("send",Color.WHITE,1f);paint.color=ChatLook.accent(dark);canvas.drawCircle(width-30f,265f,24f,paint);send.setBounds(width-42,253,width-18,277);send.draw(canvas)
             java.io.File("build/ui-screenshots/appearance-$width-${if(dark)"dark"else"light"}.png").apply{parentFile.mkdirs()}.outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle()
         }
     }

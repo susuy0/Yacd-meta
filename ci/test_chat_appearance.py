@@ -33,3 +33,49 @@ assert 'MainTab.entries.find { it.name == id }?.let(onSelect)' in components
 assert 'ChatFilterTabs(options, selected, onSelect)' in components
 assert 'ChatFieldColors()' in components
 print('PASS: shared native tab routing, configured order, accessibility selection, scrollable filters and field styles')
+
+# Execute the production send-circle geometry. A static color audit alone cannot
+# catch the old 38dp circle or a circle clipped by a 48dp composer control.
+import subprocess, tempfile
+def method(signature):
+    start = composer.index(signature)
+    opening = composer.index('{', start)
+    end, depth = opening + 1, 1
+    while depth:
+        depth += (composer[end] == '{') - (composer[end] == '}')
+        end += 1
+    return composer[start:end]
+
+geometry = method('private void checkBackgroundRect()')
+native = '''
+public class SendCircleGeometryTest {
+ static final int DEFAULT_HEIGHT=48;
+ static class Rect { float l,t,r,b; void set(float l,float t,float r,float b){this.l=l;this.t=t;this.r=r;this.b=b;} }
+ static class Price { float width; float getCurrentWidth(){return width;} }
+ final Rect backgroundRect=new Rect(); final Price priceText=new Price();
+ float density=1, sameWidthFactor=0; int measuredWidth=100, measuredHeight=48;
+ float dpf2(float value){return value*density;}
+ float lerp(float a,float b,float f){return a+(b-a)*f;}
+ int getMeasuredWidth(){return measuredWidth;} int getMeasuredHeight(){return measuredHeight;}
+ GEOMETRY
+ static void check(boolean value){if(!value)throw new AssertionError("Send circle clipped or wrong size");}
+ public static void main(String[] args){
+  for(float density:new float[]{1,2,3}) for(int controlHeight:new int[]{48,96}) {
+   SendCircleGeometryTest v=new SendCircleGeometryTest();v.density=density;
+   v.measuredWidth=(int)(100*density);v.measuredHeight=(int)(controlHeight*density);
+   for(float price:new float[]{0,60}) for(float factor:new float[]{0,.5f,1}) {
+    v.priceText.width=price*density;v.sameWidthFactor=factor;v.checkBackgroundRect();
+    Rect r=v.backgroundRect;check(r.l>=0&&r.t>=0&&r.r<=v.measuredWidth&&r.b<=v.measuredHeight);
+    check(Math.abs(r.b-r.t-48*density)<.01f);check(r.r-r.l>=48*density);
+    if(price==0||factor==1)check(Math.abs(r.r-r.l-48*density)<.01f);
+   }
+  }
+  System.out.println("PASS: production send-circle geometry at 1x/2x/3x, multiline and paid-message expansion");
+ }
+}
+'''.replace('GEOMETRY', geometry)
+with tempfile.TemporaryDirectory() as directory:
+    java = Path(directory)/'SendCircleGeometryTest.java'
+    java.write_text(native)
+    subprocess.run(['javac', '-d', directory, str(java)], check=True)
+    subprocess.run(['java', '-cp', directory, 'SendCircleGeometryTest'], check=True)

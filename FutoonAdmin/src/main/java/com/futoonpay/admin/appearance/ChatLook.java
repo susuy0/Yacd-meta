@@ -8,16 +8,17 @@ import androidx.annotation.Nullable;
 /** Shared Android chat design tokens and vector artwork, independent of business state. */
 public final class ChatLook {
     private ChatLook() {}
-    public static final int ROW_HEIGHT = 76, NAV_HEIGHT = 72, BUBBLE_RADIUS = 10, INPUT_RADIUS = 25;
-    public static int surface(boolean dark) { return dark ? 0xff111b21 : 0xffffffff; }
-    public static int background(boolean dark) { return dark ? 0xff0b141a : 0xffffffff; }
-    public static int field(boolean dark) { return dark ? 0xff202c33 : 0xfff0f2f5; }
-    public static int wallpaper(boolean dark) { return dark ? 0xff0b141a : 0xffefeae2; }
-    public static int text(boolean dark) { return dark ? 0xffe9edef : 0xff111b21; }
-    public static int secondary(boolean dark) { return dark ? 0xff8696a0 : 0xff667781; }
-    public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff008069; }
-    public static int outgoing(boolean dark) { return dark ? 0xff005c4b : 0xffd9fdd3; }
-    public static int incoming(boolean dark) { return dark ? 0xff202c33 : 0xffffffff; }
+    public static final int ROW_HEIGHT = 76, NAV_HEIGHT = 80, BUBBLE_RADIUS = 10, INPUT_RADIUS = 24;
+    public static int surface(boolean dark) { return dark ? 0xff12181c : 0xffffffff; }
+    public static int background(boolean dark) { return dark ? 0xff0a1014 : 0xffffffff; }
+    public static int field(boolean dark) { return dark ? 0xff20272b : 0xfff1f2f4; }
+    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xffefeae2; }
+    public static int text(boolean dark) { return dark ? 0xfff7f8fa : 0xff0a1014; }
+    public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff5b6368; }
+    public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1daa61; }
+    public static int accentText(boolean dark) { return dark ? 0xff21c063 : 0xff1b8755; }
+    public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd9fdd3; }
+    public static int incoming(boolean dark) { return dark ? 0xff20272b : 0xffffffff; }
     public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd9fdd3; }
     public static Integer color(String key, boolean dark) {
         switch (key) {
@@ -40,7 +41,7 @@ public final class ChatLook {
             case "key_actionBarDefaultSubtitle": case "key_actionBarDefaultSearchPlaceholder": case "key_chats_date":
             case "key_chats_message": case "key_chats_message_threeLines": case "key_windowBackgroundWhiteGrayText":
             case "key_windowBackgroundWhiteGrayText2": case "key_windowBackgroundWhiteGrayText3": case "key_windowBackgroundWhiteGrayText4":
-            case "key_glass_tabUnselected": case "key_glass_defaultIcon": case "key_profile_status": case "key_avatar_subtitleInProfileBlue": case "key_windowBackgroundWhiteGrayIcon": return secondary(dark);
+            case "key_glass_defaultIcon": case "key_profile_status": case "key_avatar_subtitleInProfileBlue": case "key_windowBackgroundWhiteGrayIcon": return secondary(dark);
             case "key_chat_inFileNameText": case "key_chat_outFileNameText":
             case "key_chat_inAudioTitleText": case "key_chat_outAudioTitleText":
             case "key_chat_inContactNameText": case "key_chat_outContactNameText": return text(dark);
@@ -48,13 +49,14 @@ public final class ChatLook {
             case "key_chat_inContactPhoneText": case "key_chat_outContactPhoneText": case "key_chat_inContactPhoneSelectedText": case "key_chat_outContactPhoneSelectedText":
             case "key_chat_inAudioPerformerText": case "key_chat_outAudioPerformerText": case "key_chat_inAudioDurationText": case "key_chat_outAudioDurationText": return secondary(dark);
             case "key_chat_inForwardedNameText": case "key_chat_outForwardedNameText": return secondary(dark);
-            case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return accent(dark);
+            case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return accentText(dark);
             case "key_actionBarTabUnactiveText": return secondary(dark);
             case "key_actionBarTabSelector": return selected(dark);
-            case "key_chat_messagePanelSend": return dark ? 0xff00a884 : 0xff008069;
+            case "key_glass_tabUnselected": case "key_glass_tabSelected": case "key_glass_tabSelectedText": return text(dark);
+            case "key_chat_messagePanelSend": return accent(dark);
             case "key_chats_unreadCounter": case "key_featuredStickers_addButton":
             case "key_switch2TrackChecked": case "key_switchTrackChecked": case "key_checkbox": case "key_dialogButton": case "key_chats_actionBackground": case "key_profile_actionBackground": case "key_profile_verifiedBackground":
-            case "key_glass_tabSelected": case "key_glass_tabSelectedText": case "key_telegram_color_dialogsLogo":
+            case "key_telegram_color_dialogsLogo":
             case "key_chat_outReplyLine": case "key_chat_inReplyLine": case "key_chat_outReplyNameText": case "key_chat_inReplyNameText": return accent(dark);
             case "key_chats_unreadCounterText": case "key_featuredStickers_buttonText": case "key_chat_messagePanelVoicePressed":
             case "key_checkboxCheck": case "key_chats_actionIcon": case "key_profile_actionIcon": case "key_profile_verifiedCheck": return 0xffffffff;
@@ -63,14 +65,14 @@ public final class ChatLook {
             case "key_chat_inReplyMessageText": case "key_chat_outReplyMessageText": return secondary(dark);
             case "key_chat_inReplyMediaMessageText": case "key_chat_outReplyMediaMessageText": return accent(dark);
             case "key_dialogInputField": case "key_chat_messagePanelVoiceBackground": return field(dark);
-            case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff202c33 : 0xfff0f2f5;
+            case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff20272b : 0xfff1f2f4;
             case "key_listSelector": case "key_actionBarDefaultSelector": return dark ? 0x1fe9edef : 0x12111b21;
             case "key_chat_selectedBackground": return dark ? 0x664a8f7c : 0x5580d8a0;
             case "key_chat_serviceBackground": return dark ? 0xff182229 : 0xfff7f4ef;
             case "key_chat_serviceText": case "key_chat_serviceLink": case "key_chat_serviceIcon": return secondary(dark);
         }
         // Preserve destructive/payment/status colors and special media overlays.
-        if (key.startsWith("key_windowBackgroundWhiteBlue") || key.startsWith("key_windowBackgroundWhiteGreen") || key.startsWith("key_chat_inSiteName") || key.startsWith("key_chat_outSiteName") || key.startsWith("key_dialogTextBlue")) return accent(dark);
+        if (key.startsWith("key_windowBackgroundWhiteBlue") || key.startsWith("key_windowBackgroundWhiteGreen") || key.startsWith("key_chat_inSiteName") || key.startsWith("key_chat_outSiteName") || key.startsWith("key_dialogTextBlue")) return accentText(dark);
         return null;
     }
     /** Text bubble body and its top-corner tail share the exact outline used by hit highlights. */
@@ -96,9 +98,19 @@ public final class ChatLook {
                 case "search": c.drawCircle(10.5f,10.5f,6.5f,p);c.drawLine(15.5f,15.5f,21,21,p);break;
                 case "menu": p.setStyle(Paint.Style.FILL);for(int y=5;y<=19;y+=7)c.drawCircle(12,y,1.6f,p);break;
                 case "send": p.setStyle(Paint.Style.FILL);path.moveTo(4,3);path.lineTo(22,12);path.lineTo(4,21);path.lineTo(7,13.2f);path.lineTo(16,12);path.lineTo(7,10.8f);path.close();c.drawPath(path,p);break;
-                case "chat": case "compose": c.drawRoundRect(3,4,21,18,4,4,p);path.moveTo(8,18);path.lineTo(4,22);path.lineTo(4,16);c.drawPath(path,p);if(glyph.equals("compose")){c.drawLine(12,8,12,14,p);c.drawLine(9,11,15,11,p);}else{c.drawLine(7,9,17,9,p);c.drawLine(7,13,14,13,p);}break;
-                case "profile": c.drawCircle(12,7.5f,4,p);c.drawArc(4,13,20,27,185,170,false,p);break;
-                case "settings": c.drawCircle(12,12,4,p);for(int i=0;i<8;i++){c.save();c.rotate(i*45,12,12);c.drawLine(12,2,12,5,p);c.restore();}c.drawCircle(12,12,7.5f,p);break;
+                case "compose":
+                    p.setStyle(Paint.Style.FILL);path.moveTo(3,4);path.lineTo(18,4);path.quadTo(21,4,21,7);path.lineTo(21,17);path.quadTo(21,20,18,20);path.lineTo(7,20);path.quadTo(4,20,4,17);path.lineTo(4,8);path.lineTo(2,5);path.quadTo(1.5f,4,3,4);path.close();
+                    path.setFillType(Path.FillType.EVEN_ODD);path.moveTo(11,8);path.lineTo(13,8);path.lineTo(13,11);path.lineTo(16,11);path.lineTo(16,13);path.lineTo(13,13);path.lineTo(13,16);path.lineTo(11,16);path.lineTo(11,13);path.lineTo(8,13);path.lineTo(8,11);path.lineTo(11,11);path.close();c.drawPath(path,p);path.setFillType(Path.FillType.WINDING);break;
+                case "chat": case "chat_selected":
+                    if(glyph.endsWith("_selected"))p.setStyle(Paint.Style.FILL);
+                    path.moveTo(4,4);path.lineTo(17,4);path.quadTo(20,4,20,7);path.lineTo(20,15);path.quadTo(20,18,17,18);path.lineTo(8,18);path.lineTo(3,21);path.lineTo(3,7);path.quadTo(3,4,4,4);path.close();c.drawPath(path,p);
+                    if(!glyph.endsWith("_selected")){c.drawLine(7,9,16,9,p);c.drawLine(7,13,13,13,p);}break;
+                case "profile": case "profile_selected":
+                    if(glyph.endsWith("_selected"))p.setStyle(Paint.Style.FILL);
+                    c.drawCircle(12,7.5f,3.5f,p);path.moveTo(4,21);path.cubicTo(4,12,20,12,20,21);path.close();c.drawPath(path,p);break;
+                case "settings": case "settings_selected":
+                    if(glyph.endsWith("_selected")){p.setStyle(Paint.Style.FILL);path.addCircle(12,12,8,Path.Direction.CW);path.addCircle(12,12,3,Path.Direction.CCW);c.drawPath(path,p);}else{c.drawCircle(12,12,3,p);c.drawCircle(12,12,7,p);}
+                    p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(glyph.endsWith("_selected")?3:2);for(int i=0;i<8;i++){c.save();c.rotate(i*45,12,12);c.drawLine(12,2,12,5,p);c.restore();}break;
                 case "clip": path.moveTo(8,17);path.lineTo(16,9);path.cubicTo(19,6,22,10,19,13);path.lineTo(10,22);path.cubicTo(5,26,-1,19,4,14);path.lineTo(14,4);path.cubicTo(20,-2,27,6,21,12);c.save();c.scale(.8f,.8f,12,12);c.drawPath(path,p);c.restore();break;
                 case "emoji": c.drawCircle(12,12,9,p);c.drawArc(7,8,17,18,20,140,false,p);p.setStyle(Paint.Style.FILL);c.drawCircle(8.5f,9,1,p);c.drawCircle(15.5f,9,1,p);break;
                 case "back": c.drawLine(19,12,5,12,p);c.drawLine(5,12,11,6,p);c.drawLine(5,12,11,18,p);break;

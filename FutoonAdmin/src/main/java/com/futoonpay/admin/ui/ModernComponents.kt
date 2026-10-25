@@ -93,16 +93,16 @@ internal fun ChatNavigationBar(items: List<ChatNavItem>, selected: String?, onSe
     val scale = LocalDensity.current.fontScale.coerceIn(1f, 1.5f)
     Column(Modifier.fillMaxWidth().background(CardColor)) {
         HorizontalDivider(color = Line, thickness = .5.dp)
-        Row(Modifier.fillMaxWidth().heightIn(min = (72 * scale).dp).selectableGroup()) {
+        Row(Modifier.fillMaxWidth().heightIn(min = (com.futoonpay.admin.appearance.ChatLook.NAV_HEIGHT * scale).dp).selectableGroup()) {
             items.forEach { item ->
                 val active = selected == item.id
-                Column(Modifier.weight(1f).heightIn(min = (72 * scale).dp).testTag("chat-nav-${item.id}")
+                Column(Modifier.weight(1f).heightIn(min = (com.futoonpay.admin.appearance.ChatLook.NAV_HEIGHT * scale).dp).testTag("chat-nav-${item.id}")
                     .selectable(active, role = Role.Tab, onClick = { onSelect(item.id) }).padding(horizontal = 4.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
                     Box(Modifier.widthIn(max = 64.dp).fillMaxWidth().height(32.dp).background(if (active) GreenTint else Color.Transparent, RoundedCornerShape(50)), contentAlignment = Alignment.Center) {
-                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(24.dp), tint = if (active) GreenDark else Ink)
+                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(24.dp), tint = Ink)
                     }
-                    Text(item.title, color = Ink, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(item.title, color = Ink, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

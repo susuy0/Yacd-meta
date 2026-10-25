@@ -55,7 +55,7 @@ class ChatNavigationUiTest {
         screenshot("54-chat-navigation-320-reordered")
     }
     @Test fun darkRtlLargeFontKeepsAllFiveTabsVisibleAndWithinThePanel() {
-        val dark=FutoonPalette(dark=true,surface=Color(0xff111b21),background=Color(0xff0b141a),text=Color(0xffe9edef),secondaryText=Color(0xff8696a0),accent=Color(0xff21c063),accentText=Color(0xff21c063),divider=Color(0xff202c33))
+        val dark=FutoonPalette(dark=true,surface=Color(0xff12181c),background=Color(0xff0a1014),text=Color(0xfff7f8fa),secondaryText=Color(0xff8d9599),accent=Color(0xff21c063),accentText=Color(0xff21c063),divider=Color(0xff20272b))
         compose.setContent { val density=LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density,1.5f),LocalLayoutDirection provides LayoutDirection.Rtl) {
                 FutoonTheme(dark) { Column(Modifier.width(320.dp).height(250.dp).testTag("appearance-panel")) { Box(Modifier.weight(1f));ChatNavigationBar(destinations,"merchants"){} } }
