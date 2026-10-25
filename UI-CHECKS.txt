@@ -1,25 +1,19 @@
-短信 / Futoon chat v0.11.0 — iOS PDF 原生结构验证
-源码：ebb67dae5d5775ddd3e97755d29bd7014cd0fd03
-上游：f32ffeec763f0bdbf4bec25b52d654f77bff733d
-PDF SHA-256：dffac59a08cd0c58073b6da6097687934d1a414cb802bcfbab3b9f7c11e552c4
-
-359 tests, 0 failures, 0 errors, 0 skipped; 53 suites
+v0.11.1 / versionCode 72039
+源码：442acf413a6192c7f36cae7f8505d6ec43d81dec
+361 tests, 0 failures/errors/skips, 54 suites
 Lint: 0 errors, 37 warnings, 3 hints
-68 synthetic fixture images; 12 core gates passed
+72 synthetic screenshots; 12 core gates passed
 
-- 首页：大标题、真实搜索输入、单层分类；原生文件夹锁定、路由、切换及取消选择恢复；新建聊天复用原回调。
-- 列表：56dp头像、圆形未读、去掉重复文件夹标签，保留Futoon TGID Tag；话题预览保留原点击。
-- 聊天：44dp连续顶栏、原生返回箭头、平面置顶区、底部气泡尾角；中性机器人按钮前景色修复。
-- 输入：内联附件加号走原分发器，长按快捷回复与空/有字发送状态保留；重复外置附件按钮隐藏。
-- 资料/设置：原生分组信息行、大标题与搜索、独立二维码/资料操作；滚动、搜索、回收和初始化时的小标题检查带旧版负对照。
-- Futoon：原订单/商户/结算/更多及付款凭证手选收件人等操作保留；控件与导航跟随统一样式。
-- 旧设置仍有效；默认入口40dp在已有允许范围内；已保存的自定义图片和尺寸保留。
-- 客户端完整编译和APK构建通过；135个模块文件及宿主补丁匹配；冻结源码一致。
-- APK身份、ABI、权限、v2签名/摘要、ZIP CRC及20个业务标识通过；未改C++，原生库哈希一致。
+- 设置：UniversalAdapter构造时同步填充，资料卡尚未创建；修复前负对照可复现NPE。页面完成初始化后才加载条目；清理/重建/迟到搜索回调有保护。
+- 导航：底栏保留完整56dp，不再用旧内边距压缩子项；父测量不再把10sp覆盖成14sp。
+- 导航：文字按真实高度布局，大字缩短间距；固定标签禁用横向滚动，绘制像素检查要求文字实际出现。
+- 首页：大标题容器去掉继承自紧凑搜索框的上下内边距并保留16dp左右对齐，分类保留48dp以上触摸区域，圆角底完整。
+- 聊天：置顶栏标题、线条、正文和关闭按钮补齐统一主题；原交互保留。
+- 全部Futoon订单、商户、结算、识别、快捷回复、付款凭证和原媒体入口的路由保留；移除的拍摄/录音/定位权限未回归。
+- 客户端完整编译、APK构建、身份/签名/内容摘要、ABI、权限、20个业务标识通过。
 
-APK：SMS-Futoon-v0.11.0-arm64.apk；41,038,019字节；72029
-SHA-256：50b0dd1e2ba8ab15f2d3390cd76f862eb2538bc7757128fe288f144f56a35447
-R8 mapping SHA-256：687fa083063db6b34d5096be4c01ae47c55f8a26c96962d8d95d5c129b9d4968
-记录：SMS-Futoon-v0.11.0-build-records.zip
+APK SMS-Futoon-v0.11.1-arm64.apk: cea2353e24953aa53fafe103735bc2bb5f2c36595e8823f0c38330366ff50b0f
+Mapping: 40ec634fef9e170e0c4f1c60e13bc91c332508b625864c35634493fee7953be2
+记录: SMS-Futoon-v0.11.1-build-records.zip
 
-界限：合成数据和真实原生组件检查，不等同于Android17真机完整页面截图或完整逐页像素1:1认证。未做真实业务写入、发送和FCM送达。没有引入液态玻璃库。
+界限：SDK35 Robolectric原生组件和合成数据；无Android17真机逐页验证，无完整运行时像素认证；未做真实业务写入、消息发送或FCM送达测试。
