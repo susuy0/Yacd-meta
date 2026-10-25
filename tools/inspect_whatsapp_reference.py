@@ -64,6 +64,17 @@ measurements = {
     'composer.action_width': resolve(ET.parse(res / 'layout/APKTOOL_RENAMED_0x7f0e0502.xml').getroot().get(android + 'layout_width')),
     'composer.action_height': resolve(ET.parse(res / 'layout/APKTOOL_RENAMED_0x7f0e0502.xml').getroot().get(android + 'layout_height')),
     'composer.input_radius': resolve('@dimen/APKTOOL_RENAMED_0x7f0711b9'),
+    'settings.avatar_size': layout('0x7f0e10e6', 'profile_info_photo', 'layout_width'),
+    'settings.name_size': layout('0x7f0e10e6', 'profile_info_name', 'textSize'),
+    'settings.status_size': layout('0x7f0e10e6', 'profile_info_status', 'textSize'),
+    'settings.icon_size': layout('0x7f0e12eb', 'settings_row_icon', 'layout_width'),
+    'settings.icon_margin': layout('0x7f0e12eb', 'settings_row_icon', 'layout_marginLeft'),
+    'settings.row_title_size': layout('0x7f0e12eb', 'settings_row_text', 'textSize'),
+    'settings.row_subtitle_size': layout('0x7f0e12eb', 'settings_row_subtext', 'textSize'),
+    'settings.row_vertical_padding': layout('0x7f0e12eb', 'settings_row_icon_text', 'paddingTop'),
+    'conversation_row.avatar_size': resolve('@dimen/APKTOOL_RENAMED_0x7f071243'),
+    'profile.avatar_size': resolve('@dimen/APKTOOL_RENAMED_0x7f07123e'),
+    'attachment.item_width': resolve('@dimen/APKTOOL_RENAMED_0x7f07041e'),
     'popup.corner_radius': resolve('@dimen/APKTOOL_RENAMED_0x7f071230'),
     'popup.vertical_padding': resolve('@dimen/APKTOOL_RENAMED_0x7f071232'),
 }
@@ -71,7 +82,7 @@ palettes = {}
 for night in [False, True]:
     table, palette_styles = values(night)
     node = palette_styles['APKTOOL_RENAMED_0x7f150546']
-    roles = {'accent': '9ad', 'selection': '9ae', 'selection_text': '9af', 'accent_text': '9ca', 'secondary_text': '9cb', 'primary_text': '9cc', 'outgoing_bubble': '9c1'}
+    roles = {'accent': '9ad', 'selection': '9ae', 'selection_text': '9af', 'accent_text': '9ca', 'secondary_text': '9cb', 'primary_text': '9cc', 'outgoing_bubble': '9c1', 'wallpaper': '9c5', 'wallpaper_ink': '9c6'}
     palettes['dark' if night else 'light'] = {
         name: resolve(next(i.text for i in node if i.get('name') == 'APKTOOL_RENAMED_0x7f040' + suffix), table)
         for name, suffix in roles.items()

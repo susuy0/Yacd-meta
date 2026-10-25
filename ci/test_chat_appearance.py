@@ -79,3 +79,25 @@ with tempfile.TemporaryDirectory() as directory:
     java.write_text(native)
     subprocess.run(['javac', '-d', directory, str(java)], check=True)
     subprocess.run(['java', '-cp', directory, 'SendCircleGeometryTest'], check=True)
+
+# Attachment launcher uses the existing adapter/dispatcher, retains lifecycle cleanup,
+# and never adds capture/voice/location entries to the currently allowed choices.
+attach=(src/'Components/ChatAttachAlert.java').read_text()
+assert 'buttonsAdapter.createViewHolder' in attach and 'buttonsAdapter.bindViewHolder' in attach
+assert 'attachmentChoiceHandler.onItemClick(original, itemPosition)' in attach
+assert 'onLongClickBotButton(bot.attachMenuBot, bot.currentUser)' in attach
+assert 'if (attachmentChooser != null) { dismissAttachmentChooser(); return true; }' in attach
+assert 'popup.setOnDismissListener' in attach and attach.count('dismissAttachmentChooser();')>=6
+chat=(src/'ChatActivity.java').read_text()
+assert 'openAttachMenu(true);' in chat and 'private void openAttachMenu() { openAttachMenu(false); }' in chat
+assert 'if (chatAttachAlert != null) chatAttachAlert.dismissAttachmentChooser();' in chat
+settings=(src/'SettingsActivity.java').read_text()
+assert '.setParts(avatarContainer, titleView, subtitleView, qrButton)' in settings
+assert 'new QrActivity(args)' in settings and 'new ProfileActivity(args)' in settings
+assert 'actionBarVisible = true;' in settings
+assert 'setRtl(LocaleController.isRTL)' in settings and 'grid.setRtl(LocaleController.isRTL)' in attach
+row=(src/'Cells/DialogCell.java').read_text()
+assert 'public int avatarStart = 16;' in row and 'avatarLeft + dp(48), avatarTop + dp(48)' in row
+profile=(src/'ProfileActivity.java').read_text()
+assert 'lerp(intoSize, 120, diff)' in profile and 'Telegram ID' in profile
+print('PASS: native grid uses allowed host choices and original handlers; lifecycle cleanup, bot long press, separate QR/profile routes, 48dp list and 120dp profile avatars')

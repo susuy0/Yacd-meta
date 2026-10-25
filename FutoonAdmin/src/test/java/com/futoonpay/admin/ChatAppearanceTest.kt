@@ -62,7 +62,7 @@ class ChatAppearanceTest {
         val bitmap=Bitmap.createBitmap(64,64,Bitmap.Config.ARGB_8888);drawable.setBounds(8,8,56,56);drawable.alpha=alpha;drawable.draw(Canvas(bitmap));return bitmap
     }
     @Test fun vectorIconsRespectBoundsAndAlphaForEveryAction() {
-        for(name in listOf("chat","chat_selected","compose","profile","profile_selected","settings","settings_selected","search","menu","send","clip","emoji","back")){
+        for(name in listOf("chat","chat_selected","compose","profile","profile_selected","settings","settings_selected","search","menu","send","clip","emoji","back","edit","gallery","file","audio","poll","todo","reply","app","money")){
             val d=ChatLook.icon(name,Color.BLACK,2f);val bitmap=render(d)
             assertEquals(48,d.intrinsicWidth);assertTrue((8..55).any{x->(8..55).any{y->Color.alpha(bitmap.getPixel(x,y))>0}})
             assertEquals(0,bitmap.getPixel(0,0));val hidden=render(d,0);assertTrue((0..63).all{x->(0..63).all{y->Color.alpha(hidden.getPixel(x,y))==0}})

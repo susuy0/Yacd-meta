@@ -12,7 +12,7 @@ public final class ChatLook {
     public static int surface(boolean dark) { return dark ? 0xff12181c : 0xffffffff; }
     public static int background(boolean dark) { return dark ? 0xff0a1014 : 0xffffffff; }
     public static int field(boolean dark) { return dark ? 0xff20272b : 0xfff1f2f4; }
-    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xffefeae2; }
+    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xfff5f1eb; }
     public static int text(boolean dark) { return dark ? 0xfff7f8fa : 0xff0a1014; }
     public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff5b6368; }
     public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1daa61; }
@@ -93,6 +93,38 @@ public final class ChatLook {
     }
     public static Drawable icon(String glyph, int color, float density) { return new Glyph(glyph, color, density); }
     public static Drawable wallpaperDrawable(boolean dark, float density) { return new Paper(dark, density); }
+    private static Bitmap doodleBitmap;
+    private static int doodleDensity;
+    public static synchronized Drawable wallpaperDrawable(android.content.res.Resources resources, boolean dark) {
+        int density=resources.getDisplayMetrics().densityDpi;
+        if(doodleBitmap==null || doodleDensity!=density) {
+            doodleBitmap=BitmapFactory.decodeResource(resources, com.futoonpay.admin.R.drawable.futoon_chat_doodle);
+            doodleDensity=density;
+        }
+        return doodleBitmap == null ? wallpaperDrawable(dark, resources.getDisplayMetrics().density) : new DoodlePaper(doodleBitmap, dark);
+    }
+    private static final class DoodlePaper extends Drawable {
+        private final boolean dark; private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG); private int alpha=255;
+        DoodlePaper(Bitmap bitmap, boolean dark) {
+            this.dark=dark; ink.setShader(new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT));
+            // The reference PNG is an opaque grayscale mask, not an RGBA image.
+            // Map its luminance to coverage; SRC_IN alone would tint the whole rectangle.
+            int tint=dark?0x1affffff:0xffeae0d3;
+            float coverage=Color.alpha(tint)/255f;
+            ink.setColorFilter(new ColorMatrixColorFilter(new ColorMatrix(new float[]{
+                0,0,0,0,Color.red(tint), 0,0,0,0,Color.green(tint), 0,0,0,0,Color.blue(tint),
+                .2126f*coverage,.7152f*coverage,.0722f*coverage,0,0
+            })));
+        }
+        @Override public void draw(@NonNull Canvas canvas) {
+            if(alpha==0)return; Rect bounds=getBounds(); int save=alpha<255?canvas.saveLayerAlpha(new RectF(bounds),alpha):canvas.save();
+            canvas.clipRect(bounds); canvas.drawColor(wallpaper(dark)); ink.setAlpha(255); canvas.drawRect(bounds,ink); canvas.restoreToCount(save);
+        }
+        @Override public void setAlpha(int value){alpha=value;invalidateSelf();}
+        @Override public void setColorFilter(@Nullable ColorFilter filter){ink.setColorFilter(filter);invalidateSelf();}
+        @Override public int getOpacity(){return alpha==255?PixelFormat.OPAQUE:PixelFormat.TRANSLUCENT;}
+    }
+
     private static final class Glyph extends Drawable {
         private final String glyph; private final int color, size; private final Paint p = new Paint(3); private final Path path = new Path(); private int alpha=255;
         Glyph(String glyph,int color,float density) { this.glyph=glyph;this.color=color;size=Math.round(24*density);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND); }
@@ -117,6 +149,15 @@ public final class ChatLook {
                     p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(glyph.endsWith("_selected")?3:2);for(int i=0;i<8;i++){c.save();c.rotate(i*45,12,12);c.drawLine(12,2,12,5,p);c.restore();}break;
                 case "clip": path.moveTo(8,17);path.lineTo(16,9);path.cubicTo(19,6,22,10,19,13);path.lineTo(10,22);path.cubicTo(5,26,-1,19,4,14);path.lineTo(14,4);path.cubicTo(20,-2,27,6,21,12);c.save();c.scale(.8f,.8f,12,12);c.drawPath(path,p);c.restore();break;
                 case "emoji": c.drawCircle(12,12,9,p);c.drawArc(7,8,17,18,20,140,false,p);p.setStyle(Paint.Style.FILL);c.drawCircle(8.5f,9,1,p);c.drawCircle(15.5f,9,1,p);break;
+                case "edit": path.moveTo(4,16);path.lineTo(4,21);path.lineTo(9,20);path.lineTo(21,8);path.lineTo(16,3);path.close();c.drawPath(path,p);c.drawLine(13,6,18,11,p);break;
+                case "gallery": c.drawRoundRect(3,3,21,21,3,3,p);c.drawCircle(8,8,2,p);path.moveTo(3,18);path.lineTo(9,12);path.lineTo(13,16);path.lineTo(17,11);path.lineTo(21,15);c.drawPath(path,p);break;
+                case "file": path.moveTo(5,2);path.lineTo(14,2);path.lineTo(20,8);path.lineTo(20,22);path.lineTo(5,22);path.close();c.drawPath(path,p);c.drawLine(14,2,14,8,p);c.drawLine(14,8,20,8,p);c.drawLine(9,13,16,13,p);c.drawLine(9,17,16,17,p);break;
+                case "audio": path.moveTo(9,18);path.lineTo(9,5);path.lineTo(20,3);path.lineTo(20,16);c.drawPath(path,p);c.drawOval(3,16,9,21,p);c.drawOval(14,14,20,19,p);break;
+                case "poll": c.drawLine(4,21,4,12,p);c.drawLine(12,21,12,4,p);c.drawLine(20,21,20,8,p);break;
+                case "todo": c.drawRoundRect(3,3,21,21,3,3,p);path.moveTo(7,12);path.lineTo(10,15);path.lineTo(17,8);c.drawPath(path,p);break;
+                case "reply": path.moveTo(10,5);path.lineTo(3,11);path.lineTo(10,17);path.moveTo(3,11);path.cubicTo(17,8,21,12,21,20);c.drawPath(path,p);break;
+                case "app": for(int y=4;y<20;y+=10)for(int x=4;x<20;x+=10)c.drawRoundRect(x,y,x+6,y+6,1,1,p);break;
+                case "money": c.drawRoundRect(2,5,22,19,2,2,p);c.drawCircle(12,12,4,p);c.drawLine(5,12,6,12,p);c.drawLine(18,12,19,12,p);break;
                 case "back": c.drawLine(19,12,5,12,p);c.drawLine(5,12,11,6,p);c.drawLine(5,12,11,18,p);break;
                 default: c.drawCircle(12,12,8,p);
             }
