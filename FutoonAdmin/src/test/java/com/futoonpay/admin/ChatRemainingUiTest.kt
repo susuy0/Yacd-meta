@@ -25,11 +25,13 @@ class ChatRemainingUiTest {
     private fun layout(v:View,w:Int,h:Int,exact:Boolean=false){v.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,if(exact)View.MeasureSpec.EXACTLY else View.MeasureSpec.AT_MOST));v.layout(0,0,v.measuredWidth,v.measuredHeight);v.viewTreeObserver.dispatchOnPreDraw()}
     private fun screenshot(v:View,name:String){val b=Bitmap.createBitmap(v.width,v.height,Bitmap.Config.ARGB_8888);v.draw(Canvas(b));java.io.File("build/ui-screenshots/$name.png").apply{parentFile?.mkdirs()}.outputStream().use{b.compress(Bitmap.CompressFormat.PNG,100,it)};b.recycle()}
     @Test fun settingsHeaderPreservesDistinctQrAndProfileActionsAtEveryWidthAndFontScale(){
+        val activity=org.robolectric.Robolectric.buildActivity(android.app.Activity::class.java).setup()
+        try {
         for(scale in listOf(1f,1.5f,2f))for(width in listOf(280,320,390))for(rtl in listOf(false,true)){
             val context=base.createConfigurationContext(Configuration(base.resources.configuration).apply{fontScale=scale})
             val avatar=TextView(context).apply{text="F";textSize=24f;gravity=android.view.Gravity.CENTER;setTextColor(Color.WHITE);background=android.graphics.drawable.GradientDrawable().apply{shape=android.graphics.drawable.GradientDrawable.OVAL;setColor(ChatLook.accent(false))}};val title=TextView(context).apply{text="Futoon merchant";setTextColor(ChatLook.text(false));setSingleLine();ellipsize=android.text.TextUtils.TruncateAt.END};val subtitle=TextView(context).apply{text="@merchant · Telegram";setTextColor(ChatLook.secondary(false));setSingleLine();ellipsize=android.text.TextUtils.TruncateAt.END};val qr=android.widget.ImageView(context).apply{setImageDrawable(ChatLook.icon("app",ChatLook.text(false),1f));scaleType=android.widget.ImageView.ScaleType.CENTER};var profile=0;var scans=0
             val header=ChatSettingsHeader(context).apply{setBackgroundColor(ChatLook.surface(false));setParts(avatar,title,subtitle,qr);setRtl(rtl);setOnClickListener{profile++}}
-            qr.setOnClickListener{scans++};layout(header,width,300)
+            qr.setOnClickListener{scans++};activity.get().setContentView(header);org.robolectric.shadows.ShadowLooper.idleMainLooper();layout(header,width,300)
             assertTrue("Title must have a visible line: ${title.textSize}px ${title.width}x${title.height}",title.width>0 && title.height>0 && title.textSize>0)
             assertTrue("Status must have a visible line: ${subtitle.textSize}px ${subtitle.width}x${subtitle.height}",subtitle.width>0 && subtitle.height>0 && subtitle.textSize>0)
             assertEquals(64,avatar.width);assertEquals(64,avatar.height);assertEquals(56,qr.width);assertTrue(header.height>=104)
@@ -40,6 +42,7 @@ class ChatRemainingUiTest {
             qr.performClick();assertEquals(1,scans);assertEquals(0,profile);header.performClick();assertEquals(1,profile)
             if(width==390&&scale==1f)screenshot(header,"settings-native-${if(rtl)"rtl"else"ltr"}")
         }
+        } finally { activity.pause().stop().destroy() }
     }
     private fun grid(width:Int,scale:Float=1f,rtl:Boolean=false,call:(Int)->Unit={}):ChatAttachmentGrid{
         val context=base.createConfigurationContext(Configuration(base.resources.configuration).apply{fontScale=scale})
