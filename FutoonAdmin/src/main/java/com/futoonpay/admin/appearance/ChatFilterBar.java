@@ -16,7 +16,7 @@ public final class ChatFilterBar extends HorizontalScrollView {
     private final LinearLayout row;private boolean dark;private int selected;
     public ChatFilterBar(Context context,String[] labels,boolean dark,IntConsumer callback) {
         super(context);this.dark=dark;setHorizontalScrollBarEnabled(false);setFillViewport(false);
-        row=new LinearLayout(context);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);addView(row,new LayoutParams(-2,-1));
+        row=new LinearLayout(context);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);addView(row,new LayoutParams(-2,-2));
         for(int i=0;i<labels.length;i++){final int value=i;TextView button=new TextView(context){@Override public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info){super.onInitializeAccessibilityNodeInfo(info);info.setClassName("android.widget.Button");info.setSelected(isSelected());}};
             button.setText(labels[i]);button.setTextSize(15);button.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));button.setGravity(Gravity.CENTER);button.setPadding(dp(16),0,dp(16),0);button.setMinWidth(dp(48));button.setFocusable(true);button.setOnClickListener(v->{select(value);callback.accept(value);});
             LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-2,dp(Math.max(48,28+20*Math.max(1,getResources().getConfiguration().fontScale))));lp.setMarginEnd(dp(8));row.addView(button,lp);

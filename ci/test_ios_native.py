@@ -52,6 +52,7 @@ assert 'com.github.QWEA0' not in (repo/'FutoonAdmin/build.gradle.kts').read_text
 print('PASS: inline attachment uses native dispatch; folder locks/transitions and cancellation preserved; new-chat original handler; profile sections and TGID; readable bot label')
 subprocess.run([sys.executable,str(repo/'ci/test_settings_population.py'),str(host)],check=True)
 subprocess.run([sys.executable,str(repo/'ci/prepare_native_ui_tests.py'),str(host)],check=True)
+subprocess.run([sys.executable,str(repo/'ci/test_home_header_scale.py'),str(host)],check=True)
 native_tabs=(src/'Components/glass/GlassTabView.java').read_text()
 main_tabs=(src/'MainTabsActivity.java').read_text()
 assert 'tabsView.setPadding(dp(8), 0, dp(8), 0);' in main_tabs

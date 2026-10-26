@@ -15,9 +15,14 @@ with tempfile.TemporaryDirectory(prefix='futoon-source-proof-')as folder:
  env=dict(os.environ,GIT_INDEX_FILE=str(Path(folder)/'index'))
  for cmd in [['git','read-tree','HEAD'],['git','apply','--cached','--whitespace=nowarn',str(repo/'integration.patch')],['git','diff','--exit-code','--ignore-submodules=all','--','.',':!FutoonAdmin']]:subprocess.run(cmd,cwd=host,env=env,check=True,stdout=subprocess.DEVNULL)
 module_files=git('ls-files','FutoonAdmin').splitlines()
-for file in module_files:assert (repo/file).read_bytes()==(host/file).read_bytes(),file
+freeze=state/('v'+a.version.replace('.','')+'-frozen-sources.json')
+for file,expected in json.loads(freeze.read_text()).items():assert sha(repo/file)==expected,file
+for file in module_files:
+ assert (repo/file).read_bytes()==(host/file).read_bytes(),file
+ assert (repo/file).read_bytes()==(state/'native-tests'/file).read_bytes(),file
 apk=out/f'SMS-Futoon-v{a.version}-arm64.apk';shutil.copyfile(host/'TMessagesProj_App/build/outputs/apk/afat/debug/app.apk',apk)
 verified=json.loads(subprocess.check_output(['python3',str(repo/'tools/verify_release.py'),str(apk)],text=True));verified['filename']=apk.name
+assert verified['signer_sha256']=='a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab'
 with zipfile.ZipFile(apk)as z:native_sha=hashlib.sha256(z.read('lib/arm64-v8a/libtmessages.49.so')).hexdigest()
 assert native_sha=='b9371dc7147f557eee08b7058d1fb6f141ca45a01715fc6248598668bea1798c',native_sha
 mapping=host/'TMessagesProj_App/build/outputs/mapping/afatDebug/mapping.txt';mapping_record={'bytes':mapping.stat().st_size,'sha256':sha(mapping)}
@@ -29,7 +34,7 @@ with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=
  z.write(mapping,'mapping.txt');z.write(state/'release-verification.json','release-verification.json');z.write(lint,'lint-results-debug.xml')
  for f in results.glob('TEST-*.xml'):z.write(f,'test-results/'+f.name)
  for f in images:z.write(f,'synthetic-ui/'+f.name)
- for name in ['tests-result.json','client-result.json','apk-result.json','core-checks.json','tests.log','client.log','apk.log','ui-coverage.log','v011-frozen-sources.json','v011-pipeline.json','ios-pdf-measurements.json','ios-core-checks.json']:
+ for name in ['tests-result.json','client-result.json','apk-result.json','core-checks.json','tests.log','client.log','apk.log','ui-coverage.log','v'+a.version.replace('.','')+'-frozen-sources.json','v'+a.version.replace('.','')+'-pipeline.json']:
   if(state/name).exists():z.write(state/name,'checks/'+name)
 record['build_records']={'filename':archive.name,'bytes':archive.stat().st_size,'sha256':sha(archive)}
 (out/'release-summary.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n');print(json.dumps(record,ensure_ascii=False,indent=2))

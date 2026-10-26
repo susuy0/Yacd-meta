@@ -26,11 +26,13 @@ public class ChatInboxHeader extends FrameLayout {
         largeTitle.setText(title);requestLayout();
     }
     public void setHeaderDark(boolean dark){if(largeTitle!=null)largeTitle.setTextColor(ChatLook.text(dark));}
-    public int searchTop(){return largeTitle==null?getPaddingTop():dp(titleBand(getResources().getConfiguration().fontScale)+8);}
-    public int searchBottom(){return largeTitle==null?getHeight()-getPaddingBottom():dp(titleBand(getResources().getConfiguration().fontScale)+searchBand(getResources().getConfiguration().fontScale)-8);}
+    public int searchTop(){return largeTitle==null?getPaddingTop():editor.getTop();}
+    public int searchBottom(){return largeTitle==null?getHeight()-getPaddingBottom():editor.getBottom();}
     private void position(View view,int top,int height,int gravity,int left,int right){if(view==null)return;LayoutParams p=(LayoutParams)view.getLayoutParams();p.gravity=Gravity.TOP|gravity;p.topMargin=dp(top);p.bottomMargin=0;p.height=dp(height);p.leftMargin=dp(left);p.rightMargin=dp(right);}
     @Override protected void onMeasure(int ws,int hs){
         if(largeTitle!=null){float scale=getResources().getConfiguration().fontScale;int title=titleBand(scale),field=searchBand(scale),bar=filterBand(scale),input=field-16;
+            // Legacy compact-search LayoutParams must not clip the expanded header.
+            hs=MeasureSpec.makeMeasureSpec(dp(title+field+bar)+getPaddingTop()+getPaddingBottom(),MeasureSpec.EXACTLY);
             position(largeTitle,0,title,Gravity.FILL_HORIZONTAL,5,5);
             position(editor,title+4,input,Gravity.FILL_HORIZONTAL,5,5);
             position(search,title+4+(input-24)/2,24,Gravity.LEFT,13,13);

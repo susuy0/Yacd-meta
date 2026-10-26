@@ -40,6 +40,7 @@ class IosChromeUiTest {
             layout(header,width,ChatInboxHeader.homeHeight(scale))
             val title=(0 until header.childCount).map{header.getChildAt(it)}.filterIsInstance<TextView>().single{it.text.toString()=="Futoon chat"}
             assertTrue(title.bottom<=editor.top);assertTrue(editor.bottom<=filter.top);assertTrue(filter.bottom<=header.height)
+            assertEquals(editor.top,header.searchTop());assertEquals(editor.bottom,header.searchBottom())
             assertEquals("订单 S202610250018",editor.text.toString());assertTrue(editor.width>100)
             val row=filter.getChildAt(0)as LinearLayout;assertEquals(4,row.childCount);row.getChildAt(2).performClick();assertEquals(2,selected)
             assertTrue((0 until row.childCount).all{row.getChildAt(it).height>=48 && row.getChildAt(it).height<=filter.height})
