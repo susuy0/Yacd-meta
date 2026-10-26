@@ -1,12 +1,12 @@
 {
-  "version": "0.11.1 native settings and navigation fixes",
-  "versionCode": 72039,
+  "version": "0.11.2 native inbox clipping and composer geometry",
+  "versionCode": 72049,
   "upstream_commit": "f32ffeec763f0bdbf4bec25b52d654f77bff733d",
   "package": "com.futoonpay.vinechat.beta",
-  "patch_sha256": "a10b62e550ddff34f53b289fb0136c20f4fb0320317899e2bf8fa83688d69429",
-  "source_baseline": "8bcec57d6aa2c90f6579c2e7f5302583d7fff995",
-  "source_commit": "442acf413a6192c7f36cae7f8505d6ec43d81dec",
-  "source_tree": "29183d3ab3de8d549a858a0e4f38cd9cf4fb313d",
+  "patch_sha256": "632298f8e17b12794e8800e131d6581bc03a6edd4e2a43dc221955d7ece6bde9",
+  "source_baseline": "2d6f85369ffbcace845f3faebcd6a6b7544c3596",
+  "source_commit": "d31a241f619555b148bceb62e046c0d1eb36c449",
+  "source_tree": "ac0f48c3629553bd95124b3985b563c20f3b00f2",
   "features": {
     "native_ui_only": true,
     "original_telegram_ui": "Native visual adaptation using static measurements from WhatsApp 2.26.42.71; full pixel equivalence not claimed",
@@ -169,19 +169,26 @@
     "native_tab_horizontal_scroll_disabled": true,
     "native_tab_glyph_render_checked": true,
     "inbox_compact_search_padding_removed": true,
-    "native_pinned_message_palette": true
+    "native_pinned_message_palette": true,
+    "inbox_intrinsic_height_for_legacy_compact_parent": true,
+    "inbox_font_context_matches_rendered_view": true,
+    "search_background_matches_actual_input_bounds": true,
+    "filter_row_wraps_content": true,
+    "composer_emoji_intrinsic_dp": 22,
+    "composer_emoji_native_states_preserved": true,
+    "composer_font_sp": 17
   },
   "previous_release": {
-    "version": "0.11.0",
-    "versionCode": 72029,
-    "source_commit": "ebb67dae5d5775ddd3e97755d29bd7014cd0fd03",
-    "apk_sha256": "50b0dd1e2ba8ab15f2d3390cd76f862eb2538bc7757128fe288f144f56a35447"
+    "version": "0.11.1",
+    "versionCode": 72039,
+    "source_commit": "442acf413a6192c7f36cae7f8505d6ec43d81dec",
+    "apk_sha256": "cea2353e24953aa53fafe103735bc2bb5f2c36595e8823f0c38330366ff50b0f"
   },
   "validation": {
-    "status": "passed locally; Android17 device flows and full runtime visual parity unverified",
+    "status": "passed locally; Android17 runtime and complete pixel parity unverified",
     "executor": "local",
     "github_actions_run": null,
-    "github_actions_note": "Tests and builds completed locally.",
+    "github_actions_note": "No Actions run was observed for the compiled source; built locally.",
     "native_tests": {
       "junit": {
         "tests": 361,
@@ -193,8 +200,8 @@
       "lint": {
         "Fatal": 0,
         "Error": 0,
-        "Warning": 37,
-        "Hint": 3,
+        "Warning": 32,
+        "Hint": 2,
         "Information": 0
       },
       "screenshots": 72
@@ -226,8 +233,6 @@
     "source_worktree_matches_published_patch": true,
     "workflow_test_scope_cleanup": "cancel and join each ViewModel scope before resetting Dispatchers.Main",
     "manual_screenshot_review": [
-      "native-tabs-font-1.0.png",
-      "native-tabs-font-2.0.png",
       "native-inbox-container-font-1.0.png",
       "native-inbox-container-font-2.0.png"
     ],
@@ -242,16 +247,15 @@
     ],
     "module_files_compared": 139,
     "new_ui_checks": [
-      "Actual native settings fill prefix exercised at the synchronous UniversalAdapter constructor boundary; v0.11.0 null-card failure reproduced without the fix",
-      "Settings clear/recreate, search and late callbacks guarded",
-      "Verbatim native tab layout/font/measurement methods compiled into Android fixture; 280/320/393/640dp and fonts1/1.3/1.5/2 checked",
-      "Label glyphs must be present in the rendered bitmap; full visible text height and icon separation checked",
-      "Nested inbox header/filter viewport checked at fonts1/1.3/1.5/2"
+      "Native header rendered through a legacy 48dp parent at fonts1/1.3/1.5/2; filter touch targets remain fully visible",
+      "Actual View/Activity font mismatch selector executed; old Activity-only selector rejected by the same test",
+      "Search background top/bottom equal native input bounds at280/320/393/640dp and fonts1/1.5/2",
+      "Original emoji/sticker/keyboard states retained through intrinsic22dp drawable and CENTER rendering"
     ]
   },
   "apk": {
-    "bytes": 41037607,
-    "sha256": "cea2353e24953aa53fafe103735bc2bb5f2c36595e8823f0c38330366ff50b0f",
+    "bytes": 41038335,
+    "sha256": "9b96f0b65d274b821355112e9b367c2c0099d1c9f346d874bdc594dae807a744",
     "signer_sha256": "a08d7dc323ddf71ef3201944397e0d3cce7d40847263e11f328b68bbe19229ab",
     "v2_signature": "verified",
     "zip_crc": "verified",
@@ -262,31 +266,31 @@
     "native_core_bytes": 9893208,
     "native_operation_markers": 20,
     "package": "com.futoonpay.vinechat.beta",
-    "versionCode": 72039,
+    "versionCode": 72049,
     "versionName": "13.0.2",
     "minSdkVersion": 23,
     "targetSdkVersion": 36,
     "application_label": "短信",
-    "filename": "SMS-Futoon-v0.11.1-arm64.apk",
+    "filename": "SMS-Futoon-v0.11.2-arm64.apk",
     "same_signer_as_previous_release": true,
     "push_mode": "development-no-fcm"
   },
   "native_library": {
-    "method": "unchanged native binary verified against v0.11.0; C++ not recompiled",
-    "source_apk_sha256": "50b0dd1e2ba8ab15f2d3390cd76f862eb2538bc7757128fe288f144f56a35447",
-    "source_filename": "SMS-Futoon-v0.11.0-arm64.apk",
+    "method": "Unchanged native binary verified from v0.11.1; C++ not recompiled",
+    "source_filename": "SMS-Futoon-v0.11.1-arm64.apk",
+    "source_apk_sha256": "cea2353e24953aa53fafe103735bc2bb5f2c36595e8823f0c38330366ff50b0f",
     "sha256": "b9371dc7147f557eee08b7058d1fb6f141ca45a01715fc6248598668bea1798c"
   },
   "mapping": {
-    "bytes": 228139454,
-    "sha256": "40ec634fef9e170e0c4f1c60e13bc91c332508b625864c35634493fee7953be2",
-    "saved_in": "SMS-Futoon-v0.11.1-build-records.zip"
+    "bytes": 228142462,
+    "sha256": "ea2be6837d7a45cd520ddab1c8a30c381869027909b2826b3fec4c328cb92e29",
+    "saved_in": "SMS-Futoon-v0.11.2-build-records.zip"
   },
   "artifacts": {
     "build_records": {
-      "filename": "SMS-Futoon-v0.11.1-build-records.zip",
-      "bytes": 23121951,
-      "sha256": "ef5fe20959806dfdbb976fcf43d7a5705acd9941292b799b48329ea7cb50b217"
+      "filename": "SMS-Futoon-v0.11.2-build-records.zip",
+      "bytes": 23704689,
+      "sha256": "8f4a20944c2e94633626ee21d92b3d4a739803a1792b9583bba7b0b1c4bd642e"
     },
     "reference_apk": {
       "filename": "WhatsApp-2.26.42.71-reference.apk",

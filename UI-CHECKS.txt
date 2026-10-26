@@ -1,19 +1,18 @@
-v0.11.1 / versionCode 72039
-源码：442acf413a6192c7f36cae7f8505d6ec43d81dec
+v0.11.2 / versionCode 72049
+Source: d31a241f619555b148bceb62e046c0d1eb36c449
 361 tests, 0 failures/errors/skips, 54 suites
-Lint: 0 errors, 37 warnings, 3 hints
-72 synthetic screenshots; 12 core gates passed
+Lint: 0 errors, 32 warnings, 2 hints
+72 component fixture images; 12 core gates passed
 
-- 设置：UniversalAdapter构造时同步填充，资料卡尚未创建；修复前负对照可复现NPE。页面完成初始化后才加载条目；清理/重建/迟到搜索回调有保护。
-- 导航：底栏保留完整56dp，不再用旧内边距压缩子项；父测量不再把10sp覆盖成14sp。
-- 导航：文字按真实高度布局，大字缩短间距；固定标签禁用横向滚动，绘制像素检查要求文字实际出现。
-- 首页：大标题容器去掉继承自紧凑搜索框的上下内边距并保留16dp左右对齐，分类保留48dp以上触摸区域，圆角底完整。
-- 聊天：置顶栏标题、线条、正文和关闭按钮补齐统一主题；原交互保留。
-- 全部Futoon订单、商户、结算、识别、快捷回复、付款凭证和原媒体入口的路由保留；移除的拍摄/录音/定位权限未回归。
-- 客户端完整编译、APK构建、身份/签名/内容摘要、ABI、权限、20个业务标识通过。
+- 首页大标题/搜索/筛选控件对旧48dp父容器保留完整测量高度。
+- 首页高度从实际View字体配置计算；Activity/View字体不一致时的旧算法被负对照检出。
+- 搜索底板使用真实输入框上下边界，筛选行按内容测量，保留16dp左右对齐。
+- 表情图案22dp CENTER，保留原生表情/贴纸/键盘切换动画和点击范围；输入17sp。
+- 发送身份、附件、发送、长按回复和业务操作路由保留；原底栏和设置闪退修复回归通过。
+- 完整客户端、APK、权限、身份、v2签名/内容摘要、ABI和20个业务标识校验通过。
 
-APK SMS-Futoon-v0.11.1-arm64.apk: cea2353e24953aa53fafe103735bc2bb5f2c36595e8823f0c38330366ff50b0f
-Mapping: 40ec634fef9e170e0c4f1c60e13bc91c332508b625864c35634493fee7953be2
-记录: SMS-Futoon-v0.11.1-build-records.zip
+APK: 9b96f0b65d274b821355112e9b367c2c0099d1c9f346d874bdc594dae807a744
+Mapping: ea2be6837d7a45cd520ddab1c8a30c381869027909b2826b3fec4c328cb92e29
+Records: SMS-Futoon-v0.11.2-build-records.zip
 
-界限：SDK35 Robolectric原生组件和合成数据；无Android17真机逐页验证，无完整运行时像素认证；未做真实业务写入、消息发送或FCM送达测试。
+Limits: SDK35 Robolectric fixtures; no Android17 device runtime or full pixel parity verification; no live backend writes, recipient sending or FCM delivery test.
