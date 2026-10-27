@@ -10865,7 +10865,7 @@ index 6b45401b4769aee4534c5954deea17322947441d..116e6eb8f67edc37d365c113c943a924
                          currentReplyPhoto = photoSize;
                          if (photoImageLocation != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
-index 0fae7fdda99102496683e4c1cf866df7cf156a93..78570b2218771ade680432efc9d97f3f041b39cc 100644
+index 0fae7fdda99102496683e4c1cf866df7cf156a93..1e6372fff8b63772a86a424c335ff6ed24158890 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 @@ -167,9 +167,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
@@ -11143,7 +11143,18 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..78570b2218771ade680432efc9d97f3f
          float gtx = 0, gty = 0;
          boolean emojiStatusVisible = false;
  
-@@ -4112,7 +4159,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -3907,6 +3954,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+                     } else {
+                         swipeMessage = getString(swipeMessageStringId = R.string.Archive);
+                         translationDrawable = Theme.dialogs_archiveDrawable;
++                        if (org.telegram.messenger.BuildVars.FUTOON_LITE) {
++                            // The reference's Archive action is solid green.
++                            backgroundColor = revealBackgroundColor = com.futoonpay.admin.appearance.ChatLook.accent(org.telegram.ui.FutoonChatAppearance.dark());
++                        }
+                     }
+                 } else {
+                     backgroundColor = Theme.getColor(Theme.key_chats_archivePinBackground, resourcesProvider);
+@@ -4112,7 +4163,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  Theme.dialogs_lockDrawable.draw(canvas);
              }
  
@@ -11152,7 +11163,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..78570b2218771ade680432efc9d97f3f
              if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
                  nameTop -= dp(isForumCell() ? 8 : 9);
              }
-@@ -4182,7 +4229,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4182,7 +4233,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
  
                      int a = timeTextPaint.getAlpha();
                      timeTextPaint.setAlpha(27);
@@ -11161,7 +11172,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..78570b2218771ade680432efc9d97f3f
                      timeTextPaint.setAlpha(a);
  
                      pd.draw(canvas);
-@@ -4343,7 +4390,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4343,7 +4394,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  }
  
                  if (lastTopicMessageUnread && topMessageTopicEndIndex != topMessageTopicStartIndex && (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER1 || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2)) {
@@ -11170,7 +11181,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..78570b2218771ade680432efc9d97f3f
                      if (!buttonCreated) {
                          canvasButton.rewind();
                          if (topMessageTopicEndIndex != topMessageTopicStartIndex && topMessageTopicEndIndex > 0) {
-@@ -4825,7 +4872,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4825,7 +4876,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              if (fullSeparator || currentDialogFolderId != 0 && archiveHidden && !fullSeparator2 || fullSeparator2 && !archiveHidden) {
                  left = 0;
              } else {
@@ -11179,7 +11190,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..78570b2218771ade680432efc9d97f3f
              }
  
              if (rightFragmentOpenedProgress != 1) {
-@@ -5269,7 +5316,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -5269,7 +5320,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
      }
  
      private void drawCounter(Canvas canvas, boolean drawCounterMuted, int countTop, int countLeftLocal, int countLeftOld, float globalScale, boolean outline) {
@@ -11655,7 +11666,7 @@ index 0137db4a960a2ff8da29c88ac0eaeb4d314035d7..6506c4ebdf72b79569a8f1c19096f8d4
  
      @Override
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailCell.java
-index cd7466e0f23bafb3dc657a2098f2bba717d83591..e7732c04c3331122e3dcadf0fb550165a3dc3e20 100644
+index cd7466e0f23bafb3dc657a2098f2bba717d83591..2729115aa5ce7cb8991deafea517b8376d992c28 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailCell.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/TextDetailCell.java
 @@ -76,10 +76,10 @@ public class TextDetailCell extends FrameLayout {
@@ -11730,7 +11741,7 @@ index cd7466e0f23bafb3dc657a2098f2bba717d83591..e7732c04c3331122e3dcadf0fb550165
          }
  
          updateColors();
-@@ -184,12 +184,21 @@ public class TextDetailCell extends FrameLayout {
+@@ -184,12 +184,24 @@ public class TextDetailCell extends FrameLayout {
          return super.onTouchEvent(ev);
      }
  
@@ -11746,10 +11757,13 @@ index cd7466e0f23bafb3dc657a2098f2bba717d83591..e7732c04c3331122e3dcadf0fb550165
          super.onMeasure(
              MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
 -            multiline ? heightMeasureSpec : MeasureSpec.makeMeasureSpec(dp(60) + (needDivider ? 1 : 0), MeasureSpec.EXACTLY)
-+            multiline ? heightMeasureSpec : MeasureSpec.makeMeasureSpec(com.futoonpay.admin.appearance.ChatChrome.rowHeight(getContext(), true) + (needDivider ? 1 : 0), MeasureSpec.EXACTLY)
++            // Measure children at their natural height: a fixed row height used to clip the value label's bottom.
++            multiline ? heightMeasureSpec : MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
          );
 +        int detailHeight=Math.max(valueTextView.getMeasuredHeight(),rightValueTextView.getVisibility()==VISIBLE?rightValueTextView.getMeasuredHeight():0);
-+        setMeasuredDimension(getMeasuredWidth(),Math.max(getMeasuredHeight(),textView.getMeasuredHeight()+detailHeight+dp(36)));
++        int row = com.futoonpay.admin.appearance.ChatChrome.rowHeight(getContext(), true) + (needDivider ? 1 : 0);
++        int natural = textView.getMeasuredHeight() + detailHeight + dp(multiline ? 36 : 20) + (needDivider ? 1 : 0);
++        setMeasuredDimension(getMeasuredWidth(), multiline ? Math.max(getMeasuredHeight(), natural) : Math.max(row, natural));
      }
  
      public void setTextAndValue(CharSequence text, CharSequence value, boolean divider) {
@@ -12691,7 +12705,7 @@ index 88fe6a16845b615376d66c4e3dfa512d56e652ea..e44f701772efd6c9eafc7aded3e22a54
          }
          String fileName = FileLoader.getDocumentFileName(messageObject.getDocument());
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
-index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfbfbbacfa1 100644
+index a8f9973061553dce80d45a1c16984e7ff8145312..ee89c4b649f8e8cae2e0267246b6bb1ea872f2bb 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 @@ -637,6 +637,7 @@ public class ChatActivityEnterView extends FrameLayout implements
@@ -12729,7 +12743,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          addView(textFieldContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM, 0, 1, 0, 0));
  
          FrameLayout frameLayout = messageEditTextContainer = new FrameLayout(context) {
-@@ -2699,9 +2700,29 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2699,9 +2700,30 @@ public class ChatActivityEnterView extends FrameLayout implements
              }
          };
          frameLayout.setClipChildren(false);
@@ -12740,10 +12754,11 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
 +            futoonPill.setColor(com.futoonpay.admin.appearance.ChatLook.incoming(futoonDark));
 +            futoonPill.setCornerRadius(dp(24));
 +            futoonPill.setStroke(Math.max(1, dp(0.5f)), com.futoonpay.admin.appearance.ChatLook.tabBorder(futoonDark));
-+            frameLayout.setBackground(new android.graphics.drawable.InsetDrawable(futoonPill, 0, dp(9.5f), 0, dp(9.5f)));
++            frameLayout.setBackground(futoonPill);
 +        }
-+        frameLayout.setMinimumHeight(dp(DEFAULT_HEIGHT));
-+        textFieldContainer.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, isFutoonComposer() ? 44 : 0, 0, DEFAULT_HEIGHT + 6, 0));
++        frameLayout.setMinimumHeight(dp(isFutoonComposer() ? 38 : DEFAULT_HEIGHT));
++        // 48dp touch rows keep their centre 24dp above the bottom padding; the 38dp pill sits 5dp up to share it.
++        textFieldContainer.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, isFutoonComposer() ? 44 : 0, 0, DEFAULT_HEIGHT + 6, isFutoonComposer() ? 5 : 0));
 +        if (isFutoonComposer()) {
 +            iosAttachButton = new ImageView(context);
 +            iosAttachButton.setImageDrawable(org.telegram.ui.FutoonChatAppearance.icon("plus"));
@@ -12761,7 +12776,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              @Override
              protected void onDraw(Canvas canvas) {
                  super.onDraw(canvas);
-@@ -2715,6 +2736,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2715,6 +2737,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          };
          emojiButton.setContentDescription(getString(R.string.AccDescrEmojiButton));
          emojiButton.setFocusable(true);
@@ -12769,18 +12784,18 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          int padding = dp(7.5f);
          emojiButton.setPadding(padding, padding, padding, padding);
          emojiButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.SRC_IN));
-@@ -2752,7 +2774,9 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2752,7 +2775,9 @@ public class ChatActivityEnterView extends FrameLayout implements
                  }
              }
          });
 -        messageEditTextContainer.addView(emojiButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.LEFT, 2, 0, 0, 0));
 +        messageEditTextContainer.addView(emojiButton, isFutoonComposer()
-+            ? LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, 2, 0)
++            ? LayoutHelper.createFrame(40, 38, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, 2, 0)
 +            : LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.LEFT, 2, 0, 0, 0));
          setEmojiButtonImage(false, false);
  
          deleteRichDraftButton = new ImageView(context);
-@@ -2835,7 +2859,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2835,7 +2860,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              };
              attachButton.setScaleType(ImageView.ScaleType.CENTER);
              attachButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.MULTIPLY));
@@ -12789,7 +12804,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              attachButton.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector)));
              messageEditTextContainer.addView(attachButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT));
              attachButton.setOnClickListener(v -> {
-@@ -2980,7 +3004,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2980,7 +3005,7 @@ public class ChatActivityEnterView extends FrameLayout implements
  
              @Override
              public void setVisibility(int visibility) {
@@ -12798,7 +12813,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              }
  
              @Override
-@@ -2991,6 +3015,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -2991,6 +3016,7 @@ public class ChatActivityEnterView extends FrameLayout implements
  
              @Override
              public boolean onTouchEvent(MotionEvent motionEvent) {
@@ -12806,7 +12821,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                  if (isLiveComment) return false;
                  createRecordCircle();
                  if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-@@ -3251,6 +3276,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -3251,6 +3277,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  super.dispatchDraw(canvas);
              }
          };
@@ -12814,7 +12829,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          audioVideoButtonContainer.setSoundEffectsEnabled(false);
          sendButtonContainer.addView(audioVideoButtonContainer, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.RIGHT | Gravity.BOTTOM));
          audioVideoButtonContainer.setFocusable(true);
-@@ -3516,6 +3542,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -3516,6 +3543,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              if ((messageSendPreview != null && messageSendPreview.isShowing()) || (runningAnimationAudio != null && runningAnimationAudio.isRunning()) || moveToSendStateRunnable != null) {
                  return;
              }
@@ -12822,7 +12837,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              sendMessage();
          });
          sendButton.setOnLongClickListener(this::onSendLongClick);
-@@ -3555,6 +3582,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -3555,6 +3583,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              }
          });
          slowModeButton.setOnLongClickListener(v -> {
@@ -12830,7 +12845,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              if (messageEditText == null || messageEditText.length() <= 0) {
                  return false;
              }
-@@ -4725,6 +4753,11 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -4725,6 +4754,11 @@ public class ChatActivityEnterView extends FrameLayout implements
      }
  
      public void drawBackground(Canvas canvas, boolean withComposeShadowDrawable) {
@@ -12842,7 +12857,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          if (!shouldDrawBackground) {
              return;
          }
-@@ -4777,7 +4810,58 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -4777,7 +4811,58 @@ public class ChatActivityEnterView extends FrameLayout implements
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
@@ -12901,16 +12916,19 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
              return false;
          }
-@@ -5810,7 +5894,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -5810,9 +5895,9 @@ public class ChatActivityEnterView extends FrameLayout implements
          updateFieldHint(false);
          messageEditText.setSingleLine(false);
          messageEditText.setMaxLines(6);
 -        messageEditText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
 +        messageEditText.setTextSize(isFutoonComposer() ? TypedValue.COMPLEX_UNIT_SP : TypedValue.COMPLEX_UNIT_DIP, isFutoonComposer() ? 17 : 18);
          messageEditText.setGravity(Gravity.BOTTOM);
-         messageEditText.setPadding(0, dp(9), 0, dp(10));
+-        messageEditText.setPadding(0, dp(9), 0, dp(10));
++        messageEditText.setPadding(0, dp(isFutoonComposer() ? 8 : 9), 0, dp(isFutoonComposer() ? 8 : 10));
          messageEditText.setBackgroundDrawable(null);
-@@ -5821,7 +5905,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+         messageEditText.setTextColor(getThemedColor(Theme.key_chat_messagePanelText));
+         messageEditText.setLinkTextColor(getThemedColor(Theme.key_chat_messageLinkOut));
+@@ -5821,7 +5906,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          messageEditText.setHintTextColor(getThemedColor(Theme.key_chat_messagePanelHint));
          messageEditText.setCursorColor(getThemedColor(Theme.key_chat_messagePanelCursor));
          messageEditText.setHandlesColor(getThemedColor(Theme.key_chat_TextSelectionCursor));
@@ -12919,7 +12937,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
  
          richDraftPreview = new RichMessageLayout.PreviewView(getContext(), currentAccount, resourcesProvider);
          richDraftPreview.setAllowActions(false);
-@@ -6468,7 +6552,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -6468,7 +6553,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          }
      }
  
@@ -12928,7 +12946,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
  
      private boolean resizeForTopViewLastShow;
      private void resizeForTopView(boolean show) {
-@@ -8114,7 +8198,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8114,7 +8199,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                      }
                  }
              }
@@ -12937,7 +12955,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              shownSendButton = true;
              final String caption = messageEditText == null ? null : messageEditText.getCaption();
              boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
-@@ -8125,14 +8209,14 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8125,14 +8210,14 @@ public class ChatActivityEnterView extends FrameLayout implements
              } else {
                  color = getThemedColor(Theme.key_chat_messagePanelSend);
              }
@@ -12954,7 +12972,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                  if (animated) {
                      if (runningAnimationType == 1 && caption == null || runningAnimationType == 3 && caption != null) {
                          return;
-@@ -8156,7 +8240,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8156,7 +8241,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                              attachButtonAnimator = null;
                          }
                          if (sideButtons != null) {
@@ -12963,7 +12981,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                              if (attachButton != null) {
                                  animators.add(ObjectAnimator.ofFloat(attachButton, View.ALPHA, attachButtonAlpha = captionNearAttach ? 0.0f : 1.0f));
                                  animators.add(ObjectAnimator.ofFloat(attachButton, View.SCALE_X, captionNearAttach ? 0.5f : 1.0f));
-@@ -8323,7 +8407,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8323,7 +8408,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                          updateFieldRight(0);
  
                          if (sideButtons != null) {
@@ -12972,7 +12990,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                              if (attachButton != null) {
                                  attachButton.setAlpha(attachButtonAlpha = captionNearAttach ? 0.0f : 1.0f);
                                  attachButton.setScaleX(captionNearAttach ? 0.5f : 1.0f);
-@@ -8349,7 +8433,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8349,7 +8434,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  }
              } else {
                  if (sideButtons != null) {
@@ -12981,7 +12999,16 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                      if (attachButton != null) {
                          if (attachButtonAnimator != null) {
                              attachButtonAnimator.cancel();
-@@ -8790,6 +8874,9 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -8760,7 +8845,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+         slowModeButton.setVisibility(visible ? VISIBLE : GONE);
+         int padding = visible ? dp(slowModeButton.isPremiumMode ? 26 : 16) : 0;
+         if (messageEditText != null && messageEditText.getPaddingRight() != padding) {
+-            messageEditText.setPadding(0, dp(9), padding, dp(10));
++            messageEditText.setPadding(0, dp(isFutoonComposer() ? 8 : 9), padding, dp(isFutoonComposer() ? 8 : 10));
+         }
+     }
+ 
+@@ -8790,6 +8875,9 @@ public class ChatActivityEnterView extends FrameLayout implements
              }
          }
          layoutParams.rightMargin = Math.max(layoutParams.rightMargin, Math.max(0, sendButton.width() - dp(DEFAULT_HEIGHT)));
@@ -12991,7 +13018,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          if (doneButton != null && doneButton.getVisibility() == VISIBLE) {
              layoutParams.rightMargin = Math.max(layoutParams.rightMargin, Math.max(0, doneButton.width() - dp(DEFAULT_HEIGHT)));
          }
-@@ -10371,6 +10458,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -10371,6 +10459,7 @@ public class ChatActivityEnterView extends FrameLayout implements
  
      @Override
      public void updateColors() {
@@ -12999,7 +13026,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          if (messageSendPreview != null) {
              messageSendPreview.updateColors();
          }
-@@ -11578,20 +11666,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -11578,20 +11667,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  }, null);
              }
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_buttonTypeRequestGeoLocation.class)) {
@@ -13021,7 +13048,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
          } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) || TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) {
              SendMessagesHelper.getInstance(currentAccount).sendCallback(true, messageObject, button, parentFragment);
          } else if (buttonTypeSwitchInline != null) {
-@@ -14527,7 +14602,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14527,7 +14603,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                  ((MarginLayoutParams) deleteRichDraftButton.getLayoutParams()).leftMargin = dp(10) + (botCommandsMenuButton == null ? 0 : botCommandsMenuButton.getMeasuredWidth());
              }
              if (messageEditText != null) {
@@ -13030,7 +13057,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              }
              if (richDraftPreview != null) {
                  ((MarginLayoutParams) richDraftPreview.getLayoutParams()).leftMargin = dp(57) + (botCommandsMenuButton == null ? 0 : botCommandsMenuButton.getMeasuredWidth());
-@@ -14564,7 +14639,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14564,7 +14640,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              if (botCommandsMenuButton != null) {
                  botWebViewButton.setMeasuredButtonWidth(botCommandsMenuButton.getMeasuredWidth());
              }
@@ -13039,7 +13066,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              measureChild(botWebViewButton, widthMeasureSpec, heightMeasureSpec);
          }
  //        if (botWebViewMenuContainer != null) {
-@@ -14944,8 +15019,8 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14944,8 +15020,8 @@ public class ChatActivityEnterView extends FrameLayout implements
              priceText.setCallback(this);
              priceText.setOverrideFullWidth(AndroidUtilities.displaySize.x);
  
@@ -13050,7 +13077,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              drawableInverse = context.getResources().getDrawable(resId).mutate();
              emojiDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(14));
  
-@@ -14994,21 +15069,21 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -14994,21 +15070,21 @@ public class ChatActivityEnterView extends FrameLayout implements
          public int getCircleWidth() {
              if (circleWidth >= 0)
                  return circleWidth;
@@ -13076,7 +13103,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              bounds.set(right - w, bottom - h, right, bottom);
          }
  
-@@ -15031,16 +15106,16 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15031,16 +15107,16 @@ public class ChatActivityEnterView extends FrameLayout implements
  
                  final float right, cy, h;
                  if (newCounterPos) {
@@ -13097,7 +13124,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                              getMeasuredHeight() - dp(24),
                              priceProgress);
                      h = lerp(getCircleHeight(), dp(32), priceProgress) * openProgress;
-@@ -15172,7 +15247,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15172,7 +15248,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              updateColors();
              checkBackgroundRect();
              if (isNewDesignSendButton) {
@@ -13106,7 +13133,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              }
  
              final boolean inactive = isInactive();
-@@ -15212,16 +15287,16 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15212,16 +15288,16 @@ public class ChatActivityEnterView extends FrameLayout implements
              }
              final float right, cy, h;
              if (newCounterPos) {
@@ -13127,7 +13154,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
                      getMeasuredHeight() - dp(24),
                      priceProgress);
                  h = lerp(getCircleHeight(), dp(32), priceProgress) * openProgress;
-@@ -15507,8 +15582,8 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15507,8 +15583,8 @@ public class ChatActivityEnterView extends FrameLayout implements
          private static final int RADIUS = 19;
  
          private void checkBackgroundRect() {
@@ -13138,7 +13165,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              final float width = lerp(
                  Math.max(height, dpf2(10 + 10) + priceText.getCurrentWidth()),
                  height, sameWidthFactor);
-@@ -15646,7 +15721,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15646,7 +15722,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          if (topView != null) {
              final float y = getMeasuredHeight() - animatorInputFieldHeight.getFactor();
  
@@ -13147,7 +13174,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..5f0432ad977f9d3bfca46e42b588fdfb
              topView.setVisibility(visibility > 0 ? VISIBLE : GONE);
          }
  
-@@ -15664,7 +15739,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -15664,7 +15740,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              (animatorTopViewVisibility.getValue() ? 1 : 0):
              animatorTopViewVisibility.getFloatValue();
  
