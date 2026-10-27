@@ -13112,7 +13112,7 @@ index 197aecf8379dcce4c8ae1cbb948fae2260f089f7..b23ff3c20f780aeaf26d796078a2b673
          clipPath.addRoundRect(clipRectF, r, r, Path.Direction.CW);
  
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
-index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..5cc842aaa40c25a191f0ac7c2fae632b8454b736 100644
+index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..e2b9af15b3286f2ce406cea5f05513023be928f2 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAttachAlert.java
 @@ -1116,6 +1116,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
@@ -13237,7 +13237,7 @@ index 8a33d8a3892f8a5eb8c8c2122d44435e195a84b5..5cc842aaa40c25a191f0ac7c2fae632b
 +            int id = original.getTag() instanceof Integer ? (Integer) original.getTag() : -1;
 +            String glyph = id == 1 ? "gallery" : id == 3 ? "audio" : id == 4 ? "file" : id == 9 ? "poll" : id == 11 ? "reply" : id == 12 ? "todo" : id == 13 || id == 14 ? "emoji" : id == 17 ? "money" : "app";
 +            choices.add(new com.futoonpay.admin.appearance.ChatAttachmentGrid.Entry("attachment-" + position, label,
-+                org.telegram.ui.FutoonChatAppearance.icon(glyph), () -> {
++                com.futoonpay.admin.appearance.ChatLook.icon(glyph, com.futoonpay.admin.appearance.ChatAttachmentGrid.tint(glyph, org.telegram.ui.FutoonChatAppearance.dark()), AndroidUtilities.density), () -> {
 +                    dismissAttachmentChooser();
 +                    if (destroyed || !anchor.isAttachedToWindow() || baseFragment == null || baseFragment.getParentActivity() == null) return;
 +                    openPicker.run();
