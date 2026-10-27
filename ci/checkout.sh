@@ -24,6 +24,13 @@ git -C "$destination" apply "${patch_args[@]}" --check "$package_dir/integration
 git -C "$destination" apply "${patch_args[@]}" "$package_dir/integration.patch"
 # Bring in the original data/business library; all interaction stays in the host panel.
 cp -R "$package_dir/FutoonAdmin" "$destination/FutoonAdmin"
+# Inter replaces the host's Roboto text face (SIL OFL 1.1; see fonts/SOURCE.txt).
+mkdir -p "$destination/TMessagesProj/src/main/assets/fonts" "$destination/TMessagesProj/src/main/res/font"
+for face in regular italic medium semibold bold; do
+    cp "$package_dir/fonts/inter_$face.ttf" "$destination/TMessagesProj/src/main/assets/fonts/inter_$face.ttf"
+    cp "$package_dir/fonts/inter_$face.ttf" "$destination/TMessagesProj/src/main/res/font/inter_$face.ttf"
+done
+cp "$package_dir/fonts/inter.xml" "$destination/TMessagesProj/src/main/res/font/inter.xml"
 if [[ "$mode" == full ]]; then
     git -C "$destination" submodule update --init --recursive --depth 1 --jobs 2
 fi

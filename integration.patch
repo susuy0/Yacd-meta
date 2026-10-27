@@ -1284,8 +1284,34 @@ index 63c819b26b3ac191c77b516257c021c90d37f3ba..755f411f779385d4be7ae1d519e28ba9
  
          <receiver android:name=".ChatsWidgetProvider" android:exported="false">
              <meta-data android:name="android.appwidget.provider"
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/AndroidUtilities.java b/TMessagesProj/src/main/java/org/telegram/messenger/AndroidUtilities.java
+index efa8e2956c84582b5215083c605e7a9756560748..3603b173279cc1b760e6d07d680b37241b906165 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/AndroidUtilities.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/AndroidUtilities.java
+@@ -249,7 +249,7 @@ public class AndroidUtilities {
+     public final static int REPLACING_TAG_TYPE_LINK_NBSP = 3;
+     public final static int REPLACING_TAG_TYPE_UNDERLINE = 4;
+ 
+-    public final static String TYPEFACE_ROBOTO_MEDIUM = "fonts/rmedium.ttf";
++    public final static String TYPEFACE_ROBOTO_MEDIUM = "fonts/inter_semibold.ttf";
+     public final static String TYPEFACE_ROBOTO_EXTRA_BOLD = "fonts/rextrabold.ttf";
+     public final static String TYPEFACE_ROBOTO_MEDIUM_ITALIC = "fonts/rmediumitalic.ttf";
+     public final static String TYPEFACE_ROBOTO_MONO = "fonts/rmono.ttf";
+@@ -261,10 +261,9 @@ public class AndroidUtilities {
+ 
+     public static Typeface bold() {
+         if (mediumTypeface == null) {
+-            if (SharedConfig.useSystemBoldFont && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
++            mediumTypeface = getTypeface(TYPEFACE_ROBOTO_MEDIUM);
++            if (mediumTypeface == null) {
+                 mediumTypeface = Typeface.create(null, 500, false);
+-            } else {
+-                mediumTypeface = getTypeface(TYPEFACE_ROBOTO_MEDIUM);
+             }
+         }
+         return mediumTypeface;
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
-index 5405be7f611ac6ce7c4b36937043e99ffeb7914e..68c4fb9bcb83acabdf208a7640c4813807f3c9e4 100644
+index 5405be7f611ac6ce7c4b36937043e99ffeb7914e..9eabbdf2f2b83c754491df8e2c4afdef8ab26305 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 @@ -51,6 +51,7 @@ import java.util.Locale;
@@ -1296,16 +1322,17 @@ index 5405be7f611ac6ce7c4b36937043e99ffeb7914e..68c4fb9bcb83acabdf208a7640c48138
      public static ApplicationLoader applicationLoaderInstance;
  
      @SuppressLint("StaticFieldLeak")
-@@ -80,7 +81,7 @@ public class ApplicationLoader extends Application {
+@@ -80,7 +81,8 @@ public class ApplicationLoader extends Application {
  
      @Override
      protected void attachBaseContext(Context base) {
 -        super.attachBaseContext(base);
 +        super.attachBaseContext(com.futoonpay.admin.appearance.ChatScale.wrap(base));
++        com.futoonpay.admin.appearance.ChatFonts.init(base);
      }
  
      public static ILocationServiceProvider getLocationServiceProvider() {
-@@ -258,6 +259,8 @@ public class ApplicationLoader extends Application {
+@@ -258,6 +260,8 @@ public class ApplicationLoader extends Application {
              if (user != null) {
                  MessagesController.getInstance(a).putUser(user, true);
                  SendMessagesHelper.getInstance(a).checkUnsentMessages();
@@ -9725,9 +9752,247 @@ index 92421054b07a1f1e32e00edb22dfe55789251cab..dbdfd4056ec28e345dcc9393d9776cb3
          int heightHalf = (bounds.height() - padding) >> 1;
          if (rad > heightHalf) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
-index b56ee0d84558b738144f16961eeaec8b767bb993..08815091737653a546fd063a8450f8ed61ab8eea 100644
+index b56ee0d84558b738144f16961eeaec8b767bb993..191da4cc149d0663a85f13657144c500d3fddad2 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
+@@ -7784,9 +7784,9 @@ public class Theme {
+ 
+     public static void createCommonDialogResources(Context context) {
+         if (dialogs_countTextPaint == null) {
+-            dialogs_countTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_countTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_countTextPaint.setTypeface(AndroidUtilities.bold());
+-            dialogs_countTextPaint2 = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_countTextPaint2 = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_countTextPaint2.setTypeface(AndroidUtilities.bold());
+             dialogs_countPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             dialogs_onlineCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+@@ -7808,29 +7808,29 @@ public class Theme {
+             dialogs_messagePaint = new TextPaint[2];
+             dialogs_messagePrintingPaint = new TextPaint[2];
+             for (int a = 0; a < 2; a++) {
+-                dialogs_namePaint[a] = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                dialogs_namePaint[a] = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+                 dialogs_namePaint[a].setTypeface(AndroidUtilities.bold());
+-                dialogs_nameEncryptedPaint[a] = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                dialogs_nameEncryptedPaint[a] = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+                 dialogs_nameEncryptedPaint[a].setTypeface(AndroidUtilities.bold());
+-                dialogs_messagePaint[a] = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                dialogs_messagePrintingPaint[a] = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                dialogs_messagePaint[a] = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                dialogs_messagePrintingPaint[a] = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             }
+-            dialogs_searchNamePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_searchNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_searchNamePaint.setTypeface(AndroidUtilities.bold());
+-            dialogs_searchNameEncryptedPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_searchNameEncryptedPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_searchNameEncryptedPaint.setTypeface(AndroidUtilities.bold());
+-            dialogs_messageNamePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_messageNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_messageNamePaint.setTypeface(AndroidUtilities.bold());
+-            dialogs_timePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            dialogs_timePaintBold = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            dialogs_timePaintBoldAccent = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            dialogs_archiveTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_timePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_timePaintBold = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_timePaintBoldAccent = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_archiveTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_archiveTextPaint.setTypeface(AndroidUtilities.bold());
+-            dialogs_archiveTextPaintSmall = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_archiveTextPaintSmall = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_archiveTextPaintSmall.setTypeface(AndroidUtilities.bold());
+-            dialogs_onlinePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            dialogs_offlinePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            dialogs_tagTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_onlinePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_offlinePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            dialogs_tagTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             dialogs_tagTextPaint.setTypeface(AndroidUtilities.bold());
+ 
+             dialogs_tabletSeletedPaint = new Paint();
+@@ -7993,40 +7993,40 @@ public class Theme {
+     public static void createCommonMessageResources() {
+         synchronized (sync) {
+             if (chat_msgTextPaint == null) {
+-                chat_msgTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-                chat_msgGameTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgGameTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+                 chat_msgTextPaintEmoji = new TextPaint[6];
+-                chat_msgTextPaintOneEmoji = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-                chat_msgTextPaintTwoEmoji = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-                chat_msgTextPaintThreeEmoji = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-                chat_msgBotButtonPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextPaintOneEmoji = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextPaintTwoEmoji = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextPaintThreeEmoji = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgBotButtonPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+                 chat_msgBotButtonPaint.setTypeface(AndroidUtilities.bold());
+-                chat_namePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_namePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+                 chat_namePaint.setTypeface(AndroidUtilities.bold());
+-                chat_replyNamePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_replyNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+                 chat_replyNamePaint.setTypeface(AndroidUtilities.bold());
+-                chat_replyTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_quoteTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_explanationTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_titleLabelTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_topicTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_replyTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_quoteTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_explanationTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_titleLabelTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_topicTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+                 chat_topicTextPaint.setTypeface(AndroidUtilities.bold());
+-                chat_forwardNamePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_adminPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_timePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_msgTextCodePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++                chat_forwardNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_adminPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_timePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_msgTextCodePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+                 chat_msgTextCodePaint.setTypeface(Typeface.MONOSPACE);
+-                chat_msgTextCode2Paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextCode2Paint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+                 chat_msgTextCode2Paint.setTypeface(Typeface.MONOSPACE);
+-                chat_msgTextCode3Paint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextCode3Paint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+                 chat_msgTextCode3Paint.setTypeface(Typeface.MONOSPACE);
+-                chat_msgCodeBgPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-                chat_ephemeralPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_msgCodeBgPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++                chat_ephemeralPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             }
+ 
+             final float[] emojiSizePercents = new float[] {.68f, .46f, .34f, .28f, .22f, .19f};
+             for (int i = 0; i < chat_msgTextPaintEmoji.length; ++i) {
+-                chat_msgTextPaintEmoji[i] = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++                chat_msgTextPaintEmoji[i] = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+                 chat_msgTextPaintEmoji[i].setTextSize(dp(emojiSizePercents[i] * 120f));
+             }
+             chat_msgTextPaintOneEmoji.setTextSize(dp(28 + 18));
+@@ -8056,20 +8056,20 @@ public class Theme {
+         createCommonMessageResources();
+ 
+         if (chat_infoPaint == null) {
+-            chat_infoPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_infoBoldPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_infoPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_infoBoldPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_infoBoldPaint.setTypeface(AndroidUtilities.bold());
+-            chat_stickerCommentCountPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_stickerCommentCountPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_stickerCommentCountPaint.setTypeface(AndroidUtilities.bold());
+-            chat_docNamePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_docNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_docNamePaint.setTypeface(AndroidUtilities.bold());
+             chat_docBackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_deleteProgressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_deleteProgressPaint.setStyle(Paint.Style.STROKE);
+             chat_deleteProgressPaint.setStrokeCap(Paint.Cap.ROUND);
+-            chat_locationTitlePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_locationTitlePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_locationTitlePaint.setTypeface(AndroidUtilities.bold());
+-            chat_locationAddressPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_locationAddressPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_urlPaint = new Paint();
+             chat_urlPaint.setPathEffect(LinkPath.getRoundedEffect());
+             chat_outUrlPaint = new Paint();
+@@ -8083,35 +8083,35 @@ public class Theme {
+             chat_radialProgress2Paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_radialProgress2Paint.setStrokeCap(Paint.Cap.ROUND);
+             chat_radialProgress2Paint.setStyle(Paint.Style.STROKE);
+-            chat_audioTimePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_livePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_audioTimePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_livePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_livePaint.setTypeface(Typeface.DEFAULT_BOLD);
+-            chat_audioTitlePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_audioTitlePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_audioTitlePaint.setTypeface(AndroidUtilities.bold());
+-            chat_audioPerformerPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_botButtonPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_audioPerformerPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_botButtonPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_botButtonPaint.setTypeface(AndroidUtilities.bold());
+-            chat_contactNamePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_contactNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_contactNamePaint.setTypeface(AndroidUtilities.bold());
+-            chat_contactPhonePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_durationPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_gamePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_contactPhonePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_durationPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_gamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_gamePaint.setTypeface(AndroidUtilities.bold());
+-            chat_shipmentPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_timePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_adminPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_ephemeralPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_namePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_shipmentPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_timePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_adminPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_ephemeralPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_namePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             chat_namePaint.setTypeface(AndroidUtilities.bold());
+-            chat_forwardNamePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_replyNamePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_forwardNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_replyNamePaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             chat_replyNamePaint.setTypeface(AndroidUtilities.bold());
+-            chat_replyTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_topicTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_replyTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_topicTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
+             chat_topicTextPaint.setTypeface(AndroidUtilities.bold());
+-            chat_titleLabelTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_commentTextPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
+-            chat_instantViewPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_titleLabelTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_commentTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(TextPaint.ANTI_ALIAS_FLAG);
++            chat_instantViewPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_instantViewPaint.setTypeface(AndroidUtilities.bold());
+             chat_instantViewRectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_instantViewRectPaint.setStyle(Paint.Style.STROKE);
+@@ -8126,18 +8126,18 @@ public class Theme {
+             chat_statusRecordPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_statusRecordPaint.setStyle(Paint.Style.STROKE);
+             chat_statusRecordPaint.setStrokeCap(Paint.Cap.ROUND);
+-            chat_actionTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_actionTextPaint2 = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+-            chat_actionTextPaint3 = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_actionTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_actionTextPaint2 = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
++            chat_actionTextPaint3 = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_actionTextPaint.setTypeface(AndroidUtilities.bold());
+-            chat_unlockExtendedMediaTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_unlockExtendedMediaTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_unlockExtendedMediaTextPaint.setTypeface(AndroidUtilities.bold());
+             chat_actionBackgroundGradientDarkenPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_actionBackgroundGradientDarkenPaint.setColor(0x15000000);
+             chat_timeBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+-            chat_contextResult_titleTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_contextResult_titleTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_contextResult_titleTextPaint.setTypeface(AndroidUtilities.bold());
+-            chat_contextResult_descriptionTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            chat_contextResult_descriptionTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+             chat_composeBackgroundPaint = new Paint();
+             chat_radialProgressPausedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+             chat_radialProgressPausedSeekbarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+@@ -8854,7 +8854,7 @@ public class Theme {
+ 
+     public static void createProfileResources(Context context) {
+         if (profile_verifiedDrawable == null) {
+-            profile_aboutTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++            profile_aboutTextPaint = com.futoonpay.admin.appearance.ChatFonts.paint(Paint.ANTI_ALIAS_FLAG);
+ 
+             Resources resources = context.getResources();
+ 
 @@ -8979,6 +8979,7 @@ public class Theme {
      }
  
@@ -19469,6 +19734,18 @@ index 0000000000000000000000000000000000000000..dd226efe035e71c912b75e56841f53e5
 +    <path android:fillColor="#FFFFFF" android:pathData="M25,26 L83,26 L83,70 L59,70 L39,85 L39,70 L25,70 Z" />
 +    <path android:fillColor="#12846D" android:pathData="M36,37 L45,37 L54,57 L63,37 L72,37 L58,65 L50,65 Z" />
 +</vector>
+diff --git a/TMessagesProj/src/main/res/values/styles.xml b/TMessagesProj/src/main/res/values/styles.xml
+index 2e97ad7beb59de973f81608f4f23eb2a87d868c0..25c30710923d555b9d78d845298f703087e31a1d 100644
+--- a/TMessagesProj/src/main/res/values/styles.xml
++++ b/TMessagesProj/src/main/res/values/styles.xml
+@@ -87,6 +87,7 @@
+ 
+     <style name="MyTextViewStyle" parent="android:Widget.Holo.Light.TextView">
+         <item name="android:hyphenationFrequency">none</item>
++        <item name="android:fontFamily">@font/inter</item>
+     </style>
+ 
+     <style name="EditTextNoBackgroundStyle" parent="android:Widget.EditText">
 diff --git a/TMessagesProj_App/build.gradle b/TMessagesProj_App/build.gradle
 index 0bc330623b2f16823452417045c81537ec57e729..fc074ea1994b5bae636c374c08fa1b44560ca14b 100644
 --- a/TMessagesProj_App/build.gradle

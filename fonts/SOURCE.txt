@@ -1,0 +1,5 @@
+Inter 4.1 (SIL Open Font License 1.1, see LICENSE-Inter-OFL.txt)
+Source: https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
+Zip SHA-256: 9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e
+  (matches the checksum in the Homebrew font-inter cask)
+Files: extras/ttf/Inter-{Regular,Italic,Medium,SemiBold,Bold}.ttf renamed to lowercase inter_*.ttf
