@@ -10214,9 +10214,18 @@ index f6b8a242e9bab3d2539be9cef810ff390fe04bde..6d98753e4b3f7186a3897e28a66577d3
  
      protected void update(boolean animated) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Adapters/DialogsAdapter.java b/TMessagesProj/src/main/java/org/telegram/ui/Adapters/DialogsAdapter.java
-index cd393c4dde1656c3f001d3015d079c33707077ed..8c3063b5e6a7065e37a655179bc1677abb86985f 100644
+index cd393c4dde1656c3f001d3015d079c33707077ed..02e8b22ad0378574f5b8263ebbda67674eb4069a 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Adapters/DialogsAdapter.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Adapters/DialogsAdapter.java
+@@ -995,7 +995,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
+                 } else {
+                     DialogCell cell = (DialogCell) holder.itemView;
+                     cell.isHiddenInCommunity = communityId != 0 && ChatObject.isHiddenInCommunity(currentAccount, dialog.id);
+-                    cell.useSeparator = false; // nextDialog != null;
++                    cell.useSeparator = nextDialog != null;
+                     cell.fullSeparator = false; // dialog.pinned && nextDialog != null && !nextDialog.pinned;
+                     if (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT) {
+                         if (AndroidUtilities.isTablet()) {
 @@ -1625,6 +1625,11 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
              }
          }
@@ -17793,7 +17802,7 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..70d27329827bbeee5043343d5818b01fdbd7bc4a 100644
+index 693df7877dde165920833faafae227cf60679d29..25f65e1156088e7eaead921b716312d3269ccb4e 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 @@ -175,7 +175,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
@@ -18069,7 +18078,15 @@ index 693df7877dde165920833faafae227cf60679d29..70d27329827bbeee5043343d5818b01f
          return WindowInsetsCompat.CONSUMED;
      }
  
-@@ -1167,7 +1183,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1154,6 +1170,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+         private final TextView valueView;
+         private final boolean mini;
+         private boolean hasBackground = true;
++        private ImageView chevronView;
+ 
+         public SettingCell(Context context, Theme.ResourcesProvider resourcesProvider) {
+             this(context, resourcesProvider, false);
+@@ -1167,7 +1184,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              setOrientation(HORIZONTAL);
  
              iconLayout = new FrameLayout(context);
@@ -18078,7 +18095,7 @@ index 693df7877dde165920833faafae227cf60679d29..70d27329827bbeee5043343d5818b01f
  
              iconView = new ImageView(context);
              iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-@@ -1177,24 +1193,26 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1177,24 +1194,34 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              textLayout.setOrientation(VERTICAL);
  
              titleView = new TextView(context);
@@ -18110,18 +18127,28 @@ index 693df7877dde165920833faafae227cf60679d29..70d27329827bbeee5043343d5818b01f
              }
 +            setPadding(0, dp(mini ? 8 : 11), 0, dp(mini ? 8 : 11));
 +            titleView.setIncludeFontPadding(false); subtitleView.setIncludeFontPadding(false);
++            chevronView = new ImageView(context);
++            chevronView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
++            chevronView.setRotation(LocaleController.isRTL ? 0 : 180);
++            if (LocaleController.isRTL) {
++                addView(chevronView, 0, LayoutHelper.createLinear(16, 16, Gravity.CENTER_VERTICAL, 12, 0, 0, 0));
++            } else {
++                addView(chevronView, LayoutHelper.createLinear(16, 16, Gravity.CENTER_VERTICAL, 0, 0, 16, 0));
++            }
              updateColors();
          }
  
-@@ -1203,6 +1221,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1203,7 +1230,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
              subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, resourcesProvider));
              valueView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
 +            iconView.setColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider), android.graphics.PorterDuff.Mode.SRC_IN);
              iconBackground.setDrawBorder(hasBackground && (resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark()));
++            if (chevronView != null) chevronView.setImageDrawable(com.futoonpay.admin.appearance.ChatLook.icon("back", com.futoonpay.admin.appearance.ChatLook.secondary(FutoonChatAppearance.dark()), AndroidUtilities.density));
          }
  
-@@ -1235,10 +1254,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+         private boolean twoLines;
+@@ -1235,10 +1264,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
  
          @Override
          protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -18131,7 +18158,7 @@ index 693df7877dde165920833faafae227cf60679d29..70d27329827bbeee5043343d5818b01f
 -            );
 +            super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
 +                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
-+            setMeasuredDimension(getMeasuredWidth(), Math.max(getMeasuredHeight(), dp(mini ? 48 : twoLines ? 72 : 56)));
++            setMeasuredDimension(getMeasuredWidth(), Math.max(getMeasuredHeight(), dp(mini ? 48 : twoLines ? 60 : 48)));
          }
  
          public static class Background extends Drawable {
