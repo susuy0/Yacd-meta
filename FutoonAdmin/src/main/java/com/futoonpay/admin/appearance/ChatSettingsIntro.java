@@ -12,7 +12,7 @@ public final class ChatSettingsIntro extends LinearLayout {
     private final TextView title,search;
     public ChatSettingsIntro(Context context,String label,String hint,Runnable action){
         super(context);setOrientation(VERTICAL);setPadding(dp(16),dp(12),dp(16),dp(12));
-        title=new TextView(context);title.setText(label);title.setTextSize(34);title.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));title.setIncludeFontPadding(false);addView(title,new LayoutParams(-1,-2));
+        title=new TextView(context);title.setText(label);title.setTextSize(34);title.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));title.setIncludeFontPadding(false);title.setGravity(Gravity.CENTER_VERTICAL);addView(title,new LayoutParams(-1,dp(Math.round(41*Math.max(1,context.getResources().getConfiguration().fontScale)))));
         search=new TextView(context);search.setText(hint);search.setTextSize(17);search.setGravity(Gravity.CENTER_VERTICAL);search.setPadding(dp(12),0,dp(12),0);search.setCompoundDrawablesWithIntrinsicBounds(ChatLook.icon("search",ChatLook.secondary(false),getResources().getDisplayMetrics().density),null,null,null);search.setCompoundDrawablePadding(dp(8));search.setFocusable(true);search.setContentDescription(hint);search.setOnClickListener(v->action.run());
         LayoutParams lp=new LayoutParams(-1,dp(searchHeight(getResources().getConfiguration().fontScale)));lp.topMargin=dp(9);addView(search,lp);setDark(false);
     }

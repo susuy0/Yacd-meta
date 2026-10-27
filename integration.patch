@@ -12107,7 +12107,7 @@ index 58ea803470b147c6bc8583d92548482d90b62f64..39a4ca1997c683686124cff69f759923
                      selectedParticipant = null;
                      return;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
-index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..825686a4d4b4a702f97567cd25701ea820b153c1 100644
+index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..117b0f5a0a496dc02847024629928d11b83f1d7a 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 @@ -1032,6 +1032,7 @@ public class ChatActivity extends BaseFragment implements
@@ -12249,6 +12249,15 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..825686a4d4b4a702f97567cd25701ea8
                      headerItem.showSubItem(call);
                      if (userFull.video_calls_available) {
                          headerItem.showSubItem(video_call);
+@@ -4464,7 +4534,7 @@ public class ChatActivity extends BaseFragment implements
+             if (searchItem != null) {
+                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
+             }
+-            if (ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
++            if (!org.telegram.messenger.BuildVars.FUTOON_LITE && ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
+                 RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, dp(24), dp(24));
+                 headerItem.lazilyAddSubItem(boost_group, drawable, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.BoostingBoostChannelMenu : R.string.BoostingBoostGroupMenu));
+             }
 @@ -4542,6 +4612,9 @@ public class ChatActivity extends BaseFragment implements
              headerItem.lazilyAddSubItem(rename_business_link, R.drawable.msg_edit, getString(R.string.Rename));
              headerItem.lazilyAddSubItem(delete_business_link, R.drawable.msg_delete, getString(R.string.Delete)).setColors(Theme.getColor(Theme.key_text_RedRegular), Theme.getColor(Theme.key_text_RedRegular));
@@ -12259,6 +12268,15 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..825686a4d4b4a702f97567cd25701ea8
          if (ChatObject.isForum(currentChat) && isTopic && getParentLayout() != null && getParentLayout().getFragmentStack() != null && chatMode == MODE_DEFAULT) {
              boolean hasMyForum = false;
              for (int i = 0; i < getParentLayout().getFragmentStack().size(); ++i) {
+@@ -4585,7 +4658,7 @@ public class ChatActivity extends BaseFragment implements
+             }
+         }
+ 
+-        if (BuildConfig.DEBUG_PRIVATE_VERSION && headerItem != null) {
++        if (BuildConfig.DEBUG_PRIVATE_VERSION && !org.telegram.messenger.BuildVars.FUTOON_LITE && headerItem != null) {
+             headerItem.lazilyAddSubItem(888, R.drawable.menu_download_round, "Dump Canvas");
+         }
+ 
 @@ -8093,7 +8166,7 @@ public class ChatActivity extends BaseFragment implements
          } else {
              chatActivityEnterView.setDelegate(new ChatActivityEnterViewDelegate());
@@ -13824,7 +13842,7 @@ index 5b6f2ba2a5658dc944dde8b3aa75a90256a500bf..f833637db64946f2c0407c600d2dd3e9
      }
  
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java
-index 1238632a08d6ebcf76987ad098449209589010e6..ed3cbba195c42a0caaadfa2b8e9fa42df7437779 100644
+index 1238632a08d6ebcf76987ad098449209589010e6..94aee4eaf16f08455a1ab03edc248915e4b8b00d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java
 @@ -78,10 +78,14 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
@@ -13912,7 +13930,18 @@ index 1238632a08d6ebcf76987ad098449209589010e6..ed3cbba195c42a0caaadfa2b8e9fa42d
          if (lastSubtitle == null) {
              if (subtitleTextView != null) {
                  subtitleTextView.setText(value);
-@@ -1376,7 +1403,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+@@ -1282,6 +1309,10 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+             useOnlineColor = true;
+             setTypingAnimation(true);
+         }
++        if (org.telegram.messenger.BuildVars.FUTOON_LITE && printString == null && user != null && !user.bot && !UserObject.isUserSelf(user) && parentFragment.getChatMode() == 0) {
++            newSubtitle = "zh".equals(LocaleController.getInstance().getCurrentLocale().getLanguage()) ? "点按查看联系人信息" : "tap here for contact info";
++            useOnlineColor = false;
++        }
+         lastSubtitleColorKey = useOnlineColor ? Theme.key_chat_status : Theme.key_actionBarDefaultSubtitle;
+         if (lastSubtitle == null) {
+             if (subtitleTextView != null) {
+@@ -1376,7 +1407,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
          avatarDrawable.setInfo(currentAccount, chat);
          if (avatarImageView != null) {
              avatarImageView.setForUserOrChat(chat, avatarDrawable);
@@ -13998,7 +14027,7 @@ index ce63f668e24b30be0dab697e6a1573e7351a9243..feffb594cd9af1bc88a97eb71735390b
                  Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)
              ));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
-index 9274278b46bdfd9e151a421afbce85e06b6d3599..e4665bc71149ae1d4d42f1b95097cd43a64394d0 100644
+index 9274278b46bdfd9e151a421afbce85e06b6d3599..f0d24242565bfbabbd4ffebb9b50b357c653cb45 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
 @@ -49,7 +49,7 @@ import me.vkryl.android.animator.BoolAnimator;
@@ -14028,7 +14057,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..e4665bc71149ae1d4d42f1b95097cd43
          addView(searchIcon, LayoutHelper.createFrame(24, 24, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 12, 0, 12, 0));
  
          additionalIconsLayout = new LinearLayout(context);
-@@ -182,21 +182,47 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+@@ -182,21 +182,54 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
          additionalIconsLayout.addView(icon);
      }
  
@@ -14060,6 +14089,13 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..e4665bc71149ae1d4d42f1b95097cd43
 +    }
 +    private com.futoonpay.admin.appearance.ChatFilterBar chatFilters;
 +
++    public void setChatFiltersAlpha(float alpha) {
++        if (chatFilters != null) {
++            chatFilters.setAlpha(alpha);
++            chatFilters.setVisibility(alpha <= 0.01f ? View.INVISIBLE : View.VISIBLE);
++        }
++    }
++
      @Override
      protected void dispatchDraw(@NonNull Canvas canvas) {
          canvas.save();
@@ -14081,7 +14117,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..e4665bc71149ae1d4d42f1b95097cd43
              blurredBackgroundDrawable.setBounds(
                      getPaddingLeft() - dp(4),
                      getPaddingTop() - dp(4),
-@@ -242,7 +268,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+@@ -242,7 +275,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
  
      private void checkUi_editTextPaddings() {
          final int filtersWidth = (int) animatorSearchFiltersWidth.getFactor() + dp(6); //searchFilterLayout.getWidth();
@@ -14090,7 +14126,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..e4665bc71149ae1d4d42f1b95097cd43
          final int pEnd = dp(48) + additionalIconsLayout.getMeasuredWidth();
  
          final int pLeft = LocaleController.isRTL ? pEnd : pStart;
-@@ -273,10 +299,13 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+@@ -273,10 +306,13 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
  
      @Override
      public void updateColors() {
@@ -14863,7 +14899,7 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d792d715101 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..4fbcea7d52e8d8431451efabd1758038b03293f6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 @@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -14962,16 +14998,21 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                  } else if (dialogStoriesCell != null && dialogStoriesCell.getPremiumHint() == child) {
                      continue;
                  }
-@@ -1623,7 +1628,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -1623,7 +1628,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
      }
  
      private float getSearchFieldAdditionOffset() {
 -        return -lerp(dp(4), dp(SEARCH_FIELD_HEIGHT), animatorSearchVisible.getFloatValue());
++        if (hasChatQuickFilters() && org.telegram.messenger.BuildVars.FUTOON_LITE) {
++            // Keep the search row below the status band and hide the quick filters while searching.
++            if (fragmentSearchField != null) fragmentSearchField.setChatFiltersAlpha(1f - animatorSearchVisible.getFloatValue());
++            return -lerp(dp(4), dp(getChatSearchHeight() - 60), animatorSearchVisible.getFloatValue());
++        }
 +        return -lerp(dp(4), dp(getChatSearchHeight()), animatorSearchVisible.getFloatValue());
      }
  
      private void updateStoriesViewAlpha(float alpha) {
-@@ -2067,7 +2072,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -2067,7 +2077,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  t += dp(DialogStoriesCell.HEIGHT_IN_DP);
              }
              if (!actionModeFullyShowed) {
@@ -14980,7 +15021,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              }
              additionalPadding = 0;
  
-@@ -2378,7 +2383,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -2378,7 +2388,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                          offset += dp(DialogStoriesCell.HEIGHT_IN_DP);
                      }
                      if (backward) {
@@ -14989,7 +15030,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                          // offset += canShowFilterTabsView ? dp(50) : 0;
                      }
                      if (p >= 0) {
-@@ -2887,6 +2892,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -2887,6 +2897,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              SharedConfig.loadProxyList();
          }
  
@@ -14999,7 +15040,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          observersGroup = getNotificationCenter().createObserversGroup(this);
  
          if (searchString == null) {
-@@ -2969,7 +2977,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -2969,7 +2982,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
          getContactsController().loadGlobalPrivacySetting();
  
@@ -15008,11 +15049,11 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              getMessagesController().getSavedMessagesController().preloadDialogs(true);
          }
  
-@@ -3287,6 +3295,16 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3287,6 +3300,16 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              }
          };
          fragmentSearchField.setPadding(dp(4), dp(4), dp(4), dp(4));
-+        if (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE) fragmentSearchField.showFutoonNote("These chats are unarchived when new messages are received.", getThemedColor(Theme.key_windowBackgroundWhite));
++        if (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE) fragmentSearchField.showFutoonNote("zh".equals(LocaleController.getInstance().getCurrentLocale().getLanguage()) ? "有新消息时，这些聊天会自动取消归档。" : "These chats are unarchived when new messages are received.", getThemedColor(Theme.key_windowBackgroundWhite));
 +        if (hasChatQuickFilters()) fragmentSearchField.setChatFilters(new String[]{"全部", "未读", "群组", "列表 ⌄"}, chatQuickFilter, value -> {
 +            if (value == 3) { showChatFolderChooser(); return; }
 +            if (filterTabsView != null && filterTabsView.getCurrentTabId() != filterTabsView.getDefaultTabId()) filterTabsView.selectFirstTab();
@@ -15025,7 +15066,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          fragmentSearchField.setPivotX(0);
          fragmentSearchField.setPivotY(0);
          if (initialDialogsType == DIALOGS_TYPE_DEFAULT) {
-@@ -3500,7 +3518,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3500,7 +3523,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  actionBar.setBackButtonDrawable(backDrawable = new BackDrawable(false));
              }
              if (folderId != 0) {
@@ -15037,7 +15078,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              } else if (communityId != 0) {
                  actionBar.setTitle(DialogObject.getName(community));
                  actionBar.setAdditionalTextLeft(dp(28));
-@@ -3515,9 +3536,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3515,9 +3541,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  logoDrawable = context.getResources().getDrawable(R.drawable.telegram_logo_2).mutate();
                  logoDrawable.setBounds(0, dp(2), logoDrawable.getIntrinsicWidth(), dp(2) + logoDrawable.getIntrinsicHeight());
                  logoDrawable.setColorFilter(getThemedColor(Theme.key_telegram_color_dialogsLogo), PorterDuff.Mode.MULTIPLY);
@@ -15051,7 +15092,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                  updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
              }
              if (folderId == 0) {
-@@ -4209,13 +4231,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4209,13 +4236,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                  }
                                  int canScrollDy = -(view.getTop() - pTop) + viewsH;
                                  if (!rightSlidingDialogContainer.hasFragment() && !(actionBar != null && actionBar.isActionModeShowed())) {
@@ -15067,7 +15108,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                                  }
                                  int positiveDy = Math.abs(dy);
                                  if (canScrollDy < positiveDy) {
-@@ -4578,7 +4600,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4578,7 +4605,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                          if (applyScrollY) {
                              int maxScrollYOffset = getMaxScrollYOffset();
                              if (!(filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && animatorFilterTabsVisible.getValue())) {
@@ -15076,7 +15117,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                              }
                              if (newTranslation < -maxScrollYOffset) {
                                  newTranslation = -maxScrollYOffset;
-@@ -4732,14 +4754,37 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4732,14 +4759,37 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          });
          searchTabsAndFiltersLayout.addView(filtersView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP));
  
@@ -15117,7 +15158,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          floatingButton3.setOnClickListener(v -> {
              if (parentLayout != null && parentLayout.isInPreviewMode()) {
                  finishPreviewFragment();
-@@ -5336,7 +5381,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5336,7 +5386,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
          }
          if (fragmentSearchField != null) {
@@ -15126,7 +15167,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          }
  
  
-@@ -5713,7 +5758,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5713,7 +5763,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  }
  
                  if (actionBarHeightNoSearch < scrollY && scrollY < actionBarHeight) {
@@ -15135,7 +15176,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                      int s = scrollY - actionBarHeightNoSearch;
                      if (s < h / 2) {
                          viewPage.scroller.smoothScrollBy(-s);
-@@ -5751,9 +5796,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5751,9 +5801,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
      private int getMaxScrollYOffset() {
          if (hasStories) {
@@ -15147,7 +15188,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          }
      }
  
-@@ -6847,6 +6892,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6847,6 +6897,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
      }
  
@@ -15168,7 +15209,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
      private void updateFilterTabs(boolean force, boolean animated) {
          if (filterTabsView == null || inPreviewMode || searchIsShowed || (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
              return;
-@@ -6857,7 +6916,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6857,7 +6921,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          final ArrayList<MessagesController.DialogFilter> filters = getMessagesController().getDialogFilters();
          if (filters.size() > 1) {
@@ -15177,7 +15218,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                  boolean animatedUpdateItems = animated;
                  if (filterTabsView.getVisibility() != View.VISIBLE) {
                      animatedUpdateItems = false;
-@@ -7071,7 +7130,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7071,7 +7135,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                          if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                              PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                                          } else {
@@ -15186,7 +15227,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                                          }
                                      }));
                                  }
-@@ -7182,7 +7241,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7182,7 +7246,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0) +
                      (topPanelLayout != null ? topPanelLayout.getHeight() : 0) +
                      (dialogStoriesCell != null && dialogStoriesCellVisible ? (int) ((1f - dialogStoriesCell.getCollapsedProgress()) * dp(DialogStoriesCell.HEIGHT_IN_DP)) : 0) +
@@ -15195,7 +15236,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                  );
              }
  
-@@ -7561,7 +7620,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7561,7 +7625,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (searchViewPager != null) {
                  animators.add(ObjectAnimator.ofFloat(searchViewPager, View.ALPHA, show ? 1.0f : 0.0f));
                  if (hasStories) {
@@ -15204,7 +15245,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                      animators.add(ObjectAnimator.ofFloat(searchViewPager, SEARCH_TRANSLATION_Y, show ? translationY : 0, show ? 0 : translationY));
                  }
                  if (!budget) {
-@@ -8889,7 +8948,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -8889,7 +8953,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              floatingButton3.setImageResource(R.drawable.floating_check);
              floatingButton3.setContentDescription(LocaleController.getString(R.string.Done));
          } else {
@@ -15213,7 +15254,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              floatingButton3.setContentDescription(LocaleController.getString(R.string.NewMessageTitle));
          }
      }
-@@ -9037,7 +9096,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9037,7 +9101,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  viewPages[i].listView.cancelClickRunnables(true);
              }
          }
@@ -15222,7 +15263,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          float finalTranslateListHeight = translateListHeight;
          actionBarColorAnimator = ValueAnimator.ofFloat(progressToActionMode, 0);
          actionBarColorAnimator.addUpdateListener(valueAnimator -> {
-@@ -9063,7 +9122,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9063,7 +9127,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  invalidateScrollY = true;
                  fixScrollYAfterArchiveOpened = true;
                  fragmentView.invalidate();
@@ -15231,7 +15272,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                  viewPages[0].setTranslationY(0);
                  for (int i = 0; i < viewPages.length; i++) {
                      if (viewPages[i] != null) {
-@@ -10051,7 +10110,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10051,7 +10115,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      viewPages[i].listView.cancelClickRunnables(true);
                  }
              }
@@ -15240,7 +15281,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              if (translateListHeight != 0) {
                  actionModeAdditionalHeight = (int) translateListHeight;
                  fragmentView.requestLayout();
-@@ -10078,7 +10137,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10078,7 +10142,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      actionBarColorAnimator = null;
                      actionModeAdditionalHeight = 0;
                      actionModeFullyShowed = true;
@@ -15249,7 +15290,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                      viewPages[0].setTranslationY(0);
                      for (int i = 0; i < viewPages.length; i++) {
                          if (viewPages[i] != null) {
-@@ -10350,7 +10409,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10350,7 +10414,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                          PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                      } else {
@@ -15258,7 +15299,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
                      }
                  }));
                  return;
-@@ -10375,9 +10434,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10375,9 +10439,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.READ_MEDIA_IMAGES);
              }
@@ -15269,7 +15310,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
              }
-@@ -10394,7 +10451,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10394,7 +10456,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          String[] items = permissons.toArray(new String[0]);
          try {
@@ -15278,7 +15319,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          } catch (Exception ignore) {
          }
      }
-@@ -10993,7 +11050,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10993,7 +11055,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
          if (dialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -15298,7 +15339,16 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
              return messagesController.dialogsServerOnly;
          } else if (dialogsType == DIALOGS_TYPE_ADD_USERS_TO) {
-@@ -14004,7 +14072,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -12964,7 +13037,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             public void setTranslationY(float translationY) {
+                 super.setTranslationY(translationY);
+                 if (searchTabsAndFiltersLayout != null) {
+-                    searchTabsAndFiltersLayout.setTranslationY(translationY);
++                    searchTabsAndFiltersLayout.setTranslationY(translationY + (hasChatQuickFilters() && org.telegram.messenger.BuildVars.FUTOON_LITE ? dp(53) * animatorSearchVisible.getFloatValue() : 0f));
+                 }
+             }
+ 
+@@ -14004,7 +14077,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
      private float getFilterTabsVisibilityFactor(boolean includeSearch) {
          final float factor1 = includeSearch ? (1f - animatorSearchVisible.getFloatValue()) : 1f;
          final float factor2 = 1f - getRightSlidingProgress();
@@ -15307,7 +15357,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
          return factor1 * factor2 * factor3;
      }
  
-@@ -14039,7 +14107,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14039,7 +14112,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
  
          final int maxScrollWithoutSearch = getMaxScrollYOffsetWithoutSearch();
@@ -15316,7 +15366,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
  
          final float actionModeVisible = Math.max(progressToActionMode, animatorActionModeVisible.getFloatValue());
          final float searchFieldVisible = animatorSearchVisible.getFloatValue();
-@@ -14177,7 +14245,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14177,7 +14250,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          final int mainTabTop = mainTabBottom - dp(DialogsActivity.MAIN_TABS_HEIGHT);
  
          final int actionBarHeight = actionBar.getMeasuredHeight()
@@ -15325,7 +15375,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..31adc8f83b96e632859e825887943d79
              + dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)
              + (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0)
              + (topPanelLayout != null && topPanelLayout.getVisibility() == View.VISIBLE ? topPanelLayout.getSumHeightOfAllVisibleChild() : 0)
-@@ -14434,4 +14502,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14434,4 +14507,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          return true;
      }
  
