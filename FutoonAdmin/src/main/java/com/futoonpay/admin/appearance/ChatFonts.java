@@ -9,7 +9,8 @@ import android.text.TextPaint;
 public final class ChatFonts {
     public static final String REGULAR = "fonts/inter_regular.ttf";
     private static AssetManager assets;
-    private static Typeface regular;
+    public static final String SEMIBOLD = "fonts/inter_semibold.ttf", BOLD = "fonts/inter_bold.ttf";
+    private static Typeface regular, semibold, bold;
     private ChatFonts() {}
 
     public static void init(Context context) {
@@ -22,6 +23,21 @@ public final class ChatFonts {
             try { regular = Typeface.createFromAsset(assets, REGULAR); } catch (RuntimeException ignored) { regular = null; }
         }
         return regular;
+    }
+
+    /** The semibold face used for names and chips, or null when unavailable. */
+    public static synchronized Typeface semibold() {
+        if (semibold == null && assets != null) {
+            try { semibold = Typeface.createFromAsset(assets, SEMIBOLD); } catch (RuntimeException ignored) { semibold = null; }
+        }
+        return semibold;
+    }
+
+    public static synchronized Typeface bold() {
+        if (bold == null && assets != null) {
+            try { bold = Typeface.createFromAsset(assets, BOLD); } catch (RuntimeException ignored) { bold = null; }
+        }
+        return bold;
     }
 
     public static TextPaint paint(int flags) {

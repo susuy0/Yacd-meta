@@ -198,6 +198,7 @@ public final class ChatLook {
                 case "plus": c.drawLine(12,3,12,21,p);c.drawLine(3,12,21,12,p);break;
                 case "more": p.setStyle(Paint.Style.FILL);c.drawCircle(5,12,1.5f,p);c.drawCircle(12,12,1.5f,p);c.drawCircle(19,12,1.5f,p);break;
                 case "back": c.drawLine(8,12,15,5,p);c.drawLine(8,12,15,19,p);break;
+                case "archive": c.drawRoundRect(3,4,21,9,1.5f,1.5f,p);path.moveTo(4.5f,9);path.lineTo(4.5f,19);path.quadTo(4.5f,20.5f,6,20.5f);path.lineTo(18,20.5f);path.quadTo(19.5f,20.5f,19.5f,19);path.lineTo(19.5f,9);c.drawPath(path,p);c.drawLine(10,13,14,13,p);break;
                 default: c.drawCircle(12,12,8,p);
             }
             c.restoreToCount(save);

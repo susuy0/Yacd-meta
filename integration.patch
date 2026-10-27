@@ -9679,6 +9679,20 @@ index b479005883d8a82b9a8252661d729a84fb455561..bcb37303db06806ecad987b722c87265
          shadowDrawable.setColorFilter(new PorterDuffColorFilter(internalBackgroundColor = getThemedColor(Theme.key_dialogBackground), PorterDuff.Mode.MULTIPLY));
          shadowDrawable.getPadding(padding);
          backgroundPaddingLeft = padding.left;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/DrawerLayoutContainer.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/DrawerLayoutContainer.java
+index e16c4da8ff7a0f67a7120d85636c57ec8053bdf4..f1688b0eec2c671d47d37753b605f52c75411b0c 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/DrawerLayoutContainer.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/DrawerLayoutContainer.java
+@@ -195,7 +195,8 @@ public class DrawerLayoutContainer extends FrameLayout {
+         final Insets systemAndImeInsets = AndroidUtilities.getDefaultWindowInsets(insets, true);
+ 
+         if (!systemAndCutoutInsets.equals(systemInsets) || !systemAndCutoutAndImeInsets.equals(systemAndImeInsets)) {
+-            AndroidUtilities.statusBarHeight = systemInsets.top;
++            // The iOS reference has a 47pt status bar; keep that top band so every title row sits where the reference does.
++            AndroidUtilities.statusBarHeight = systemInsets.top > 0 ? Math.max(systemInsets.top, AndroidUtilities.dp(47)) : 0;
+             AndroidUtilities.navigationBarHeight = systemInsets.bottom;
+ 
+             systemAndCutoutInsets = systemInsets;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java
 index 92421054b07a1f1e32e00edb22dfe55789251cab..dbdfd4056ec28e345dcc9393d9776cb37d920264 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/MessageDrawable.java
@@ -9752,7 +9766,7 @@ index 92421054b07a1f1e32e00edb22dfe55789251cab..dbdfd4056ec28e345dcc9393d9776cb3
          int heightHalf = (bounds.height() - padding) >> 1;
          if (rad > heightHalf) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
-index b56ee0d84558b738144f16961eeaec8b767bb993..191da4cc149d0663a85f13657144c500d3fddad2 100644
+index b56ee0d84558b738144f16961eeaec8b767bb993..ac0d5ba0aca5c5c1266d285536ed841ad0771f5d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ActionBar/Theme.java
 @@ -7784,9 +7784,9 @@ public class Theme {
@@ -9812,6 +9826,20 @@ index b56ee0d84558b738144f16961eeaec8b767bb993..191da4cc149d0663a85f13657144c500
              dialogs_tagTextPaint.setTypeface(AndroidUtilities.bold());
  
              dialogs_tabletSeletedPaint = new Paint();
+@@ -7894,10 +7894,10 @@ public class Theme {
+         }
+ 
+         dialogs_messageNamePaint.setTextSize(dp(14));
+-        dialogs_timePaint.setTextSize(dp(12));
+-        dialogs_timePaintBold.setTextSize(dp(12));
++        dialogs_timePaint.setTextSize(dp(13));
++        dialogs_timePaintBold.setTextSize(dp(13));
+         dialogs_timePaintBold.setTypeface(AndroidUtilities.bold());
+-        dialogs_timePaintBoldAccent.setTextSize(dp(12));
++        dialogs_timePaintBoldAccent.setTextSize(dp(13));
+         dialogs_timePaintBoldAccent.setTypeface(AndroidUtilities.bold());
+         dialogs_archiveTextPaint.setTextSize(dp(13));
+         dialogs_archiveTextPaintSmall.setTextSize(dp(11));
 @@ -7993,40 +7993,40 @@ public class Theme {
      public static void createCommonMessageResources() {
          synchronized (sync) {
@@ -10808,7 +10836,7 @@ index 6b45401b4769aee4534c5954deea17322947441d..116e6eb8f67edc37d365c113c943a924
                          currentReplyPhoto = photoSize;
                          if (photoImageLocation != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
-index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439ef38e214a 100644
+index 0fae7fdda99102496683e4c1cf866df7cf156a93..d1b867af192d5f76a9965174315c207aeed5e8ed 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 @@ -167,9 +167,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
@@ -10841,7 +10869,17 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
          for (int i = 0; i < thumbImage.length; ++i) {
              thumbImage[i] = new ImageReceiver(this);
              thumbImage[i].ignoreNotifications = true;
-@@ -1216,7 +1217,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -1022,6 +1023,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+     }
+ 
+     private int getCollapsedHeight() {
++        if (isDialogFolder() && !isTopic && customDialog == null) {
++            return dp(45) + 1;
++        }
+         int height = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? heightThreeLines : heightDefault);
+         if (useSeparator || true) {
+             height += 1;
+@@ -1216,7 +1220,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
      }
  
      public boolean hasTags() {
@@ -10850,16 +10888,32 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
      }
  
      public boolean separateMessageNameLine() {
-@@ -1254,7 +1255,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
-             Theme.dialogs_messagePaint[0].setTextSize(dp(16));
-             Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(16));
+@@ -1251,10 +1255,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+         if (useForceThreeLines || SharedConfig.useThreeLinesLayout || true) {
+             Theme.dialogs_namePaint[0].setTextSize(dp(17));
+             Theme.dialogs_nameEncryptedPaint[0].setTextSize(dp(17));
+-            Theme.dialogs_messagePaint[0].setTextSize(dp(16));
+-            Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(16));
++            Theme.dialogs_messagePaint[0].setTextSize(dp(15.5f));
++            Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(15.5f));
  
 -            Theme.dialogs_namePaint[1].setTextSize(dp(16));
 +            Theme.dialogs_namePaint[1].setTextSize(dp(17));
              Theme.dialogs_nameEncryptedPaint[1].setTextSize(dp(16));
              Theme.dialogs_messagePaint[1].setTextSize(dp(15));
              Theme.dialogs_messagePrintingPaint[1].setTextSize(dp(15));
-@@ -1347,10 +1348,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -1265,8 +1269,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+         } else {
+             Theme.dialogs_namePaint[0].setTextSize(dp(17));
+             Theme.dialogs_nameEncryptedPaint[0].setTextSize(dp(17));
+-            Theme.dialogs_messagePaint[0].setTextSize(dp(16));
+-            Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(16));
++            Theme.dialogs_messagePaint[0].setTextSize(dp(15.5f));
++            Theme.dialogs_messagePrintingPaint[0].setTextSize(dp(15.5f));
+ 
+             Theme.dialogs_messagePaint[0].setColor(Theme.dialogs_messagePaint[0].linkColor = Theme.getColor(Theme.key_chats_message, resourcesProvider));
+             paintIndex = 0;
+@@ -1347,10 +1351,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
                      nameLockTop = dp(12.5f);
                      if (!LocaleController.isRTL) {
@@ -10872,7 +10926,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
                          nameLeft = dp(22);
                      }
                  } else {
-@@ -1367,7 +1368,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -1367,7 +1371,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  drawVerified = !forbidVerified && customDialog.verified;
                  if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
                      if (!LocaleController.isRTL) {
@@ -10881,7 +10935,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
                      } else {
                          nameLeft = dp(22);
                      }
-@@ -1439,7 +1440,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -1439,7 +1443,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
          } else {
              if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
                  if (!LocaleController.isRTL) {
@@ -10890,7 +10944,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
                  } else {
                      nameLeft = dp(22);
                  }
-@@ -1457,10 +1458,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -1457,10 +1461,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                      if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
                          nameLockTop = dp(12.5f);
                          if (!LocaleController.isRTL) {
@@ -10903,7 +10957,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
                              nameLeft = dp(22);
                          }
                      } else {
-@@ -2390,6 +2391,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -2390,6 +2394,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              if (nameString instanceof String) {
                  nameString = ((String) nameString).replace('\n', ' ');
              }
@@ -10914,7 +10968,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
              CharSequence nameStringFinal = nameString;
              if (nameLayoutEllipsizeByGradient) {
                  nameLayoutFits = nameStringFinal.length() == TextUtils.ellipsize(nameStringFinal, Theme.dialogs_namePaint[paintIndex], ellipsizeWidth, TextUtils.TruncateAt.END).length();
-@@ -2428,7 +2433,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -2428,7 +2436,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
          int avatarTop;
          int thumbLeft;
          if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
@@ -10923,7 +10977,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
              messageNameTop = dp(32);
              timeTop = dp(13);
              errorTop = dp(42.33f);
-@@ -2440,18 +2445,18 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -2440,36 +2448,36 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              if (LocaleController.isRTL) {
                  buttonLeft = typingLeft = messageLeft = messageNameLeft = dp(16);
                  avatarLeft = getMeasuredWidth() - dp(56 + avatarStart);
@@ -10944,9 +10998,17 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
 -            avatarTop = dp(9);
 +            avatarTop = dp(10);
              messageNameTop = dp(31);
-             timeTop = dp(16);
-             errorTop = dp(38);
-@@ -2462,14 +2467,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+-            timeTop = dp(16);
+-            errorTop = dp(38);
+-            pinTop = dp(39);
+-            countTop = isTopic ? dp(35f) : dp(38f);
+-            checkDrawTop = dp(17);
++            timeTop = dp(12);
++            errorTop = dp(31);
++            pinTop = dp(32);
++            countTop = isTopic ? dp(28f) : dp(31f);
++            checkDrawTop = dp(13);
+             messageWidth = getMeasuredWidth() - dp(messagePaddingStart + 20 - (LocaleController.isRTL ? 0 : 12));
  
              if (LocaleController.isRTL) {
                  buttonLeft = typingLeft = messageLeft = messageNameLeft = dp(22);
@@ -10965,7 +11027,52 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
              for (int i = 0; i < thumbImage.length; ++i) {
                  thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(30) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(thumbSize), dp(thumbSize));
              }
-@@ -3230,6 +3235,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -2719,7 +2727,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+                     thumbImage[i].setImageY(avatarTop + yoff + dp(21));
+                 }
+             } else {
+-                messageTop = dp(39);
++                messageTop = dp(30);
+             }
+         }
+ 
+@@ -3225,11 +3233,44 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+         return currentDialogFolderId != 0;
+     }
+ 
++    private TextPaint futoonArchivePaint;
++
++    /** The reference's Archived row: outline box icon, one semibold label and an inset separator. */
++    private void drawFutoonArchiveRow(Canvas canvas) {
++        final boolean dark = org.telegram.ui.FutoonChatAppearance.dark();
++        final int width = getMeasuredWidth();
++        final int height = getMeasuredHeight() - 1;
++        if (futoonArchivePaint == null) {
++            futoonArchivePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
++        }
++        futoonArchivePaint.setTextSize(dp(17));
++        futoonArchivePaint.setTypeface(AndroidUtilities.bold());
++        futoonArchivePaint.setColor(com.futoonpay.admin.appearance.ChatLook.text(dark));
++        final boolean rtl = LocaleController.isRTL;
++        final int textStart = dp(messagePaddingStart + 4);
++        final Paint.FontMetrics metrics = futoonArchivePaint.getFontMetrics();
++        final float baseline = height / 2f - (metrics.ascent + metrics.descent) / 2f;
++        futoonArchivePaint.setTextAlign(rtl ? Paint.Align.RIGHT : Paint.Align.LEFT);
++        canvas.drawText(getString(R.string.ArchivedChats), rtl ? width - textStart : textStart, baseline, futoonArchivePaint);
++        final android.graphics.drawable.Drawable icon = com.futoonpay.admin.appearance.ChatLook.icon("archive", com.futoonpay.admin.appearance.ChatLook.secondary(dark), AndroidUtilities.density);
++        final int box = dp(24);
++        final int left = rtl ? width - dp(32) - box : dp(32);
++        final int top = (height - box) / 2;
++        icon.setBounds(left, top, left + box, top + box);
++        icon.draw(canvas);
++        if (useSeparator) {
++            final float y = getMeasuredHeight() - 1;
++            canvas.drawLine(rtl ? 0 : textStart, y, rtl ? width - textStart : width, y, Theme.dividerPaint);
++        }
++    }
++
+     public boolean update(int mask) {
+         return update(mask, true);
      }
  
      public boolean update(int mask, boolean animated) {
@@ -10974,7 +11081,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
          boolean requestLayout = false;
          boolean rebuildLayout = false;
          boolean invalidate = false;
-@@ -3257,7 +3264,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -3257,7 +3298,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              }
              drawMonoforumAvatar = false;
              drawCommunityAvatar = false;
@@ -10983,7 +11090,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
              drawUnmute = false;
          } else {
              int oldUnreadCount = unreadCount;
-@@ -3706,8 +3713,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -3706,8 +3747,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  avatarRadius = 1;
              } else if (drawCommunityAvatar) {
                  avatarRadius = dp(12);
@@ -10992,7 +11099,29 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
              } else {
                  avatarRadius = dp(28);
              }
-@@ -4182,7 +4187,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -3819,6 +3858,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+             return;
+         }
+ 
++        if (isDialogFolder() && !isTopic && customDialog == null) {
++            emojiStatusView.setVisibility(View.INVISIBLE);
++            drawFutoonArchiveRow(canvas);
++            return;
++        }
++
+         float gtx = 0, gty = 0;
+         boolean emojiStatusVisible = false;
+ 
+@@ -4112,7 +4157,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+                 Theme.dialogs_lockDrawable.draw(canvas);
+             }
+ 
+-            int nameTop = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 14);
++            int nameTop = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 10);
+             if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
+                 nameTop -= dp(isForumCell() ? 8 : 9);
+             }
+@@ -4182,7 +4227,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
  
                      int a = timeTextPaint.getAlpha();
                      timeTextPaint.setAlpha(27);
@@ -11001,7 +11130,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
                      timeTextPaint.setAlpha(a);
  
                      pd.draw(canvas);
-@@ -4343,7 +4348,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4343,7 +4388,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  }
  
                  if (lastTopicMessageUnread && topMessageTopicEndIndex != topMessageTopicStartIndex && (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER1 || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2)) {
@@ -11010,7 +11139,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
                      if (!buttonCreated) {
                          canvasButton.rewind();
                          if (topMessageTopicEndIndex != topMessageTopicStartIndex && topMessageTopicEndIndex > 0) {
-@@ -4825,7 +4830,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4825,7 +4870,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              if (fullSeparator || currentDialogFolderId != 0 && archiveHidden && !fullSeparator2 || fullSeparator2 && !archiveHidden) {
                  left = 0;
              } else {
@@ -11019,7 +11148,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..7b87f38e609ce491c335a5e303ad439e
              }
  
              if (rightFragmentOpenedProgress != 1) {
-@@ -5269,7 +5274,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -5269,7 +5314,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
      }
  
      private void drawCounter(Canvas canvas, boolean drawCounterMuted, int countTop, int countLeftLocal, int countLeftOld, float globalScale, boolean outline) {
@@ -13762,7 +13891,7 @@ index ce63f668e24b30be0dab697e6a1573e7351a9243..feffb594cd9af1bc88a97eb71735390b
                  Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)
              ));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
-index 9274278b46bdfd9e151a421afbce85e06b6d3599..a5e80de7f53b7e4019015fd3dd9b3d59f053d7ae 100644
+index 9274278b46bdfd9e151a421afbce85e06b6d3599..f15f254650620f85ce115c75fd9f4617f08ed891 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
 @@ -49,7 +49,7 @@ import me.vkryl.android.animator.BoolAnimator;
@@ -13802,7 +13931,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..a5e80de7f53b7e4019015fd3dd9b3d59
 +        chatFilters.select(selected);
 +        addView(chatFilters, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, 4, 52, 4, 0));
 +        bindHome("Futoon chat", chatFilters, editText, searchIcon, closeIcon, additionalIconsLayout, searchFilterLayout);
-+        editText.setPadding(dp(38), 0, dp(38), 0);
++        editText.setPadding(dp(30), 0, dp(38), 0);
 +        setHeaderDark(org.telegram.ui.FutoonChatAppearance.dark());
 +    }
 +
@@ -13832,6 +13961,15 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..a5e80de7f53b7e4019015fd3dd9b3d59
              blurredBackgroundDrawable.setBounds(
                      getPaddingLeft() - dp(4),
                      getPaddingTop() - dp(4),
+@@ -242,7 +255,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+ 
+     private void checkUi_editTextPaddings() {
+         final int filtersWidth = (int) animatorSearchFiltersWidth.getFactor() + dp(6); //searchFilterLayout.getWidth();
+-        final int pStart = Math.max(filtersWidth, dp(48));
++        final int pStart = Math.max(filtersWidth, chatFilters == null ? dp(48) : dp(30));
+         final int pEnd = dp(48) + additionalIconsLayout.getMeasuredWidth();
+ 
+         final int pLeft = LocaleController.isRTL ? pEnd : pStart;
 @@ -273,10 +286,13 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
  
      @Override
@@ -14587,7 +14725,7 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613a12de755 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..d7676e9d6d21388c5ee2754501b275e6ccf8cb6c 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 @@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -14713,7 +14851,17 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                          // offset += canShowFilterTabsView ? dp(50) : 0;
                      }
                      if (p >= 0) {
-@@ -2969,7 +2974,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -2887,6 +2892,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             SharedConfig.loadProxyList();
+         }
+ 
++        // The reference always lists the Archived row at the top of the inbox.
++        if (hasChatQuickFilters() && SharedConfig.archiveHidden) SharedConfig.toggleArchiveHidden();
++
+         observersGroup = getNotificationCenter().createObserversGroup(this);
+ 
+         if (searchString == null) {
+@@ -2969,7 +2977,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
          getContactsController().loadGlobalPrivacySetting();
  
@@ -14722,7 +14870,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
              getMessagesController().getSavedMessagesController().preloadDialogs(true);
          }
  
-@@ -3287,6 +3292,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3287,6 +3295,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              }
          };
          fragmentSearchField.setPadding(dp(4), dp(4), dp(4), dp(4));
@@ -14738,7 +14886,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          fragmentSearchField.setPivotX(0);
          fragmentSearchField.setPivotY(0);
          if (initialDialogsType == DIALOGS_TYPE_DEFAULT) {
-@@ -3515,9 +3529,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3515,9 +3532,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  logoDrawable = context.getResources().getDrawable(R.drawable.telegram_logo_2).mutate();
                  logoDrawable.setBounds(0, dp(2), logoDrawable.getIntrinsicWidth(), dp(2) + logoDrawable.getIntrinsicHeight());
                  logoDrawable.setColorFilter(getThemedColor(Theme.key_telegram_color_dialogsLogo), PorterDuff.Mode.MULTIPLY);
@@ -14752,7 +14900,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                  updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
              }
              if (folderId == 0) {
-@@ -4209,13 +4224,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4209,13 +4227,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                  }
                                  int canScrollDy = -(view.getTop() - pTop) + viewsH;
                                  if (!rightSlidingDialogContainer.hasFragment() && !(actionBar != null && actionBar.isActionModeShowed())) {
@@ -14768,7 +14916,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                                  }
                                  int positiveDy = Math.abs(dy);
                                  if (canScrollDy < positiveDy) {
-@@ -4578,7 +4593,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4578,7 +4596,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                          if (applyScrollY) {
                              int maxScrollYOffset = getMaxScrollYOffset();
                              if (!(filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && animatorFilterTabsVisible.getValue())) {
@@ -14777,7 +14925,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                              }
                              if (newTranslation < -maxScrollYOffset) {
                                  newTranslation = -maxScrollYOffset;
-@@ -4732,14 +4747,37 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4732,14 +4750,37 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          });
          searchTabsAndFiltersLayout.addView(filtersView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP));
  
@@ -14802,7 +14950,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
 +            newChat.setIconColor(android.graphics.Color.WHITE);
 +            android.graphics.drawable.GradientDrawable disc = new android.graphics.drawable.GradientDrawable();
 +            disc.setColor(com.futoonpay.admin.appearance.ChatLook.accent(FutoonChatAppearance.dark())); disc.setCornerRadius(dp(16));
-+            newChat.setBackground(new android.graphics.drawable.InsetDrawable(disc, dp(8), dp(8), dp(8), dp(8)));
++            newChat.setBackground(new android.graphics.drawable.InsetDrawable(disc, dp(10), dp(10), dp(10), dp(10)));
 +            newChat.setContentDescription("新建聊天");
 +            newChat.setOnClickListener(v -> floatingButton3.performClick());
 +            if (optionsItem != null) {
@@ -14810,7 +14958,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
 +                optionsItem.setIcon(FutoonChatAppearance.icon("more"));
 +                android.graphics.drawable.GradientDrawable moreDisc = new android.graphics.drawable.GradientDrawable();
 +                moreDisc.setColor(com.futoonpay.admin.appearance.ChatLook.field(FutoonChatAppearance.dark())); moreDisc.setCornerRadius(dp(16));
-+                optionsItem.setBackground(new android.graphics.drawable.InsetDrawable(moreDisc, dp(8), dp(8), dp(8), dp(8)));
++                optionsItem.setBackground(new android.graphics.drawable.InsetDrawable(moreDisc, dp(10), dp(10), dp(10), dp(10)));
 +                actionBar.addView(optionsItem, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.BOTTOM, 8, 0, 0, 0));
 +            }
 +        }
@@ -14818,7 +14966,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          floatingButton3.setOnClickListener(v -> {
              if (parentLayout != null && parentLayout.isInPreviewMode()) {
                  finishPreviewFragment();
-@@ -5336,7 +5374,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5336,7 +5377,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
          }
          if (fragmentSearchField != null) {
@@ -14827,7 +14975,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          }
  
  
-@@ -5713,7 +5751,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5713,7 +5754,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  }
  
                  if (actionBarHeightNoSearch < scrollY && scrollY < actionBarHeight) {
@@ -14836,7 +14984,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                      int s = scrollY - actionBarHeightNoSearch;
                      if (s < h / 2) {
                          viewPage.scroller.smoothScrollBy(-s);
-@@ -5751,9 +5789,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5751,9 +5792,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
      private int getMaxScrollYOffset() {
          if (hasStories) {
@@ -14848,7 +14996,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          }
      }
  
-@@ -6847,6 +6885,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6847,6 +6888,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
      }
  
@@ -14869,7 +15017,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
      private void updateFilterTabs(boolean force, boolean animated) {
          if (filterTabsView == null || inPreviewMode || searchIsShowed || (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
              return;
-@@ -6857,7 +6909,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6857,7 +6912,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          final ArrayList<MessagesController.DialogFilter> filters = getMessagesController().getDialogFilters();
          if (filters.size() > 1) {
@@ -14878,7 +15026,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                  boolean animatedUpdateItems = animated;
                  if (filterTabsView.getVisibility() != View.VISIBLE) {
                      animatedUpdateItems = false;
-@@ -7071,7 +7123,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7071,7 +7126,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                          if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                              PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                                          } else {
@@ -14887,7 +15035,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                                          }
                                      }));
                                  }
-@@ -7182,7 +7234,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7182,7 +7237,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0) +
                      (topPanelLayout != null ? topPanelLayout.getHeight() : 0) +
                      (dialogStoriesCell != null && dialogStoriesCellVisible ? (int) ((1f - dialogStoriesCell.getCollapsedProgress()) * dp(DialogStoriesCell.HEIGHT_IN_DP)) : 0) +
@@ -14896,7 +15044,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                  );
              }
  
-@@ -7561,7 +7613,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7561,7 +7616,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (searchViewPager != null) {
                  animators.add(ObjectAnimator.ofFloat(searchViewPager, View.ALPHA, show ? 1.0f : 0.0f));
                  if (hasStories) {
@@ -14905,7 +15053,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                      animators.add(ObjectAnimator.ofFloat(searchViewPager, SEARCH_TRANSLATION_Y, show ? translationY : 0, show ? 0 : translationY));
                  }
                  if (!budget) {
-@@ -8889,7 +8941,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -8889,7 +8944,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              floatingButton3.setImageResource(R.drawable.floating_check);
              floatingButton3.setContentDescription(LocaleController.getString(R.string.Done));
          } else {
@@ -14914,7 +15062,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
              floatingButton3.setContentDescription(LocaleController.getString(R.string.NewMessageTitle));
          }
      }
-@@ -9037,7 +9089,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9037,7 +9092,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  viewPages[i].listView.cancelClickRunnables(true);
              }
          }
@@ -14923,7 +15071,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          float finalTranslateListHeight = translateListHeight;
          actionBarColorAnimator = ValueAnimator.ofFloat(progressToActionMode, 0);
          actionBarColorAnimator.addUpdateListener(valueAnimator -> {
-@@ -9063,7 +9115,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9063,7 +9118,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  invalidateScrollY = true;
                  fixScrollYAfterArchiveOpened = true;
                  fragmentView.invalidate();
@@ -14932,7 +15080,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                  viewPages[0].setTranslationY(0);
                  for (int i = 0; i < viewPages.length; i++) {
                      if (viewPages[i] != null) {
-@@ -10051,7 +10103,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10051,7 +10106,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      viewPages[i].listView.cancelClickRunnables(true);
                  }
              }
@@ -14941,7 +15089,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
              if (translateListHeight != 0) {
                  actionModeAdditionalHeight = (int) translateListHeight;
                  fragmentView.requestLayout();
-@@ -10078,7 +10130,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10078,7 +10133,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      actionBarColorAnimator = null;
                      actionModeAdditionalHeight = 0;
                      actionModeFullyShowed = true;
@@ -14950,7 +15098,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                      viewPages[0].setTranslationY(0);
                      for (int i = 0; i < viewPages.length; i++) {
                          if (viewPages[i] != null) {
-@@ -10350,7 +10402,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10350,7 +10405,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                          PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                      } else {
@@ -14959,7 +15107,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
                      }
                  }));
                  return;
-@@ -10375,9 +10427,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10375,9 +10430,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.READ_MEDIA_IMAGES);
              }
@@ -14970,7 +15118,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
              if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
              }
-@@ -10394,7 +10444,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10394,7 +10447,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          String[] items = permissons.toArray(new String[0]);
          try {
@@ -14979,7 +15127,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          } catch (Exception ignore) {
          }
      }
-@@ -10993,7 +11043,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10993,7 +11046,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
          if (dialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -14999,7 +15147,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
              return messagesController.dialogsServerOnly;
          } else if (dialogsType == DIALOGS_TYPE_ADD_USERS_TO) {
-@@ -14004,7 +14065,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14004,7 +14068,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
      private float getFilterTabsVisibilityFactor(boolean includeSearch) {
          final float factor1 = includeSearch ? (1f - animatorSearchVisible.getFloatValue()) : 1f;
          final float factor2 = 1f - getRightSlidingProgress();
@@ -15008,7 +15156,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
          return factor1 * factor2 * factor3;
      }
  
-@@ -14039,7 +14100,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14039,7 +14103,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
  
          final int maxScrollWithoutSearch = getMaxScrollYOffsetWithoutSearch();
@@ -15017,7 +15165,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
  
          final float actionModeVisible = Math.max(progressToActionMode, animatorActionModeVisible.getFloatValue());
          final float searchFieldVisible = animatorSearchVisible.getFloatValue();
-@@ -14177,7 +14238,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14177,7 +14241,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          final int mainTabTop = mainTabBottom - dp(DialogsActivity.MAIN_TABS_HEIGHT);
  
          final int actionBarHeight = actionBar.getMeasuredHeight()
@@ -15026,7 +15174,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..fc140d10c873245f1d4b5f8e2407d613
              + dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)
              + (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0)
              + (topPanelLayout != null && topPanelLayout.getVisibility() == View.VISIBLE ? topPanelLayout.getSumHeightOfAllVisibleChild() : 0)
-@@ -14434,4 +14495,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14434,4 +14498,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          return true;
      }
  
