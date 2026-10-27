@@ -48,7 +48,7 @@ class NativeChromeRegressionTest {
             root.viewTreeObserver.dispatchOnPreDraw()
             for(i in 0 until root.childCount){val tab=root.getChildAt(i)as NativeTabFixture
                 val label=tab.textView;val icon=tab.imageView
-                assertEquals(10f*app.resources.displayMetrics.scaledDensity,label.textSize,.1f)
+                assertEquals(11f*app.resources.displayMetrics.scaledDensity,label.textSize,.1f)
                 assertTrue("$width/$scale label clipped",label.bottom<=tab.height)
                 assertTrue("$width/$scale icon overlap",icon.bottom<label.top)
                 assertTrue("$width/$scale icon height ${icon.height}",icon.height>=20)

@@ -14,7 +14,7 @@ composer=(src/'Components/ChatActivityEnterView.java').read_text();a=composer.in
 assert 'setBackground(' not in composer[a:b], 'Draw must not allocate or relayout the composer'
 assert 'FutoonQuickReplies' in composer and 'insertFutoon' in composer
 main=(src/'MainTabsActivity.java').read_text();assert 'setOnLongClickListener(this::openAccountSelector)' in main and 'setOnLongClickListener(this::openFoldersSelector)' in main
-assert 'POSITION_CONTACTS = -1' in main and 'TABS_COUNT = 3' in main
+assert 'POSITION_CONTACTS = -1' in main and 'TABS_COUNT = 2' in main
 assert 'setChatAppearance("chat")' in main
 view=(src/'DialogsActivity.java').read_text();assert 'hasChatQuickFilters()' in view and '!onlySelect && folderId == 0 && communityId == 0' in view
 assert 'dialog.unread_count > 0 || dialog.unread_mark' in view and 'chat.megagroup' in view

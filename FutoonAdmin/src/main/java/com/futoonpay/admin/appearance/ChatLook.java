@@ -12,15 +12,15 @@ public final class ChatLook {
     public static int surface(boolean dark) { return dark ? 0xff12181c : 0xffffffff; }
     public static int background(boolean dark) { return dark ? 0xff0a1014 : 0xfff4f4f4; }
     public static int field(boolean dark) { return dark ? 0xff20272b : 0xfff4f4f4; }
-    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xfff5f2eb; }
+    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xfff7f5ef; }
     public static int text(boolean dark) { return dark ? 0xfff7f8fa : 0xff0a0a0a; }
     public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff767779; }
     public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1dab61; }
     public static int accentText(boolean dark) { return dark ? 0xff21c063 : 0xff1b8755; }
     public static int selectedText(boolean dark) { return dark ? 0xffd9fdd3 : 0xff15603e; }
-    public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd0fecf; }
+    public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd8fcd8; }
     public static int incoming(boolean dark) { return dark ? 0xff20272b : 0xffffffff; }
-    public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd9fdd3; }
+    public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd8fcd8; }
     /** Bottom tab bar fill and its top hairline, sampled from the iOS reference (#F8F8F8 / #D6D6D6). */
     public static int tabBar(boolean dark) { return dark ? 0xff12181c : 0xfff8f8f8; }
     public static int tabBorder(boolean dark) { return dark ? 0xff20272b : 0xffd6d6d6; }

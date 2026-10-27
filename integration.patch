@@ -13806,10 +13806,15 @@ index 5b6f2ba2a5658dc944dde8b3aa75a90256a500bf..f833637db64946f2c0407c600d2dd3e9
      }
  
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java
-index 1238632a08d6ebcf76987ad098449209589010e6..f697bf20bd8b42d735be9bea40e3106ab53fafa1 100644
+index 1238632a08d6ebcf76987ad098449209589010e6..d01d53779b7a24d68d13bdc26be313e71c5471e5 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatAvatarContainer.java
-@@ -82,6 +82,10 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+@@ -78,10 +78,14 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+ 
+     public boolean allowDrawStories;
+     private Integer storiesForceState;
+-    private int avatarSizeInDp = 42;
++    private int avatarSizeInDp = 38;
      public BackupImageView avatarImageView;
      private boolean avatarImageIsHidden;
      private SimpleTextView titleTextView;
@@ -13820,6 +13825,15 @@ index 1238632a08d6ebcf76987ad098449209589010e6..f697bf20bd8b42d735be9bea40e3106a
      private AtomicReference<SimpleTextView> titleTextLargerCopyView = new AtomicReference<>();
      private SimpleTextView subtitleTextView;
      private AnimatedTextView animatedSubtitleTextView;
+@@ -262,7 +266,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+             }
+         }
+         avatarImageView.setContentDescription(getString(R.string.AccDescrProfilePicture));
+-        avatarImageView.setRoundRadius(dp(21));
++        avatarImageView.setRoundRadius(dp(18));
+         addView(avatarImageView);
+         if (avatarClickable) {
+             final TLRPC.Chat chat = parentFragment != null ? parentFragment.getCurrentChat() : null;
 @@ -665,6 +669,15 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
      protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
          final int width = MeasureSpec.getSize(widthMeasureSpec);
@@ -13849,6 +13863,15 @@ index 1238632a08d6ebcf76987ad098449209589010e6..f697bf20bd8b42d735be9bea40e3106a
          if (titleTextView != null) {
              titleTextView.setTextSizePx(dp(17.5f));
          }
+@@ -771,7 +790,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+         final int subtitleTop = viewTop + dp(glassMode ? 23.66f : 24);
+ 
+         avatarImageView.layout(1 + leftPadding, 1 + viewTop, 1 + leftPadding + avatarImageView.getMeasuredWidth(), 1 + viewTop + avatarImageView.getMeasuredHeight());
+-        int l = leftPadding + (avatarImageView.getVisibility() == VISIBLE ? dp(glassMode ? 49.66f : 55) : dp(glassMode ? 13 : 1)) + rightAvatarPadding;
++        int l = leftPadding + (avatarImageView.getVisibility() == VISIBLE ? dp(47.5f) : dp(glassMode ? 13 : 1)) + rightAvatarPadding;
+         SimpleTextView titleTextLargerCopyView = this.titleTextLargerCopyView.get();
+         if (getSubtitleTextView().getVisibility() != GONE) {
+             titleTextView.layout(l, viewTop + dp(1.66f) - titleTextView.getPaddingTop(), l + titleTextView.getMeasuredWidth(), viewTop + titleTextView.getTextHeight() + dp(1.66f) - titleTextView.getPaddingTop() + titleTextView.getPaddingBottom());
 @@ -940,6 +959,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
          if (value != null) {
              value = Emoji.replaceEmoji(value, titleTextView.getPaint().getFontMetricsInt(), false);
@@ -13857,6 +13880,15 @@ index 1238632a08d6ebcf76987ad098449209589010e6..f697bf20bd8b42d735be9bea40e3106a
          titleTextView.setText(value);
          rightDrawableIsScam = false;
          if (scam || fake) {
+@@ -1376,7 +1396,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
+         avatarDrawable.setInfo(currentAccount, chat);
+         if (avatarImageView != null) {
+             avatarImageView.setForUserOrChat(chat, avatarDrawable);
+-            avatarImageView.setRoundRadius(ChatObject.isForum(chat) ? dp(ChatObject.hasStories(chat) ? 11 : 16) : dp(21));
++            avatarImageView.setRoundRadius(dp(18));
+         }
+     }
+ 
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/DialogCellTags.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/DialogCellTags.java
 index 887719cdb3a0b712008d665acf5a75dc3d409598..7b44e21cba641bd8eb793289acd1ad9dd72151b8 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/DialogCellTags.java
@@ -14404,7 +14436,7 @@ index 3471788319c163ccc6b8c73873220697f7d3815b..bd28ffdae6d4501f3f670d63f4acae5d
              timestampLayout.addView(timestampTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 9, 0, 0, 0));
              ScaleStateListAnimator.apply(timestampLayout, 0.025f, 1.5f);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java
-index f570f57b749ee535c92796f217d54bb35b89bb28..362c107ffe8c2afc725d8117ff116113eb513f88 100644
+index f570f57b749ee535c92796f217d54bb35b89bb28..b46f0d3bcf28d0df2efe16fa76c532c8191718f3 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java
 @@ -3740,15 +3740,12 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
@@ -14426,6 +14458,24 @@ index f570f57b749ee535c92796f217d54bb35b89bb28..362c107ffe8c2afc725d8117ff116113
              searchTagsList = new SearchTagsList(getContext(), profileActivity, profileActivity.getCurrentAccount(), includeSavedDialogs() ? 0 : dialog_id, resourcesProvider) {
                  @Override
                  protected boolean setFilter(ReactionsLayoutInBubble.VisibleReaction reaction) {
+@@ -3831,7 +3828,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
+     }
+ 
+     protected boolean includeStories() {
+-        return true;
++        return !org.telegram.messenger.BuildVars.FUTOON_LITE;
+     }
+ 
+     protected boolean includeSavedDialogs() {
+@@ -6858,7 +6855,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
+         boolean hasEditBotPreviews = user != null && user.bot && user.bot_has_main_app && user.bot_can_edit;
+         boolean hasBotPreviews = user != null && user.bot && !user.bot_can_edit && (userInfo != null && userInfo.bot_info != null && userInfo.bot_info.has_preview_medias) && !hasEditBotPreviews;
+         boolean hasStories = (DialogObject.isUserDialog(dialog_id) || DialogObject.isChatDialog(dialog_id)) && !DialogObject.isEncryptedDialog(dialog_id) && (userInfo != null && userInfo.stories_pinned_available || info != null && info.stories_pinned_available || isStoriesView()) && includeStories();
+-        boolean hasGifts = giftsContainer != null && (userInfo != null && userInfo.stargifts_count > 0 || info != null && info.stargifts_count > 0);
++        boolean hasGifts = !org.telegram.messenger.BuildVars.FUTOON_LITE && giftsContainer != null && (userInfo != null && userInfo.stargifts_count > 0 || info != null && info.stargifts_count > 0);
+         final TLRPC.ProfileTab main_tab = info != null ? info.main_tab : userInfo != null ? userInfo.main_tab : null;
+         int changed = 0;
+         if (wasReordering != scrollSlidingTextTabStrip.isReordering()) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
 index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef845c59ac6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
