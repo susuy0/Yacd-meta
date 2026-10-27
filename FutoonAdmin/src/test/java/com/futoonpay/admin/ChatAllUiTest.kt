@@ -52,7 +52,7 @@ class ChatAllUiTest {
         val span=StyleSpan(Typeface.BOLD);val value=SpannableString("Telegram ID 5824870757").apply{setSpan(span,0,11,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)}
         title.text="Identity";detail.text=value;row.bindChatRow(title,detail,icon,false);var calls=0;row.setOnClickListener{calls++};layout(row,320);assertEquals(72,title.left)
         icon.visibility=View.GONE;layout(row,320);assertEquals(24,title.left);assertTrue((detail.text as Spanned).getSpans(0,11,StyleSpan::class.java).contains(span));row.performClick();assertEquals(1,calls)
-        detail.text="";layout(row,320);assertEquals(48,row.height);assertEquals(0,detail.height)
+        detail.text="";layout(row,320);assertEquals(45,row.height);assertEquals(0,detail.height)
     }
     @Test fun secondaryNativeLabelsUseTheirActualLineHeightsAtLargeFonts(){
         for(scale in listOf(1f,1.5f,2f)){

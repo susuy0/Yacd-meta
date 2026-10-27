@@ -1285,7 +1285,7 @@ index 63c819b26b3ac191c77b516257c021c90d37f3ba..755f411f779385d4be7ae1d519e28ba9
          <receiver android:name=".ChatsWidgetProvider" android:exported="false">
              <meta-data android:name="android.appwidget.provider"
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
-index 5405be7f611ac6ce7c4b36937043e99ffeb7914e..9f58b8312066cfcb2accd0f96394c5c46049f0ff 100644
+index 5405be7f611ac6ce7c4b36937043e99ffeb7914e..68c4fb9bcb83acabdf208a7640c4813807f3c9e4 100644
 --- a/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/ApplicationLoader.java
 @@ -51,6 +51,7 @@ import java.util.Locale;
@@ -1296,6 +1296,15 @@ index 5405be7f611ac6ce7c4b36937043e99ffeb7914e..9f58b8312066cfcb2accd0f96394c5c4
      public static ApplicationLoader applicationLoaderInstance;
  
      @SuppressLint("StaticFieldLeak")
+@@ -80,7 +81,7 @@ public class ApplicationLoader extends Application {
+ 
+     @Override
+     protected void attachBaseContext(Context base) {
+-        super.attachBaseContext(base);
++        super.attachBaseContext(com.futoonpay.admin.appearance.ChatScale.wrap(base));
+     }
+ 
+     public static ILocationServiceProvider getLocationServiceProvider() {
 @@ -258,6 +259,8 @@ public class ApplicationLoader extends Application {
              if (user != null) {
                  MessagesController.getInstance(a).putUser(user, true);
@@ -10310,12 +10319,18 @@ index 1b75c7d97f2ad65753608fcc2ef081a07a9b7cf2..2999c812deb728a3d6bd2e5a2aa80182
  
      public void setSearchingMentions(boolean value) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java
-index ea48a1b9f3e50dea2114d5eacdc5aeb674287780..6eb7f3e641268204079ef869668c28153b506bd8 100644
+index ea48a1b9f3e50dea2114d5eacdc5aeb674287780..b81ca418ada1315e1466481d62eb24c5be41cb5f 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/BasePermissionsActivity.java
-@@ -38,6 +38,7 @@ public class BasePermissionsActivity extends FragmentActivity {
+@@ -37,7 +37,13 @@ public class BasePermissionsActivity extends FragmentActivity {
+ 
      protected int currentAccount = -1;
  
++    @Override
++    protected void attachBaseContext(android.content.Context newBase) {
++        super.attachBaseContext(com.futoonpay.admin.appearance.ChatScale.wrap(newBase));
++    }
++
      protected boolean checkPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 +        if (org.telegram.messenger.futoon.FutoonMediaPolicy.containsBlocked(permissions)) return true;
          if (grantResults == null) {
@@ -17802,7 +17817,7 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..25f65e1156088e7eaead921b716312d3269ccb4e 100644
+index 693df7877dde165920833faafae227cf60679d29..090a392b3f4f4932337ba46c59cdb6edb02b38c7 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 @@ -175,7 +175,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
@@ -18158,7 +18173,7 @@ index 693df7877dde165920833faafae227cf60679d29..25f65e1156088e7eaead921b716312d3
 -            );
 +            super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
 +                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
-+            setMeasuredDimension(getMeasuredWidth(), Math.max(getMeasuredHeight(), dp(mini ? 48 : twoLines ? 60 : 48)));
++            setMeasuredDimension(getMeasuredWidth(), Math.max(getMeasuredHeight(), dp(mini ? 45 : twoLines ? 60 : 45)));
          }
  
          public static class Background extends Drawable {

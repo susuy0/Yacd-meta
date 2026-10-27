@@ -10,7 +10,7 @@ import android.provider.Settings;
 /** Common native chrome; no conversation, permission or business state is read here. */
 public final class ChatChrome {
     private ChatChrome() {}
-    public static final int TOOLBAR=56, ROW=48, DETAIL_ROW=60, ICON=24, MEDIA_RADIUS=10, MENU_RADIUS=12, DIALOG_RADIUS=24, SHEET_RADIUS=28;
+    public static final int TOOLBAR=56, ROW=45, DETAIL_ROW=60, ICON=24, MEDIA_RADIUS=10, MENU_RADIUS=12, DIALOG_RADIUS=24, SHEET_RADIUS=28;
     public static int dp(Context c,float value){return Math.round(value*c.getResources().getDisplayMetrics().density);}
     public static int galleryColumns(int widthDp){return widthDp>=900?6:widthDp>=600?4:widthDp<300?2:3;}
     public static int galleryTile(int width,int columns,int padding,int gap){return Math.max(1,(width-padding*2-gap*(columns-1))/Math.max(1,columns));}
