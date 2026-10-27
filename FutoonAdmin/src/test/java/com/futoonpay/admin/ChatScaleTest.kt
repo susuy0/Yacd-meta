@@ -5,9 +5,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ChatScaleTest {
-    @Test fun phoneShortSideBecomesThe390PointCanvas() {
-        assertEquals(443, ChatScale.densityDpi(1080, 2.625f))
-        assertEquals(369, ChatScale.densityDpi(900, 2.0f))
+    @Test fun phoneShortSideBecomesThe393PointCanvas() {
+        assertEquals(440, ChatScale.densityDpi(1080, 2.625f))
+        assertEquals(366, ChatScale.densityDpi(900, 2.0f))
     }
 
     @Test fun tabletsAndUnknownSizesKeepTheSystemDensity() {

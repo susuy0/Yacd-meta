@@ -5,11 +5,11 @@ import android.content.res.Configuration;
 import android.util.DisplayMetrics;
 
 /**
- * Scales every dp/sp in the app so the short screen side equals the 390-point canvas of the iOS reference.
+ * Scales every dp/sp in the app so the short screen side equals the 393-point canvas of the iOS reference.
  * One reference point is then exactly one dp on phones, whatever their physical density or width.
  */
 public final class ChatScale {
-    public static final float DESIGN_WIDTH = 390f;
+    public static final float DESIGN_WIDTH = 393f;
     private ChatScale() {}
 
     /** Densities for a short side in pixels; tablets and unknown sizes keep the system density. */

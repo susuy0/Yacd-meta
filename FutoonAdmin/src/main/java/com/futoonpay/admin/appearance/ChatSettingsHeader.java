@@ -15,18 +15,19 @@ public final class ChatSettingsHeader extends FrameLayout {
     private boolean rtl;
     public void setRtl(boolean value) { rtl=value; if(title!=null){ title.setGravity((rtl?Gravity.RIGHT:Gravity.LEFT)|Gravity.CENTER_VERTICAL); subtitle.setGravity((rtl?Gravity.RIGHT:Gravity.LEFT)|Gravity.CENTER_VERTICAL); } requestLayout(); }
     private TextView title, subtitle;
-    public ChatSettingsHeader(Context context) { super(context); setClipChildren(false); card.setColor(ChatLook.surface(false));card.setCornerRadius(dp(10));setBackground(new android.graphics.drawable.InsetDrawable(card,dp(16),dp(4),dp(16),dp(4))); }
+    public ChatSettingsHeader(Context context) { super(context); setClipChildren(false); card.setColor(ChatLook.surface(false));card.setCornerRadius(dp(12));setBackground(new android.graphics.drawable.InsetDrawable(card,dp(16),dp(4),dp(16),dp(4))); }
     public void setDark(boolean dark) {card.setColor(ChatLook.surface(dark));invalidate();}
     private int dp(float value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     public static int heightDp(Context context) {
-        return Math.max(104, 32 + Math.max(64, Math.round(44 * context.getResources().getConfiguration().fontScale + 4)));
+        return Math.max(78, 22 + Math.max(56, Math.round(44 * context.getResources().getConfiguration().fontScale + 4)));
     }
     public void setParts(View avatar, TextView title, TextView subtitle, View action) {
         this.action=action; this.avatar=avatar; this.title=title; this.subtitle=subtitle;
         for(View child:new View[]{avatar,title,subtitle,action}) {
             if(child.getParent()!=this) { if(child.getParent() instanceof ViewGroup)((ViewGroup)child.getParent()).removeView(child);addView(child); }
         }
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP,22); subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP,17);
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP,20); subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP,16);
+        android.graphics.drawable.GradientDrawable disc=new android.graphics.drawable.GradientDrawable();disc.setShape(android.graphics.drawable.GradientDrawable.OVAL);disc.setColor(ChatLook.field(false));action.setBackground(disc);
         title.setIncludeFontPadding(false);subtitle.setIncludeFontPadding(false);
         setRtl(rtl);
         requestLayout();
@@ -35,7 +36,7 @@ public final class ChatSettingsHeader extends FrameLayout {
         int width=MeasureSpec.getSize(widthSpec), height=resolveSize(dp(heightDp(getContext())),heightSpec);
         if(avatar!=null) {
             avatar.measure(MeasureSpec.makeMeasureSpec(dp(56),MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(dp(56),MeasureSpec.EXACTLY));
-            action.measure(MeasureSpec.makeMeasureSpec(dp(56),MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(dp(64),MeasureSpec.EXACTLY));
+            action.measure(MeasureSpec.makeMeasureSpec(dp(36),MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(dp(36),MeasureSpec.EXACTLY));
             int available=Math.max(0,width-dp(180));
             title.measure(MeasureSpec.makeMeasureSpec(available,MeasureSpec.AT_MOST),MeasureSpec.makeMeasureSpec(0,MeasureSpec.UNSPECIFIED));
             subtitle.measure(MeasureSpec.makeMeasureSpec(available,MeasureSpec.AT_MOST),MeasureSpec.makeMeasureSpec(0,MeasureSpec.UNSPECIFIED));
@@ -49,7 +50,7 @@ public final class ChatSettingsHeader extends FrameLayout {
     @Override protected void onLayout(boolean changed,int left,int top,int right,int bottom) {
         if(avatar==null)return;
         place(avatar,dp(32),(getHeight()-avatar.getMeasuredHeight())/2);
-        place(action,getWidth()-dp(72),(getHeight()-action.getMeasuredHeight())/2);
+        place(action,getWidth()-dp(68),(getHeight()-action.getMeasuredHeight())/2);
         int block=title.getMeasuredHeight()+dp(4)+subtitle.getMeasuredHeight(), y=(getHeight()-block)/2;
         place(title,dp(100),y);place(subtitle,dp(100),y+title.getMeasuredHeight()+dp(4));
     }

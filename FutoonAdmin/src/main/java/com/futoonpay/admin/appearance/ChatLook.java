@@ -105,8 +105,8 @@ public final class ChatLook {
             case "key_chats_sentReadCheck": return 0xff53bdeb;
             case "key_chats_verifiedBackground": return accent(dark);
             case "key_chats_verifiedCheck": return 0xffffffff;
-            case "key_chat_serviceBackground": return dark ? 0xff182229 : 0xfff7f4ef;
-            case "key_chat_serviceText": case "key_chat_serviceLink": case "key_chat_serviceIcon": return secondary(dark);
+            case "key_chat_serviceBackground": return dark ? 0xff182229 : 0xffffffff;
+            case "key_chat_serviceText": case "key_chat_serviceLink": case "key_chat_serviceIcon": return text(dark);
         }
         // Preserve destructive/payment/status colors and special media overlays.
         if (key.startsWith("key_windowBackgroundWhiteBlue") || key.startsWith("key_windowBackgroundWhiteGreen") || key.startsWith("key_chat_inSiteName") || key.startsWith("key_chat_outSiteName") || key.startsWith("key_dialogTextBlue")) return accentText(dark);

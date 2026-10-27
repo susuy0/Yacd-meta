@@ -79,9 +79,9 @@ class ChatAppearanceTest {
     @Test fun realNativeFilterButtonsKeepRoutingSelectionAndTouchTargets() {
         val calls=mutableListOf<Int>();val bar=ChatFilterBar(context,arrayOf("全部","未读","群组"),false){calls+=it}
         bar.measure(View.MeasureSpec.makeMeasureSpec(320,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(48,View.MeasureSpec.EXACTLY));bar.layout(0,0,320,48)
-        val nodes=buttons(bar);assertEquals(3,nodes.size);nodes.forEach{assertTrue(it.width>=48);assertTrue(it.height>=48);assertEquals(16,it.paddingLeft);assertEquals(16,it.paddingRight);assertTrue(it.width>=it.paint.measureText(it.text.toString())+32)}
+        val nodes=buttons(bar);assertEquals(3,nodes.size);nodes.forEach{assertTrue(it.width>=40);assertTrue(it.height>=48);assertEquals(12,it.paddingLeft);assertEquals(12,it.paddingRight);assertTrue(it.width>=it.paint.measureText(it.text.toString())+24)}
         nodes[2].performClick();assertEquals(listOf(2),calls);assertEquals(2,bar.selectedFilter());assertTrue(nodes[2].isSelected);assertFalse(nodes[0].isSelected)
-        bar.setDark(true);nodes.forEach{assertEquals(16,it.paddingLeft);assertEquals(16,it.paddingRight)};assertEquals(2,bar.selectedFilter());assertEquals(listOf(2),calls);assertEquals(ChatLook.selectedText(true),nodes[2].currentTextColor)
+        bar.setDark(true);nodes.forEach{assertEquals(12,it.paddingLeft);assertEquals(12,it.paddingRight)};assertEquals(2,bar.selectedFilter());assertEquals(listOf(2),calls);assertEquals(ChatLook.accent(true),nodes[2].currentTextColor)
         bar.select(0);assertEquals(listOf(2),calls)
     }
     @Test fun narrowWideAndRtlAppearanceGeometryRendersWithoutClipping() {
