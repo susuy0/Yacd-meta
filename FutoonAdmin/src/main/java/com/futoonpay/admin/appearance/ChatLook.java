@@ -142,7 +142,7 @@ public final class ChatLook {
             this.dark=dark; ink.setShader(new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT));
             // The reference PNG is an opaque grayscale mask, not an RGBA image.
             // Map its luminance to coverage; SRC_IN alone would tint the whole rectangle.
-            int tint=dark?0x1affffff:0xffeae0d3;
+            int tint=dark?0x1affffff:0xffe9e4d9;
             float coverage=Color.alpha(tint)/255f;
             ink.setColorFilter(new ColorMatrixColorFilter(new ColorMatrix(new float[]{
                 0,0,0,0,Color.red(tint), 0,0,0,0,Color.green(tint), 0,0,0,0,Color.blue(tint),
