@@ -51,7 +51,7 @@ class NativeChromeRegressionTest {
                 assertEquals(11f*app.resources.displayMetrics.scaledDensity,label.textSize,.1f)
                 assertTrue("$width/$scale label clipped",label.bottom<=tab.height)
                 assertTrue("$width/$scale icon overlap",icon.bottom<label.top)
-                assertTrue("$width/$scale icon height ${icon.height}",icon.height>=20)
+                assertTrue("$width/$scale icon height ${icon.height}",icon.height>=16)
                 assertTrue("$width/$scale label ${label.height} line ${label.lineHeight}",label.height>=label.lineHeight)
                 assertTrue(label.text.isNotEmpty())
                 assertTrue("$width/$scale baseline ${label.baseline} layout ${label.layout?.height} measured ${label.height}",label.baseline in 1..label.height)

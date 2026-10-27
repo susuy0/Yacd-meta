@@ -15773,10 +15773,10 @@ index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a29
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93e26191635bbf566a958c63531e278bc514b7e1
+index 0000000000000000000000000000000000000000..9a4c24a5b9c13cae30d881567918533c0518e612
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java
-@@ -0,0 +1,404 @@
+@@ -0,0 +1,408 @@
 +package org.telegram.ui;
 +
 +import static org.telegram.messenger.AndroidUtilities.dp;
@@ -15900,6 +15900,10 @@ index 0000000000000000000000000000000000000000..93e26191635bbf566a958c63531e278b
 +        actionBar.centerTitle();
 +        actionBar.setBackgroundColor(page);
 +        actionBar.setTitleColor(ChatLook.text(dark));
++        if (actionBar.getTitleTextView() != null) {
++            actionBar.getTitleTextView().setTextSize(17);
++            actionBar.getTitleTextView().setTypeface(AndroidUtilities.bold());
++        }
 +        actionBar.setItemsColor(ChatLook.text(dark), false);
 +        actionBar.setCastShadows(false);
 +        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {

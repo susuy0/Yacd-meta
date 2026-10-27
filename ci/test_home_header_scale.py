@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess,sys,tempfile
 s=(Path(sys.argv[1])/'TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java').read_text()
 start=s.index('private int getChatSearchHeight()');end=s.index('\n',start)
-method=s[start:end].replace('com.futoonpay.admin.appearance.ChatInboxHeader','Header')
+method=s[start:end].replace('com.futoonpay.admin.appearance.ChatInboxHeader','Header').replace('folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE','false')
 code='''public class HeaderScaleTest {
  static class Configuration {float fontScale;Configuration(float f){fontScale=f;}}
  static class Resources {Configuration c;Resources(float f){c=new Configuration(f);}Configuration getConfiguration(){return c;}}
