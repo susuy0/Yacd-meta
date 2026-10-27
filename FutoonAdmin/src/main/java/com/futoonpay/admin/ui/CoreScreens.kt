@@ -1218,21 +1218,17 @@ internal fun MoreScreen(onLogout: () -> Unit) {
             ModuleLink("支付黑名单", "blacklist", Icons.Default.Block),
             ModuleLink("5 日无流水商户", "inactive", Icons.Default.Groups),
         ),
-        "支付与分账" to listOf(
+        "支付与通道" to listOf(
             ModuleLink("支付通道", "channels", Icons.Default.AddBusiness),
             ModuleLink("支付方式", "payment_types", Icons.Default.Payments),
             ModuleLink("通道轮询", "rolls", Icons.Default.SwapHoriz),
             ModuleLink("通道监测", "channel_monitor", Icons.Default.Assessment),
             ModuleLink("中转代理", "proxies", Icons.Default.AddBusiness),
-            ModuleLink("分账接收方", "profit_receivers", Icons.Default.Share),
-            ModuleLink("分账记录", "profit_orders", Icons.Default.ReceiptLong),
-            ModuleLink("企业付款", "transfer", Icons.Default.AccountBalance),
         ),
         "系统管理" to listOf(
             ModuleLink("公告管理", "announcements", Icons.Default.Campaign),
             ModuleLink("支付与结算设置", "payment_settings", Icons.Default.Settings),
             ModuleLink("站点与账号设置", "site_settings", Icons.Default.AdminPanelSettings),
-            ModuleLink("公众号与证书", "integrations", Icons.Default.AddBusiness),
             ModuleLink("登录日志", "login_logs", Icons.Default.History),
         ),
     )

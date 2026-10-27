@@ -24,7 +24,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
     private val forms=linkedMapOf<String,FormState>()
     private val actions=linkedMapOf<String,ActionState>()
     private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor")
-    private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","profit_receivers","profit_orders","transfer","announcements","payment_settings","site_settings","integrations","login_logs")
+    private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","announcements","payment_settings","site_settings","login_logs")
     fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
     @Throws(Exception::class) fun execute(op: String,p: JSONObject): JSONObject = runBlocking {
         require(supports(op)) { "不支持的业务操作" }

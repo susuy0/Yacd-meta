@@ -153,7 +153,7 @@ internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onS
         } }
         item { SectionLabel("运营与系统") }
         item { PayCard {
-            val additional = listOf("商户统计" to "merchant_stats", "5 日无流水商户" to "inactive", "分账接收方" to "profit_receivers", "分账记录" to "profit_orders", "企业付款" to "transfer", "公告管理" to "announcements", "支付与结算设置" to "payment_settings", "站点与账号设置" to "site_settings", "公众号与证书" to "integrations", "登录日志" to "login_logs")
+            val additional = listOf("商户统计" to "merchant_stats", "5 日无流水商户" to "inactive", "公告管理" to "announcements", "支付与结算设置" to "payment_settings", "站点与账号设置" to "site_settings", "登录日志" to "login_logs")
             additional.forEachIndexed { index, (label, id) ->
                 MenuRow(label, "原生管理", Icons.Outlined.Settings, { onModule(id) })
                 if (index < additional.lastIndex) HorizontalDivider(color = Line)

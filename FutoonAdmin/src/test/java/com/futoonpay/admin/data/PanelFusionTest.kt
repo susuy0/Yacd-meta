@@ -24,7 +24,7 @@ class PanelFusionTest {
             else 200 to """<title>站点设置</title><form action="set.php?mod=site" method="post"><input type="hidden" name="token" value="fresh"><label>站点名称<input name="sitename" value="old"></label></form>"""
         }))
         val doc=engine.execute("module.read",JSONObject().put("module","site_settings"))
-        assertEquals(5,doc.getJSONArray("sections").length())
+        assertEquals(2,doc.getJSONArray("sections").length())
         val form=doc.getJSONArray("forms").getJSONObject(0)
         assertFalse(form.getJSONArray("fields").toString().contains("fresh"))
         val result=engine.execute("form.save",JSONObject().put("ticket",form.getString("ticket")).put("values",JSONObject().put("sitename","new").put("token","forged")))

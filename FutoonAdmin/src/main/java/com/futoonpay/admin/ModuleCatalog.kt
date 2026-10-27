@@ -44,28 +44,15 @@ internal object ModuleCatalog {
         ModuleDefinition("rolls", "通道轮询", "通道路由与轮询规则", docs(ModulePage("轮询规则", "pay_roll.php"))),
         ModuleDefinition("channel_monitor", "通道监测", "可用率与通道健康状态", docs(ModulePage("通道监测", "pay_channel_monitor.php"))),
         ModuleDefinition("proxies", "中转代理", "代理节点、状态与连接配置", docs(ModulePage("中转代理", "proxy.php"))),
-        ModuleDefinition("profit_receivers", "分账接收方", "接收方账户与关系管理", docs(ModulePage("分账接收方", "ps_receiver.php"))),
-        ModuleDefinition("profit_orders", "分账记录", "分账订单、状态与结果", ajax(
-            "ajax_profitsharing.php?act=orderList", "ps_order.php", "trade_no",
-            listOf("trade_no", "rid", "money", "addtime", "endtime", "status", "result"),
-            "trade_no" to "订单号", "rid" to "接收方", "money" to "金额", "addtime" to "创建时间", "endtime" to "完成时间", "status" to "状态", "result" to "处理结果",
-            searchField = "trade_no",
-        )),
-        ModuleDefinition("transfer", "企业付款", "付款任务、收款方与处理结果", docs(ModulePage("企业付款", "transfer.php"))),
+        // Retired with the 2026-10-26 feature reduction: profit sharing, enterprise transfer, mail/SMS,
+        // site templates, cron configuration, WeChat official account/OAuth/customer service and certificate pages.
         ModuleDefinition("announcements", "公告管理", "站内公告与启停状态", docs(ModulePage("公告", "gonggao.php"))),
         ModuleDefinition("payment_settings", "支付与结算设置", "资金业务全局参数", docs(
             ModulePage("支付", "set.php?mod=pay"), ModulePage("结算", "set.php?mod=settle"),
-            ModulePage("预付款", "set.php?mod=prepayment"), ModulePage("企业付款", "set.php?mod=transfer"),
+            ModulePage("预付款", "set.php?mod=prepayment"),
         )),
-        ModuleDefinition("site_settings", "站点与账号设置", "站点外观、邮件、任务与管理员", docs(
-            ModulePage("站点", "set.php?mod=site"), ModulePage("模板", "set.php?mod=template"),
-            ModulePage("邮件", "set.php?mod=mail"), ModulePage("定时任务", "set.php?mod=cron"),
-            ModulePage("管理员", "set.php?mod=account"),
-        )),
-        ModuleDefinition("integrations", "公众号与证书", "微信与证书集成", docs(
-            ModulePage("微信公众号", "pay_weixin.php"),
-            ModulePage("微信 OAuth", "pay_weixin.php?mod=oauth"), ModulePage("证书", "certificate.php"),
-            ModulePage("微信客服", "set_wxkf.php"),
+        ModuleDefinition("site_settings", "站点与账号设置", "站点信息与管理员账号", docs(
+            ModulePage("站点", "set.php?mod=site"), ModulePage("管理员", "set.php?mod=account"),
         )),
         ModuleDefinition("login_logs", "登录日志", "管理员与商户登录记录", ajax(
             "ajax_user.php?act=logList", "log.php", "id",
