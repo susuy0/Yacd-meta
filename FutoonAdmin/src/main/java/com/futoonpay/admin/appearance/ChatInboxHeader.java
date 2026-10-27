@@ -30,6 +30,7 @@ public class ChatInboxHeader extends FrameLayout {
         if(largeTitle==null){largeTitle=new TextView(getContext());largeTitle.setTextSize(34);{Typeface face=ChatFonts.bold();largeTitle.setTypeface(face!=null?face:Typeface.create("sans-serif",Typeface.BOLD));}largeTitle.setIncludeFontPadding(false);largeTitle.setSingleLine(true);largeTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);largeTitle.setGravity(Gravity.CENTER_VERTICAL);largeTitle.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);addView(largeTitle,new LayoutParams(-1,-2));}
         largeTitle.setText(title);requestLayout();
     }
+    public void setLargeTitleAlpha(float alpha){if(largeTitle!=null)largeTitle.setAlpha(alpha);}
     public void setHeaderDark(boolean dark){if(largeTitle!=null)largeTitle.setTextColor(ChatLook.text(dark));}
     public int searchTop(){return largeTitle==null?getPaddingTop():editor.getTop();}
     public int searchBottom(){return largeTitle==null?getHeight()-getPaddingBottom():editor.getBottom();}

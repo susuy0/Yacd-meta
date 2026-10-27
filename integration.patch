@@ -14027,7 +14027,7 @@ index ce63f668e24b30be0dab697e6a1573e7351a9243..feffb594cd9af1bc88a97eb71735390b
                  Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)
              ));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
-index 9274278b46bdfd9e151a421afbce85e06b6d3599..f0d24242565bfbabbd4ffebb9b50b357c653cb45 100644
+index 9274278b46bdfd9e151a421afbce85e06b6d3599..4a52a7079f8122c76d2202b725a554983a5147d7 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/FragmentSearchField.java
 @@ -49,7 +49,7 @@ import me.vkryl.android.animator.BoolAnimator;
@@ -14057,7 +14057,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..f0d24242565bfbabbd4ffebb9b50b357
          addView(searchIcon, LayoutHelper.createFrame(24, 24, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 12, 0, 12, 0));
  
          additionalIconsLayout = new LinearLayout(context);
-@@ -182,21 +182,54 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+@@ -182,21 +182,55 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
          additionalIconsLayout.addView(icon);
      }
  
@@ -14092,6 +14092,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..f0d24242565bfbabbd4ffebb9b50b357
 +    public void setChatFiltersAlpha(float alpha) {
 +        if (chatFilters != null) {
 +            chatFilters.setAlpha(alpha);
++            setLargeTitleAlpha(alpha);
 +            chatFilters.setVisibility(alpha <= 0.01f ? View.INVISIBLE : View.VISIBLE);
 +        }
 +    }
@@ -14117,7 +14118,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..f0d24242565bfbabbd4ffebb9b50b357
              blurredBackgroundDrawable.setBounds(
                      getPaddingLeft() - dp(4),
                      getPaddingTop() - dp(4),
-@@ -242,7 +275,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+@@ -242,7 +276,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
  
      private void checkUi_editTextPaddings() {
          final int filtersWidth = (int) animatorSearchFiltersWidth.getFactor() + dp(6); //searchFilterLayout.getWidth();
@@ -14126,7 +14127,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..f0d24242565bfbabbd4ffebb9b50b357
          final int pEnd = dp(48) + additionalIconsLayout.getMeasuredWidth();
  
          final int pLeft = LocaleController.isRTL ? pEnd : pStart;
-@@ -273,10 +306,13 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
+@@ -273,10 +307,13 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
  
      @Override
      public void updateColors() {
@@ -14899,7 +14900,7 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..9f3051d6afd10f34ea52623e625c594217565e9b 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..908616bc8ef2cca2b3097e0125e8e3b55f84d167 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 @@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -15349,7 +15350,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..9f3051d6afd10f34ea52623e625c5942
                  super.setTranslationY(translationY);
                  if (searchTabsAndFiltersLayout != null) {
 -                    searchTabsAndFiltersLayout.setTranslationY(translationY);
-+                    searchTabsAndFiltersLayout.setTranslationY(translationY + (hasChatQuickFilters() && org.telegram.messenger.BuildVars.FUTOON_LITE ? dp(53) * animatorSearchVisible.getFloatValue() : 0f));
++                    searchTabsAndFiltersLayout.setTranslationY(translationY + (hasChatQuickFilters() && org.telegram.messenger.BuildVars.FUTOON_LITE ? dp(20) * animatorSearchVisible.getFloatValue() : 0f));
                  }
              }
  
