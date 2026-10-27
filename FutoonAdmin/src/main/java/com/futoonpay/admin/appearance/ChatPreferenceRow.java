@@ -44,7 +44,7 @@ public class ChatPreferenceRow extends FrameLayout {
         detail.measure(MeasureSpec.makeMeasureSpec(available,MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(0,MeasureSpec.UNSPECIFIED));
         if(icon!=null)icon.measure(MeasureSpec.makeMeasureSpec(dp(24),MeasureSpec.EXACTLY),MeasureSpec.makeMeasureSpec(dp(24),MeasureSpec.EXACTLY));
         int textHeight=title.getMeasuredHeight()+(hasDetail()?dp(4)+detail.getMeasuredHeight():0);
-        setMeasuredDimension(width,resolveSize(Math.max(dp(hasDetail()?72:56),textHeight+dp(32)),hs));
+        setMeasuredDimension(width,resolveSize(Math.max(dp(hasDetail()?ChatChrome.DETAIL_ROW:ChatChrome.ROW),textHeight+dp(24)),hs));
     }
     private void place(View v,int x,int y){if(rtl)x=getMeasuredWidth()-x-v.getMeasuredWidth();v.layout(x,y,x+v.getMeasuredWidth(),y+v.getMeasuredHeight());}
     @Override protected void onLayout(boolean changed,int l,int t,int r,int b){

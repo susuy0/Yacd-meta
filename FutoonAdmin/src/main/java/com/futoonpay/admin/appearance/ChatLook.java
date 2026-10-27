@@ -21,6 +21,9 @@ public final class ChatLook {
     public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd0fecf; }
     public static int incoming(boolean dark) { return dark ? 0xff20272b : 0xffffffff; }
     public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd9fdd3; }
+    /** Bottom tab bar fill and its top hairline, sampled from the iOS reference (#F8F8F8 / #D6D6D6). */
+    public static int tabBar(boolean dark) { return dark ? 0xff12181c : 0xfff8f8f8; }
+    public static int tabBorder(boolean dark) { return dark ? 0xff20272b : 0xffd6d6d6; }
     public static Integer color(String key, boolean dark) {
         switch (key) {
             case "key_checkboxSquareUnchecked": case "key_radioBackground": return secondary(dark);
@@ -93,7 +96,7 @@ public final class ChatLook {
             case "key_chat_inReplyMessageText": case "key_chat_outReplyMessageText": return secondary(dark);
             case "key_chat_inReplyMediaMessageText": case "key_chat_outReplyMediaMessageText": return selectedText(dark);
             case "key_dialogInputField": case "key_chat_messagePanelVoiceBackground": return field(dark);
-            case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff20272b : 0xfff1f2f4;
+            case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff20272b : 0xffe4e4e4;
             case "key_listSelector": case "key_actionBarDefaultSelector": return dark ? 0x1fe9edef : 0x12111b21;
             case "key_chat_selectedBackground": return dark ? 0x664a8f7c : 0x5580d8a0;
             // Chat-list accents: WhatsApp uses green for unread time/typing/draft, gray for media labels, blue only for read ticks.

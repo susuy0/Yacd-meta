@@ -40,7 +40,7 @@ class ChatAllUiTest {
             val c=app.createConfigurationContext(Configuration(app.resources.configuration).apply{fontScale=scale})
             val title=TextView(c).apply{text="Telegram ID";setTextColor(ChatLook.text(false));setSingleLine()};val detail=TextView(c).apply{text="5824870757\nMerchant identity · preserved native detail";setTextColor(ChatLook.secondary(false));maxLines=4};val icon=View(c)
             val row=ChatPreferenceRow(c).apply{setBackgroundColor(ChatLook.surface(false))};listOf(icon,title,detail).forEach(row::addView);row.bindChatRow(title,detail,icon,rtl);activity.get().setContentView(row);layout(row,width)
-            assertTrue(row.height>=72);assertEquals(24,icon.width);assertEquals(24,icon.height)
+            assertTrue(row.height>=60);assertEquals(24,icon.width);assertEquals(24,icon.height)
             for(v in listOf(title,detail,icon)){assertTrue(v.left>=0);assertTrue(v.right<=width);assertTrue(v.top>=0);assertTrue(v.bottom<=row.height)}
             assertTrue(title.bottom<=detail.top);assertTrue(detail.height>=detail.lineHeight*2)
             if(rtl)assertTrue(detail.right<=icon.left)else assertTrue(icon.right<=detail.left)
@@ -52,7 +52,7 @@ class ChatAllUiTest {
         val span=StyleSpan(Typeface.BOLD);val value=SpannableString("Telegram ID 5824870757").apply{setSpan(span,0,11,Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)}
         title.text="Identity";detail.text=value;row.bindChatRow(title,detail,icon,false);var calls=0;row.setOnClickListener{calls++};layout(row,320);assertEquals(72,title.left)
         icon.visibility=View.GONE;layout(row,320);assertEquals(24,title.left);assertTrue((detail.text as Spanned).getSpans(0,11,StyleSpan::class.java).contains(span));row.performClick();assertEquals(1,calls)
-        detail.text="";layout(row,320);assertEquals(56,row.height);assertEquals(0,detail.height)
+        detail.text="";layout(row,320);assertEquals(48,row.height);assertEquals(0,detail.height)
     }
     @Test fun secondaryNativeLabelsUseTheirActualLineHeightsAtLargeFonts(){
         for(scale in listOf(1f,1.5f,2f)){

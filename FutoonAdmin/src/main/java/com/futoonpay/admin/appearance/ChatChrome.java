@@ -10,11 +10,11 @@ import android.provider.Settings;
 /** Common native chrome; no conversation, permission or business state is read here. */
 public final class ChatChrome {
     private ChatChrome() {}
-    public static final int TOOLBAR=56, ROW=56, DETAIL_ROW=72, ICON=24, MEDIA_RADIUS=10, MENU_RADIUS=12, DIALOG_RADIUS=24, SHEET_RADIUS=28;
+    public static final int TOOLBAR=56, ROW=48, DETAIL_ROW=60, ICON=24, MEDIA_RADIUS=10, MENU_RADIUS=12, DIALOG_RADIUS=24, SHEET_RADIUS=28;
     public static int dp(Context c,float value){return Math.round(value*c.getResources().getDisplayMetrics().density);}
     public static int galleryColumns(int widthDp){return widthDp>=900?6:widthDp>=600?4:widthDp<300?2:3;}
     public static int galleryTile(int width,int columns,int padding,int gap){return Math.max(1,(width-padding*2-gap*(columns-1))/Math.max(1,columns));}
-    public static int rowHeight(Context c,boolean detail){float scale=Math.max(1,c.getResources().getConfiguration().fontScale);return dp(c,Math.max(detail?DETAIL_ROW:ROW,32+(detail?40:24)*scale));}
+    public static int rowHeight(Context c,boolean detail){float scale=Math.max(1,c.getResources().getConfiguration().fontScale);return dp(c,Math.max(detail?DETAIL_ROW:ROW,24+(detail?36:24)*scale));}
     public static GradientDrawable surface(Context c,boolean dark,int radius){GradientDrawable d=new GradientDrawable();d.setColor(ChatLook.surface(dark));d.setCornerRadius(dp(c,radius));return d;}
     public static RippleDrawable action(Context c,boolean dark,int radius){GradientDrawable mask=new GradientDrawable();mask.setColor(Color.WHITE);mask.setCornerRadius(dp(c,radius));return new RippleDrawable(ColorStateList.valueOf(dark?0x1fffffff:0x16000000),surface(c,dark,radius),mask);}
     public interface NightMode { boolean dark(); }
