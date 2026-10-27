@@ -96,6 +96,12 @@ public final class ChatLook {
             case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff20272b : 0xfff1f2f4;
             case "key_listSelector": case "key_actionBarDefaultSelector": return dark ? 0x1fe9edef : 0x12111b21;
             case "key_chat_selectedBackground": return dark ? 0x664a8f7c : 0x5580d8a0;
+            // Chat-list accents: WhatsApp uses green for unread time/typing/draft, gray for media labels, blue only for read ticks.
+            case "key_telegram_color_text": case "key_chats_actionMessage": case "key_chats_draft": return accentText(dark);
+            case "key_chats_attachMessage": case "key_chats_sentCheck": case "key_chats_sentClock": case "key_chats_pinnedIcon": case "key_chats_muteIcon": return secondary(dark);
+            case "key_chats_sentReadCheck": return 0xff53bdeb;
+            case "key_chats_verifiedBackground": return accent(dark);
+            case "key_chats_verifiedCheck": return 0xffffffff;
             case "key_chat_serviceBackground": return dark ? 0xff182229 : 0xfff7f4ef;
             case "key_chat_serviceText": case "key_chat_serviceLink": case "key_chat_serviceIcon": return secondary(dark);
         }

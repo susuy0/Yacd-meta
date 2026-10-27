@@ -175,7 +175,7 @@ index 53e0fa790c74e8f13cb7e20ccc5f3e30f0a6c8c7..e8412b0b4038857570b68e5fbb059af1
      <uses-permission android:name="android.permission.READ_CALL_LOG" />
      <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
 diff --git a/TMessagesProj/jni/CMakeLists.txt b/TMessagesProj/jni/CMakeLists.txt
-index f1fd720..83114e3 100644
+index f1fd7204e59ac3bb7aa993635ee68d159bf18692..83114e3baef8b7adc479e6e4719b1816c0af7f9c 100644
 --- a/TMessagesProj/jni/CMakeLists.txt
 +++ b/TMessagesProj/jni/CMakeLists.txt
 @@ -89,12 +89,12 @@ set_target_properties(libvpx PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY
@@ -257,7 +257,7 @@ index f1fd720..83114e3 100644
          yuv
          avutil
 diff --git a/TMessagesProj/jni/audio.c b/TMessagesProj/jni/audio.c
-index c681e61..fe3c356 100644
+index c681e61ee2c932e9b5f33adcb98f1db86ee4adcc..fe3c356750ba7ce44b51d6aaccacc0e5df1fbda7 100644
 --- a/TMessagesProj/jni/audio.c
 +++ b/TMessagesProj/jni/audio.c
 @@ -10,530 +10,7 @@
@@ -998,7 +998,7 @@ index c681e61..fe3c356 100644
 -}
 \ No newline at end of file
 diff --git a/TMessagesProj/jni/gifvideo.cpp b/TMessagesProj/jni/gifvideo.cpp
-index f0e0dfe..6d25887 100644
+index f0e0dfe2caf386004b2ce18fa059bfeb373024f7..6d25887c75871bdf3318d3f074be86ccdc96ca0f 100644
 --- a/TMessagesProj/jni/gifvideo.cpp
 +++ b/TMessagesProj/jni/gifvideo.cpp
 @@ -10,8 +10,6 @@
@@ -1011,7 +1011,7 @@ index f0e0dfe..6d25887 100644
  #include "gifvideo/sws_context_holder.h"
  #include "gifvideo/video_frame_reader.h"
 diff --git a/TMessagesProj/jni/jni.c b/TMessagesProj/jni/jni.c
-index 464c692..0e711c6 100644
+index 464c692110b18b3ac16835c5e453fdaeae328d4c..0e711c6f8a9c69e5005c0456e05fa65587ee9224 100644
 --- a/TMessagesProj/jni/jni.c
 +++ b/TMessagesProj/jni/jni.c
 @@ -14,7 +14,6 @@
@@ -10519,7 +10519,7 @@ index 6b45401b4769aee4534c5954deea17322947441d..116e6eb8f67edc37d365c113c943a924
                          currentReplyPhoto = photoSize;
                          if (photoImageLocation != null) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
-index 0fae7fdda99102496683e4c1cf866df7cf156a93..2568bed4df91ac06d1c01e4cd216cd0cba71a234 100644
+index 0fae7fdda99102496683e4c1cf866df7cf156a93..95cae800213d077ecfd06ab8d215bc1ecef51e3d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Cells/DialogCell.java
 @@ -167,9 +167,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
@@ -10694,7 +10694,16 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..2568bed4df91ac06d1c01e4cd216cd0c
              drawUnmute = false;
          } else {
              int oldUnreadCount = unreadCount;
-@@ -4182,7 +4189,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -3706,8 +3713,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+                 avatarRadius = 1;
+             } else if (drawCommunityAvatar) {
+                 avatarRadius = dp(12);
+-            } else if (chat != null && chat.forum && currentDialogFolderId == 0 && !useFromUserAsAvatar || !isSavedDialog && user != null && user.self && MessagesController.getInstance(currentAccount).savedViewAsChats) {
+-                avatarRadius = dp(16);
+             } else {
+                 avatarRadius = dp(28);
+             }
+@@ -4182,7 +4187,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
  
                      int a = timeTextPaint.getAlpha();
                      timeTextPaint.setAlpha(27);
@@ -10703,7 +10712,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..2568bed4df91ac06d1c01e4cd216cd0c
                      timeTextPaint.setAlpha(a);
  
                      pd.draw(canvas);
-@@ -4343,7 +4350,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4343,7 +4348,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                  }
  
                  if (lastTopicMessageUnread && topMessageTopicEndIndex != topMessageTopicStartIndex && (dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER1 || dialogsType == DialogsActivity.DIALOGS_TYPE_FOLDER2)) {
@@ -10712,7 +10721,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..2568bed4df91ac06d1c01e4cd216cd0c
                      if (!buttonCreated) {
                          canvasButton.rewind();
                          if (topMessageTopicEndIndex != topMessageTopicStartIndex && topMessageTopicEndIndex > 0) {
-@@ -4820,7 +4827,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -4820,7 +4825,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              canvas.restore();
          }
  
@@ -10721,7 +10730,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..2568bed4df91ac06d1c01e4cd216cd0c
              int left;
              if (fullSeparator || currentDialogFolderId != 0 && archiveHidden && !fullSeparator2 || fullSeparator2 && !archiveHidden) {
                  left = 0;
-@@ -5269,7 +5276,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
+@@ -5269,7 +5274,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
      }
  
      private void drawCounter(Canvas canvas, boolean drawCounterMuted, int countTop, int countLeftLocal, int countLeftOld, float globalScale, boolean outline) {
@@ -14801,10 +14810,10 @@ index f7c1592923f81072f03f0341d469b24cb1571656..e1bab116a8873adb6df8582806641205
              noTag.setGravity(Gravity.RIGHT);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..42cb9b4dd5858898859a6351ec083f97e7ba0e20
+index 0000000000000000000000000000000000000000..ccf6941bcaed1f7b5ca97f4223b42606ccbba7f5
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatAppearance.java
-@@ -0,0 +1,276 @@
+@@ -0,0 +1,287 @@
 +package org.telegram.ui;
 +
 +import android.graphics.drawable.Drawable;
@@ -14911,6 +14920,17 @@ index 0000000000000000000000000000000000000000..42cb9b4dd5858898859a6351ec083f97
 +            put("key_chats_actionBackground", Theme.key_chats_actionBackground);
 +            put("key_chats_actionIcon", Theme.key_chats_actionIcon);
 +            put("key_chats_date", Theme.key_chats_date);
++            put("key_telegram_color_text", Theme.key_telegram_color_text);
++            put("key_chats_actionMessage", Theme.key_chats_actionMessage);
++            put("key_chats_attachMessage", Theme.key_chats_attachMessage);
++            put("key_chats_draft", Theme.key_chats_draft);
++            put("key_chats_sentCheck", Theme.key_chats_sentCheck);
++            put("key_chats_sentReadCheck", Theme.key_chats_sentReadCheck);
++            put("key_chats_sentClock", Theme.key_chats_sentClock);
++            put("key_chats_pinnedIcon", Theme.key_chats_pinnedIcon);
++            put("key_chats_muteIcon", Theme.key_chats_muteIcon);
++            put("key_chats_verifiedBackground", Theme.key_chats_verifiedBackground);
++            put("key_chats_verifiedCheck", Theme.key_chats_verifiedCheck);
 +            put("key_chats_message", Theme.key_chats_message);
 +            put("key_chats_message_threeLines", Theme.key_chats_message_threeLines);
 +            put("key_chats_name", Theme.key_chats_name);
@@ -17756,7 +17776,7 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda9cf46296 100644
+index 693df7877dde165920833faafae227cf60679d29..9bebc3f6638747ffd159403df55f6de3b41207d8 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 @@ -175,7 +175,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
@@ -17863,7 +17883,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          ScaleStateListAnimator.apply(cameraButton);
  
          titleView = new TextView(context);
-@@ -462,12 +470,28 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -462,12 +470,30 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          topView.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 16, 138.333f - 12, 16, 0));
  
          subtitleView = new TextView(context);
@@ -17885,6 +17905,8 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
 +        });
 +        ((com.futoonpay.admin.appearance.ChatSettingsHeader) topView).setParts(avatarContainer, titleView, subtitleView, qrButton);
 +        cameraImageView.setVisibility(View.GONE);
++        // The capture entry was removed, so the badge is an empty green disc; the avatar itself stays tappable.
++        cameraButton.setVisibility(View.GONE);
 +        topView.setOnClickListener(v -> {
 +            Bundle args = new Bundle(); args.putLong("user_id", getUserConfig().getClientUserId());
 +            presentFragment(new ProfileActivity(args));
@@ -17893,7 +17915,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          versionView = new TextView(context);
          versionView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
          versionView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText4));
-@@ -490,6 +514,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -490,6 +516,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          navigationBar = new View(context);
  //        fragmentView.addView(navigationBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 0, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
  
@@ -17901,7 +17923,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          updateActionBarVisible(true, false);
          listView.adapter.update(false);
          setInfo();
-@@ -502,6 +527,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -502,6 +529,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
  
      @Override
      public void onFragmentDestroy() {
@@ -17909,7 +17931,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          super.onFragmentDestroy();
  
          getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
-@@ -561,6 +587,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -561,6 +589,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          final int navigationBarColor = getThemedColor(Theme.key_windowBackgroundWhite);
          navigationBar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { Theme.multAlpha(navigationBarColor, 0.0f), navigationBarColor }));
  
@@ -17918,7 +17940,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          actionBarBackground.invalidate();
          listView.invalidate();
      }
-@@ -580,50 +608,32 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -580,50 +610,32 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          updateActionBarVisible(false, true);
      }
      private void updateActionBarVisible(boolean force, boolean animated) {
@@ -17985,7 +18007,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
  
          accountNumbers.clear();
          for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-@@ -698,6 +708,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -698,6 +710,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          }
  
          items.add(SettingCell.Factory.of(1, IconBackgroundColors.BLUE.top, IconBackgroundColors.BLUE.bottom, R.drawable.settings_account, getString(R.string.SettingsAccount), getString(R.string.SettingsAccountInfo)));
@@ -17993,7 +18015,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          items.add(SettingCell.Factory.of(2, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_chat, getString(R.string.SettingsChat), getString(R.string.SettingsChatInfo)));
          items.add(SettingCell.Factory.of(3, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_privacy, getString(R.string.SettingsPrivacySecurity), getString(R.string.SettingsPrivacySecurityInfo)));
          items.add(SettingCell.Factory.of(5, IconBackgroundColors.RED.top, IconBackgroundColors.RED.bottom, R.drawable.settings_sounds, getString(R.string.SettingsNotifications), getString(R.string.SettingsNotificationsInfo)));
-@@ -817,6 +828,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -817,6 +830,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              return;
          }
          switch (item.id) {
@@ -18003,7 +18025,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
              case 1:
                  presentSettingFragment(new UserInfoActivity());
                  break;
-@@ -972,7 +986,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -972,7 +988,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          final Insets systemInsets = AndroidUtilities.getDefaultWindowInsets(insets, false);
          navigationBarHeight = systemInsets.bottom;
          final int statusBarHeight = systemInsets.top;
@@ -18012,7 +18034,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
          return WindowInsetsCompat.CONSUMED;
      }
  
-@@ -1167,7 +1181,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1167,7 +1183,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              setOrientation(HORIZONTAL);
  
              iconLayout = new FrameLayout(context);
@@ -18021,7 +18043,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
  
              iconView = new ImageView(context);
              iconView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-@@ -1177,24 +1191,26 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1177,24 +1193,26 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              textLayout.setOrientation(VERTICAL);
  
              titleView = new TextView(context);
@@ -18056,7 +18078,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
              updateColors();
          }
  
-@@ -1203,6 +1219,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1203,6 +1221,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
              subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, resourcesProvider));
              valueView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
@@ -18064,7 +18086,7 @@ index 693df7877dde165920833faafae227cf60679d29..4de1b74fb3943e64db5f5338204a9cda
              iconBackground.setDrawBorder(hasBackground && (resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark()));
          }
  
-@@ -1235,10 +1252,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1235,10 +1254,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
  
          @Override
          protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -19934,7 +19956,7 @@ index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f3
  }
  repositories {
 diff --git a/gradle.properties b/gradle.properties
-index 55d530f04eceaa33faa42b235a441f289255dbee..e8558e23fe1ceff71c74e3175e0d4c450088fb0b 100644
+index 55d530f04eceaa33faa42b235a441f289255dbee..5f6ecd00cad4532af51fbd35bbafd3c6a9d28376 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -13,9 +13,9 @@
