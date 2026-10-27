@@ -1,7 +1,7 @@
 name: VineChat Android
 on:
   push:
-    branches: [main, master, native-startup-validation]
+    branches: [main, master, native-startup-validation, "claude/**"]
     paths: [integration.patch, "FutoonAdmin/**", "ci/**", ".github/workflows/android.yml"]
   workflow_dispatch:
     inputs:
