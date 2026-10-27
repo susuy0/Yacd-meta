@@ -12705,7 +12705,7 @@ index 88fe6a16845b615376d66c4e3dfa512d56e652ea..e44f701772efd6c9eafc7aded3e22a54
          }
          String fileName = FileLoader.getDocumentFileName(messageObject.getDocument());
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
-index a8f9973061553dce80d45a1c16984e7ff8145312..ee89c4b649f8e8cae2e0267246b6bb1ea872f2bb 100644
+index a8f9973061553dce80d45a1c16984e7ff8145312..6f63bd96b08253144a9ed100f343a0e1ac205a18 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java
 @@ -637,6 +637,7 @@ public class ChatActivityEnterView extends FrameLayout implements
@@ -12937,6 +12937,24 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..ee89c4b649f8e8cae2e0267246b6bb1e
  
          richDraftPreview = new RichMessageLayout.PreviewView(getContext(), currentAccount, resourcesProvider);
          richDraftPreview.setAllowActions(false);
+@@ -6077,7 +6162,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+ 
+     private boolean shownAiButton;
+     private void showAiButton(boolean show_) {
+-        final boolean show = (show_ || richDraftActive) && parentFragment != null && !parentFragment.isSecretChat();
++        final boolean show = !org.telegram.messenger.BuildVars.FUTOON_LITE && (show_ || richDraftActive) && parentFragment != null && !parentFragment.isSecretChat();
+ 
+         if (shownAiButton == show) return;
+         if (show) {
+@@ -6130,7 +6215,7 @@ public class ChatActivityEnterView extends FrameLayout implements
+ 
+     private boolean shownRichButton;
+     private void showRichButton(boolean show_) {
+-        final boolean show = (richDraftActive || show_) && parentFragment != null && !parentFragment.isSecretChat() && editingMessageObject == null && MessagesController.getInstance(currentAccount).richEditorAvailable();
++        final boolean show = !org.telegram.messenger.BuildVars.FUTOON_LITE && (richDraftActive || show_) && parentFragment != null && !parentFragment.isSecretChat() && editingMessageObject == null && MessagesController.getInstance(currentAccount).richEditorAvailable();
+ 
+         if (shownRichButton == show) return;
+         shownRichButton = show;
 @@ -6468,7 +6553,7 @@ public class ChatActivityEnterView extends FrameLayout implements
          }
      }
@@ -14966,7 +14984,7 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..5245c299ac430caf5bea1b999da0cd62298a95f3 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fddf3dbe8b 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 @@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -15372,7 +15390,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..5245c299ac430caf5bea1b999da0cd62
 +                button.setOnClickListener(v -> performSelectedDialogsAction(selectedDialogs, actionId, true, false));
 +                futoonSelectionBar.addView(button, new LinearLayout.LayoutParams(0, LayoutHelper.MATCH_PARENT, 1f));
 +            }
-+            ((ViewGroup) fragmentView).addView(futoonSelectionBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 52, Gravity.BOTTOM, 0, 0, 0, 56));
++            ((ViewGroup) fragmentView).addView(futoonSelectionBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 52, Gravity.BOTTOM, 0, 0, 0, 100));
 +        }
 +        futoonSelectionBar.setVisibility(View.VISIBLE);
 +        futoonSelectionBar.bringToFront();
