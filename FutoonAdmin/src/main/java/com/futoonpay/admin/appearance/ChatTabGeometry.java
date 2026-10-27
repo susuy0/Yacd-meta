@@ -7,7 +7,7 @@ import android.widget.TextView;
 
 /** Measures the label before placing it; the native host owns the click and badge. */
 public final class ChatTabGeometry {
-    public static final float LABEL_SP = 10f;
+    public static final float LABEL_SP = 11f;
     private ChatTabGeometry() {}
 
     public static void prepare(View icon, TextView label, int width, int height) {

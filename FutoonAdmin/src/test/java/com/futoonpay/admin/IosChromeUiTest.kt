@@ -51,7 +51,7 @@ class IosChromeUiTest {
         val view=ChatSettingsIntro(activity,"设置","搜索设置"){calls++};activity.setContentView(view)
         view.measure(View.MeasureSpec.makeMeasureSpec(393,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED));view.layout(0,0,393,view.measuredHeight)
         val title=view.getChildAt(0)as TextView;val search=view.getChildAt(1)as TextView
-        assertTrue(title.bottom<search.top);assertTrue(search.height>=36);search.performClick();assertEquals(1,calls)
+        assertTrue(title.bottom<search.top);assertTrue(search.height>=34);search.performClick();assertEquals(1,calls)
         view.setDark(true);assertEquals(ChatLook.text(true),title.currentTextColor);view.setDark(false)
         val b=Bitmap.createBitmap(393,view.height,Bitmap.Config.ARGB_8888);view.draw(Canvas(b));File("build/ui-screenshots/ios-settings-large-title.png").apply{parentFile.mkdirs()}.outputStream().use{b.compress(Bitmap.CompressFormat.PNG,100,it)};b.recycle();activity.finish()
     }

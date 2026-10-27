@@ -17324,15 +17324,16 @@ index fd968804eb422b343d9da54876d710193e2e1e23..225364b8257cd561c4aa2e5c648bb92a
              textView.setGravity(Gravity.CENTER);
              topView.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 16, 152, 16, 0));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
-index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c3565715839e981ef 100644
+index 8f1a10be39797dcaa3b15fd19a514651d43960c3..406d8f570bc02326d7f9e6f541e6da689b47cc8d 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/MainTabsActivity.java
-@@ -90,11 +90,11 @@ import me.vkryl.android.animator.FactorAnimator;
+@@ -90,11 +90,12 @@ import me.vkryl.android.animator.FactorAnimator;
  
  public class MainTabsActivity extends ViewPagerActivity implements NotificationCenter.NotificationCenterDelegate, FactorAnimator.Target {
  
 -    public static final int TABS_COUNT = 4;
-+    public static final int TABS_COUNT = 3;
++    // The reference's tab bar has only Chats and Settings once unsupported tabs are removed.
++    public static final int TABS_COUNT = 2;
      private static final int POSITION_CHATS = 0;
 -    private static final int POSITION_CONTACTS = 1;
 -    private static final int POSITION_CALLS_OR_SETTINGS = 2;
@@ -17343,7 +17344,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
  
      private static final int INDEX_CHATS = 0;
      private static final int INDEX_CONTACTS = 1;
-@@ -103,7 +103,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -103,7 +104,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      private static final int INDEX_PROFILE = 4;
  
      private static int indexToPosition(int index) {
@@ -17352,7 +17353,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
      }
  
      private static final int ANIMATOR_ID_TABS_VISIBLE = 0;
-@@ -116,6 +116,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -116,6 +117,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
  
      private UpdateLayoutWrapper updateLayoutWrapper;
      private FrameLayout tabsViewWrapper;
@@ -17360,7 +17361,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
      private MainTabsLayout tabsView;
      private BlurredBackgroundDrawable tabsViewBackground;
      private View fadeView;
-@@ -308,27 +309,25 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -308,27 +310,25 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
  
          tabsView = new MainTabsLayout(context, resourceProvider);
          tabsView.setClipChildren(false);
@@ -17394,16 +17395,16 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
  
              final int position = indexToPosition(index);
              tabs[index].setOnClickListener(v -> {
-@@ -349,7 +348,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -349,7 +349,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
              });
  
              tabsView.addView(tabs[index]);
 -            tabsView.setViewVisible(view, true, false);
-+            tabsView.setViewVisible(view, index != INDEX_CONTACTS && index != INDEX_CALLS, false);
++            tabsView.setViewVisible(view, index != INDEX_CONTACTS && index != INDEX_CALLS && index != INDEX_PROFILE, false);
          }
          checkUi_callTabVisible(getUserConfig().showCallsTab, false);
  
-@@ -366,7 +365,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -366,7 +366,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
          tabsViewBackground = iBlur3FactoryGlass.create(tabsView, BlurredBackgroundProviderImpl.mainTabs(resourceProvider));
          tabsViewBackground.setRadius(dp(DialogsActivity.MAIN_TABS_HEIGHT / 2f));
          tabsViewBackground.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN - 0.334f));
@@ -17412,7 +17413,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
  
          BlurredBackgroundDrawableViewFactory iBlur3FactoryFade = new BlurredBackgroundDrawableViewFactory(iBlur3SourceColor);
          iBlur3FactoryFade.setSourceRootView(viewPositionWatcher, contentView);
-@@ -379,8 +378,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -379,8 +379,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
          contentView.addView(fadeView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 0, Gravity.BOTTOM));
  
          tabsViewWrapper = new FrameLayout(context);
@@ -17426,7 +17427,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
          tabsViewWrapper.setClipToPadding(false);
          contentView.addView(tabsViewWrapper, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM));
  
-@@ -412,50 +416,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -412,50 +417,11 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      }
  
      public boolean openContactsSelector(View anchor) {
@@ -17479,7 +17480,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
      }
  
      private Integer pendingFolderId;
-@@ -807,19 +772,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -807,19 +773,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
  
      @Override
      protected BaseFragment createBaseFragmentAt(int position) {
@@ -17500,7 +17501,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
              Bundle args = new Bundle();
              args.putBoolean("hasMainTabs", true);
              return new SettingsActivity(args);
-@@ -851,12 +804,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -851,12 +805,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      public void selectTab(int position, boolean animated) {
          for (int a = 0; a < tabs.length; a++) {
              GlassTabView tab = tabs[a];
@@ -17515,7 +17516,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
              final int position = indexToPosition(index);
              final float visibility = Math.max(0, 1f - Math.abs(position - animatedPosition));
              tabs[index].setGestureSelectedOverride(visibility, allow);
-@@ -1087,9 +1042,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -1087,9 +1043,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
      }
  
      private void checkUi_callTabVisible(boolean callTabsVisible, boolean animated) {
@@ -17526,7 +17527,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
          }
      }
  
-@@ -1216,6 +1171,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -1216,6 +1172,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
          blur3_updateFadeColors();
          if (tabsViewBackground != null) {
              tabsViewBackground.updateColors();
@@ -17536,7 +17537,7 @@ index 8f1a10be39797dcaa3b15fd19a514651d43960c3..33dc24b3a02e103522c01c8c35657158
          }
          blur3_invalidateBlur();
          if (fadeView != null) {
-@@ -1226,6 +1184,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
+@@ -1226,6 +1185,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
          }
          if (tabs != null) {
              for (GlassTabView tabView : tabs) {

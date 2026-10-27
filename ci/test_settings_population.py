@@ -26,7 +26,7 @@ public class SettingsPopulationTest {
  static class R {static class string {static int Settings;}}
  static class ActionBar {static int getCurrentActionBarHeight(){return 44;}}
  static class FutoonChatAppearance {static boolean dark(){return false;}}
- static class ChatSettingsIntro {ChatSettingsIntro(Object c,String l,String h,Runnable r){}void setDark(boolean d){}}
+ static class ChatSettingsIntro {ChatSettingsIntro(Object c,String l,String h,Runnable r){}void setDark(boolean d){}static int heightDp(Object c){return 100;}}
  static class ChatSettingsHeader {void setDark(boolean d){}static int heightDp(Object c){return 100;}}
  static class UItem {Object view;UItem(Object v){view=v;}static UItem asCustom(Object v){return new UItem(v);}static UItem asCustomShadow(Object v,int h){return new UItem(v);}static UItem asSpace(int h){return new UItem(null);}}
  static class SearchItem {boolean showing;boolean isSearchFieldVisible2(){return showing;}void toggleSearch(boolean b){showing=b;}}
