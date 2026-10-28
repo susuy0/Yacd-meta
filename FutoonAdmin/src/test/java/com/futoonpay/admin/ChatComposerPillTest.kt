@@ -25,7 +25,8 @@ class ChatComposerPillTest {
     @Test fun extraTextLinesGrowThePillUpwardOnly() {
         val one = rect(68f)
         val two = rect(90f)
-        assertEquals(one.bottom, two.bottom, 0.01f)
+        // both frames are bottom aligned, so the gap under the pill must not change
+        assertEquals(68f * density - one.bottom, 90f * density - two.bottom, 0.01f)
         assertEquals(22f * density, two.height() - one.height(), 0.01f)
     }
 }
