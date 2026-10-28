@@ -645,7 +645,17 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
     var actionError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(searchSignal) { if (searchSignal > 0) advanced = true }
     LaunchedEffect(state.settlementSearch) { filters = state.settlementSearch }
+    var quick by rememberSaveable { mutableStateOf("") }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            OutlinedTextField(
+                quick, { quick = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(18.dp)) },
+                placeholder = { Text("商户号 / 结算批次 / 收款账号", fontSize = 14.sp) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { viewModel.loadSettlements(1, com.futoonpay.admin.data.SmartSearch.settlements(quick, state.settlementSearch)) }),
+            )
+        }
         item { StatusFilters(listOf(-1 to "全部", 0 to "待结算", 2 to "正在结算", 1 to "已完成", 3 to "结算失败"), state.settlementSearch.status) { viewModel.loadSettlements(1, state.settlementSearch.copy(status = it)) } }
         item { Row(verticalAlignment = Alignment.CenterVertically) {
             Text("共 ${state.settlementTotal} 笔 · 服务器查询", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
@@ -812,7 +822,17 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
         status = state.merchantSearch.status
     }
     fun search(page: Int = 1) = viewModel.loadMerchants(page, MerchantSearchFilters(column, query, groupId, status))
+    var quickMerchant by rememberSaveable { mutableStateOf("") }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            OutlinedTextField(
+                quickMerchant, { quickMerchant = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(18.dp)) },
+                placeholder = { Text("商户号 / Telegram ID / 邮箱 / 域名 / 备注", fontSize = 14.sp) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { viewModel.loadMerchants(1, com.futoonpay.admin.data.SmartSearch.merchants(quickMerchant, state.merchantSearch)) }),
+            )
+        }
         item { Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${state.merchantTotal} 个商户 · 服务器查询", color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
             com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Text("完整搜索") }

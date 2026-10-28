@@ -37,3 +37,31 @@ class SmartSearchTest {
         assertEquals("", cleared.value); assertEquals("", cleared.merchantId); assertEquals(1, cleared.status)
     }
 }
+
+class SmartSearchListsTest {
+    private val m = com.futoonpay.admin.data.MerchantSearchFilters(groupId = "21", status = "status_1")
+    private val s = com.futoonpay.admin.data.SettlementSearchFilters(status = 0, settlementType = "4")
+
+    @Test fun merchantsPickTheRightColumn() {
+        assertEquals("uid" to "2402", SmartSearch.merchants("2402", m).let { it.column to it.value })
+        assertEquals("telegram_id", SmartSearch.merchants("6562055782", m).column)
+        assertEquals("email", SmartSearch.merchants("a@b.com", m).column)
+        assertEquals("key", SmartSearch.merchants("0123456789abcdef0123456789abcdef", m).column)
+        assertEquals("account", SmartSearch.merchants("T" + "A".repeat(33), m).column)
+        assertEquals("url", SmartSearch.merchants("api.sakura-cat.club", m).column)
+        assertEquals("username", SmartSearch.merchants("健力宝", m).column)
+    }
+
+    @Test fun merchantFiltersSurviveAndBlankClears() {
+        val f = SmartSearch.merchants("2402", m)
+        assertEquals("21", f.groupId); assertEquals("status_1", f.status)
+        assertEquals("", SmartSearch.merchants(" ", f).value)
+    }
+
+    @Test fun settlementsUseMerchantIdOrValue() {
+        assertEquals("2402", SmartSearch.settlements("2402", s).merchantId)
+        val v = SmartSearch.settlements("TXabc", s)
+        assertEquals("TXabc", v.value); assertEquals("", v.merchantId)
+        assertEquals(0, v.status); assertEquals("4", v.settlementType)
+    }
+}
