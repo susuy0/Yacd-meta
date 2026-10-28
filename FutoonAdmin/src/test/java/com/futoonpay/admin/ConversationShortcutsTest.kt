@@ -44,6 +44,7 @@ class ConversationShortcutsTest {
             assertEquals("12",store.channels(key()).single().id)
         }
     }
+    @org.junit.Before fun freshMerchantCache(){ChannelShortcutModel.clearMerchantCache()}
     private fun bridge(handler:(String)->String)=object:FixtureBridge(){
         override fun accountScope()="test:772"
         override fun address()="https://fixture.example/admin/"

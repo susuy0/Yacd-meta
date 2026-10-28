@@ -70,7 +70,8 @@ internal data class ChannelShortcutState(val scope: ChannelScope? = null, val la
 
 /** One controller per live chat; merchant identity and group channel associations are independent. */
 internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBridge) {
-    private companion object {
+    internal companion object {
+        fun clearMerchantCache() = merchantCache.clear()
         /** Merchant lookups are a network round trip per chat open; keep successful answers for a minute. */
         const val MERCHANT_TTL_MS = 60_000L
         val merchantCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, String>>()

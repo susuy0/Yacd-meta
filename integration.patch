@@ -21441,10 +21441,10 @@ index 0000000000000000000000000000000000000000..d753d446be8a49151cb0c8b8d1308a67
 +提醒、盯单通知和独立工作台不在本次范围内；Telegram 原有消息通知及推送保留。
 diff --git a/Tools/futoon/run-tests.sh b/Tools/futoon/run-tests.sh
 new file mode 100644
-index 0000000000000000000000000000000000000000..69f253afda72bef484096248152313155ab68312
+index 0000000000000000000000000000000000000000..b176c0b210167688df6d0bb7b145601e19c5cb40
 --- /dev/null
 +++ b/Tools/futoon/run-tests.sh
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,40 @@
 +#!/usr/bin/env bash
 +set -euo pipefail
 +project_root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -21473,6 +21473,7 @@ index 0000000000000000000000000000000000000000..69f253afda72bef48409624815231315
 +    raise SystemExit('jsoup dependency checksum mismatch')
 +PY
 +javac -cp "$json_jar:$jsoup_jar" -d "$test_dir/classes" \
++    "$project_root/FutoonAdmin/src/main/java/com/futoonpay/admin/BackendRoutes.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonQuery.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonIdentity.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java" \

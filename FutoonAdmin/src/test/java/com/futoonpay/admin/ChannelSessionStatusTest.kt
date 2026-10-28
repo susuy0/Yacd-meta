@@ -14,6 +14,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[35],application=Application::class)
 class ChannelSessionStatusTest {
+    @org.junit.Before fun freshMerchantCache(){ChannelShortcutModel.clearMerchantCache()}
     private class Session:PanelSession {
         var raw="[]";var active=true
         override fun isActive()=active

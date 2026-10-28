@@ -24,6 +24,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk=[35],application=Application::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ChannelShortcutRegressionTest {
+    @org.junit.Before fun freshMerchantCache(){ChannelShortcutModel.clearMerchantCache()}
     private val context get()=androidx.test.core.app.ApplicationProvider.getApplicationContext<Application>()
     private fun key(account:String="0:915",backend:String="https://pay.example/admin/",dialog:Long=-100,topic:Long=1)=ChannelScope(account,backend,dialog,topic)
     @Test fun topicAccountEnvironmentAndChatAssociationsAreIsolated(){
