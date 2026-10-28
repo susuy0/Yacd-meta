@@ -93,7 +93,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val showChannels = linked || !merchantRow || (state.scope?.dialog ?: 0) < 0
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
         val channelHeight = if (!showChannels) 0 else if (!linked || compact) 48 else if (large) (48 * scale).toInt() + 47 else 75
-        val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) 48 else if (large) (48 * scale).toInt() + 47 else 75
+        val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() + 47 else 75
         val height = if (!state.visible) 0 else 1 + channelHeight + merchantHeight
         visibility = if (height == 0) GONE else VISIBLE
         if (lastHeight != dp(height)) { lastHeight = dp(height); host.heightChanged(lastHeight) }
