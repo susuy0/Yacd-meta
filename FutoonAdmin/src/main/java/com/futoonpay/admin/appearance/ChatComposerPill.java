@@ -7,37 +7,45 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.view.View;
 
 /**
- * The composer's white pill. Measured on device: the host field frame is 68dp tall for one line (48dp control
- * row plus 10dp above and below). The pill is 32dp, sits on the same centre line as the plus and send buttons
- * (8dp above the frame bottom) and grows upward by whatever the frame gains for extra text lines.
+ * The composer's white pill. Its vertical extent is the text field's own box: the field is 32dp for one line and
+ * sits 8dp above the bottom edge, so the pill's centre is 24dp above the bottom, the same centre line as the 48dp
+ * plus and send buttons. Extra lines grow the field, and with it the pill, upward.
  */
 public final class ChatComposerPill extends Drawable {
-    public static final float ONE_LINE_FRAME_DP = 68f, PILL_DP = 32f, BOTTOM_GAP_DP = 8f;
+    public static final float PILL_DP = 32f, BOTTOM_GAP_DP = 8f;
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG), stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final float density;
+    private View source;
     private final RectF rect = new RectF();
 
-    public ChatComposerPill(int fillColor, int strokeColor, float density) {
+    public ChatComposerPill(int fillColor, int strokeColor, float density, View source) {
         this.density = density;
+        this.source = source;
         fill.setColor(fillColor);
         stroke.setColor(strokeColor);
         stroke.setStyle(Paint.Style.STROKE);
         stroke.setStrokeWidth(Math.max(1f, density * 0.5f));
     }
 
-    /** Pill bounds inside a frame, in pixels; pure so it can be unit tested. */
-    public static void pillRect(float frameLeft, float frameTop, float frameRight, float frameBottom, float density, RectF out) {
-        float extra = Math.max(0f, (frameBottom - frameTop) - ONE_LINE_FRAME_DP * density);
-        float bottom = frameBottom - BOTTOM_GAP_DP * density;
-        out.set(frameLeft, bottom - PILL_DP * density - extra, frameRight, bottom);
+    public void setSource(View view) { source = view; invalidateSelf(); }
+
+    /** Pill bounds in pixels from the field's top and bottom; pure so it can be unit tested. */
+    public static void pillRect(float left, float right, float fieldTop, float fieldBottom, float density, RectF out) {
+        float height = Math.max(PILL_DP * density, fieldBottom - fieldTop);
+        out.set(left, fieldBottom - height, right, fieldBottom);
     }
 
     @Override public void draw(Canvas canvas) {
         Rect b = getBounds();
-        pillRect(b.left, b.top, b.right, b.bottom, density, rect);
-        float r = Math.min(rect.height() / 2f, PILL_DP * density / 2f * 1.0f);
+        if (source != null && source.getHeight() > 0 && source.getBottom() > 0) {
+            pillRect(b.left, b.right, source.getTop(), source.getBottom(), density, rect);
+        } else {
+            rect.set(b.left, b.bottom - (BOTTOM_GAP_DP + PILL_DP) * density, b.right, b.bottom - BOTTOM_GAP_DP * density);
+        }
+        float r = Math.min(rect.height(), PILL_DP * density) / 2f;
         r = Math.max(r, PILL_DP * density / 2f);
         canvas.drawRoundRect(rect, r, r, fill);
         rect.inset(stroke.getStrokeWidth() / 2f, stroke.getStrokeWidth() / 2f);
