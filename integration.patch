@@ -15054,7 +15054,7 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fddf3dbe8b 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac74503d0a 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 @@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -15576,7 +15576,19 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
          } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
              return messagesController.dialogsServerOnly;
          } else if (dialogsType == DIALOGS_TYPE_ADD_USERS_TO) {
-@@ -12964,7 +13089,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -12751,8 +12876,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+         }
+         boolean onlySelfStories = !isArchive() && getStoriesController().hasOnlySelfStories();
+         boolean newVisibility;
+-        if (communityId != 0) {
++        if (communityId != 0 || org.telegram.messenger.BuildVars.FUTOON_LITE && hasChatQuickFilters()) {
++            // The reference has no stories strip; it would also swap the header for an avatar and a "Telegram" title.
+             newVisibility = false;
++            onlySelfStories = false;
+         } else if (isArchive()) {
+             newVisibility = !getStoriesController().getHiddenList().isEmpty();
+         } else {
+@@ -12964,7 +13091,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              public void setTranslationY(float translationY) {
                  super.setTranslationY(translationY);
                  if (searchTabsAndFiltersLayout != null) {
@@ -15585,7 +15597,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
                  }
              }
  
-@@ -13934,7 +14059,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -13934,7 +14061,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
      private void checkUi_searchFiltersVisibility() {
          if (searchTabsAndFiltersLayout != null) {
@@ -15594,7 +15606,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
              final float factor1 = animatorSearchVisible.getFloatValue();
              final float factor = factor0 * factor1;
              final float s = lerp(0.98f, 1f, factor);
-@@ -13994,7 +14119,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -13994,7 +14121,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              final int bottom = AndroidUtilities.navigationBarHeight;
              final int top = dp(ADDITIONAL_LIST_HEIGHT_DP)
                  + actionBar.getMeasuredHeight()
@@ -15603,7 +15615,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
                  + (topPanelLayout != null ? (int) topPanelLayout.getAnimatedHeightWithPadding(dp(7)) : 0);
  
              searchViewPager.setPagesPadding(top, bottom, doNotRequestLayout);
-@@ -14004,7 +14129,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14004,7 +14131,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
      private float getFilterTabsVisibilityFactor(boolean includeSearch) {
          final float factor1 = includeSearch ? (1f - animatorSearchVisible.getFloatValue()) : 1f;
          final float factor2 = 1f - getRightSlidingProgress();
@@ -15612,7 +15624,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
          return factor1 * factor2 * factor3;
      }
  
-@@ -14039,7 +14164,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14039,7 +14166,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
  
          final int maxScrollWithoutSearch = getMaxScrollYOffsetWithoutSearch();
@@ -15621,7 +15633,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
  
          final float actionModeVisible = Math.max(progressToActionMode, animatorActionModeVisible.getFloatValue());
          final float searchFieldVisible = animatorSearchVisible.getFloatValue();
-@@ -14177,7 +14302,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14177,7 +14304,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          final int mainTabTop = mainTabBottom - dp(DialogsActivity.MAIN_TABS_HEIGHT);
  
          final int actionBarHeight = actionBar.getMeasuredHeight()
@@ -15630,7 +15642,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..864577fc19efafd557d8029d471578fd
              + dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)
              + (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0)
              + (topPanelLayout != null && topPanelLayout.getVisibility() == View.VISIBLE ? topPanelLayout.getSumHeightOfAllVisibleChild() : 0)
-@@ -14434,4 +14559,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14434,4 +14561,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          return true;
      }
  
