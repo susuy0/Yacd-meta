@@ -667,7 +667,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
     }
     detail?.let { row -> PaySheet("结算 #${row.id}", { detail = null }) {
         LazyColumn(Modifier.heightIn(max = 580.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { DetailBlock("结算信息", listOf("状态" to settlementStatusLabel(row.status), "商户" to "${row.username} · UID ${row.merchantId}", "申请金额" to money(row.amount), "实际金额" to money(row.actualAmount), "USDT" to row.usdtAmount, "汇率" to row.usdtRate)) }
+            item { DetailBlock("结算信息", listOf("状态" to settlementStatusLabel(row.status), "商户" to "${row.username} · UID ${row.merchantId}", "申请金额" to money(row.amount), "实际金额" to money(row.actualAmount), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.chain, "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
             item { DetailBlock("收款资料", listOf("结算方式" to row.chain.ifBlank { row.payType }, "账号 / 地址" to row.account, "申请时间" to row.createdAt, "完成时间" to row.completedAt, "处理结果" to row.result)) }
             items(settlementActions(row)) { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
         }
@@ -1107,6 +1107,10 @@ internal fun MerchantDetailDialog(
                             "推荐人" to merchant.recommenderId,
                             "分成比例" to merchant.recommenderPercent.takeIf(String::isNotBlank)?.let { "$it%" }.orEmpty(),
                             "网站域名" to merchant.website, "创建时间" to merchant.createdAt,
+                            "Bot 绑定时间" to merchant.botBindTime,
+                            "满结预设" to if (merchant.fullSettlement) listOf(merchant.fullMoney, merchant.fullChain, merchant.fullAddress).filter(String::isNotBlank).joinToString(" · ").ifBlank { "已开启" } else "",
+                            "每日结算" to if (merchant.dailySettle) "已开启" else "",
+                            "等级" to merchant.level, "锁定系数" to merchant.lockedCoefficient,
                         ),
                     )
                 }

@@ -86,6 +86,13 @@ data class SettlementSummary(
     val result: String,
     val currency: String = "CNY",
     val fee: String = "",
+    /** Fields added by the 2026-10 backend: transfer, dispatch and confirmation state of a settlement. */
+    val transferStatus: String = "",
+    val transferResult: String = "",
+    val transferDate: String = "",
+    val dispatchState: String = "",
+    val confirmationAttempts: String = "",
+    val confirmationResult: String = "",
 )
 
 data class MerchantSummary(
@@ -106,6 +113,15 @@ data class MerchantSummary(
     val recommenderId: String = "",
     val recommenderPercent: String = "",
     val balances: Map<String, String> = emptyMap(),
+    /** Fields added by the 2026-10 backend: Bot binding time, full-settlement preset and daily settlement. */
+    val botBindTime: String = "",
+    val fullSettlement: Boolean = false,
+    val fullMoney: String = "",
+    val fullChain: String = "",
+    val fullAddress: String = "",
+    val dailySettle: Boolean = false,
+    val level: String = "",
+    val lockedCoefficient: String = "",
 ) {
     val paymentEnabled: Boolean get() = paymentStatus == 1
     val settlementEnabled: Boolean get() = settlementStatus == 1

@@ -287,6 +287,9 @@ class FutoonRepository(
                 status = row.intValue("status"), automatic = row.boolFlag("auto"),
                 fullSettlement = row.boolFlag("is_full"), result = row.text("result"),
                 currency = row.text("currency").ifBlank { "CNY" }, fee = row.text("fee"),
+                transferStatus = row.text("transfer_status"), transferResult = row.text("transfer_result"), transferDate = row.text("transfer_date"),
+                dispatchState = row.text("settlement_dispatch_state"), confirmationAttempts = row.text("confirmation_attempts"),
+                confirmationResult = row.text("confirmation_result"),
             )
         }
     }

@@ -18,6 +18,8 @@ internal fun JSONObject.toMerchantSummary() = MerchantSummary(
     createdAt = text("addtime"), status = intValue("status"), paymentStatus = intValue("pay"), settlementStatus = intValue("settle"),
     account = text("account"), remark = text("username"), inviteCode = text("invite_code"),
     recommenderId = text("recommender_id"), recommenderPercent = text("recommender_percent"),
+    botBindTime = text("bind_time"), fullSettlement = boolFlag("full"), fullMoney = text("full_money"), fullChain = text("full_chain"),
+    fullAddress = text("full_address"), dailySettle = boolFlag("daily_settle_on"), level = text("level"), lockedCoefficient = text("locked_coefficient"),
     balances = currencyAmounts("balances").ifEmpty { buildMap { put("CNY", text("money")); text("usdt_money").takeIf(String::isNotBlank)?.let { put("USDT", it) } } },
 )
 
