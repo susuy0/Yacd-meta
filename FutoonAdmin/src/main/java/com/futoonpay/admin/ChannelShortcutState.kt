@@ -70,6 +70,11 @@ internal data class ChannelShortcutState(val scope: ChannelScope? = null, val la
 
 /** One controller per live chat; merchant identity and group channel associations are independent. */
 internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBridge) {
+    private companion object {
+        /** Merchant lookups are a network round trip per chat open; keep successful answers for a minute. */
+        const val MERCHANT_TTL_MS = 60_000L
+        val merchantCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, String>>()
+    }
     val store = ChannelShortcutStore(context, bridge.accountScope())
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutable = MutableStateFlow(ChannelShortcutState())
@@ -162,7 +167,10 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         mutable.update { it.copy(merchantLoading = true, merchantError = null, merchant = null, merchantCandidates = emptyList()) }
         merchantJob = scope.launch {
             try {
-                val raw = withContext(Dispatchers.IO) { bridge.call("merchant.lookup", JSONObject().put("column", "telegram_id").put("value", s.telegramId).toString()) }
+                val cacheKey = "${key.account}|${key.backend}|${s.telegramId}"
+                val cached = merchantCache[cacheKey]?.takeIf { System.currentTimeMillis() - it.first < MERCHANT_TTL_MS }?.second
+                val raw = cached ?: withContext(Dispatchers.IO) { bridge.call("merchant.lookup", JSONObject().put("column", "telegram_id").put("value", s.telegramId).toString()) }
+                if (cached == null) merchantCache[cacheKey] = System.currentTimeMillis() to raw
                 ensureActive()
                 val data = JSONObject(raw); check(data.optJSONArray("rows") != null) { data.optString("msg", "后台未返回商户列表") }
                 val rows = data.optJSONArray("rows").objects()
@@ -170,7 +178,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
                 val matches = rows.distinctBy { it.optString("uid") }.map { it.toMerchantSummary() }
                 if (valid(key) && seq == merchantRequest && state.value.telegramId == s.telegramId) mutable.update { it.copy(merchant = matches.singleOrNull(), merchantCandidates = if (matches.size > 1) matches else emptyList(), merchantLoading = false, merchantError = if (matches.isEmpty()) "未找到对应商户" else null) }
             } catch (e: CancellationException) { throw e }
-            catch (e: Exception) { if (valid(key) && seq == merchantRequest) mutable.update { it.copy(merchantLoading = false, merchantError = e.message ?: "商户识别失败") } }
+            catch (e: Exception) { merchantCache.remove("${key.account}|${key.backend}|${s.telegramId}"); if (valid(key) && seq == merchantRequest) mutable.update { it.copy(merchantLoading = false, merchantError = e.message ?: "商户识别失败") } }
         }
     }
     fun chooseMerchant(uid: String) { state.value.merchantCandidates.firstOrNull { it.uid == uid }?.let { row -> mutable.update { it.copy(merchant = row, merchantCandidates = emptyList(), merchantError = null) } } }
