@@ -4,7 +4,12 @@ import android.graphics.RectF
 import com.futoonpay.admin.appearance.ChatComposerPill
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk=[35], application=android.app.Application::class, qualifiers="w390dp-h844dp-mdpi")
 class ChatComposerPillTest {
     private val density = 2.75f
     private fun rect(frameHeightDp: Float): RectF = RectF().also { ChatComposerPill.pillRect(0f, 0f, 300f, frameHeightDp * density, density, it) }
