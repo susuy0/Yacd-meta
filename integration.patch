@@ -19559,6 +19559,75 @@ index 693df7877dde165920833faafae227cf60679d29..3f473f54a7debfe6a5a8fccdd503ac4e
              }
  
              public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Stories/StoriesController.java b/TMessagesProj/src/main/java/org/telegram/ui/Stories/StoriesController.java
+index 12dc19d2b9ab56e4d67ff3f852727d910b568c03..5ad635e511f8f13fd33b87b327a6c517130630c2 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Stories/StoriesController.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Stories/StoriesController.java
+@@ -186,6 +186,9 @@ public class StoriesController {
+     }
+ 
+     public void loadAllStories() {
++        if (BuildVars.FUTOON_LITE) {
++            return; // stories are not part of this app
++        }
+         if (!firstLoad) {
+             loadStories();
+             loadStoriesRead();
+@@ -247,7 +250,7 @@ public class StoriesController {
+     }
+ 
+     public boolean hasStories(long dialogId) {
+-        if (dialogId == 0) {
++        if (BuildVars.FUTOON_LITE || dialogId == 0) {
+             return false;
+         }
+         if (hasUploadingStories(dialogId)) {
+@@ -280,10 +283,16 @@ public class StoriesController {
+     }
+ 
+     public boolean hasStories() {
++        if (BuildVars.FUTOON_LITE) {
++            return false;
++        }
+         return (dialogListStories != null && dialogListStories.size() > 0) || hasSelfStories();
+     }
+ 
+     public void loadStories() {
++        if (BuildVars.FUTOON_LITE) {
++            return;
++        }
+         if (firstLoad) {
+             loadingFromDatabase = true;
+             storiesStorage.getAllStories(allStories -> {
+@@ -305,6 +314,9 @@ public class StoriesController {
+     }
+ 
+     public void loadHiddenStories() {
++        if (BuildVars.FUTOON_LITE) {
++            return;
++        }
+         if (hasMoreHidden) {
+             loadFromServer(true);
+         }
+@@ -1069,6 +1081,9 @@ public class StoriesController {
+     }
+ 
+     public boolean hasSelfStories() {
++        if (BuildVars.FUTOON_LITE) {
++            return false;
++        }
+         long clientUserId = UserConfig.getInstance(currentAccount).clientUserId;
+         TL_stories.PeerStories storyItem = allStoriesMap.get(clientUserId);
+         if (storyItem != null && !storyItem.stories.isEmpty()) {
+@@ -4276,7 +4291,7 @@ public class StoriesController {
+     }
+ 
+     public boolean hasOnlySelfStories() {
+-        return hasSelfStories() && (getDialogListStories().isEmpty() || (getDialogListStories().size() == 1 && DialogObject.getPeerDialogId(getDialogListStories().get(0).peer) == UserConfig.getInstance(currentAccount).clientUserId));
++        return !BuildVars.FUTOON_LITE && hasSelfStories() && (getDialogListStories().isEmpty() || (getDialogListStories().size() == 1 && DialogObject.getPeerDialogId(getDialogListStories().get(0).peer) == UserConfig.getInstance(currentAccount).clientUserId));
+     }
+ 
+     public void sortHiddenStories() {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/DownloadButton.java b/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/DownloadButton.java
 index 1ef9cd7871ed44313c691f2e1ac06dc101c08f38..a79cc8168a5773b2b6f3b7b4b0681127eb8e28ea 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Stories/recorder/DownloadButton.java
