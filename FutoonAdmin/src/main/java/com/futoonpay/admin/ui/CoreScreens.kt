@@ -154,7 +154,17 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
         StatusFilters(listOf(-1 to "全部", 0 to "待支付", 1 to "已支付", 2 to "已退款", 3 to "已冻结"), state.orderSearch.status) {
             viewModel.loadOrders(1, state.orderSearch.copy(status = it))
         }
+    var quick by rememberSaveable { mutableStateOf("") }
     LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            if (showSearchEntry) OutlinedTextField(
+                quick, { quick = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Search, null, Modifier.size(18.dp)) },
+                placeholder = { Text("订单号 / 商户订单号 / 域名 / 金额 / 商户号", fontSize = 14.sp) },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { viewModel.loadOrders(1, com.futoonpay.admin.data.SmartSearch.orders(quick, state.orderSearch)) }),
+            )
+        }
         item {
             if (showSearchEntry) Row(verticalAlignment = Alignment.CenterVertically) {
                 com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Icon(Icons.Default.Search, null, Modifier.size(16.dp)); Text("完整搜索", fontSize = 12.sp) }
