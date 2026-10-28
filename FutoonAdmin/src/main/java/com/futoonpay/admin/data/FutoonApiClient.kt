@@ -36,7 +36,7 @@ class FutoonApiClient(
 
     suspend fun loadCaptcha(): ByteArray = withContext(Dispatchers.IO) {
         val loginHtml = getText("login.php", "login.php")
-        val captchaPath = Regex("<img[^>]+src=[\"']([^\"']*code\\.php[^\"']*)", RegexOption.IGNORE_CASE)
+        val captchaPath = Regex("<img[^>]+src=[\"']([^\"']*code(?:\\.php)?(?=[?\"'])[^\"']*)", RegexOption.IGNORE_CASE)
             .find(loginHtml)?.groupValues?.getOrNull(1)
             ?: "code.php?r=${System.currentTimeMillis()}"
         execute(
@@ -302,11 +302,11 @@ class FutoonApiClient(
         if (!html.contains('<')) return false
         val document = org.jsoup.Jsoup.parse(html)
         return document.select("input[name=user]").isNotEmpty() && document.select("input[name=pass]").isNotEmpty() &&
-            (html.contains("login.php", ignoreCase = true) || html.contains("登陆管理中心"))
+            (html.contains("login", ignoreCase = true) || html.contains("登陆管理中心"))
     }
 
     private fun resolve(path: String): HttpUrl {
-        val resolved = baseUrl.resolve(path) ?: throw IllegalArgumentException("无效接口路径")
+        val resolved = baseUrl.resolve(com.futoonpay.admin.BackendRoutes.route(baseUrl.encodedPath, path)) ?: throw IllegalArgumentException("无效接口路径")
         require(
             resolved.isHttps && resolved.host == baseUrl.host && resolved.encodedPath.startsWith(baseUrl.encodedPath)
         ) { "已阻止管理目录外的请求" }

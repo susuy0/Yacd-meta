@@ -6806,10 +6806,10 @@ index 07e769e5b9ae9a0a8af68bb7db0766c8517e31fd..24977d2ebd2141e80ff7cd8f7582aa09
      public CameraView(Context context, boolean frontface) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5170bc020e22cb60c43004481d834c8b56a6adfa
+index 0000000000000000000000000000000000000000..636a9a24ba3f256f9aba11478e1b050bd038678c
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java
-@@ -0,0 +1,374 @@
+@@ -0,0 +1,375 @@
 +package org.telegram.messenger.futoon;
 +
 +import org.json.JSONArray;
@@ -6893,6 +6893,7 @@ index 0000000000000000000000000000000000000000..5170bc020e22cb60c43004481d834c8b
 +            for (String part : path.split("/")) {
 +                if (part.equals(".") || part.equals("..")) throw new IllegalArgumentException();
 +            }
++            path = com.futoonpay.admin.BackendRoutes.directory(path);
 +            if (!path.endsWith("/")) path += "/";
 +            return new URI(uri.getScheme().toLowerCase(Locale.ROOT), null, uri.getHost(), uri.getPort(), path, null, null);
 +        } catch (Exception exception) {
@@ -6922,7 +6923,7 @@ index 0000000000000000000000000000000000000000..5170bc020e22cb60c43004481d834c8b
 +    public synchronized byte[] captcha() throws Exception {
 +        String html = text(request("login.php", null, "login.php"));
 +        java.util.regex.Matcher match = java.util.regex.Pattern.compile(
-+                "<img[^>]+src=[\\\"']([^\\\"']*code\\.php[^\\\"']*)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(html);
++                "<img[^>]+src=[\\\"']([^\\\"']*code(?:\\.php)?(?=[?\\\"'])[^\\\"']*)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(html);
 +        String path = match.find() ? match.group(1).replace("&amp;", "&") : "code.php?r=" + System.currentTimeMillis();
 +        return request(path, null, "login.php");
 +    }
@@ -7131,7 +7132,7 @@ index 0000000000000000000000000000000000000000..5170bc020e22cb60c43004481d834c8b
 +
 +    private URI resolve(String path) throws IOException {
 +        try {
-+            URI uri = base.resolve(path).normalize();
++            URI uri = base.resolve(com.futoonpay.admin.BackendRoutes.route(base.getPath(), path)).normalize();
 +            if (!base.getScheme().equals(uri.getScheme()) || !base.getHost().equals(uri.getHost())
 +                    || base.getPort() != uri.getPort() || uri.getUserInfo() != null
 +                    || !uri.getPath().startsWith(base.getPath()) || uri.getFragment() != null
