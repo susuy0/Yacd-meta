@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BackendRoutesTest {
-    private val svc = "/svc_802d1b0ad0420cb3ca03b6c3285e83bb/"
+    private val svc = "/svc_0123456789abcdef0123456789abcdef/"
 
     @Test fun plainRoutesDropThePhpSuffixButKeepQueries() {
         assertEquals("order", BackendRoutes.route(svc, "order.php"))
@@ -26,8 +26,8 @@ class BackendRoutesTest {
     }
 
     @Test fun pastedPageAddressesReduceToTheDirectory() {
-        assertEquals(svc, BackendRoutes.directory("/svc_802d1b0ad0420cb3ca03b6c3285e83bb/home"))
-        assertEquals(svc, BackendRoutes.directory("/svc_802d1b0ad0420cb3ca03b6c3285e83bb/order/"))
+        assertEquals(svc, BackendRoutes.directory("/svc_0123456789abcdef0123456789abcdef/home"))
+        assertEquals(svc, BackendRoutes.directory("/svc_0123456789abcdef0123456789abcdef/order/"))
         assertEquals(svc, BackendRoutes.directory(svc))
         assertEquals("/admin/home/", BackendRoutes.directory("/admin/home/"))
         assertTrue(BackendRoutes.usesPlainRoutes(svc))
