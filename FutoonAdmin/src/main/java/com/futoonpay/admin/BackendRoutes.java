@@ -30,6 +30,8 @@ public final class BackendRoutes {
         int query = path.indexOf('?');
         String head = query < 0 ? path : path.substring(0, query);
         String tail = query < 0 ? "" : path.substring(query);
+        // The new backend serves its login form, POST and logout at the directory root.
+        if (head.equals("login.php")) return "./" + tail;
         return (head.endsWith(".php") ? head.substring(0, head.length() - 4) : head) + tail;
     }
 }

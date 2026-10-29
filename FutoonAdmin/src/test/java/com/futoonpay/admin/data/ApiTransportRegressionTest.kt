@@ -144,4 +144,44 @@ class ApiTransportRegressionTest {
         try { FutoonRepository(client).testPayment("12", "测试", "1"); fail() } catch (error: IOException) { assertTrue(error.message!!.contains("核对")) }
     }
 
+    @Test fun newBackendLoginUsesRootForCaptchaPostRefererAndLogout() = runBlocking {
+        val requests = mutableListOf<Request>()
+        val base = "https://fixture.example/svc_0123456789abcdef0123456789abcdef/".toHttpUrl()
+        val transport = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            requests += request
+            val response = if (request.method == "GET" && request.url.query == null) {
+                "<form action='./' method='post'><input name='user'><input name='pass'><img src='./code?r=fixture'></form>"
+            } else "fixture"
+            Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).message("fixture")
+                .body(response.toResponseBody("text/html".toMediaType())).build()
+        }.build()
+        val cookies = TestCookies()
+        val client = FutoonApiClient(cookies, base, transport = transport)
+        assertEquals("fixture", String(client.loadCaptcha()))
+        assertEquals(base, requests[0].url)
+        assertEquals(base.resolve("code?r=fixture"), requests[1].url)
+        assertEquals(base.toString(), requests[1].header("Referer"))
+        client.login("fixture-user", "fixture-password", "fixture-code")
+        val login = requests[2]
+        assertEquals("POST", login.method)
+        assertEquals(base, login.url)
+        assertEquals(base.toString(), login.header("Referer"))
+        val form = login.body as FormBody
+        assertEquals(mapOf("user" to "fixture-user", "pass" to "fixture-password", "code" to "fixture-code"),
+            (0 until form.size).associate { form.name(it) to form.value(it) })
+        client.logout()
+        assertEquals(base.resolve("./?logout"), requests[3].url)
+        assertTrue(cookies.cleared)
+    }
+
+    @Test fun newRootLoginHtmlExpiresSessionEvenWithoutOldLoginMarkers() = runBlocking {
+        val cookies = TestCookies()
+        val html = "<html><title>用户登录</title><form action='./' method='post'><input name='user'><input type='password' name='pass'><input name='code'></form></html>"
+        val client = fixtureClient({ 200 to html }, cookies = cookies)
+        try { client.document("order.php"); fail("Expected expired session") }
+        catch (_: SessionExpiredException) { }
+        assertTrue(cookies.cleared)
+    }
+
 }

@@ -301,8 +301,7 @@ class FutoonApiClient(
     private fun looksLikeLoginPage(html: String): Boolean {
         if (!html.contains('<')) return false
         val document = org.jsoup.Jsoup.parse(html)
-        return document.select("input[name=user]").isNotEmpty() && document.select("input[name=pass]").isNotEmpty() &&
-            (html.contains("login", ignoreCase = true) || html.contains("登陆管理中心"))
+        return document.select("input[name=user]").isNotEmpty() && document.select("input[name=pass]").isNotEmpty()
     }
 
     private fun resolve(path: String): HttpUrl {

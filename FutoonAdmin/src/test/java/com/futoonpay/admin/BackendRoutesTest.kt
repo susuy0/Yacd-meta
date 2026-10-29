@@ -12,7 +12,8 @@ class BackendRoutesTest {
         assertEquals("order", BackendRoutes.route(svc, "order.php"))
         assertEquals("ajax_user?act=userList", BackendRoutes.route(svc, "ajax_user.php?act=userList"))
         assertEquals("uset?my=edit&uid=7", BackendRoutes.route(svc, "uset.php?my=edit&uid=7"))
-        assertEquals("login?logout", BackendRoutes.route(svc, "login.php?logout"))
+        assertEquals("./", BackendRoutes.route(svc, "login.php"))
+        assertEquals("./?logout", BackendRoutes.route(svc, "login.php?logout"))
     }
 
     @Test fun phpInsideAQueryValueIsNotTouched() {
@@ -22,6 +23,7 @@ class BackendRoutesTest {
     @Test fun legacyDirectoriesKeepTheirSuffix() {
         assertFalse(BackendRoutes.usesPlainRoutes("/admin/"))
         assertEquals("order.php", BackendRoutes.route("/admin/", "order.php"))
+        assertEquals("login.php?logout", BackendRoutes.route("/admin/", "login.php?logout"))
         assertEquals("order.php", BackendRoutes.route("/", "order.php"))
     }
 
