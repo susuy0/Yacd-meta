@@ -7187,7 +7187,6 @@ index 0000000000000000000000000000000000000000..636a9a24ba3f256f9aba11478e1b050b
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bbfee954f6aa31150732766fc06b86f7421d3eaa
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
 @@ -0,0 +1,165 @@
@@ -7288,7 +7287,7 @@ index 0000000000000000000000000000000000000000..bbfee954f6aa31150732766fc06b86f7
 +            if(!queued)cached.remove();
 +        }
 +        long now=System.currentTimeMillis()/1000;
-+        long topic=MessageObject.getTopicId(account,message.messageOwner,true), sender=message.getFromChatId();
++        long topic=message.getTopicId(), sender=message.getFromChatId();
 +        String text=message.messageOwner.message==null?"":message.messageOwner.message;
 +        for(GroupAutomationRule rule:rules) {
 +            if(!rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,now))continue;
@@ -7321,7 +7320,7 @@ index 0000000000000000000000000000000000000000..bbfee954f6aa31150732766fc06b86f7
 +    }
 +    private void execute(GroupAutomationRule rule,MessageObject message,String key) {
 +        long now=System.currentTimeMillis()/1000;
-+        if(!rule.acceptsEvent(message.getDialogId(),MessageObject.getTopicId(account,message.messageOwner,true),message.getFromChatId(),message.messageOwner.message==null?"":message.messageOwner.message,message.messageOwner.date,now))return;
++        if(!rule.acceptsEvent(message.getDialogId(),message.getTopicId(),message.getFromChatId(),message.messageOwner.message==null?"":message.messageOwner.message,message.messageOwner.date,now))return;
 +        if(rule.getAction().equals("draft")){draft(rule,message,key);return;}
 +        TL_keyboard.KeyboardInlineButton selected=button(message,rule);if(selected==null||!claim(key))return;
 +        TLRPC.TL_messages_getBotCallbackAnswer request=new TLRPC.TL_messages_getBotCallbackAnswer();
@@ -7335,7 +7334,7 @@ index 0000000000000000000000000000000000000000..bbfee954f6aa31150732766fc06b86f7
 +    private void draft(GroupAutomationRule rule,MessageObject message,String key) {
 +        String text=rule.getDraft().replace("{消息文字}",message.messageOwner.message==null?"":message.messageOwner.message).replace("{群名称}",rule.getGroupName()).replace("{发送者ID}",Long.toString(rule.getSender()));
 +        if(text.isEmpty()||text.length()>4096){record(rule,message,"草稿为空或超过 4096 字，已跳过");return;}
-+        long dialog=message.getDialogId(), topic=MessageObject.getTopicId(account,message.messageOwner,true);
++        long dialog=message.getDialogId(), topic=message.getTopicId();
 +        TLRPC.DraftMessage previous=MediaDataController.getInstance(account).getDraft(dialog,topic);
 +        if(previous!=null&&previous.message!=null&&!previous.message.isEmpty()){record(rule,message,"已有聊天草稿，已跳过");return;}
 +        BaseFragment fragment=LaunchActivity.getSafeLastFragment();
