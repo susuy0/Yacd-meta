@@ -66,3 +66,28 @@ with tempfile.TemporaryDirectory() as tmp:
     old = run(program.replace('if (!settingsViewsReady) return;', ''))
     assert old.returncode != 0 and 'NullPointerException' in old.stderr, old.stderr
     print('PASS: v0.11.0 constructor null-card crash reproduced by the same test without the guard')
+
+# Row IDs are reused by account and settings screens. Exercise the production
+# mapping with colliding IDs so a birthday cannot become a battery icon again.
+import re
+settings_source=settings
+marker='static String futoonGlyphFor(int id, int icon)'
+start=settings_source.index(marker); opening=settings_source.index('{', start); depth=1; end=opening+1
+while depth:
+    depth+=(settings_source[end]=='{')-(settings_source[end]=='}');end+=1
+mapping=settings_source[start:end]
+resources=sorted(set(re.findall(r'R.drawable.(\w+)',mapping)))
+with tempfile.TemporaryDirectory(prefix='futoon-settings-icons-') as folder:
+    target=Path(folder)
+    (target/'IconMeaningTest.java').write_text('''public class IconMeaningTest {
+    static class R { static class drawable { '''+''.join(f'static final int {name}={i+1};' for i,name in enumerate(resources))+''' } }
+    '''+mapping+'''
+    public static void main(String[] args) {
+        if (!"laptop".equals(futoonGlyphFor(8,R.drawable.settings_devices))) throw new AssertionError("Devices icon lost");
+        if (futoonGlyphFor(8,9999)!=null || futoonGlyphFor(9,9998)!=null || futoonGlyphFor(3,9997)!=null) throw new AssertionError("Foreign screen IDs must retain original icons");
+        if (!"money".equals(futoonGlyphFor(10071,R.drawable.settings_chat))) throw new AssertionError("Business entry lost");
+    }
+}''')
+    subprocess.run(['javac','IconMeaningTest.java'],cwd=target,check=True)
+    subprocess.run(['java','IconMeaningTest'],cwd=target,check=True)
+print('PASS: colliding account/settings row IDs retain the correct icon meaning')

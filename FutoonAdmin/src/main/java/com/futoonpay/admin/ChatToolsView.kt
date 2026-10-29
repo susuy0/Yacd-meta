@@ -79,7 +79,7 @@ interface ChatToolsHostBridge : ChatToolsNavigationBridge {
 }
 
 /** Telegram fragment/sheet owns this view explicitly, just like the native business panel. */
-class ChatToolsView @JvmOverloads constructor(context: Context, private val bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home") : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
+class ChatToolsView @JvmOverloads constructor(context: Context, private val bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home", private val sessionState: ChatToolsSessionState = ChatToolsSessionState(initialPage)) : FrameLayout(context), LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner, OnBackPressedDispatcherOwner {
     private val registry = LifecycleRegistry(this)
     private val controller = SavedStateRegistryController.create(this)
     private val compose = ComposeView(context)
@@ -98,7 +98,7 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
         compose.id = android.view.View.generateViewId()
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent { CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) { FutoonTheme(palette) {
-            Box(if (picker || bridge is ChatToolsHostBridge) Modifier.fillMaxSize().background(Mist).navigationBarsPadding() else Modifier.fillMaxSize().background(Mist).statusBarsPadding().navigationBarsPadding()) { PanelOverlayHost { ChatToolsScreen(bridge, picker, initialPage, revision) } }
+            Box(if (picker || bridge is ChatToolsHostBridge) Modifier.fillMaxSize().background(Mist).navigationBarsPadding() else Modifier.fillMaxSize().background(Mist).statusBarsPadding().navigationBarsPadding()) { PanelOverlayHost { ChatToolsScreen(bridge, picker, initialPage, revision, sessionState) } }
         } } }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
@@ -123,14 +123,15 @@ class ChatToolsView @JvmOverloads constructor(context: Context, private val brid
 internal const val QUICK_REPLY_LIMIT = 4096
 private data class ChatEditor(val kind: String, val id: String = "", val first: String = "", val second: String = "")
 
-@Composable internal fun ChatToolsScreen(bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home", hostRevision: Int = 0) {
+@Composable internal fun ChatToolsScreen(bridge: ChatToolsBridge, picker: Boolean, initialPage: String = "home", hostRevision: Int = 0, session: ChatToolsSessionState? = null) {
+    val sessionState = session ?: remember { ChatToolsSessionState(initialPage) }
     val navigation = bridge as? ChatToolsNavigationBridge
     var config by remember { mutableStateOf<ChatToolsConfig?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
     var refresh by remember { mutableIntStateOf(0) }
-    var page by rememberSaveable { mutableStateOf(initialPage) }
+    var page by sessionState.page
     var tabId by rememberSaveable { mutableStateOf(navigation?.selectedTab().orEmpty()) }
     var categoryId by rememberSaveable { mutableStateOf(navigation?.selectedCategory().orEmpty()) }
     var editor by remember { mutableStateOf<ChatEditor?>(null) }
@@ -182,7 +183,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             page == "replyList" -> page = "categories"
             page == "categories" -> page = "replies"
             page == "replies" && initialPage == "replies" -> bridge.close()
-            page != "home" -> page = "home"
+            page != "home" -> { sessionState.automation = null; page = "home" }
             else -> bridge.close()
         }
     }
@@ -269,7 +270,8 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
         } else if (data != null && page in setOf("panel", "appearance", "businessReplies", "automation")) {
             // Host read/save errors and their retry action are rendered above once.
             // The extension page owns only its local form validation messages.
-            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, Modifier.weight(1f), ::back) { next, done -> save(data.copy(extensions = next), done) }
+            ExtensionSettingsContent(page, data.extensions, bridge as? ChatToolsHostBridge, hostRevision, saving, Modifier.weight(1f), ::back,
+                if (page == "automation") sessionState.automation ?: ExtensionSettingsDraft(data.extensions).also { sessionState.automation = it } else null) { next, done -> save(data.copy(extensions = next), done) }
         } else key(page, tabId, categoryId) {
           // A new hierarchy owns its lazy content. Do not reuse a previous page's
           // deferred item providers while a saved Tab/category becomes selected.
@@ -282,18 +284,18 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                 } }
                 item {
                     val enabled = data != null && !loading
-                    Column(Modifier.background(CardColor)) {
+                    Surface(color = CardColor, shape = RoundedCornerShape(12.dp)) { Column {
                         ChatSettingRow("会话 Tag", if (data == null) "—" else "${data.tags.size} 个 Tag · ${data.tags.flatMap { it.telegramIds }.distinct().size} 个 Telegram ID", Icons.Outlined.Label, enabled) { page = "tags" }
                         ChatSettingRow("一键回复", if (data == null) "—" else "${data.tabs.size} 个 Tab · ${data.tabs.sumOf { it.categories.size }} 个分类 · ${data.tabs.sumOf { t -> t.categories.sumOf { it.replies.size } }} 条文案", Icons.Outlined.Quickreply, enabled) { page = "replies" }
                         ChatSettingRow("开户文案", if (data == null) "—" else "${if (data.openingTemplate == defaultOpeningTemplate) "默认模板" else "已自定义"} · ${data.openingTemplate.length} 字 · 6 个变量", Icons.Outlined.Description, enabled) { page = "opening" }
-                    }
+                    } }
                 }
                 item { Text("Telegram 账号管理使用原版设置；付款后台连接、退出登录在悬浮窗「更多 › 后台设置」中操作。", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(4.dp)) }
-                item { ChatSettingRow("会话快捷栏", "商户识别、群多通道关联与默认统计时间窗", Icons.Outlined.Tune, !loading && !saving) { page = "channelShortcuts" } }
-                item { ChatSettingRow("悬浮窗自定义", "高度、入口图片、Tab 顺序与状态记忆", Icons.Outlined.Tune, !loading && !saving) { page = "panel" } }
-                item { ChatSettingRow("外观", "主题、字号、圆角、透明度与遮罩", Icons.Outlined.Palette, !loading && !saving) { page = "appearance" } }
-                item { ChatSettingRow("业务回复模板", "${data?.extensions?.templates?.size ?: 0} 个模板 · 订单与商户变量", Icons.Outlined.Description, !loading && !saving) { page = "businessReplies" } }
-                item { ChatSettingRow("群自动化", "按群开启 · 消息条件与机器人按钮", Icons.Outlined.SmartToy, !loading && !saving) { page = "automation" } }
+                item { Surface(color = CardColor, shape = RoundedCornerShape(12.dp)) { ChatSettingRow("会话快捷栏", "商户识别、群多通道关联与默认统计时间窗", Icons.Outlined.Tune, !loading && !saving) { page = "channelShortcuts" } } }
+                item { Surface(color = CardColor, shape = RoundedCornerShape(12.dp)) { ChatSettingRow("悬浮窗自定义", "高度、入口图片、Tab 顺序与状态记忆", Icons.Outlined.Tune, !loading && !saving) { page = "panel" } } }
+                item { Surface(color = CardColor, shape = RoundedCornerShape(12.dp)) { ChatSettingRow("外观", "主题、字号、圆角、透明度与遮罩", Icons.Outlined.Palette, !loading && !saving) { page = "appearance" } } }
+                item { Surface(color = CardColor, shape = RoundedCornerShape(12.dp)) { ChatSettingRow("业务回复模板", "${data?.extensions?.templates?.size ?: 0} 个模板 · 订单与商户变量", Icons.Outlined.Description, !loading && !saving) { page = "businessReplies" } } }
+                item { Surface(color = CardColor, shape = RoundedCornerShape(12.dp)) { ChatSettingRow("群自动化", "按群开启 · 消息条件与机器人按钮", Icons.Outlined.SmartToy, !loading && !saving) { page = "automation" } } }
             } else if (data != null && page == "tags") {
                 item { Text("按 Telegram ID 匹配，显示在聊天列表和聊天页顶部。工单话题使用末尾完整 TGID。", color = Muted, fontSize = 13.sp) }
                 item { com.futoonpay.admin.ui.ChatTextButton(shape = RoundedCornerShape(24.dp), enabled = !saving, onClick = { editor = ChatEditor("tag") }) { Icon(Icons.Outlined.Add, null); Text("新增 Tag") } }

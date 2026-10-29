@@ -26,12 +26,13 @@ import org.json.JSONObject
 import java.util.UUID
 
 @Composable internal fun ExtensionSettingsContent(page: String, options: ExtensionOptions, host: ChatToolsHostBridge?, revision: Int,
-    saving: Boolean, modifier: Modifier, onBack: () -> Unit = {}, save: (ExtensionOptions, () -> Unit) -> Unit) {
-    var working by remember(page) { mutableStateOf(options) }
+    saving: Boolean, modifier: Modifier, onBack: () -> Unit = {}, retained: ExtensionSettingsDraft? = null, save: (ExtensionOptions, () -> Unit) -> Unit) {
+    val editing = retained ?: remember(page) { ExtensionSettingsDraft(options) }
+    var working by editing.working
     var validation by remember(page) { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
     var editTemplate by remember { mutableStateOf<BusinessReplyTemplate?>(null) }
-    var editRule by remember { mutableStateOf<GroupAutomationRule?>(null) }
+    var editRule by editing.editRule
     var deleteTemplate by remember { mutableStateOf<BusinessReplyTemplate?>(null) }
     var deleteRule by remember { mutableStateOf<GroupAutomationRule?>(null) }
     var log by remember { mutableStateOf<String?>(null) }
@@ -136,8 +137,10 @@ import java.util.UUID
     editTemplate?.let { template -> BusinessTemplateEditor(template, { editTemplate = null }) { edited ->
         working = working.copy(templates = if (working.templates.any { it.id == edited.id }) working.templates.map { if (it.id == edited.id) edited else it } else working.templates + edited); editTemplate = null
     } }
-    editRule?.let { rule -> AutomationRuleEditor(rule, host, revision, { editRule = null }) { edited ->
-        working = working.copy(rules = if (working.rules.any { it.id == edited.id }) working.rules.map { if (it.id == edited.id) edited else it } else working.rules + edited); editRule = null
+    editRule?.let { rule ->
+        val draft = editing.ruleEditor ?: AutomationRuleDraft(rule).also { editing.ruleEditor = it }
+        AutomationRuleEditor(rule, draft, host, revision, { editRule = null; editing.ruleEditor = null }) { edited ->
+        working = working.copy(rules = if (working.rules.any { it.id == edited.id }) working.rules.map { if (it.id == edited.id) edited else it } else working.rules + edited); editRule = null; editing.ruleEditor = null
     } }
     deleteTemplate?.let { template -> ConfirmExtensionDelete(template.title, { deleteTemplate = null }) { working = working.copy(templates = working.templates.filterNot { it.id == template.id }); deleteTemplate = null } }
     deleteRule?.let { rule -> ConfirmExtensionDelete(rule.title, { deleteRule = null }) { working = working.copy(rules = working.rules.filterNot { it.id == rule.id }); deleteRule = null } }
@@ -149,7 +152,9 @@ import java.util.UUID
     Slider(value.toFloat(), { change(it.toInt().coerceIn(range)) }, valueRange = range.first.toFloat()..range.last.toFloat())
 }
 @Composable private fun ExtensionToggle(title: String, value: Boolean, change: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { change(!value) }, verticalAlignment = Alignment.CenterVertically) { Text(title, Modifier.weight(1f), fontSize = 14.sp); Switch(value, change) }
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { change(!value) }, verticalAlignment = Alignment.CenterVertically) { Text(title, Modifier.weight(1f), fontSize = 14.sp); Switch(value, change, colors = SwitchDefaults.colors(checkedThumbColor = CardColor,
+        checkedTrackColor = Green, uncheckedThumbColor = CardColor, uncheckedTrackColor = Muted,
+        uncheckedBorderColor = Color.Transparent)) }
 }
 @Composable private fun ConfirmExtensionDelete(title: String, close: () -> Unit, confirm: () -> Unit) {
     PaySheet("确认删除", close) { Column(Modifier.padding(16.dp)) { Text("删除「$title」？保存设置后生效。"); Row { com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("取消") }; com.futoonpay.admin.ui.ChatTextButton(onClick = confirm) { Text("删除", color = Danger) } } } }
@@ -173,18 +178,18 @@ import java.util.UUID
     if (discard) PaySheet("放弃修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("放弃修改") } } }
 }
 
-@Composable private fun AutomationRuleEditor(initial: GroupAutomationRule, host: ChatToolsHostBridge?, revision: Int, close: () -> Unit, save: (GroupAutomationRule) -> Unit) {
-    var title by rememberSaveable(initial.id) { mutableStateOf(initial.title) }
-    var dialog by rememberSaveable(initial.id) { mutableStateOf(if (initial.dialog == -1L) "" else initial.dialog.toString()) }
-    var groupName by rememberSaveable(initial.id) { mutableStateOf(initial.groupName) }
-    var topic by rememberSaveable(initial.id) { mutableStateOf(initial.topic.toString()) }
-    var sender by rememberSaveable(initial.id) { mutableStateOf(if (initial.sender <= 0) "" else initial.sender.toString()) }
-    var keyword by rememberSaveable(initial.id) { mutableStateOf(initial.keyword) }
-    var button by rememberSaveable(initial.id) { mutableStateOf(initial.button) }
-    var action by rememberSaveable(initial.id) { mutableStateOf(initial.action) }
-    var draft by rememberSaveable(initial.id) { mutableStateOf(initial.draft) }
-    var cooldown by rememberSaveable(initial.id) { mutableStateOf(initial.cooldown.toString()) }
-    var awaitingPick by rememberSaveable(initial.id) { mutableStateOf(false) }
+@Composable private fun AutomationRuleEditor(initial: GroupAutomationRule, state: AutomationRuleDraft, host: ChatToolsHostBridge?, revision: Int, close: () -> Unit, save: (GroupAutomationRule) -> Unit) {
+    var title by state.title
+    var dialog by state.dialog
+    var groupName by state.groupName
+    var topic by state.topic
+    var sender by state.sender
+    var keyword by state.keyword
+    var button by state.button
+    var action by state.action
+    var draft by state.draft
+    var cooldown by state.cooldown
+    var awaitingPick by state.awaitingPick
     var error by remember { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
     val dirty = title != initial.title || dialog != (if (initial.dialog == -1L) "" else initial.dialog.toString()) || groupName != initial.groupName || topic != initial.topic.toString() || sender != (if (initial.sender <= 0) "" else initial.sender.toString()) || keyword != initial.keyword || button != initial.button || action != initial.action || draft != initial.draft || cooldown != initial.cooldown.toString()

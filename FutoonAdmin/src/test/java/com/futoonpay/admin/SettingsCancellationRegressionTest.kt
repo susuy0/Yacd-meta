@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,21 +36,24 @@ class SettingsCancellationRegressionTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val host = SettingsRaceHost()
     private val revision = mutableIntStateOf(0)
+    private val mounted = mutableStateOf(true)
+    private val session = ChatToolsSessionState("home")
     private val gates = mutableListOf<SettingsReadGate>()
     private val cancellationMessage = "The coroutine scope left the composition"
     private val progress = SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo)
     private fun gate() = SettingsReadGate().also { gates += it }
     @After fun releaseBlockedReads() { gates.forEach { it.release.countDown() } }
 
-    private fun root() {
+    private fun root(fromHome: Boolean = false) {
+        session.page.value = if (fromHome) "home" else "automation"
         val palette = FutoonPalette(dark = true, surface = Color(0xFF17212B), background = Color(0xFF0E1621),
             text = Color.White, secondaryText = Color(0xFF8A98A6), divider = Color(0xFF263544), accent = Color(0xFF2481CC))
         compose.setContent { FutoonTheme(palette) {
             Box(Modifier.width(390.dp).height(760.dp).testTag("settings-cancellation-root")) {
-                PanelOverlayHost { ChatToolsScreen(host, false, "automation", revision.intValue) }
+                PanelOverlayHost { if (mounted.value) ChatToolsScreen(host, false, "automation", revision.intValue, session) }
             }
         } }
-        compose.waitUntil(10000) { compose.onAllNodesWithText("新增群规则").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10000) { compose.onAllNodesWithText(if (fromHome) "会话 Tag" else "新增群规则").fetchSemanticsNodes().isNotEmpty() }
     }
 
     private fun reload() {
@@ -68,6 +72,56 @@ class SettingsCancellationRegressionTest {
     private fun assertNoCancellationError() {
         compose.onAllNodesWithText(cancellationMessage, substring = true).assertCountEquals(0)
         compose.onNodeWithText("重新读取设置").assertDoesNotExist()
+    }
+
+
+    @Test fun nativeGroupPickerRecreationKeepsPageUnsavedRulesAndEditorFields() {
+        root(fromHome = true)
+        compose.onNodeWithTag("chat-tools-list").performScrollToNode(hasText("群自动化"))
+        compose.onNodeWithText("群自动化").performClick()
+        compose.onNodeWithText("新增群规则").performClick()
+        compose.onNode(hasSetTextAction() and hasText("指定机器人／发送者 Telegram ID")).performScrollTo().performTextReplacement("5824870757")
+        compose.onNodeWithText("选择群组").performScrollTo().performClick()
+        compose.runOnIdle { mounted.value = false }
+        compose.waitForIdle()
+        host.group = """{"dialog":"-42","title":"合成测试群","topic":"0"}"""
+        compose.runOnIdle { revision.intValue++; mounted.value = true }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("选择群组").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("客户端群 ID", substring = true)).assertTextContains("-42")
+        compose.onNode(hasSetTextAction() and hasText("指定机器人／发送者 Telegram ID")).assertTextContains("5824870757")
+        compose.onNodeWithText("确定规则").performScrollTo().performClick()
+        // A second native picker visit must also retain previously staged, unsaved rules.
+        compose.onNodeWithText("新增群规则").performScrollTo().performClick()
+        compose.onNodeWithText("选择群组").performScrollTo().performClick()
+        compose.runOnIdle { mounted.value = false }
+        compose.waitForIdle()
+        host.group = """{"dialog":"-73","title":"第二个合成群","topic":"0"}"""
+        compose.runOnIdle { revision.intValue++; mounted.value = true }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("选择群组").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("客户端群 ID", substring = true)).assertTextContains("-73")
+        compose.onNodeWithContentDescription("关闭").performClick()
+        compose.onNodeWithText("放弃修改").performClick()
+        compose.onNodeWithText("保存设置").performClick()
+        compose.waitUntil(10000) { host.writes.get() == 1 }
+        assertEquals(-42L, ChatToolsConfig.parse(host.saved).extensions.rules.single().dialog)
+        assertFalse(ChatToolsConfig.parse(host.saved).extensions.rules.single().enabled)
+    }
+
+    @Test fun cancellingNativePickerKeepsUnsavedRuleFieldsAfterRecreation() {
+        root(fromHome = true)
+        compose.onNodeWithTag("chat-tools-list").performScrollToNode(hasText("群自动化"))
+        compose.onNodeWithText("群自动化").performClick()
+        compose.onNodeWithText("新增群规则").performClick()
+        compose.onNode(hasSetTextAction() and hasText("规则名称")).performTextReplacement("保留草稿")
+        compose.onNodeWithText("选择群组").performScrollTo().performClick()
+        compose.runOnIdle { mounted.value = false }
+        compose.waitForIdle()
+        host.group = ""
+        compose.runOnIdle { revision.intValue++; mounted.value = true }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("选择群组").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasText("规则名称")).assertTextContains("保留草稿")
+        compose.onNodeWithText("尚未选择群组").assertExists()
+        assertEquals(0, host.writes.get())
     }
 
     @Test fun rapidPickerReturnsKeepSelectedGroupAndRuleDraftWithoutCancellationErrors() {

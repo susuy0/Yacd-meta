@@ -7187,10 +7187,10 @@ index 0000000000000000000000000000000000000000..636a9a24ba3f256f9aba11478e1b050b
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..718caa568a5b4a38b74163e4871a48f92b4160e2
+index 0000000000000000000000000000000000000000..bbfee954f6aa31150732766fc06b86f7421d3eaa
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,165 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -7216,7 +7216,12 @@ index 0000000000000000000000000000000000000000..718caa568a5b4a38b74163e4871a48f9
 +    private final long started = System.currentTimeMillis()/1000;
 +    private final LinkedHashSet<String> completed = new LinkedHashSet<>();
 +    private final LinkedHashMap<String, MessageObject> latest = new LinkedHashMap<>();
-+    private final HashMap<String, Runnable> pending = new HashMap<>();
++    private static final class PendingAction {
++        final GroupAutomationRule rule;
++        final Runnable task;
++        PendingAction(GroupAutomationRule rule, Runnable task) { this.rule=rule; this.task=task; }
++    }
++    private final HashMap<String, PendingAction> pending = new HashMap<>();
 +    private final HashMap<String, Long> ruleDue = new HashMap<>();
 +    private long nextDue;
 +    private boolean stopped;
@@ -7244,13 +7249,22 @@ index 0000000000000000000000000000000000000000..718caa568a5b4a38b74163e4871a48f9
 +    }
 +    private boolean active() { return !stopped && owner>0 && UserConfig.getInstance(account).isClientActivated() && UserConfig.getInstance(account).getClientUserId()==owner; }
 +    public void reload() {
-+        for(Runnable action:pending.values())AndroidUtilities.cancelRunOnUIThread(action);
-+        pending.clear(); ruleDue.clear(); nextDue=0;
 +        rules=active()?new ArrayList<>(FutoonChatPreferences.get(account).options().getRules()):Collections.emptyList();
++        Iterator<PendingAction> queued=pending.values().iterator();
++        while(queued.hasNext()) {
++            PendingAction action=queued.next();
++            if(!action.rule.getEnabled()||!rules.contains(action.rule)) {
++                AndroidUtilities.cancelRunOnUIThread(action.task); queued.remove();
++            }
++        }
++        HashSet<String> enabledIds=new HashSet<>();
++        for(GroupAutomationRule rule:rules)if(rule.getEnabled())enabledIds.add(rule.getId());
++        ruleDue.keySet().retainAll(enabledIds);
++        if(pending.isEmpty())nextDue=0;
 +    }
 +    private void stop() {
 +        if(stopped)return;stopped=true;
-+        for(Runnable action:pending.values())AndroidUtilities.cancelRunOnUIThread(action); pending.clear(); latest.clear(); rules=Collections.emptyList();
++        for(PendingAction action:pending.values())AndroidUtilities.cancelRunOnUIThread(action.task); pending.clear(); latest.clear(); rules=Collections.emptyList();
 +        NotificationCenter center=NotificationCenter.getInstance(account); center.removeObserver(this,NotificationCenter.didReceiveNewMessages);center.removeObserver(this,NotificationCenter.replaceMessagesObjects);center.removeObserver(this,NotificationCenter.appDidLogout);
 +    }
 +    @Override public void didReceivedNotification(int event,int eventAccount,Object... args) {
@@ -7266,7 +7280,13 @@ index 0000000000000000000000000000000000000000..718caa568a5b4a38b74163e4871a48f9
 +    private void receive(MessageObject message) {
 +        if(message==null||message.messageOwner==null||message.getId()<=0||message.isOutOwner()||message.messageOwner instanceof TLRPC.TL_messageService||message.messageOwner.date<started)return;
 +        String messageKey=message.getDialogId()+":"+message.getId(); latest.remove(messageKey);latest.put(messageKey,message);
-+        while(latest.size()>200)latest.remove(latest.keySet().iterator().next());
++        // Retain the latest edit of queued messages even in a busy group.
++        Iterator<String> cached=latest.keySet().iterator();
++        while(latest.size()>200&&cached.hasNext()) {
++            String candidate=cached.next(); boolean queued=false;
++            for(String actionKey:pending.keySet())if(actionKey.startsWith(candidate+":")){queued=true;break;}
++            if(!queued)cached.remove();
++        }
 +        long now=System.currentTimeMillis()/1000;
 +        long topic=MessageObject.getTopicId(account,message.messageOwner,true), sender=message.getFromChatId();
 +        String text=message.messageOwner.message==null?"":message.messageOwner.message;
@@ -7279,7 +7299,7 @@ index 0000000000000000000000000000000000000000..718caa568a5b4a38b74163e4871a48f9
 +            long due=Math.max(System.currentTimeMillis(),Math.max(nextDue,ruleDue.getOrDefault(rule.getId(),0L)));
 +            nextDue=due+500;ruleDue.put(rule.getId(),due+rule.getCooldown()*1000L);
 +            Runnable task=()->{pending.remove(key);if(!active()||!rules.contains(snapshot))return;MessageObject current=latest.get(messageKey);if(current!=null)try{execute(snapshot,current,key);}catch(Exception error){record(snapshot,current,"执行中止，未自动重试");}};
-+            pending.put(key,task);AndroidUtilities.runOnUIThread(task,Math.max(0,due-System.currentTimeMillis()));
++            pending.put(key,new PendingAction(snapshot,task));AndroidUtilities.runOnUIThread(task,Math.max(0,due-System.currentTimeMillis()));
 +        }
 +    }
 +    private TL_keyboard.KeyboardInlineButton button(MessageObject message,GroupAutomationRule rule) {
@@ -14587,7 +14607,7 @@ index 2f52841f912ea2e5eadc34985b8dd7dc113f73f1..ccaa7a846ce8e522f8a800634c8f1d98
          return nameColorAnimated.set(nameColor);
      }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java
-index 2607144c519305ae85a700df303c21679143560b..4a5c6f8d630ae27f82859cc98cacddfa1741f4c8 100644
+index 2607144c519305ae85a700df303c21679143560b..270ee6be21a7650c136bf6e2a02667c8055364dc 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/ScrollSlidingTextTabStrip.java
 @@ -164,7 +164,7 @@ public class ScrollSlidingTextTabStrip extends HorizontalScrollView implements T
@@ -14611,6 +14631,15 @@ index 2607144c519305ae85a700df303c21679143560b..4a5c6f8d630ae27f82859cc98cacddfa
      }
  
      public final Path clipPath = new Path();
+@@ -697,7 +699,7 @@ public class ScrollSlidingTextTabStrip extends HorizontalScrollView implements T
+     @Override
+     protected void dispatchDraw(@NonNull Canvas canvas) {
+         canvas.save();
+-        if (backgroundDrawable != null) {
++        if (backgroundDrawable != null && !org.telegram.messenger.BuildVars.FUTOON_LITE) {
+             if (rectT.set(1f) < 1) {
+                 checkBoundsAndClipping();
+             }
 @@ -757,9 +759,9 @@ public class ScrollSlidingTextTabStrip extends HorizontalScrollView implements T
  //            );
              selectorDrawable.setBounds(
@@ -15055,7 +15084,7 @@ index 4411ecda67b01d830f617d149b9b59f59daec93f..ed7c74fba699f467648bb7f6c9ccdd09
              FileLog.e(e);
          }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
-index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac74503d0a 100644
+index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..e75d4ff26a437a916fb3b4e5e1c5b64541c24741 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java
 @@ -288,12 +288,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -15238,7 +15267,23 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          fragmentSearchField.setPivotX(0);
          fragmentSearchField.setPivotY(0);
          if (initialDialogsType == DIALOGS_TYPE_DEFAULT) {
-@@ -3500,7 +3530,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3318,6 +3348,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+             @Override
+             public void onSearchExpand() {
+                 searching = true;
++                if (futoonNewChatItem != null) futoonNewChatItem.setVisibility(View.GONE);
+                 if (switchItem != null) {
+                     switchItem.setVisibility(View.GONE);
+                 }
+@@ -3381,6 +3412,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+                 }
+ 
+                 searching = false;
++                if (futoonNewChatItem != null) futoonNewChatItem.setVisibility(View.VISIBLE);
+                 searchWas = false;
+                 if (viewPages[0] != null) {
+                     viewPages[0].listView.setEmptyView(folderId == 0 ? viewPages[0].progressView : null);
+@@ -3500,7 +3532,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  actionBar.setBackButtonDrawable(backDrawable = new BackDrawable(false));
              }
              if (folderId != 0) {
@@ -15250,7 +15295,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              } else if (communityId != 0) {
                  actionBar.setTitle(DialogObject.getName(community));
                  actionBar.setAdditionalTextLeft(dp(28));
-@@ -3515,9 +3548,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3515,9 +3550,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  logoDrawable = context.getResources().getDrawable(R.drawable.telegram_logo_2).mutate();
                  logoDrawable.setBounds(0, dp(2), logoDrawable.getIntrinsicWidth(), dp(2) + logoDrawable.getIntrinsicHeight());
                  logoDrawable.setColorFilter(getThemedColor(Theme.key_telegram_color_dialogsLogo), PorterDuff.Mode.MULTIPLY);
@@ -15269,7 +15314,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                  updateStatus(UserConfig.getInstance(currentAccount).getCurrentUser(), false);
              }
              if (folderId == 0) {
-@@ -4209,13 +4248,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4209,13 +4250,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                  }
                                  int canScrollDy = -(view.getTop() - pTop) + viewsH;
                                  if (!rightSlidingDialogContainer.hasFragment() && !(actionBar != null && actionBar.isActionModeShowed())) {
@@ -15285,7 +15330,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                                  }
                                  int positiveDy = Math.abs(dy);
                                  if (canScrollDy < positiveDy) {
-@@ -4578,7 +4617,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4578,7 +4619,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                          if (applyScrollY) {
                              int maxScrollYOffset = getMaxScrollYOffset();
                              if (!(filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && animatorFilterTabsVisible.getValue())) {
@@ -15294,7 +15339,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                              }
                              if (newTranslation < -maxScrollYOffset) {
                                  newTranslation = -maxScrollYOffset;
-@@ -4732,14 +4771,37 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -4732,14 +4773,38 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          });
          searchTabsAndFiltersLayout.addView(filtersView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP));
  
@@ -15315,7 +15360,8 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
 +        if (hasChatQuickFilters()) {
 +            floatingButton3.setVisibility(View.GONE);
 +            floatingButtonStories.setVisibility(View.GONE);
-+            ActionBarMenuItem newChat = menu.addItem(-978, FutoonChatAppearance.icon("plus"));
++            futoonNewChatItem = menu.addItem(-978, FutoonChatAppearance.icon("plus"));
++            ActionBarMenuItem newChat = futoonNewChatItem;
 +            newChat.setIconColor(android.graphics.Color.WHITE);
 +            android.graphics.drawable.GradientDrawable disc = new android.graphics.drawable.GradientDrawable();
 +            disc.setColor(com.futoonpay.admin.appearance.ChatLook.accent(FutoonChatAppearance.dark())); disc.setCornerRadius(dp(16));
@@ -15335,7 +15381,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          floatingButton3.setOnClickListener(v -> {
              if (parentLayout != null && parentLayout.isInPreviewMode()) {
                  finishPreviewFragment();
-@@ -5336,7 +5398,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5336,7 +5401,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              contentView.addView(animatedStatusView, LayoutHelper.createFrame(20, 20, Gravity.LEFT | Gravity.TOP));
          }
          if (fragmentSearchField != null) {
@@ -15344,7 +15390,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          }
  
  
-@@ -5713,7 +5775,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5713,7 +5778,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  }
  
                  if (actionBarHeightNoSearch < scrollY && scrollY < actionBarHeight) {
@@ -15353,7 +15399,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                      int s = scrollY - actionBarHeightNoSearch;
                      if (s < h / 2) {
                          viewPage.scroller.smoothScrollBy(-s);
-@@ -5751,9 +5813,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -5751,9 +5816,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
      private int getMaxScrollYOffset() {
          if (hasStories) {
@@ -15365,7 +15411,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          }
      }
  
-@@ -6847,6 +6909,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6847,6 +6912,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
      }
  
@@ -15386,7 +15432,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
      private void updateFilterTabs(boolean force, boolean animated) {
          if (filterTabsView == null || inPreviewMode || searchIsShowed || (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
              return;
-@@ -6857,7 +6933,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6857,7 +6936,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          final ArrayList<MessagesController.DialogFilter> filters = getMessagesController().getDialogFilters();
          if (filters.size() > 1) {
@@ -15395,7 +15441,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                  boolean animatedUpdateItems = animated;
                  if (filterTabsView.getVisibility() != View.VISIBLE) {
                      animatedUpdateItems = false;
-@@ -7071,7 +7147,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7071,7 +7150,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                          if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                                              PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                                          } else {
@@ -15404,7 +15450,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                                          }
                                      }));
                                  }
-@@ -7182,7 +7258,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7182,7 +7261,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0) +
                      (topPanelLayout != null ? topPanelLayout.getHeight() : 0) +
                      (dialogStoriesCell != null && dialogStoriesCellVisible ? (int) ((1f - dialogStoriesCell.getCollapsedProgress()) * dp(DialogStoriesCell.HEIGHT_IN_DP)) : 0) +
@@ -15413,7 +15459,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                  );
              }
  
-@@ -7561,7 +7637,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -7561,7 +7640,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (searchViewPager != null) {
                  animators.add(ObjectAnimator.ofFloat(searchViewPager, View.ALPHA, show ? 1.0f : 0.0f));
                  if (hasStories) {
@@ -15422,7 +15468,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                      animators.add(ObjectAnimator.ofFloat(searchViewPager, SEARCH_TRANSLATION_Y, show ? translationY : 0, show ? 0 : translationY));
                  }
                  if (!budget) {
-@@ -8889,7 +8965,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -8889,7 +8968,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              floatingButton3.setImageResource(R.drawable.floating_check);
              floatingButton3.setContentDescription(LocaleController.getString(R.string.Done));
          } else {
@@ -15431,10 +15477,11 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              floatingButton3.setContentDescription(LocaleController.getString(R.string.NewMessageTitle));
          }
      }
-@@ -9014,6 +9090,44 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9014,6 +9093,45 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          animatorSet.start();
      }
  
++    private ActionBarMenuItem futoonNewChatItem;
 +    private LinearLayout futoonSelectionBar;
 +
 +    /** Reference layout: Archive / Read / Delete along the bottom while chats are selected. */
@@ -15476,7 +15523,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
      private void hideActionMode(boolean animateCheck) {
          actionBar.hideActionMode();
          selectedDialogs.clear();
-@@ -9031,13 +9145,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9031,13 +9149,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              return;
          }
          float translateListHeight = 0;
@@ -15493,7 +15540,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          float finalTranslateListHeight = translateListHeight;
          actionBarColorAnimator = ValueAnimator.ofFloat(progressToActionMode, 0);
          actionBarColorAnimator.addUpdateListener(valueAnimator -> {
-@@ -9063,7 +9178,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -9063,7 +9182,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                  invalidateScrollY = true;
                  fixScrollYAfterArchiveOpened = true;
                  fragmentView.invalidate();
@@ -15502,7 +15549,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                  viewPages[0].setTranslationY(0);
                  for (int i = 0; i < viewPages.length; i++) {
                      if (viewPages[i] != null) {
-@@ -10018,6 +10133,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10018,6 +10137,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              AndroidUtilities.hideKeyboard(fragmentView.findFocus());
              actionBar.setActionModeOverrideColor(getThemedColor(Theme.key_windowBackgroundWhite));
              actionBar.showActionMode();
@@ -15510,7 +15557,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              if (getPinnedCount() > 1) {
                  if (viewPages != null) {
                      for (int a = 0; a < viewPages.length; a++) {
-@@ -10051,7 +10167,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10051,7 +10171,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      viewPages[i].listView.cancelClickRunnables(true);
                  }
              }
@@ -15519,7 +15566,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              if (translateListHeight != 0) {
                  actionModeAdditionalHeight = (int) translateListHeight;
                  fragmentView.requestLayout();
-@@ -10078,7 +10194,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10078,7 +10198,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      actionBarColorAnimator = null;
                      actionModeAdditionalHeight = 0;
                      actionModeFullyShowed = true;
@@ -15528,7 +15575,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                      viewPages[0].setTranslationY(0);
                      for (int i = 0; i < viewPages.length; i++) {
                          if (viewPages[i] != null) {
-@@ -10350,7 +10466,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10350,7 +10470,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                      if (!PermissionRequest.canAskPermission(Manifest.permission.POST_NOTIFICATIONS)) {
                          PermissionRequest.showPermissionSettings(Manifest.permission.POST_NOTIFICATIONS);
                      } else {
@@ -15537,7 +15584,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                      }
                  }));
                  return;
-@@ -10375,9 +10491,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10375,9 +10495,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.READ_MEDIA_IMAGES);
              }
@@ -15548,7 +15595,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              if (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                  permissons.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
              }
-@@ -10394,7 +10508,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10394,7 +10512,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          String[] items = permissons.toArray(new String[0]);
          try {
@@ -15557,7 +15604,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          } catch (Exception ignore) {
          }
      }
-@@ -10993,7 +11107,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10993,7 +11111,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
          if (dialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -15577,7 +15624,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
              return messagesController.dialogsServerOnly;
          } else if (dialogsType == DIALOGS_TYPE_ADD_USERS_TO) {
-@@ -12751,8 +12876,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -12751,8 +12880,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          boolean onlySelfStories = !isArchive() && getStoriesController().hasOnlySelfStories();
          boolean newVisibility;
@@ -15589,7 +15636,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          } else if (isArchive()) {
              newVisibility = !getStoriesController().getHiddenList().isEmpty();
          } else {
-@@ -12964,7 +13091,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -12964,7 +13095,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              public void setTranslationY(float translationY) {
                  super.setTranslationY(translationY);
                  if (searchTabsAndFiltersLayout != null) {
@@ -15598,7 +15645,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                  }
              }
  
-@@ -13934,7 +14061,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -13934,7 +14065,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
  
      private void checkUi_searchFiltersVisibility() {
          if (searchTabsAndFiltersLayout != null) {
@@ -15607,7 +15654,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              final float factor1 = animatorSearchVisible.getFloatValue();
              final float factor = factor0 * factor1;
              final float s = lerp(0.98f, 1f, factor);
-@@ -13994,7 +14121,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -13994,7 +14125,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              final int bottom = AndroidUtilities.navigationBarHeight;
              final int top = dp(ADDITIONAL_LIST_HEIGHT_DP)
                  + actionBar.getMeasuredHeight()
@@ -15616,7 +15663,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
                  + (topPanelLayout != null ? (int) topPanelLayout.getAnimatedHeightWithPadding(dp(7)) : 0);
  
              searchViewPager.setPagesPadding(top, bottom, doNotRequestLayout);
-@@ -14004,7 +14131,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14004,7 +14135,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
      private float getFilterTabsVisibilityFactor(boolean includeSearch) {
          final float factor1 = includeSearch ? (1f - animatorSearchVisible.getFloatValue()) : 1f;
          final float factor2 = 1f - getRightSlidingProgress();
@@ -15625,7 +15672,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
          return factor1 * factor2 * factor3;
      }
  
-@@ -14039,7 +14166,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14039,7 +14170,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
  
          final int maxScrollWithoutSearch = getMaxScrollYOffsetWithoutSearch();
@@ -15634,7 +15681,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
  
          final float actionModeVisible = Math.max(progressToActionMode, animatorActionModeVisible.getFloatValue());
          final float searchFieldVisible = animatorSearchVisible.getFloatValue();
-@@ -14177,7 +14304,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14177,7 +14308,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          final int mainTabTop = mainTabBottom - dp(DialogsActivity.MAIN_TABS_HEIGHT);
  
          final int actionBarHeight = actionBar.getMeasuredHeight()
@@ -15643,7 +15690,7 @@ index 0c5dc3fb84325f6c627f9ef3c1feaf8af10b7856..2062485b541921bc227c99cfa5d389ac
              + dp(hasStories ? DialogStoriesCell.HEIGHT_IN_DP : 0)
              + (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE ? filterTabsView.getMeasuredHeight() : 0)
              + (topPanelLayout != null && topPanelLayout.getVisibility() == View.VISIBLE ? topPanelLayout.getSumHeightOfAllVisibleChild() : 0)
-@@ -14434,4 +14561,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -14434,4 +14565,4 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          return true;
      }
  
@@ -16014,10 +16061,10 @@ index 0000000000000000000000000000000000000000..62f1179d8d129c007a73937a2014fcc0
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a2957a25e00
+index 0000000000000000000000000000000000000000..0afc757386ea28cf2bc06a79454c4c76ebbd7288
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonChatSettingsActivity.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,74 @@
 +package org.telegram.ui;
 +
 +import android.content.Context;
@@ -16035,6 +16082,7 @@ index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a29
 +/** Native custom settings, scoped to the selected Telegram account. */
 +public final class FutoonChatSettingsActivity extends BaseFragment {
 +    private ChatToolsView tools;
++    private com.futoonpay.admin.ChatToolsSessionState sessionState;
 +    private final boolean replies;
 +    private String selectedTab = "", selectedCategory = "";
 +    private Runnable returnToPicker;
@@ -16050,7 +16098,9 @@ index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a29
 +        actionBar.setAllowOverlayTitle(true);
 +        actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() { @Override public void onItemClick(int id) { if (id == -1 && tools != null) tools.handleBack(); } });
 +        FutoonChatPreferences preferences = FutoonChatPreferences.get(currentAccount);
-+        actions = new FutoonSettingsHostActions(this, currentAccount, () -> { if (tools != null) tools.reloadSettings(); });
++        if (sessionState == null) sessionState = new com.futoonpay.admin.ChatToolsSessionState(replies ? "replies" : "home");
++        if (actions == null) actions = new FutoonSettingsHostActions(this, currentAccount, () -> { if (tools != null) tools.reloadSettings(); });
++        if (tools != null) tools.close();
 +        tools = new ChatToolsView(context, new com.futoonpay.admin.ChannelChatToolsHostBridge() {
 +            public String channelAccountScope() { return currentAccount+":"+UserConfig.getInstance(currentAccount).getClientUserId(); }
 +            public String channelBackendAddress() { return new org.telegram.messenger.futoon.FutoonStore(currentAccount).address(); }
@@ -16071,7 +16121,7 @@ index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a29
 +            public String selectedGroup() { return actions.selectedGroup(); }
 +            public String automationLog() { return actions.automationLog(); }
 +            public void resetEntryPosition() { actions.resetEntryPosition(); }
-+        }, false, replies ? "replies" : "home");
++        }, false, replies ? "replies" : "home", sessionState);
 +        FutoonThemeBridge.bind(tools, tools::setThemeColors, currentAccount);
 +        fragmentView = tools; return fragmentView;
 +    }
@@ -16091,10 +16141,10 @@ index 0000000000000000000000000000000000000000..5f8db5f3aa4f106393cf42d095023a29
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a4c24a5b9c13cae30d881567918533c0518e612
+index 0000000000000000000000000000000000000000..70a27c6cccd8f3bd769949246c3ccb7229e90392
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java
-@@ -0,0 +1,408 @@
+@@ -0,0 +1,414 @@
 +package org.telegram.ui;
 +
 +import static org.telegram.messenger.AndroidUtilities.dp;
@@ -16323,6 +16373,11 @@ index 0000000000000000000000000000000000000000..9a4c24a5b9c13cae30d881567918533c
 +            content.addView(about, aboutParams);
 +        }
 +
++        content.addView(card(context, cardColor, dark,
++            row(context, "contact", "Telegram ID", Long.toString(userId), false, false, dark,
++                v -> AndroidUtilities.addToClipboard(Long.toString(userId)))
++        ), groupParams(16));
++
 +        // Shared content and notifications.
 +        content.addView(card(context, cardColor, dark,
 +            row(context, "gallery", text("Media, Links and Docs", "媒体、链接和文档"), null, false, true, dark, v -> openMedia()),
@@ -16430,6 +16485,7 @@ index 0000000000000000000000000000000000000000..9a4c24a5b9c13cae30d881567918533c
 +    private void openMedia() {
 +        Bundle b = new Bundle(originalArgs);
 +        b.putBoolean("futoon_original", true);
++        b.putBoolean("futoon_open_media", true);
 +        presentFragment(new ProfileActivity(b));
 +    }
 +
@@ -18863,7 +18919,7 @@ index 9ab26df3ac49dd83ab70fe19f1bb321e43959321..35a26fa65d0bc448eb8386adceedc923
          if (requestCode == 3) {
              if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
-index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..1d6650408728f03cda6a1f5dd55d64158f3a5524 100644
+index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..dfc5ef7c471a7e066d14ae2f7d53b00e3e36df1a 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 @@ -654,6 +654,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
@@ -18904,6 +18960,15 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..1d6650408728f03cda6a1f5dd55d6415
          frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
          listView.setOnItemClickListener((view, position, x, y) -> {
              if (getParentActivity() == null) {
+@@ -5049,7 +5055,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
+             }
+         });
+ 
+-        if (openSimilar || openGifts || openCommonChats) {
++        if (openSimilar || openGifts || openCommonChats || getArguments().getBoolean("futoon_open_media", false)) {
+             updateRowsIds();
+             scrollToSharedMedia();
+             savedScrollToSharedMedia = true;
 @@ -5558,7 +5564,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                  nameTextView[a].setTextColor(getThemedColor(Theme.key_actionBarDefaultTitle));
              }
@@ -19039,7 +19104,7 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..1d6650408728f03cda6a1f5dd55d6415
          }
  
 +        if (BuildVars.FUTOON_LITE) {
-+            callItemVisible = videoCallItemVisible = voiceChatAction = streamAction = false;
++            callItemVisible = videoCallItemVisible = voiceChatAction = streamAction = addStoryAction = false;
 +            otherItem.hideSubItem(call_item);
 +            otherItem.hideSubItem(video_call_item);
 +            otherItem.hideSubItem(add_contact);
@@ -19116,7 +19181,7 @@ index e6f07af0982dcda5509dd8dcb998601e3ebfbcc5..31a89b27231148911c902ba921ff8012
              private TLObject response = null;
              private TLRPC.TL_error error = null;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
-index 693df7877dde165920833faafae227cf60679d29..3f473f54a7debfe6a5a8fccdd503ac4e9d18e869 100644
+index 693df7877dde165920833faafae227cf60679d29..0eda1633c251e92ab7ac98d2ef0589b6a238dc07 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/SettingsActivity.java
 @@ -175,7 +175,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
@@ -19529,7 +19594,7 @@ index 693df7877dde165920833faafae227cf60679d29..3f473f54a7debfe6a5a8fccdd503ac4e
          }
  
          public static class Background extends Drawable {
-@@ -1303,12 +1374,30 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -1303,12 +1374,29 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
              public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
                  int iconColorTop    = (int) item.longValue;
                  int iconColorBottom = (int) (item.longValue >>> 32);
@@ -19540,23 +19605,22 @@ index 693df7877dde165920833faafae227cf60679d29..3f473f54a7debfe6a5a8fccdd503ac4e
                      item.subtext,
                      item.textValue
                  );
-+                if (BuildVars.FUTOON_LITE) ((SettingCell) view).setFutoonGlyph(futoonGlyphFor((int) item.id));
++                if (BuildVars.FUTOON_LITE) ((SettingCell) view).setFutoonGlyph(futoonGlyphFor((int) item.id, item.iconResId));
 +            }
 +
-+            static String futoonGlyphFor(int id) {
-+                switch (id) {
-+                    case 1: return "key";
-+                    case 2: return "bubble";
-+                    case 3: return "lock";
-+                    case 5: return "notify";
-+                    case 6: return "storage";
-+                    case 7: return "list";
-+                    case 8: return "laptop";
-+                    case 9: return "battery";
-+                    case 10: return "globe";
-+                    case 10071: return "money";
-+                    default: return null;
-+                }
++            static String futoonGlyphFor(int id, int icon) {
++                if (id == 10071 && icon == R.drawable.settings_chat) return "money";
++                if (icon == R.drawable.settings_account) return "key";
++                if (icon == R.drawable.settings_chat) return "bubble";
++                if (icon == R.drawable.settings_privacy) return "lock";
++                if (icon == R.drawable.settings_sounds) return "notify";
++                if (icon == R.drawable.settings_data) return "storage";
++                if (icon == R.drawable.settings_folders) return "list";
++                if (icon == R.drawable.settings_devices) return "laptop";
++                if (icon == R.drawable.settings_power) return "battery";
++                if (icon == R.drawable.settings_language) return "globe";
++                // Row IDs are local to each screen; unknown icons keep their original meaning.
++                return null;
              }
  
              public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title) {
@@ -21522,3 +21586,53 @@ index 7d4f1ab10371a33d29979f1dee3520da048ef3a2..8cd1f7f62d557367443661337c02efb5
  include ':TMessagesProj'
  include ':TMessagesProj_App'
  include ':TMessagesProj_AppHuawei'
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java
+index 79abb08e49ecfcf79ce3d1718201aa71a945d176..0847abb1fac401dfe94f5b3afa380097587f73c0 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java
+@@ -272,7 +272,7 @@ public class LiteModeSettingsActivity extends BaseFragment {
+                 items.add(Item.asCheckbox(LocaleController.getString("LiteOptionsThanos"), LiteMode.FLAG_CHAT_THANOS));
+             }
+         }
+-        items.add(Item.asSwitch(R.drawable.msg2_call_earpiece, LocaleController.getString(R.string.LiteOptionsCalls), LiteMode.FLAG_CALLS_ANIMATIONS));
++        if (!org.telegram.messenger.BuildVars.FUTOON_LITE) items.add(Item.asSwitch(R.drawable.msg2_call_earpiece, LocaleController.getString(R.string.LiteOptionsCalls), LiteMode.FLAG_CALLS_ANIMATIONS));
+         items.add(Item.asSwitch(R.drawable.msg2_videocall, LocaleController.getString(R.string.LiteOptionsAutoplayVideo), LiteMode.FLAG_AUTOPLAY_VIDEOS));
+         items.add(Item.asSwitch(R.drawable.msg2_gif, LocaleController.getString(R.string.LiteOptionsAutoplayGifs), LiteMode.FLAG_AUTOPLAY_GIFS));
+         items.add(Item.asSwitch(R.drawable.photo_star, LocaleController.getString(R.string.LiteOptionsParticles), LiteMode.FLAG_PARTICLES));
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
+index d21d71c377adca370e0fd16a496f9440b894e779..01f2383528ebdf4269b1d7fde2b9242747320036 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
+@@ -180,14 +180,14 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+         privateRow = rowCount++;
+         groupRow = rowCount++;
+         channelsRow = rowCount++;
+-        storiesRow = rowCount++;
++        storiesRow = org.telegram.messenger.BuildVars.FUTOON_LITE ? -1 : rowCount++;
+         reactionsRow = rowCount++;
+         notificationsSection2Row = rowCount++;
+ 
+-        callsSectionRow = rowCount++;
+-        callsVibrateRow = rowCount++;
+-        callsRingtoneRow = rowCount++;
+-        eventsSection2Row = rowCount++;
++        callsSectionRow = org.telegram.messenger.BuildVars.FUTOON_LITE ? -1 : rowCount++;
++        callsVibrateRow = org.telegram.messenger.BuildVars.FUTOON_LITE ? -1 : rowCount++;
++        callsRingtoneRow = org.telegram.messenger.BuildVars.FUTOON_LITE ? -1 : rowCount++;
++        eventsSection2Row = org.telegram.messenger.BuildVars.FUTOON_LITE ? -1 : rowCount++;
+ 
+         badgeNumberSection = rowCount++;
+         badgeNumberShowRow = rowCount++;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java
+index 6ce417f1fca4670c57176b614018bd5d17f160e1..e3ae826a9538d59415a15df386ef095db13fba01 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java
+@@ -737,7 +737,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
+         lastSeenRow = rowCount++;
+         profilePhotoRow = rowCount++;
+         forwardsRow = rowCount++;
+-        callsRow = rowCount++;
++        callsRow = org.telegram.messenger.BuildVars.FUTOON_LITE ? -1 : rowCount++;
+         groupsDetailRow = -1;
+         if (!getMessagesController().premiumFeaturesBlocked() || getUserConfig().isPremium()) {
+             voicesRow = rowCount++;
