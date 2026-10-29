@@ -14702,7 +14702,7 @@ index 3471788319c163ccc6b8c73873220697f7d3815b..bd28ffdae6d4501f3f670d63f4acae5d
              timestampLayout.addView(timestampTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 9, 0, 0, 0));
              ScaleStateListAnimator.apply(timestampLayout, 0.025f, 1.5f);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java
-index f570f57b749ee535c92796f217d54bb35b89bb28..b46f0d3bcf28d0df2efe16fa76c532c8191718f3 100644
+index f570f57..4d653b1 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/SharedMediaLayout.java
 @@ -3740,15 +3740,12 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
@@ -14742,6 +14742,23 @@ index f570f57b749ee535c92796f217d54bb35b89bb28..b46f0d3bcf28d0df2efe16fa76c532c8
          final TLRPC.ProfileTab main_tab = info != null ? info.main_tab : userInfo != null ? userInfo.main_tab : null;
          int changed = 0;
          if (wasReordering != scrollSlidingTextTabStrip.isReordering()) {
+@@ -11566,10 +11563,14 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
+                 blurBounds.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
+                 canvas.save();
+                 canvas.translate(getScrollX(), 0);
+-                canvas.clipPath(clipPath);
+-                if (SharedConfig.chatBlurEnabled()) {
++                if (org.telegram.messenger.BuildVars.FUTOON_LITE) {
++                    // Lite tabs fill the row; a glass capsule clip can cover only some tabs.
++                    canvas.drawRect(blurBounds, backgroundPaint);
++                } else if (SharedConfig.chatBlurEnabled()) {
++                    canvas.clipPath(clipPath);
+                     drawBackgroundWithBlur(canvas, getY(), blurBounds, backgroundPaint);
+                 } else {
++                    canvas.clipPath(clipPath);
+                     canvas.drawPaint(backgroundPaint);
+                 }
+                 canvas.translate(-getScrollX(), 0);
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
 index d4c29e804844237d264fa8533cc9a7a5da945f8b..0d221843f057fb76d4a82a8e28693ef845c59ac6 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/WallpaperUpdater.java
@@ -16141,10 +16158,9 @@ index 0000000000000000000000000000000000000000..0afc757386ea28cf2bc06a79454c4c76
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..70a27c6cccd8f3bd769949246c3ccb7229e90392
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonContactInfoActivity.java
-@@ -0,0 +1,414 @@
+@@ -0,0 +1,413 @@
 +package org.telegram.ui;
 +
 +import static org.telegram.messenger.AndroidUtilities.dp;
@@ -16483,10 +16499,9 @@ index 0000000000000000000000000000000000000000..70a27c6cccd8f3bd769949246c3ccb72
 +    }
 +
 +    private void openMedia() {
-+        Bundle b = new Bundle(originalArgs);
-+        b.putBoolean("futoon_original", true);
-+        b.putBoolean("futoon_open_media", true);
-+        presentFragment(new ProfileActivity(b));
++        Bundle b = new Bundle();
++        b.putLong("dialog_id", userId);
++        presentFragment(new org.telegram.ui.Components.MediaActivity(b, null));
 +    }
 +
 +    private void toggleMute() {
@@ -18919,7 +18934,7 @@ index 9ab26df3ac49dd83ab70fe19f1bb321e43959321..35a26fa65d0bc448eb8386adceedc923
          if (requestCode == 3) {
              if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
-index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..dfc5ef7c471a7e066d14ae2f7d53b00e3e36df1a 100644
+index f0a3ad0..0403e96 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ProfileActivity.java
 @@ -654,6 +654,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
@@ -18960,15 +18975,6 @@ index f0a3ad01785200bfa77a80fd61ba33a86f67ab91..dfc5ef7c471a7e066d14ae2f7d53b00e
          frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
          listView.setOnItemClickListener((view, position, x, y) -> {
              if (getParentActivity() == null) {
-@@ -5049,7 +5055,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
-             }
-         });
- 
--        if (openSimilar || openGifts || openCommonChats) {
-+        if (openSimilar || openGifts || openCommonChats || getArguments().getBoolean("futoon_open_media", false)) {
-             updateRowsIds();
-             scrollToSharedMedia();
-             savedScrollToSharedMedia = true;
 @@ -5558,7 +5564,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                  nameTextView[a].setTextColor(getThemedColor(Theme.key_actionBarDefaultTitle));
              }
@@ -21600,7 +21606,7 @@ index 79abb08e49ecfcf79ce3d1718201aa71a945d176..0847abb1fac401dfe94f5b3afa380097
          items.add(Item.asSwitch(R.drawable.msg2_gif, LocaleController.getString(R.string.LiteOptionsAutoplayGifs), LiteMode.FLAG_AUTOPLAY_GIFS));
          items.add(Item.asSwitch(R.drawable.photo_star, LocaleController.getString(R.string.LiteOptionsParticles), LiteMode.FLAG_PARTICLES));
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
-index d21d71c377adca370e0fd16a496f9440b894e779..01f2383528ebdf4269b1d7fde2b9242747320036 100644
+index d21d71c..e20cb49 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsSettingsActivity.java
 @@ -180,14 +180,14 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
@@ -21623,6 +21629,46 @@ index d21d71c377adca370e0fd16a496f9440b894e779..01f2383528ebdf4269b1d7fde2b92427
  
          badgeNumberSection = rowCount++;
          badgeNumberShowRow = rowCount++;
+@@ -529,7 +529,7 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                 } else if (position == reactionsRow) {
+                     type = NotificationsController.TYPE_REACTIONS_MESSAGES;
+                     exceptions = null;
+-                    enabled = getNotificationsSettings().getBoolean("EnableReactionsMessages", true) || getNotificationsSettings().getBoolean("EnableReactionsStories", true);
++                    enabled = getNotificationsSettings().getBoolean("EnableReactionsMessages", true) || (!org.telegram.messenger.BuildVars.FUTOON_LITE && getNotificationsSettings().getBoolean("EnableReactionsStories", true));
+                 } else {
+                     type = NotificationsController.TYPE_CHANNEL;
+                     exceptions = exceptionChannels;
+@@ -559,10 +559,10 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                             SharedPreferences.Editor edit = getNotificationsSettings().edit();
+                             if (enabledFinal) {
+                                 edit.putBoolean("EnableReactionsMessages", false);
+-                                edit.putBoolean("EnableReactionsStories", false);
++                                if (!org.telegram.messenger.BuildVars.FUTOON_LITE) edit.putBoolean("EnableReactionsStories", false);
+                             } else {
+                                 edit.putBoolean("EnableReactionsMessages", true);
+-                                edit.putBoolean("EnableReactionsStories", true);
++                                if (!org.telegram.messenger.BuildVars.FUTOON_LITE) edit.putBoolean("EnableReactionsStories", true);
+                             }
+                             edit.apply();
+                             getNotificationsController().updateServerNotificationsSettings(type);
+@@ -1076,7 +1076,7 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                         text = getString(R.string.NotificationReactions);
+                         exceptions = null;
+                         autoExceptions = null;
+-                        offUntil = preferences.getBoolean("EnableReactionsMessages", true) || preferences.getBoolean("EnableReactionsStories", true) ? 0 : Integer.MAX_VALUE;
++                        offUntil = preferences.getBoolean("EnableReactionsMessages", true) || (!org.telegram.messenger.BuildVars.FUTOON_LITE && preferences.getBoolean("EnableReactionsStories", true)) ? 0 : Integer.MAX_VALUE;
+                         icon = R.drawable.msg_reactions;
+                     } else {
+                         text = getString(R.string.NotificationsChannels);
+@@ -1102,7 +1102,7 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
+                             if (preferences.getBoolean("EnableReactionsMessages", true)) {
+                                 builder.append(getString(R.string.NotificationReactionsMessages));
+                             }
+-                            if (preferences.getBoolean("EnableReactionsStories", true)) {
++                            if (!org.telegram.messenger.BuildVars.FUTOON_LITE && preferences.getBoolean("EnableReactionsStories", true)) {
+                                 if (builder.length() > 0) {
+                                     builder.append(", ");
+                                 }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java
 index 6ce417f1fca4670c57176b614018bd5d17f160e1..e3ae826a9538d59415a15df386ef095db13fba01 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/PrivacySettingsActivity.java
@@ -21636,3 +21682,44 @@ index 6ce417f1fca4670c57176b614018bd5d17f160e1..e3ae826a9538d59415a15df386ef095d
          groupsDetailRow = -1;
          if (!getMessagesController().premiumFeaturesBlocked() || getUserConfig().isPremium()) {
              voicesRow = rowCount++;
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsCustomSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsCustomSettingsActivity.java
+index 627188c..02830c9 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/NotificationsCustomSettingsActivity.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/NotificationsCustomSettingsActivity.java
+@@ -1416,20 +1416,22 @@ public class NotificationsCustomSettingsActivity extends BaseFragment implements
+                     ),
+                     prefs.getBoolean("EnableReactionsMessages", true)
+                 ));
+-                storiesRow = items.size();
+-                items.add(ItemInner.asCheck2(
+-                    BUTTON_STORIES_REACTIONS,
+-                    R.drawable.msg_stories_saved,
+-                    getString(R.string.NotifyMeAboutStoriesReactions),
+-                    getString(
+-                        !prefs.getBoolean("EnableReactionsStories", true) ?
+-                            R.string.NotifyFromNobody :
+-                        prefs.getBoolean("EnableReactionsStoriesContacts", false) ?
+-                            R.string.NotifyFromContacts :
+-                            R.string.NotifyFromEveryone
+-                    ),
+-                    prefs.getBoolean("EnableReactionsStories", true)
+-                ));
++                if (!org.telegram.messenger.BuildVars.FUTOON_LITE) {
++                    storiesRow = items.size();
++                    items.add(ItemInner.asCheck2(
++                        BUTTON_STORIES_REACTIONS,
++                        R.drawable.msg_stories_saved,
++                        getString(R.string.NotifyMeAboutStoriesReactions),
++                        getString(
++                            !prefs.getBoolean("EnableReactionsStories", true) ?
++                                R.string.NotifyFromNobody :
++                            prefs.getBoolean("EnableReactionsStoriesContacts", false) ?
++                                R.string.NotifyFromContacts :
++                                R.string.NotifyFromEveryone
++                        ),
++                        prefs.getBoolean("EnableReactionsStories", true)
++                    ));
++                }
+                 items.add(ItemInner.asShadow(-1, null));
+             } else {
+                 int text;
