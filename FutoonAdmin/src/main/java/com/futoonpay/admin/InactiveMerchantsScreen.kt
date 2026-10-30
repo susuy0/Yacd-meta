@@ -45,7 +45,7 @@ internal fun InactiveMerchantsScreen(state: NativeModuleState, onScan: (Inactive
             }
             items(rows, key = { it.uid }) { merchant ->
                 var expanded by remember(merchant.uid) { mutableStateOf(false) }
-                PayCard(compact = true) {
+                LedgerRecord {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(modifier = Modifier.semantics { contentDescription = "选择商户 #${merchant.uid}" }, checked = merchant.uid in selected, enabled = !busy && merchant.status > 0, onCheckedChange = { checked -> selected = if (checked) selected + merchant.uid else selected - merchant.uid })
                         Column(Modifier.weight(1f)) { Text("${merchant.name.ifBlank { "商户" }} #${merchant.uid}"); Text(merchant.statusText, color = Muted) }

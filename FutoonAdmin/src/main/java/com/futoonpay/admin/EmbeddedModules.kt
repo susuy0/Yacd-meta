@@ -59,6 +59,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -352,11 +353,11 @@ private fun AjaxModuleScreen(
         item {
             val next = state.page * 30 < state.total && state.rows.isNotEmpty()
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page - 1, query, state.selectedPath) }, enabled = state.page > 1) {
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { onLoad(state.page - 1, query, state.selectedPath) }, enabled = state.page > 1) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null); Text("上一页")
                 }
                 Text("第 ${state.page} 页", color = Muted, fontSize = 12.sp)
-                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page + 1, query, state.selectedPath) }, enabled = next) {
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { onLoad(state.page + 1, query, state.selectedPath) }, enabled = next) {
                     Text("下一页"); Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
                 }
             }
@@ -366,7 +367,7 @@ private fun AjaxModuleScreen(
         AlertDialog(shape = RoundedCornerShape(20.dp), 
             onDismissRequest = { deleteRow = null }, title = { Text("移除黑名单") },
             text = { Text("确认移除 ${row.values["content"].orEmpty()}？") },
-            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onDelete(row.id); deleteRow = null }) { Text("确认移除") } },
+            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onDelete(row.id); deleteRow = null }) { Text("确认移除") } },
             dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { deleteRow = null }) { Text("取消") } },
         )
     }
@@ -379,7 +380,7 @@ internal fun GenericRowCard(row: GenericRow, source: ModuleSource.Ajax, onDelete
     val title = if (blacklist) row.values["content"].orEmpty().ifBlank { "记录 #${row.id}" }
         else row.values["uid"]?.takeIf(String::isNotBlank)?.let { "商户 #$it" } ?: "记录 #${row.id}"
     val primary = if (blacklist) setOf("type", "addtime", "remark") else setOf("type", "money", "date", "addtime")
-    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
+    Surface(color = CardColor, shape = androidx.compose.ui.graphics.RectangleShape) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
@@ -466,7 +467,7 @@ internal fun NativeTableRow(headers: List<String>, row: List<String>, summaryFie
     var expanded by remember(row) { mutableStateOf(false) }
     val fields = row.mapIndexedNotNull { index, value -> if (value.isBlank()) null else
         (headers.getOrNull(index)?.ifBlank { "字段 ${index + 1}" } ?: "字段 ${index + 1}") to value }
-    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
+    Surface(color = CardColor, shape = androidx.compose.ui.graphics.RectangleShape) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             val hasZero = foldZeroDetails && fields.drop(summaryFields).any { it.second.toBigDecimalOrNull()?.compareTo(java.math.BigDecimal.ZERO) == 0 }
             val details = if (!foldZeroDetails || showZero) fields.drop(summaryFields) else fields.drop(summaryFields).filter { it.second.toBigDecimalOrNull()?.compareTo(java.math.BigDecimal.ZERO) != 0 }
@@ -500,14 +501,14 @@ internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String,
             }
             com.futoonpay.admin.ui.ChatButton(enabled = !busy, onClick = {
                 if (form.method.equals("GET", true)) onSubmit(form, values.toMap()) else confirm = true
-            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) { Text(if (form.method.equals("GET", true)) "查询" else "保存设置") }
+            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) { Text(if (form.method.equals("GET", true)) "查询" else "保存设置") }
         }
     }
     if (confirm) AlertDialog(shape = RoundedCornerShape(20.dp), 
         onDismissRequest = { confirm = false }, title = { Text("确认保存") },
         text = { Text("设置会立即提交到管理后台。资金、通道和权限参数请再次核对。") },
         confirmButton = {
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = {
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = {
                 val submitted = values.filter { (name, value) ->
                     val field = form.fields.first { it.name == name }
                     !field.readOnly && (!field.sensitive || value.isNotBlank())
@@ -554,7 +555,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(field.label + if (field.required) " *" else "", color = Ink, fontSize = 13.sp)
         com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { query = ""; selected = value; expanded = true }, enabled = !field.readOnly && field.options.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(24.dp)) {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(8.dp)) {
             Text(current.ifBlank { if (field.options.isEmpty()) "暂无可用选项" else "请选择" }, color = Ink,
                 fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text("⌄", color = Muted, fontSize = 20.sp)
@@ -576,7 +577,7 @@ private fun SelectField(field: NativeField, value: String, onValueChange: (Strin
             }
             if (options.isEmpty()) item { Text("没有匹配的选项", color = Muted, modifier = Modifier.padding(16.dp)) }
         }
-        if (confirmSelection) com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onValueChange(selected); expanded = false },
+        if (confirmSelection) com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onValueChange(selected); expanded = false },
             enabled = field.options.any { it.value == selected }, modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(min = 48.dp)) {
             Text(field.options.firstOrNull { it.value == selected }?.label?.let { "选择 $it" } ?: "选择插件")
         }
@@ -601,7 +602,7 @@ private fun BlacklistDialog(onDismiss: () -> Unit, onConfirm: (String, String, S
                 item { OutlinedTextField(remark, { remark = it }, label = { Text("备注") } , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             }
         },
-        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onConfirm(type, content, reason, days, remark) }, enabled = content.isNotBlank()) { Text("确认添加") } },
+        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onConfirm(type, content, reason, days, remark) }, enabled = content.isNotBlank()) { Text("确认添加") } },
         dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = onDismiss) { Text("取消") } },
     )
 }

@@ -235,11 +235,11 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             item { ListFeedback(state.loading && state.rows.isEmpty(), state.loadError, !state.loading && state.rows.isEmpty(), { viewModel.load() }) }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { viewModel.load(state.page - 1, keyword, merchantId, state.status) }, enabled = state.page > 1) {
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { viewModel.load(state.page - 1, keyword, merchantId, state.status) }, enabled = state.page > 1) {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null); Text("上一页")
                     }
                     Text("第 ${state.page} 页", color = Muted, fontSize = 12.sp)
-                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp),
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp),
                         onClick = { viewModel.load(state.page + 1, keyword, merchantId, state.status) },
                         enabled = state.page * FutoonRepository.DOMAIN_PAGE_SIZE < state.total && state.rows.isNotEmpty(),
                     ) { Text("下一页"); Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) }
@@ -261,8 +261,8 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             reviewError?.let { Text(it, color = Danger, fontSize = 12.sp) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 fun submitReview(status: Int) { reviewLoading = true; reviewError = null; viewModel.setStatus(row.id, status, remark) { response -> reviewLoading = false; if (response.success) selectedDomain = null else reviewError = response.message } }
-                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { submitReview(2) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 2) { Text("拒绝", color = Danger) }
-                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { submitReview(1) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 1) { Text(if (reviewLoading) "提交中…" else "通过审核") }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { submitReview(2) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 2) { Text("拒绝", color = Danger) }
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { submitReview(1) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), enabled = !reviewLoading && row.status != 1) { Text(if (reviewLoading) "提交中…" else "通过审核") }
             }
         }
     } }
@@ -273,7 +273,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             onDismissRequest = { pending = null }, title = { Text(label) },
             text = { Text("${action.row.domain}\n商户 ${action.row.merchantId}\n该操作会立即更新后台审核状态。") },
             confirmButton = {
-                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = {
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = {
                     if (action.delete) viewModel.delete(action.row.id) else viewModel.setStatus(action.row.id, action.status ?: 0, "") {}
                     pending = null
                 }) { Text("确认") }
@@ -331,7 +331,7 @@ private fun AddDomainDialog(onDismiss: () -> Unit, fixedMerchantId: String = "",
                 OutlinedTextField(domain, { domain = it }, label = { Text("域名") }, supportingText = { Text("支持通配符 *") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
         },
-        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onConfirm(merchantId.trim(), domain.trim()) }, enabled = merchantId.isNotBlank() && domain.isNotBlank()) { Text("确认添加") } },
+        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onConfirm(merchantId.trim(), domain.trim()) }, enabled = merchantId.isNotBlank() && domain.isNotBlank()) { Text("确认添加") } },
         dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = onDismiss) { Text("取消") } },
     )
 }

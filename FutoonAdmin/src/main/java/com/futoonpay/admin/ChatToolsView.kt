@@ -202,8 +202,8 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                     if (currentPreview.body.length > QUICK_REPLY_LIMIT) Text("文案超过 $QUICK_REPLY_LIMIT 字，请在管理中修改后再填入。", color = Danger)
                 }
                 Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { preview = null }, modifier = Modifier.weight(1f)) { Text("返回列表") }
-                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), enabled = currentPreview.body.length <= QUICK_REPLY_LIMIT, onClick = { bridge.selectReply(currentPreview.body) }, modifier = Modifier.weight(1f)) { Text("填入输入框") }
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { preview = null }, modifier = Modifier.weight(1f)) { Text("返回列表") }
+                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), enabled = currentPreview.body.length <= QUICK_REPLY_LIMIT, onClick = { bridge.selectReply(currentPreview.body) }, modifier = Modifier.weight(1f)) { Text("填入输入框") }
                 }
                 com.futoonpay.admin.ui.ChatTextButton(shape = RoundedCornerShape(24.dp), onClick = bridge::originalSendOptions, modifier = Modifier.fillMaxWidth()) { Text("原发送选项") }
             }
@@ -305,7 +305,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
                 if (data.tags.isEmpty()) item { Text("暂无自定义 Tag", color = Muted) }
             } else if (data != null && page == "opening") {
                 item { Text("开户后填入当前会话输入框，由你校对后手动发送。D0 开启结算，D1 不开启结算。", color = Muted, fontSize = 13.sp) }
-                item { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), enabled = !saving, onClick = { editor = ChatEditor("opening", "opening", second = data.openingTemplate) }) { Text("编辑开户文案") } }
+                item { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), enabled = !saving, onClick = { editor = ChatEditor("opening", "opening", second = data.openingTemplate) }) { Text("编辑开户文案") } }
                 item { PayCard { Text(data.openingTemplate, fontSize = 14.sp) } }
             } else if (data != null && page == "replies") {
                 item { Text("选择 Tab 管理分类，再进入分类管理文案。", color = Muted, fontSize = 13.sp) }
@@ -415,7 +415,7 @@ private data class ChatEditor(val kind: String, val id: String = "", val first: 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 com.futoonpay.admin.ui.ChatTextButton(shape = RoundedCornerShape(24.dp), enabled = !saving, onClick = ::close) { Text("取消") }
                 Spacer(Modifier.weight(1f))
-                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), enabled = !saving && dirty && (current.kind != "opening" || validation == null), onClick = {
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), enabled = !saving && dirty && (current.kind != "opening" || validation == null), onClick = {
                     if (validation != null) inputError = validation else try { onSave(first, second.text) } catch (e: IllegalArgumentException) { inputError = e.message }
                 }) { Text(if (saving) "保存中…" else "保存") }
             }

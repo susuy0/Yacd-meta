@@ -15,13 +15,13 @@ import org.json.JSONObject
 data class FutoonPalette(
     val dark: Boolean = false,
     val surface: Color = Color(0xFFFFFFFF),
-    val background: Color = Color(0xFFF4F4F4),
-    val text: Color = Color(0xFF0A0A0A),
-    val secondaryText: Color = Color(0xFF767779),
-    val accent: Color = Color(0xFF1DAB61),
-    val accentText: Color = Color(0xFF1B8755),
+    val background: Color = Color(0xFFF4F7F9),
+    val text: Color = Color(0xFF182A35),
+    val secondaryText: Color = Color(0xFF647687),
+    val accent: Color = Color(0xFF087F69),
+    val accentText: Color = Color(0xFF08745F),
     val buttonText: Color = Color.White,
-    val divider: Color = Color(0xFFF4F4F4),
+    val divider: Color = Color(0xFFE5EBEF),
     val error: Color = Color(0xFFCF3434),
     val success: Color = Color(0xFF26844B),
     val fontScale: Float = 1f,
@@ -46,8 +46,10 @@ val Mist: Color @Composable get() = MaterialTheme.colorScheme.background
 val Line: Color @Composable get() = MaterialTheme.colorScheme.outlineVariant
 val Muted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 val Danger: Color @Composable get() = MaterialTheme.colorScheme.error
-// Pending/uncertain states also carry explicit text and icons; no fixed amber overrides a custom theme.
-val Warning: Color @Composable get() = LocalFutoonPalette.current.accentText
+// State has a semantic color and a text label; it never relies on color alone.
+val Warning: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFFEBC57C) else Color(0xFF94600B)
+val HeaderSurface: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFF14252E) else Color(0xFF20343E)
+val HeaderInk: Color @Composable get() = Color(0xFFF6F9FB)
 val GreenTint: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
 val SelectedInk: Color @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
 val CardColor: Color @Composable get() = MaterialTheme.colorScheme.surface
@@ -78,8 +80,8 @@ fun FutoonTheme(palette: FutoonPalette = LocalFutoonPalette.current, content: @C
     val density = androidx.compose.ui.platform.LocalDensity.current
     CompositionLocalProvider(LocalFutoonPalette provides safePalette, androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * palette.fontScale)) {
         MaterialTheme(colorScheme = colors,
-            typography = Typography(titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp), titleMedium = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), bodyLarge = TextStyle(fontSize = 17.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 15.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
-            shapes = Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(20.dp), extraLarge = RoundedCornerShape(24.dp)),
+            typography = Typography(titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp), titleMedium = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 23.sp), bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp), bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 18.sp)),
+            shapes = Shapes(extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(8.dp), medium = RoundedCornerShape(10.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(20.dp)),
             content = { CompositionLocalProvider(LocalContentColor provides colors.onSurface) { content() } })
     }
 }

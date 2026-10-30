@@ -56,13 +56,15 @@ class OfficialBackendUiTest {
         val writes = AtomicInteger(); val vm = model { if (it.method != "GET") writes.incrementAndGet(); "{}" }
         val state = AppUiState(settlements = listOf(row(2)), settlementTotal = 1, settlementsLoading = false)
         compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp)) { PanelOverlayHost { SettlementsScreen(state, vm) } } } }
-        compose.onNodeWithText("实际到账 47.56 USDT").assertExists()
-        compose.onNodeWithText("手续费", substring = true).assertDoesNotExist()
         compose.onNodeWithContentDescription("结算操作").performClick()
         compose.onNodeWithText("标记已完成").assertDoesNotExist(); compose.onNodeWithText("作废结算").assertDoesNotExist()
         compose.onNodeWithText("设为正在结算").assertDoesNotExist()
         compose.onNodeWithText("原因与处理建议").assertExists(); assertEquals(0, writes.get())
         screenshot("41-processing-settlement-actions")
+        compose.onNodeWithText("原因与处理建议").performClick()
+        compose.onNodeWithText("47.56 USDT").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("手续费", substring = true).assertDoesNotExist()
+        assertEquals(0, writes.get())
     }
     @Test fun reviewDetailsReadOnlyUntilAnExplicitReviewIntentAndNeverDisplayToken() {
         val writes = AtomicInteger(); val token = "a".repeat(64); var action = ""; var payload = emptyMap<String, String>()
@@ -144,7 +146,7 @@ class OfficialBackendUiTest {
         compose.onNodeWithText("示例新通道").assertExists()
         compose.onNodeWithText("敏感字段不会从网页回填；留空表示不修改").assertDoesNotExist()
         compose.onNodeWithText("查询日期").performTextReplacement("2026-10-29")
-        compose.onNodeWithContentDescription("统计方式").performClick(); compose.onNodeWithText("按支付通道").performClick(); compose.onNodeWithText("查询", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("按支付通道").performClick()
         compose.waitUntil(5000) { requests.size >= 2 && compose.onAllNodesWithText("2026-10-29 · 按支付通道 · 1 个商户").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(mapOf("day" to "2026-10-29", "method" to "channel"), requests.last())
         screenshot("46-native-merchant-statistics")

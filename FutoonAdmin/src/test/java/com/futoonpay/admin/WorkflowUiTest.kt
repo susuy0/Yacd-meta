@@ -64,7 +64,7 @@ class WorkflowUiTest {
     }
     @Test fun allFiveTabsRemainVisibleAndRecognizedMerchantUsesMoreWithoutEditing() {
         root()
-        listOf("识别", "订单", "商户", "结算", "更多").forEach { compose.onNode(hasText(it) and hasClickAction()).assertIsDisplayed() }
+        listOf("识别", "订单", "商户", "结算", "管理").forEach { compose.onNode(hasText(it) and hasClickAction()).assertIsDisplayed() }
         compose.onNode(hasText("识别") and hasClickAction()).performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithContentDescription("当前商户更多操作").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("截图 OCR / 二维码").assertIsDisplayed()
@@ -83,13 +83,46 @@ class WorkflowUiTest {
         assertFalse(bridge.calls.any { it.first in listOf("merchant.profile", "form.save") })
         screenshot("23-recognition-merchant-more")
     }
+    @Test fun recognitionLibraryMenuPreservesFavoritesAndBackReturnsToRecognition() {
+        root()
+        compose.onNodeWithTag("chat-nav-recognition").performClick()
+        compose.onNodeWithText("收藏订单").assertDoesNotExist()
+        compose.onNodeWithContentDescription("识别工具").performClick()
+        compose.onNodeWithText("收藏订单").performClick()
+        compose.onNodeWithText("暂无收藏订单").assertExists()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("截图 OCR / 二维码").assertExists()
+        assertFalse(bridge.calls.any { it.first == "form.save" })
+    }
+    @Test fun clipboardPasteOnlyFillsInputAndDoesNotStartAQuery() {
+        root()
+        compose.onNodeWithTag("chat-nav-recognition").performClick()
+        compose.runOnUiThread {
+            val clipboard=compose.activity.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("fixture", "商户 PID 10028"))
+        }
+        compose.onNodeWithText("粘贴").performClick()
+        compose.onNode(hasText("商户 PID 10028") and hasSetTextAction()).assertExists()
+        assertFalse(bridge.calls.any { it.first == "orders.search" })
+    }
+    @Test fun recognitionSelectAllCanDisableQueriesWithoutLosingTheCorrectedIdentifier() {
+        root(RecognizedQuery("系统订单号 S1000001", "AUTO"))
+        compose.onNodeWithTag("recognition-list").performScrollToNode(hasContentDescription("全选识别结果"))
+        compose.onNodeWithContentDescription("全选识别结果").assertIsOn().performClick().assertIsOff()
+        compose.onNodeWithText("查询所选").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("全选识别结果").performClick().assertIsOn()
+        compose.onNodeWithText("查询所选").assertIsEnabled()
+        assertFalse(bridge.calls.any { it.first == "orders.search" })
+    }
     @Test fun merchantTabHasBothCurrentConversationAndOriginalFullList() {
         root()
         compose.onNode(hasText("商户") and hasClickAction()).performClick()
-        compose.onNodeWithText("当前会话").assertIsDisplayed()
+        compose.onNodeWithText("全部商户").assertIsSelected()
+        compose.onNodeWithText("当前会话").assertIsDisplayed().performClick()
+        compose.onNodeWithText("当前会话商户").assertExists()
         compose.onNodeWithText("全部商户").assertIsDisplayed().performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("UID 1011", substring = true).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("完整搜索").assertExists()
+        compose.onNodeWithContentDescription("完整搜索").assertExists()
         compose.onNodeWithText("多选").assertExists()
         screenshot("24-full-original-merchants-tab")
     }

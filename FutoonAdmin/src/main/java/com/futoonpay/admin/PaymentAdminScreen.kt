@@ -706,7 +706,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             if (state.spec.supportsAdd) Surface(color = CardColor) {
-                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = viewModel::openAdd, enabled = !state.loading,
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = viewModel::openAdd, enabled = !state.loading,
                     modifier = Modifier.fillMaxWidth().padding(16.dp).heightIn(min = 48.dp)) {
                     Text("新建" + state.spec.title)
                 }
@@ -788,7 +788,7 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
         if (!document?.actions.isNullOrEmpty()) item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(document?.actions.orEmpty()) { action ->
-                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { select(action) }, enabled = !state.loading) { Text(action.label) }
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { select(action) }, enabled = !state.loading) { Text(action.label) }
                 }
             }
         }
@@ -805,7 +805,7 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
             onDismissRequest = { pending = null },
             title = { Text("确认${action.label}") },
             text = { Text(com.futoonpay.admin.data.nativeActionTarget(document, action) + configurationActionAssociations(state, action) + "\n该操作会立即更新后台状态。") },
-            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { viewModel.execute(action); pending = null }) { Text("确认${action.label}") } },
+            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { viewModel.execute(action); pending = null }) { Text("确认${action.label}") } },
             dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { pending = null }) { Text("取消") } },
         )
     }
@@ -848,7 +848,7 @@ private fun PaymentChannelCard(
         PaymentChannelStatus.DISABLED -> Danger
         PaymentChannelStatus.UNKNOWN -> Warning
     }
-    Card(modifier = Modifier.clickable { onOpenDetail(item) }, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Surface(modifier = Modifier.fillMaxWidth().clickable { onOpenDetail(item) }, color = CardColor, shape = androidx.compose.ui.graphics.RectangleShape) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -969,10 +969,10 @@ private fun PaymentChannelDetailScreen(
             item {
                 Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = onTest, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("测试支付") }
-                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onOrders, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("通道订单") }
+                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = onTest, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("测试支付") }
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = onOrders, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("通道订单") }
                 }
-                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp),
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp),
                     onClick = onRelatedType,
                     enabled = !detail?.paymentTypeId.isNullOrBlank(),
                     modifier = Modifier.fillMaxWidth(),
@@ -1003,7 +1003,7 @@ private fun PaymentChannelDetailScreen(
             onDismissRequest = { pending = null },
             title = { Text("确认${action.label}") },
             text = { Text("该操作会立即更新通道状态，并可能影响正在处理的支付。") },
-            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onAction(action); pending = null }) { Text("确认") } },
+            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onAction(action); pending = null }) { Text("确认") } },
             dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { pending = null }) { Text("取消") } },
         )
     }
@@ -1050,7 +1050,7 @@ private fun PaymentTestDialog(
                     Text(it.message, color = if (it.success) GreenDark else Danger, fontSize = 12.sp)
                     if (it.tradeNo.isNotBlank()) androidx.compose.foundation.text.selection.SelectionContainer { Text("订单号 ${it.tradeNo}", fontSize = 12.sp) }
                     if (it.success && qr != null) androidx.compose.foundation.Image(qr.asImageBitmap(), "支付二维码", Modifier.fillMaxWidth().height(220.dp))
-                    if (it.success && canOpen) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp),
+                    if (it.success && canOpen) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp),
                         onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(paymentUrl))) }.onFailure {
                             android.widget.Toast.makeText(context, "未找到可打开付款页的应用，可复制付款链接", android.widget.Toast.LENGTH_LONG).show()
                         } },
@@ -1067,8 +1067,8 @@ private fun PaymentTestDialog(
                 }
             }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("关闭") }
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) {
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("关闭") }
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { if (uncertain) { onDismiss(); navigation.orders(channelId = channel.id) } else onSubmit(name, amount) }, enabled = !loading && name.isNotBlank() && com.futoonpay.admin.data.validRefundAmount(amount, "999999999.99"), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) {
                 if (loading) CircularProgressIndicator(Modifier.size(17.dp), strokeWidth = 2.dp) else Text(if (uncertain) "在订单中核对" else "创建测试订单")
             }
         }
@@ -1092,7 +1092,7 @@ private fun PaymentChannelSortPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
@@ -1114,7 +1114,7 @@ private fun PaymentChannelGroupPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
@@ -1177,7 +1177,7 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
         RollGroupStatus.DISABLED -> Danger
         RollGroupStatus.UNKNOWN -> Warning
     }
-    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Surface(modifier = Modifier.fillMaxWidth(), color = CardColor, shape = androidx.compose.ui.graphics.RectangleShape) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -1229,7 +1229,7 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
 private fun RollSortPicker(label: String, value: RollSortDimension, onSelect: (RollSortDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
@@ -1247,7 +1247,7 @@ private fun RollSortPicker(label: String, value: RollSortDimension, onSelect: (R
 private fun RollGroupPicker(value: RollGroupDimension, onSelect: (RollGroupDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
@@ -1282,12 +1282,12 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
         itemsIndexed(channels, key = { index, it -> "${it.id}:$index" }) { _, item ->
             val metrics = item.metrics(window)
             SelectableRecord(selection, item.id, "通道 ${item.id}") {
-            PayCard {
+            com.futoonpay.admin.ui.LedgerRecord {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(item.name.ifBlank { "通道 #${item.id}" } + " #${item.id}", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     PayBadge(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else GreenDark)
                 }
-                Text(metrics.rate?.let(::formatMonitorRate) ?: if (metrics.total == 0) "暂无样本" else "暂无统计", color = GreenDark, fontSize = 30.sp, fontWeight = FontWeight.SemiBold)
+                Text(metrics.rate?.let(::formatMonitorRate) ?: if (metrics.total == 0) "暂无样本" else "暂无统计", color = GreenDark, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Text("成功率 · 近${window.label}", color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("成功 ${metrics.successful ?: "—"}", color = Muted, fontSize = 12.sp)
@@ -1305,9 +1305,9 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
         }
         item { ListFeedback(state.loading && channels.isEmpty(), state.loadError, !state.loading && channels.isEmpty(), { onLoad(state.page, query) }) }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page - 1, query) }, enabled = state.page > 1 && !state.loading) { Text("上一页") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { onLoad(state.page - 1, query) }, enabled = state.page > 1 && !state.loading) { Text("上一页") }
             Text("第 ${state.page} 页", color = Muted, fontSize = 12.sp)
-            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { onLoad(state.page + 1, query) }, enabled = channels.size >= FutoonRepository.PAGE_SIZE && !state.loading) { Text("下一页") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { onLoad(state.page + 1, query) }, enabled = channels.size >= FutoonRepository.PAGE_SIZE && !state.loading) { Text("下一页") }
         } }
     }
 }
@@ -1403,7 +1403,7 @@ private fun MonitorRateCell(label: String, rate: Double?, modifier: Modifier = M
 private fun MonitorSortPicker(label: String, value: MonitorSortDimension, onSelect: (MonitorSortDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text(label, color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp, maxLines = 1)
@@ -1421,7 +1421,7 @@ private fun MonitorSortPicker(label: String, value: MonitorSortDimension, onSele
 private fun MonitorGroupPicker(value: MonitorGroupDimension, onSelect: (MonitorGroupDimension) -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier) {
-        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+        com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
                 Text("分组维度", color = Muted, fontSize = 12.sp)
                 Text(value.label, color = Ink, fontSize = 12.sp)
@@ -1437,7 +1437,7 @@ private fun MonitorGroupPicker(value: MonitorGroupDimension, onSelect: (MonitorG
 
 @Composable
 private fun SortDirectionButton(ascending: Boolean, onClick: () -> Unit) {
-    com.futoonpay.admin.ui.ChatOutlinedButton(onClick = onClick, modifier = Modifier.width(76.dp).height(56.dp), shape = RoundedCornerShape(24.dp)) {
+    com.futoonpay.admin.ui.ChatOutlinedButton(onClick = onClick, modifier = Modifier.width(76.dp).height(56.dp), shape = RoundedCornerShape(8.dp)) {
         Text(if (ascending) "升序" else "降序", fontSize = 12.sp)
     }
 }
@@ -1459,7 +1459,7 @@ private fun monitorExtraFields(item: ChannelMonitorItem): List<Pair<String, Stri
 
 @Composable
 private fun PaymentRowCard(headers: List<String>, row: List<String>, actions: List<NativeAction>, onAction: (NativeAction) -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
+    Surface(modifier = Modifier.fillMaxWidth(), color = CardColor, shape = androidx.compose.ui.graphics.RectangleShape) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             row.forEachIndexed { index, value ->
                 if (value.isNotBlank()) Row(Modifier.fillMaxWidth()) {
@@ -1525,8 +1525,8 @@ internal fun PaymentEditorScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
             Surface(color = CardColor) { Row(Modifier.fillMaxWidth().imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onBack, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = {
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = onBack, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+                com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = {
                     val submitted = values.filter { (name, value) -> val field = form.fields.first { it.name == name }; !field.readOnly && (!field.sensitive || value.isNotBlank()) }
                     onSubmit(form, submitted)
                 }, enabled = !loading && !missingRequired && !uncertain, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "处理中…" else "保存") }
@@ -1561,7 +1561,7 @@ internal fun PaymentEditorScreen(
                         }
                     }
                 }
-                item { com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = {
+                item { com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = {
                     if (visibleRoutes >= channelFields.size) onAddRoute()
                     visibleRoutes++
                 }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text("添加通道") } }
@@ -1585,7 +1585,7 @@ internal fun PaymentEditorScreen(
     }
     pluginChange?.let { next -> AlertDialog(shape = RoundedCornerShape(20.dp), onDismissRequest = { pluginChange = null },
         title = { Text("更换支付插件") }, text = { Text("更换后会重新加载账户配置字段，当前账户输入将清空。") },
-        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onFieldChange("plugin", next); pluginChange = null }) { Text("更换插件") } },
+        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onFieldChange("plugin", next); pluginChange = null }) { Text("更换插件") } },
         dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { pluginChange = null }) { Text("保留当前插件") } }) }
 }
 

@@ -9,9 +9,10 @@ import org.json.JSONObject
 import java.util.UUID
 
 /** Original 1.3.4 repository, forms, validation and module catalogue adapted to the host panel. */
-class PanelBusinessEngine internal constructor(private val api: FutoonApiClient) {
-    constructor(session: PanelSession): this(FutoonApiClient(PanelCookieJar(session,session.address().toHttpUrl()),session.address().toHttpUrl()))
-    private val repository=FutoonRepository(api)
+class PanelBusinessEngine internal constructor(private val api: FutoonApiClient, balancePendingStore: BalancePendingStore = MemoryBalancePendingStore()) {
+    constructor(session: PanelSession): this(FutoonApiClient(PanelCookieJar(session,session.address().toHttpUrl()),session.address().toHttpUrl()), SessionBalancePendingStore(session))
+    private val repository=FutoonRepository(api, balancePendingStore)
+    private val balanceSessions=linkedMapOf<String, BalanceSession>()
     private data class DocumentState(val module: String,val path: String,val document: NativeDocument)
     private data class FormState(val module: String,val path: String,val form: NativeForm,val uid: String="",val accountForm: NativeForm?=null,val routeForm: NativeForm?=null,val primarySaved: Boolean=false,val expires: Long=System.currentTimeMillis()+600000)
     private data class ActionState(val state: DocumentState,val action: NativeAction,val expires: Long=System.currentTimeMillis()+600000)
@@ -25,7 +26,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
     private val actions=linkedMapOf<String,ActionState>()
     private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor","weixin_apps")
     private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","payment_plugins","user_groups","group_purchase","announcements","payment_settings","site_settings","login_logs","account_settings")
-    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
+    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","merchant.balance.info","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
     @Throws(Exception::class) fun execute(op: String,p: JSONObject): JSONObject = runBlocking {
         require(supports(op)) { "不支持的业务操作" }
         when(op) {
@@ -97,7 +98,34 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             "merchant.profile" -> {val uid=id(p.getString("uid"));registerForm("merchant","uset.php?my=edit&uid=$uid",repository.merchantProfile(uid),uid)}
             "merchant.status" -> {val type=p.getString("type");require(type in setOf("status","pay","settle"));result(repository.setMerchantStatus(id(p.getString("uid")),type,p.getBoolean("enabled")))}
             "merchant.group" -> result(repository.setMerchantGroup(id(p.getString("uid")),p.getString("gid").also {require(it.matches(Regex("[0-9]{1,10}")))},p.optString("endtime")))
-            "merchant.balance" -> {require(p.optString("currency","CNY")=="CNY");val direction=p.getString("direction");require(direction in setOf("add","deduct"));result(repository.rechargeMerchant(id(p.getString("uid")),if(direction=="add")"add" else "reduce",amount(p.getString("amount"))))}
+            "merchant.balance.info" -> {
+                val session=repository.merchantBalanceInfo(id(p.getString("uid")))
+                val ticket=UUID.randomUUID().toString()
+                while(balanceSessions.size>=20)balanceSessions.remove(balanceSessions.keys.first())
+                balanceSessions[ticket]=session
+                val info=session.info
+                JSONObject().put("ticket",ticket).put("uid",info.uid).put("currency","CNY")
+                    .put("money",info.total).put("available",info.available).put("freeze_money",info.frozen).put("reserved",info.reserved)
+                    .put("reservation_shortfall",info.shortfall).put("freezable",info.freezable).put("releasable",info.releasable).put("reservation_consistent",info.consistent)
+                    .put("applications_more",info.applicationsMore).put("applications",JSONArray(info.applications.map { a->JSONObject().put("id",a.id).put("amount",a.amount).put("amount_unit",a.unit).put("release_amount",a.releaseAmount).put("status_label",a.status).put("chain_label",a.chain).put("created_at",a.createdAt).put("can_cancel",a.canCancel).put("blocked_reason",a.blockedReason) }))
+                    .put("pending",session.pending?.let { JSONObject().put("operation",it.operation.action).put("amount",it.fields["rmb"]).put("note",it.fields["note"]).put("application_id",it.fields["application_id"].orEmpty()) })
+            }
+            "merchant.balance" -> {
+                require(p.optString("currency","CNY")=="CNY")
+                val uid=id(p.getString("uid"))
+                if(repository.modernBackend) {
+                    val ticket=p.getString("ticket")
+                    val session=balanceSessions.remove(ticket) ?: error("请先重新读取余额管理")
+                    require(session.info.uid==uid) { "商户号与余额管理不一致" }
+                    val retry=p.optBoolean("retry")
+                    val action=p.optString("direction").let { if(it=="deduct")"reduce" else it }
+                    val command=if(retry)session.pending?.command() ?: error("没有待核对操作") else BalanceCommand(ModernBalanceOperation.fromAction(action) ?: error("余额操作无效"),p.optString("amount"),p.optString("note"),p.optString("application_id"))
+                    result(repository.adjustMerchantBalance(session,command,retry))
+                } else {
+                    val direction=p.getString("direction");require(direction in setOf("add","deduct"))
+                    result(repository.rechargeMerchant(uid,if(direction=="add")"add" else "reduce",amount(p.getString("amount"))))
+                }
+            }
             "settlements.list" -> {
                 val r=repository.settlements(page(p),mapOf("uid" to p.optString("uid"),"type" to "0","dstatus" to p.optString("status","-1")))
                 currentSettlements=r.rows
@@ -295,7 +323,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
     }
     private fun trimTickets() {val now=System.currentTimeMillis();batches.entries.removeAll {it.value.first<=now};while(batches.size>30)batches.remove(batches.keys.first());forms.entries.removeAll {it.value.expires<=now};actions.entries.removeAll {it.value.expires<=now};while(forms.size>200)forms.remove(forms.keys.first());while(actions.size>2000)actions.remove(actions.keys.first())}
     private fun optionJson(o: NativeOption)=JSONObject().put("value",o.value).put("label",o.label)
-    private fun result(r: ApiResult)=JSONObject().put("code",if(r.success)0 else -1).put("msg",r.message).put("partial",r.partial).put("id",r.recordId)
+    private fun result(r: ApiResult)=JSONObject().put("code",if(r.success)0 else -1).put("msg",r.message).put("partial",r.partial).put("uncertain",r.uncertain).put("id",r.recordId)
     private fun page(p: JSONObject)=p.optInt("page",1).also {require(it in 1..100000)}
     private fun id(s: String)=s.also {require(it.matches(Regex("[1-9][0-9]{0,19}"))){"记录 ID 无效"}}
     private fun orderId(s: String)=s.also {require(it.matches(Regex("[A-Za-z0-9_-]{4,128}"))){"订单号无效"}}

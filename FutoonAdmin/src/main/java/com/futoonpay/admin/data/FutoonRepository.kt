@@ -13,7 +13,17 @@ import kotlinx.coroutines.sync.withPermit
 
 class FutoonRepository(
     private val api: FutoonApiClient,
+    balancePendingStore: BalancePendingStore = MemoryBalancePendingStore(),
 ) {
+    private val modernBalance = ModernMerchantBalance(api, balancePendingStore)
+    suspend fun merchantBalanceInfo(uid: String): BalanceSession {
+        require(modernBackend) { "旧版后台不支持新版余额管理" }
+        return modernBalance.open(uid)
+    }
+    suspend fun adjustMerchantBalance(session: BalanceSession, command: BalanceCommand, retry: Boolean = false): ApiResult {
+        require(modernBackend)
+        return modernBalance.submit(session, command, retry)
+    }
     val backendAddress: String get() = api.baseUrl.toString()
     val modernBackend: Boolean get() = com.futoonpay.admin.BackendRoutes.usesPlainRoutes(api.baseUrl.encodedPath)
     private val batchRunner = BatchRunner()
@@ -487,6 +497,7 @@ class FutoonRepository(
     )
 
     suspend fun rechargeMerchant(uid: String, operation: String, amount: String): ApiResult {
+        if (modernBackend) return ApiResult(false, "请先打开余额管理，读取最新余额并填写操作原因")
         val fields = merchantBalanceFields(uid, operation, amount)
             ?: return ApiResult(false, "请选择增加或扣除余额，并输入大于 0、最多两位小数的金额及有效商户号")
         return api.postAction(

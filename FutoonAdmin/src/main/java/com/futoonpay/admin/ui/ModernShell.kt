@@ -73,7 +73,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 Text("包含 https://，不带路径", color = Muted, fontSize = 12.sp)
                 LoginField("后台路径", path, { path = it; error = null }, "/admin", KeyboardType.Uri)
                 Text("以 / 开头，可修改，保存在本机", color = Muted, fontSize = 12.sp)
-                if (!connected) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = {
+                if (!connected) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = {
                     runCatching { composeBackendAddress(origin, path) }.onSuccess(onConnect).onFailure { error = it.message }
                 }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(if (busy) "正在连接…" else "连接后台") }
             }
@@ -104,7 +104,7 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
         (error ?: state.message)?.let { item { Text(it, color = Danger, fontSize = 13.sp) } }
     }
         Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { onLogin(username, password, captcha) },
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onLogin(username, password, captcha) },
                 enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = ButtonText, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
@@ -134,13 +134,19 @@ internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onS
             leadingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.fillMaxWidth(), colors = ChatFieldColors()) }
         groups.forEach { (name, entries) ->
             item { SectionLabel(name) }
-            item { Surface(shape = RoundedCornerShape(10.dp), color = CardColor) { Column(Modifier.padding(horizontal = 8.dp)) {
+            item { Surface(shape = androidx.compose.ui.graphics.RectangleShape, color = CardColor) { Column(Modifier.padding(horizontal = 8.dp)) {
                 entries.forEachIndexed { i, entry ->
                     MenuRow(entry.title, when (entry.id) {
                         "channels" -> Icons.Outlined.Power
-                        "payment_types", "payment_plugins", "weixin_apps" -> Icons.Outlined.Payments
-                        "rolls", "user_groups", "group_purchase" -> Icons.Outlined.AccountTree
-                        "channel_monitor", "merchant_stats", "inactive" -> Icons.Outlined.Insights
+                        "payment_types" -> Icons.Outlined.CreditCard
+                        "payment_plugins" -> Icons.Outlined.Extension
+                        "weixin_apps" -> Icons.Outlined.ChatBubbleOutline
+                        "rolls" -> Icons.Outlined.Autorenew
+                        "user_groups" -> Icons.Outlined.Groups
+                        "group_purchase" -> Icons.Outlined.Inventory2
+                        "channel_monitor" -> Icons.Outlined.MonitorHeart
+                        "merchant_stats" -> Icons.Outlined.ShowChart
+                        "inactive" -> Icons.Outlined.PersonSearch
                         "funds" -> Icons.Outlined.AccountBalanceWallet
                         "domain_audit" -> Icons.Outlined.Language
                         "blacklist" -> Icons.Outlined.Block
@@ -152,14 +158,14 @@ internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onS
         }
         if (query.isBlank() || listOf("后台连接", "后台地址", "登录会话", "版本").any { it.contains(query.trim(), true) }) {
             item { SectionLabel("App 设置") }
-            item { Surface(shape = RoundedCornerShape(10.dp), color = CardColor) { MenuRow("后台连接", Icons.Outlined.Settings, onSettings) } }
+            item { Surface(shape = androidx.compose.ui.graphics.RectangleShape, color = CardColor) { MenuRow("后台连接", Icons.Outlined.Settings, onSettings) } }
         } else if (groups.isEmpty()) item { Text("没有找到相关功能", color = Muted, modifier = Modifier.padding(12.dp)) }
     }
 }
 
 @Composable
 private fun MenuRow(title: String, icon: ImageVector, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(icon, null, tint = Muted, modifier = Modifier.size(22.dp)) }
         Text(title, modifier = Modifier.weight(1f).padding(horizontal = 12.dp), fontSize = 15.sp, fontWeight = FontWeight.Medium)
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted, modifier = Modifier.size(18.dp))
@@ -175,7 +181,7 @@ internal fun DataRow(label: String, value: String) {
             Text(value.ifBlank { "—" }, fontSize = 15.sp)
         } else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(label, color = Muted, fontSize = 13.sp, modifier = Modifier.widthIn(min = 72.dp, max = 110.dp))
-            Text(value.ifBlank { "—" }, fontSize = 14.sp, modifier = Modifier.weight(1f))
+            Text(value.ifBlank { "—" }, fontSize = 14.sp, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
         }
     }
 }
@@ -191,8 +197,8 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
     BackHandler { if (edit) edit = false else onBack() }
     Scaffold(containerColor = Mist, topBar = { PayTopBar(if (edit) "更换后台地址" else "设置", { if (edit) edit = false else onBack() }) }, bottomBar = {
         if (edit) Surface(color = CardColor) { Row(Modifier.imePadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { edit = false }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { runCatching { composeBackendAddress(origin, path) }.onSuccess(onSave).onFailure { error = it.message } }, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text("保存并重新登录") }
         } }
     }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize().imePadding(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -217,7 +223,7 @@ internal fun SettingsScreen(state: AppUiState, onBack: () -> Unit, onSave: (Stri
                 } }
                 item { SectionLabel("版本信息") }
                 item { PayCard { DataRow("应用版本", BuildConfig.VERSION_NAME); DataRow("包名", "com.futoonpay.vinechat.beta") } }
-                item { com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
+                item { com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { logout = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("退出登录", color = Danger) } }
             }
         }
     }

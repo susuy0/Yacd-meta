@@ -8095,11 +8095,12 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..8e52b2304f1bae1fbe9267462d17c68ecfbd48fe
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,35 @@
 +package org.telegram.messenger.futoon;
 +
 +import com.futoonpay.admin.PanelBusinessEngine;
 +import com.futoonpay.admin.PanelSession;
++import com.futoonpay.admin.PanelBalanceSession;
 +import com.futoonpay.admin.data.SessionExpiredException;
 +import org.json.JSONObject;
 +import org.telegram.messenger.UserConfig;
@@ -8110,12 +8111,14 @@ index 0000000000000000000000000000000000000000..8e52b2304f1bae1fbe9267462d17c68e
 +    public static PanelSession session(int account,FutoonStore store) {
 +        final long owner=UserConfig.getInstance(account).getClientUserId();
 +        final String address=store.address();
-+        return new PanelSession(){
++        return new PanelBalanceSession(){
 +            public boolean isActive(){return UserConfig.getInstance(account).isClientActivated()&&UserConfig.getInstance(account).getClientUserId()==owner;}
 +            public String address(){return store.address();}
 +            public String loadCookies(){try{return store.session(address).load();}catch(Exception e){throw new IllegalStateException(e);}}
 +            public void saveCookies(String json){try{store.session(address).save(json);}catch(Exception e){throw new IllegalStateException(e);}}
 +            public void clearCookies(){try{store.session(address).clear();}catch(Exception e){throw new IllegalStateException(e);}}
++            public String loadBalancePending(String uid){try{return store.balancePending(address,uid).load();}catch(Exception e){throw new IllegalStateException("无法读取余额操作记录，请先核对操作日志",e);}}
++            public void saveBalancePending(String uid,String json){try{store.balancePending(address,uid).save(json);}catch(Exception e){throw new IllegalStateException("无法保存余额操作记录，未发送新操作",e);}}
 +        };
 +    }
 +    public static FutoonBusinessApi.Engine create(int account,FutoonStore store) {
@@ -8271,7 +8274,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..05fc14e3cec86db89174dc3ab1bc483738eae1d9
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonStore.java
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,114 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -8317,7 +8320,12 @@ index 0000000000000000000000000000000000000000..05fc14e3cec86db89174dc3ab1bc4837
 +        session("local-data:" + backend).save(value);
 +    }
 +
-+    public FutoonApi.SessionPersistence session(String address) throws Exception {
++    public FutoonApi.SessionPersistence session(String address) throws Exception { return session(address,false); }
++    public FutoonApi.SessionPersistence balancePending(String address,String uid) throws Exception {
++        if(!uid.matches("[1-9][0-9]{0,9}"))throw new IllegalArgumentException("商户号无效");
++        return session("balance-pending:"+address+":"+uid,true);
++    }
++    private FutoonApi.SessionPersistence session(String address,boolean strict) throws Exception {
 +        StringBuilder hash = new StringBuilder();
 +        for (byte value : MessageDigest.getInstance("SHA-256").digest(address.getBytes(StandardCharsets.UTF_8))) {
 +            hash.append(String.format(java.util.Locale.ROOT, "%02x", value & 255));
@@ -8347,6 +8355,7 @@ index 0000000000000000000000000000000000000000..05fc14e3cec86db89174dc3ab1bc4837
 +                    cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, Base64.decode(parts[0], Base64.NO_WRAP)));
 +                    return new String(cipher.doFinal(Base64.decode(parts[1], Base64.NO_WRAP)), StandardCharsets.UTF_8);
 +                } catch (Exception invalidSession) {
++                    if(strict)throw new java.io.IOException("余额操作记录无法解密，请先核对操作日志",invalidSession);
 +                    clear();
 +                    return "";
 +                }
@@ -12141,11 +12150,11 @@ index 58ea803470b147c6bc8583d92548482d90b62f64..39a4ca1997c683686124cff69f759923
                      selectedParticipant = null;
                      return;
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
-index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0ce831de91 100644
+index 9dec6be..b3a8e1b 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ChatActivity.java
 @@ -1032,6 +1032,7 @@ public class ChatActivity extends BaseFragment implements
- 
+
      private Paint scrimPaint;
      private Paint actionBarBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 +    private boolean futoonChatCounted;
@@ -12163,11 +12172,11 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
      public final static int OPTION_SHARE = 6;
 @@ -1683,6 +1686,8 @@ public class ChatActivity extends BaseFragment implements
      private final static int view_as_topics = 59;
- 
+
      private final static int search = 40;
 +    private final static int futoon_pinned = 9040;
 +    private boolean futoonPinnedExpanded;
- 
+
      private final static int topic_close = 60;
      private final static int open_forum = 61;
 @@ -2427,7 +2432,7 @@ public class ChatActivity extends BaseFragment implements
@@ -12177,10 +12186,10 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 -            openAttachMenu();
 +            openAttachMenu(true);
          }
- 
+
          @Override
 @@ -3401,6 +3406,11 @@ public class ChatActivity extends BaseFragment implements
- 
+
      @Override
      public void onFragmentDestroy() {
 +        if (futoonPanel != null) { futoonPanel.destroy(); futoonPanel = null; }
@@ -12191,10 +12200,10 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
          super.onFragmentDestroy();
          if (messageMetricsView != null) {
              messageMetricsView.finish();
-@@ -3612,6 +3622,49 @@ public class ChatActivity extends BaseFragment implements
- 
+@@ -3612,6 +3622,62 @@ public class ChatActivity extends BaseFragment implements
+
      private Runnable justForTest;
- 
+
 +    private FutoonPanel futoonPanel;
 +
 +    public String futoonTelegramId() {
@@ -12209,6 +12218,19 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 +        return chatActivityEnterView != null && (chatActivityEnterView.getFieldText() == null || chatActivityEnterView.getFieldText().length() == 0);
 +    }
 +
++    public java.util.ArrayList<MessageObject> futoonRecentMessages() {
++        java.util.ArrayList<MessageObject> rows=new java.util.ArrayList<>();
++        if(currentEncryptedChat!=null || isReport() || inPreviewMode || MessagesController.getInstance(currentAccount).isPeerNoForwards(dialog_id))return rows;
++        long topic=getTopicId();
++        for(MessageObject m:messages)if(m!=null&&m.currentAccount==currentAccount&&m.getId()>0&&m.getDialogId()==dialog_id&&m.messageOwner!=null&&!m.messageOwner.noforwards&&!m.isSecretMedia()&&(topic==0||m.getTopicId()==topic))rows.add(m);
++        rows.sort((a,b)->{int date=Integer.compare(b.messageOwner.date,a.messageOwner.date);return date!=0?date:Integer.compare(b.getId(),a.getId());});
++        return new java.util.ArrayList<>(rows.subList(0,Math.min(20,rows.size())));
++    }
++    public void futoonOrderHintsChanged(){
++        if(chatListView==null)return;
++        for(int i=0;i<chatListView.getChildCount();i++){View child=chatListView.getChildAt(i);if(child instanceof ChatMessageCell){ChatMessageCell cell=(ChatMessageCell)child;cell.forceResetMessageObject();}}
++        updateVisibleRows();
++    }
 +    public void bindFutoonContext() {
 +        if (futoonPanel == null) return;
 +        org.telegram.messenger.futoon.FutoonIdentity identity = null;
@@ -12241,7 +12263,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
      @Override
      public View createView(Context context) {
          Timer t = Timer.create("ChatActivity.createView");
-@@ -3662,6 +3715,10 @@ public class ChatActivity extends BaseFragment implements
+@@ -3662,6 +3728,10 @@ public class ChatActivity extends BaseFragment implements
          if (isInsideContainer) {
              actionBar.setVisibility(View.GONE);
          }
@@ -12251,8 +12273,8 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 +        }
          actionBarBackgroundPaint.setColor(getThemedColor(Theme.key_actionBarDefault));
          sharedResources = new ChatMessageSharedResources(context);
- 
-@@ -3737,6 +3794,21 @@ public class ChatActivity extends BaseFragment implements
+
+@@ -3737,6 +3807,21 @@ public class ChatActivity extends BaseFragment implements
          actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
              @Override
              public void onItemClick(final int id) {
@@ -12274,7 +12296,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                  if (id == -1) {
                      if (isInPollAddOptionMode()) {
                          pollAddOptionModeClose();
-@@ -4007,6 +4079,9 @@ public class ChatActivity extends BaseFragment implements
+@@ -4007,6 +4092,9 @@ public class ChatActivity extends BaseFragment implements
                      getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of("/help", dialog_id, null, null, null, false, null, null, null, true, 0, 0, null, false));
                  } else if (id == bot_settings) {
                      getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of("/settings", dialog_id, null, null, null, false, null, null, null, true, 0, 0, null, false));
@@ -12284,7 +12306,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                  } else if (id == search) {
                      openSearchWithText(isSupportedTags() ? "" : null);
                  } else if (id == translate) {
-@@ -4309,7 +4384,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -4309,7 +4397,7 @@ public class ChatActivity extends BaseFragment implements
                  audioCallIconItem = menu.lazilyAddItem(call, R.drawable.call, themeDelegate);
                  audioCallIconItem.setContentDescription(LocaleController.getString(R.string.Call));
                  userFull = getMessagesController().getUserFull(currentUser.id);
@@ -12293,7 +12315,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                      showAudioCallAsIcon = !inPreviewMode;
                      audioCallIconItem.setVisibility(View.VISIBLE);
                  } else {
-@@ -4448,7 +4523,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -4448,7 +4536,7 @@ public class ChatActivity extends BaseFragment implements
              if (currentUser != null && chatMode != MODE_SAVED) {
                  headerItem.lazilyAddSubItem(call, R.drawable.msg_callback, LocaleController.getString(R.string.Call));
                  headerItem.lazilyAddSubItem(video_call, R.drawable.msg_videocall, LocaleController.getString(R.string.VideoCall));
@@ -12302,7 +12324,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                      headerItem.showSubItem(call);
                      if (userFull.video_calls_available) {
                          headerItem.showSubItem(video_call);
-@@ -4464,7 +4539,10 @@ public class ChatActivity extends BaseFragment implements
+@@ -4464,7 +4552,10 @@ public class ChatActivity extends BaseFragment implements
              if (searchItem != null) {
                  headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
              }
@@ -12314,7 +12336,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                  RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, dp(24), dp(24));
                  headerItem.lazilyAddSubItem(boost_group, drawable, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.BoostingBoostChannelMenu : R.string.BoostingBoostGroupMenu));
              }
-@@ -4542,6 +4620,9 @@ public class ChatActivity extends BaseFragment implements
+@@ -4542,6 +4633,9 @@ public class ChatActivity extends BaseFragment implements
              headerItem.lazilyAddSubItem(rename_business_link, R.drawable.msg_edit, getString(R.string.Rename));
              headerItem.lazilyAddSubItem(delete_business_link, R.drawable.msg_delete, getString(R.string.Delete)).setColors(Theme.getColor(Theme.key_text_RedRegular), Theme.getColor(Theme.key_text_RedRegular));
          }
@@ -12324,16 +12346,16 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
          if (ChatObject.isForum(currentChat) && isTopic && getParentLayout() != null && getParentLayout().getFragmentStack() != null && chatMode == MODE_DEFAULT) {
              boolean hasMyForum = false;
              for (int i = 0; i < getParentLayout().getFragmentStack().size(); ++i) {
-@@ -4585,7 +4666,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -4585,7 +4679,7 @@ public class ChatActivity extends BaseFragment implements
              }
          }
- 
+
 -        if (BuildConfig.DEBUG_PRIVATE_VERSION && headerItem != null) {
 +        if (BuildConfig.DEBUG_PRIVATE_VERSION && !org.telegram.messenger.BuildVars.FUTOON_LITE && headerItem != null) {
              headerItem.lazilyAddSubItem(888, R.drawable.menu_download_round, "Dump Canvas");
          }
- 
-@@ -8093,7 +8174,7 @@ public class ChatActivity extends BaseFragment implements
+
+@@ -8093,7 +8187,7 @@ public class ChatActivity extends BaseFragment implements
          } else {
              chatActivityEnterView.setDelegate(new ChatActivityEnterViewDelegate());
          }
@@ -12342,10 +12364,10 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
              chatActivityEnterView.setSideButtonsForAttach(sideControlsButtonsLayout);
          }
          chatActivityEnterView.setInAppInsetsController(windowInsetsStateHolder);
-@@ -8757,6 +8838,11 @@ public class ChatActivity extends BaseFragment implements
+@@ -8757,6 +8851,11 @@ public class ChatActivity extends BaseFragment implements
              }
          });
- 
+
 +        textSelectionHelper.setOnFutoonQuery((text, messageId) -> {
 +            if (actionBar != null && actionBar.isActionModeShowed()) clearSelectionMode();
 +            bindFutoonContext();
@@ -12354,7 +12376,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
          View overlay = textSelectionHelper.getOverlayView(context);
          if (overlay != null) {
              if (overlay.getParent() instanceof ViewGroup) {
-@@ -9022,6 +9108,10 @@ public class ChatActivity extends BaseFragment implements
+@@ -9022,6 +9121,10 @@ public class ChatActivity extends BaseFragment implements
          onBottomItemsVisibilityChanged();
          ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
          Timer.finish(t);
@@ -12362,20 +12384,20 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 +            futoonPanel = new FutoonPanel(this, contentView, currentAccount, chatActivityEnterView);
 +            bindFutoonContext();
 +        }
- 
+
          return fragmentView;
      }
-@@ -9091,6 +9181,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -9091,6 +9194,7 @@ public class ChatActivity extends BaseFragment implements
          }
- 
+
          windowInsetsStateHolder.setInsets(insets);
 +        if (futoonPanel != null) futoonPanel.onBottomInsetChanged(windowInsetsStateHolder.getCurrentMaxBottomInset());
          
          if (messagesSearchListContainer != null) {
              messagesSearchListContainer.setPadding(insetsLeft, 0, insetsRight, 0);
-@@ -10373,6 +10464,9 @@ public class ChatActivity extends BaseFragment implements
+@@ -10373,6 +10477,9 @@ public class ChatActivity extends BaseFragment implements
          actionMode.setOnLayoutListener(actionBar::invalidate);
- 
+
          if (currentEncryptedChat == null) {
 +            if (!getMessagesController().isPeerNoForwards(dialog_id)) {
 +                actionModeViews.add(actionMode.addItemWithWidth(OPTION_FUTOON_LOOKUP, R.drawable.msg_search, dp(48), "富通批量查询"));
@@ -12383,7 +12405,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
              final boolean isSavedMessages = getDialogId() == getUserConfig().getClientUserId() && (chatMode == 0 || chatMode == MODE_SAVED);
              actionModeViews.add(actionMode.addItemWithWidth(save_to, R.drawable.msg_download, dp(48), LocaleController.getString(R.string.SaveToMusic)));
              actionModeViews.add(actionMode.addItemWithWidth(edit, R.drawable.msg_edit, dp(48), LocaleController.getString(R.string.Edit)));
-@@ -13027,7 +13121,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -13027,7 +13134,7 @@ public class ChatActivity extends BaseFragment implements
          }
          if (Build.VERSION.SDK_INT >= 23 && getParentActivity() != null) {
              if (getParentActivity().checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -12392,10 +12414,10 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                  return true;
              }
          }
-@@ -13635,7 +13729,9 @@ public class ChatActivity extends BaseFragment implements
+@@ -13635,7 +13742,9 @@ public class ChatActivity extends BaseFragment implements
          return true;
      }
- 
+
 -    private void openAttachMenu() {
 +    private void openAttachMenu() { openAttachMenu(false); }
 +
@@ -12403,18 +12425,18 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
          if (getParentActivity() == null || chatActivityEnterView != null && !TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer())) {
              return;
          }
-@@ -13659,7 +13755,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -13659,7 +13768,7 @@ public class ChatActivity extends BaseFragment implements
          chatAttachAlert.init();
          chatAttachAlert.getCommentView().setText(chatActivityEnterView.getFieldText());
          chatAttachAlert.parentThemeDelegate = themeDelegate;
 -        showDialog(chatAttachAlert);
 +        if (!chooser || !chatAttachAlert.showAttachmentChooser(chatActivityEnterView, () -> showDialog(chatAttachAlert))) showDialog(chatAttachAlert);
      }
- 
+
      public void openAttachMenuForCreatingSticker() {
-@@ -13935,41 +14031,19 @@ public class ChatActivity extends BaseFragment implements
+@@ -13935,41 +14044,19 @@ public class ChatActivity extends BaseFragment implements
      }
- 
+
      private void processSelectedAttach(int which) {
 -        if (which == attach_photo) {
 -            if (Build.VERSION.SDK_INT >= 23 && getParentActivity().checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -12457,7 +12479,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                      } catch (Throwable ignore) {}
                      return;
                  }
-@@ -14014,33 +14088,6 @@ public class ChatActivity extends BaseFragment implements
+@@ -14014,33 +14101,6 @@ public class ChatActivity extends BaseFragment implements
                  }
              });
              presentFragment(fragment);
@@ -12490,8 +12512,8 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 -            }
          }
      }
- 
-@@ -18409,7 +18456,7 @@ public class ChatActivity extends BaseFragment implements
+
+@@ -18409,7 +18469,7 @@ public class ChatActivity extends BaseFragment implements
                      TLRPC.UserFull userInfo = getCurrentUserInfo();
                      if (showAudioCallAsIcon) {
                          headerItem.hideSubItem(call);
@@ -12500,7 +12522,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                          headerItem.showSubItem(call, true);
                      }
                  }
-@@ -18571,6 +18618,13 @@ public class ChatActivity extends BaseFragment implements
+@@ -18571,6 +18631,13 @@ public class ChatActivity extends BaseFragment implements
                      int h = allHeight - AndroidUtilities.statusBarHeight - AndroidUtilities.navigationBarHeight;
                      int contentHeightSpec = View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY);
                      child.measure(contentWidthSpec, contentHeightSpec);
@@ -12514,23 +12536,23 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                  } else if (child == topicsTabs) {
                      int height = allHeight;
                      if (actionBar.getVisibility() == VISIBLE) {
-@@ -19867,6 +19921,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -19867,6 +19934,7 @@ public class ChatActivity extends BaseFragment implements
              if (a == photoPathes.size() - 1 && caption != null) {
                  entry.caption = caption;
              }
 +            if (photoInfo.params != null && photoInfo.params.containsKey("futoon_draft")) entry.futoonParams = new HashMap<>(photoInfo.params);
              entries.add(entry);
          }
- 
-@@ -20417,6 +20472,7 @@ public class ChatActivity extends BaseFragment implements
- 
+
+@@ -20417,6 +20485,7 @@ public class ChatActivity extends BaseFragment implements
+
      @Override
      public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
 +        if (futoonPanel != null && futoonPanel.activityResult(requestCode, resultCode, data)) return;
          if (resultCode == Activity.RESULT_OK) {
              if (requestCode == 0 || requestCode == 2) {
                  createChatAttachView();
-@@ -24051,8 +24107,8 @@ public class ChatActivity extends BaseFragment implements
+@@ -24051,8 +24120,8 @@ public class ChatActivity extends BaseFragment implements
                      }
                  }
                  if (headerItem != null) {
@@ -12541,7 +12563,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                          if (showAudioCallAsIcon) {
                              if (audioCallIconItem != null) {
                                  View item = audioCallIconItem.createView();
-@@ -28476,7 +28532,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -28476,7 +28545,7 @@ public class ChatActivity extends BaseFragment implements
          String callLink = callLink(pinnedMessageObject);
          pinnedMessageButtonShown = botButton != null || !TextUtils.isEmpty(callLink);
          SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
@@ -12550,7 +12572,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
              changed = hidePinnedMessageView(animated);
          } else {
              if (pinnedMessageView == null) {
-@@ -29796,7 +29852,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -29796,7 +29865,7 @@ public class ChatActivity extends BaseFragment implements
          super.setInPreviewMode(value);
          if (currentUser != null && audioCallIconItem != null) {
              TLRPC.UserFull userFull = getMessagesController().getUserFull(currentUser.id);
@@ -12559,7 +12581,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                  showAudioCallAsIcon = !inPreviewMode;
                  audioCallIconItem.setVisibility(View.VISIBLE);
              } else {
-@@ -29880,6 +29936,8 @@ public class ChatActivity extends BaseFragment implements
+@@ -29880,6 +29949,8 @@ public class ChatActivity extends BaseFragment implements
      @Override
      public void onResume() {
          super.onResume();
@@ -12568,8 +12590,8 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
          checkShowBlur(false);
          activityResumeTime = System.currentTimeMillis();
          if (openImport && getSendMessagesHelper().getImportingHistory(dialog_id) != null) {
-@@ -30091,6 +30149,8 @@ public class ChatActivity extends BaseFragment implements
- 
+@@ -30091,6 +30162,8 @@ public class ChatActivity extends BaseFragment implements
+
      @Override
      public void onPause() {
 +        if (chatAttachAlert != null) chatAttachAlert.dismissAttachmentChooser();
@@ -12577,18 +12599,18 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
          super.onPause();
          scrolling = false;
          if (scrimPopupWindow != null) {
-@@ -30664,6 +30724,7 @@ public class ChatActivity extends BaseFragment implements
- 
+@@ -30664,6 +30737,7 @@ public class ChatActivity extends BaseFragment implements
+
      @Override
      public void onConfigurationChanged(android.content.res.Configuration newConfig) {
 +        if (chatAttachAlert != null) chatAttachAlert.dismissAttachmentChooser();
          fixLayout();
          if (visibleDialog instanceof DatePickerDialog) {
              visibleDialog.dismiss();
-@@ -31010,6 +31071,17 @@ public class ChatActivity extends BaseFragment implements
+@@ -31010,6 +31084,17 @@ public class ChatActivity extends BaseFragment implements
              final ArrayList<Integer> options = new ArrayList<>();
              View optionsView = null;
- 
+
 +            if (!noforwards && currentEncryptedChat == null && FutoonPanel.canUsePhoto(currentAccount, message)) {
 +                items.add("作为富通凭证");
 +                options.add(OPTION_FUTOON_EVIDENCE);
@@ -12603,7 +12625,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
              if (AndroidUtilities.isAccessibilityScreenReaderEnabled() && message.messageOwner != null && message.messageOwner.from_id != null && message.messageOwner.from_id.user_id != getUserConfig().clientUserId && chatMode != MODE_SAVED) {
                  items.add(LocaleController.getString(R.string.OpenProfile));
                  options.add(OPTION_OPEN_PROFILE);
-@@ -33425,6 +33497,18 @@ public class ChatActivity extends BaseFragment implements
+@@ -33425,6 +33510,18 @@ public class ChatActivity extends BaseFragment implements
          }
          boolean preserveDim = false;
          switch (option) {
@@ -12622,7 +12644,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
              case OPTION_RETRY: {
                  final MessageObject object = selectedObject;
                  final MessageObject.GroupedMessages group = selectedObjectGroup;
-@@ -33534,7 +33618,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -33534,7 +33631,7 @@ public class ChatActivity extends BaseFragment implements
              }
              case OPTION_SAVE_TO_GALLERY: {
                  if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && getParentActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -12631,7 +12653,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                      selectedObject = null;
                      selectedObjectGroup = null;
                      selectedObjectToEditCaption = null;
-@@ -33689,7 +33773,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -33689,7 +33786,7 @@ public class ChatActivity extends BaseFragment implements
                      }
                  }
                  if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && getParentActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -12640,7 +12662,7 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                      selectedObject = null;
                      selectedObjectGroup = null;
                      selectedObjectToEditCaption = null;
-@@ -33765,7 +33849,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -33765,7 +33862,7 @@ public class ChatActivity extends BaseFragment implements
              }
              case OPTION_SAVE_TO_DOWNLOADS_OR_MUSIC: {
                  if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && getParentActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -12649,16 +12671,24 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
                      selectedObject = null;
                      selectedObjectGroup = null;
                      selectedObjectToEditCaption = null;
-@@ -34734,6 +34818,7 @@ public class ChatActivity extends BaseFragment implements
- 
+@@ -34734,6 +34831,7 @@ public class ChatActivity extends BaseFragment implements
+
      @Override
      public boolean onBackPressed(boolean invoked) {
 +        if (futoonPanel != null && futoonPanel.back(invoked)) return false;
          final Bulletin bulletin = Bulletin.getVisibleBulletin();
          if (bulletin != null && bulletin.getLayout() instanceof Bulletin.LottieLayoutWithReactions) {
              if (invoked) {
-@@ -35476,21 +35561,7 @@ public class ChatActivity extends BaseFragment implements
- 
+@@ -34942,6 +35040,7 @@ public class ChatActivity extends BaseFragment implements
+     }
+
+     private void updateVisibleRows(boolean suppressUpdateMessageObject) {
++        if(futoonPanel!=null)futoonPanel.scheduleOrderHints();
+         if (chatListView == null) {
+             return;
+         }
+@@ -35476,21 +35575,7 @@ public class ChatActivity extends BaseFragment implements
+
      @Override
      public void didSelectLocation(TLRPC.MessageMedia location, int locationType, boolean notify, int scheduleDate, long payStars) {
 -        SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(location, dialog_id, replyingMessageObject, getThreadMessage(), null, null, notify, scheduleDate, 0);
@@ -12678,9 +12708,9 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 -        }
 +        // Sending locations is not supported by this client.
      }
- 
+
      public boolean isEditingMessageMedia() {
-@@ -39673,7 +39744,7 @@ public class ChatActivity extends BaseFragment implements
+@@ -39673,7 +39758,7 @@ public class ChatActivity extends BaseFragment implements
              }
              if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE)
                  && getParentActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -12688,17 +12718,28 @@ index 9dec6beb3cc45603ab90ce08fa87d77aadebb1e5..702889213f8a6955f98760d4ab017f0c
 +                org.telegram.ui.Components.FutoonPermissionRequests.request(getParentActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 4);
                  return;
              }
- 
-@@ -46715,7 +46786,7 @@ public class ChatActivity extends BaseFragment implements
+
+@@ -40797,6 +40882,10 @@ public class ChatActivity extends BaseFragment implements
+
+         @Override
+         public void didPressUrl(ChatMessageCell cell, final CharacterStyle url, boolean longPress) {
++            if(url instanceof org.telegram.messenger.futoon.FutoonOrderSpan){
++                if(!longPress&&futoonPanel!=null)futoonPanel.openOrderHint((org.telegram.messenger.futoon.FutoonOrderSpan)url);
++                return;
++            }
+             didPressMessageUrl(url, longPress, cell.getMessageObject(), cell);
+         }
+
+@@ -46715,7 +46804,7 @@ public class ChatActivity extends BaseFragment implements
                  * (1f - animatorSearchResultAsListVisibility.getFloatValue())
                  * (1f - getHashtagTabsShownT());
- 
+
 -            topPanelLayout.setPadding(dp(7) + (int) sideMenu, dp(7), dp(7), dp(7));
 +            topPanelLayout.setPadding((int) sideMenu, 0, 0, 0);
          }
      }
- 
-@@ -47483,3 +47554,4 @@ public class ChatActivity extends BaseFragment implements
+
+@@ -47483,3 +47572,4 @@ public class ChatActivity extends BaseFragment implements
          abstract void drawChatForegroundElements(Canvas canvas, @Nullable RectF position);
      }
  }
@@ -12709,7 +12750,7 @@ index ed5f22c5e4efb052fbe23cf5e7b7dcc7198738c8..2290cb6d81f879433a0010ef9f397c6d
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/ChatEditActivity.java
 @@ -809,7 +809,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
          }
- 
+
          descriptionTextView = new EditTextBoldCursor(context);
 -        descriptionTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
 +        descriptionTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
@@ -12723,7 +12764,7 @@ index 9cfc4ddf53bc327fae15fd891b129a6b20039c89..0297a43c69d747cc4f9f95a4a2a959a5
 @@ -67,7 +67,7 @@ public class CodeFieldContainer extends LinearLayout {
                      AndroidUtilities.rectTmp.inset(offset, offset);
                  }
- 
+
 -                canvas.drawRoundRect(AndroidUtilities.rectTmp, AndroidUtilities.dp(4), AndroidUtilities.dp(4), paint);
 +                canvas.drawLine(AndroidUtilities.rectTmp.left, AndroidUtilities.rectTmp.bottom, AndroidUtilities.rectTmp.right, AndroidUtilities.rectTmp.bottom, paint);
              }
@@ -12747,7 +12788,7 @@ index 88fe6a16845b615376d66c4e3dfa512d56e652ea..e44f701772efd6c9eafc7aded3e22a54
 --- a/TMessagesProj/src/main/java/org/telegram/ui/Components/AudioPlayerAlert.java
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/AudioPlayerAlert.java
 @@ -3049,7 +3049,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
- 
+
      private void saveToMusic(MessageObject messageObject) {
          if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && parentActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 -            parentActivity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 4);
@@ -12784,7 +12825,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
 +                    org.telegram.ui.Components.FutoonPermissionRequests.request(parentActivity, new String[]{Manifest.permission.RECORD_AUDIO}, 3);
                      return;
                  }
- 
+
 @@ -2655,14 +2656,15 @@ public class ChatActivityEnterView extends FrameLayout implements
          };
          textFieldContainer.setClipChildren(false);
@@ -12792,7 +12833,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
 -        textFieldContainer.setPadding(0, dp(1), 0, 0);
 +        textFieldContainer.setPadding(dp(4), dp(3.25f), dp(4), dp(4));
          addView(textFieldContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM, 0, 1, 0, 0));
- 
+
          FrameLayout frameLayout = messageEditTextContainer = new FrameLayout(context) {
              @Override
              protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -12825,7 +12866,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
 +            });
 +            textFieldContainer.addView(iosAttachButton, LayoutHelper.createFrame(44, DEFAULT_HEIGHT, Gravity.LEFT | Gravity.BOTTOM));
 +        }
- 
+
 -        emojiButton = new ChatActivityEnterViewAnimatedIconView(context) {
 +        emojiButton = new ChatActivityEnterViewAnimatedIconView(context, isFutoonComposer() ? 22 : 32) {
              @Override
@@ -12848,7 +12889,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
 +            ? LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, 2, 0)
 +            : LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.LEFT, 2, 0, 0, 0));
          setEmojiButtonImage(false, false);
- 
+
          deleteRichDraftButton = new ImageView(context);
 @@ -2835,7 +2856,7 @@ public class ChatActivityEnterView extends FrameLayout implements
              };
@@ -16664,7 +16705,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a30c5a6fb
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,388 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -16706,6 +16747,7 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +    private static final int PICK_IMAGES=8042;
 +    private static final int PICK_OCR=8043,EXPORT_FILE=8044;
 +    private static final ExecutorService WORK=Executors.newSingleThreadExecutor();
++    private static final ExecutorService HINT_WORK=Executors.newSingleThreadExecutor();
 +    private final ChatActivity host;
 +    private final int account;
 +    private final long owner;
@@ -16728,6 +16770,65 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +    private ChannelSheetView channelSheetView;
 +    private FutoonApi api;
 +    private FutoonBusinessApi business;
++    private FutoonBusinessApi.Engine nativeEngine;
++    private final ArrayList<MessageObject> hintMessages=new ArrayList<>();
++    private String hintSignature="";
++    private volatile int hintGeneration;
++    private boolean hintScheduled;
++    public void scheduleOrderHints(){
++        if(destroyed||paused||hintScheduled)return;
++        hintScheduled=true;
++        AndroidUtilities.runOnUIThread(()->{hintScheduled=false;scanOrderHints();},350);
++    }
++    private void clearOrderHints(){
++        hintGeneration++;hintSignature="";
++        for(MessageObject m:hintMessages)if(m.messageText instanceof android.text.Spannable){android.text.Spannable text=(android.text.Spannable)m.messageText;for(FutoonOrderSpan span:text.getSpans(0,text.length(),FutoonOrderSpan.class))text.removeSpan(span);m.generateLayout(null);}
++        hintMessages.clear();
++    }
++    private void scanOrderHints(){
++        if(!valid()||paused||store.address().isEmpty()||!com.futoonpay.admin.ChannelSessionStatus.hasSession(FutoonNativeBridge.session(account,store)))return;
++        final long dialog=dialogId,topic=topicId;final String backend=store.address();
++        final ArrayList<MessageObject> messages=host.futoonRecentMessages();
++        final ArrayList<FutoonRecentOrders.Message> input=new ArrayList<>();StringBuilder signature=new StringBuilder(backend).append(':').append(dialog).append(':').append(topic);
++        for(MessageObject m:messages){String raw=m.messageOwner.message==null?"":m.messageOwner.message;signature.append('|').append(m.getId()).append(':').append(raw);input.add(new FutoonRecentOrders.Message(m.getId(),dialog,topic,raw));}
++        if(signature.toString().equals(hintSignature))return;
++        clearOrderHints();hintSignature=signature.toString();final int scan=hintGeneration;
++        HINT_WORK.execute(()->{
++            try{
++                if(!valid()||paused||scan!=hintGeneration||!backend.equals(store.address()))return;
++                FutoonApi hintApi=new FutoonApi(backend,store.session(backend));
++                FutoonBusinessApi hintBusiness=new FutoonBusinessApi(hintApi);
++                for(FutoonRecentOrders.Candidate candidate:FutoonRecentOrders.extract(input,dialog,topic)){
++                    if(!valid()||paused||scan!=hintGeneration||!backend.equals(store.address()))return;
++                    JSONObject response=hintBusiness.call("orders.search",new JSONObject().put("text",candidate.query.value).put("kind",candidate.query.kind.name()).put("page",1));
++                    JSONArray rows=response.optJSONArray("rows");
++                    if(rows==null||rows.length()!=1||response.optInt("total",rows.length())!=1||"PID".equals(response.optString("kind")))continue;
++                    final JSONObject order=rows.getJSONObject(0);if(order.optString("trade_no").isEmpty())continue;
++                    AndroidUtilities.runOnUIThread(()->{
++                        if(!valid()||paused||scan!=hintGeneration||dialog!=dialogId||topic!=topicId||!backend.equals(store.address()))return;
++                        boolean changed=false;
++                        for(FutoonRecentOrders.Range range:candidate.ranges)for(MessageObject m:messages)if(m.getId()==range.message&&m.messageText!=null&&range.end<=m.messageText.length()){
++                            String raw=m.messageOwner.message==null?"":m.messageOwner.message;
++                            FutoonRecentOrders.Message original=null;for(FutoonRecentOrders.Message item:input)if(item.id==range.message)original=item;
++                            if(original==null||!raw.equals(original.text)||!m.messageText.toString().equals(raw))continue;
++                            android.text.Spannable text=m.messageText instanceof android.text.Spannable?(android.text.Spannable)m.messageText:new android.text.SpannableString(m.messageText);
++                            if(text.getSpans(range.start,range.end,android.text.style.ClickableSpan.class).length>0)continue;
++                            text.setSpan(new FutoonOrderSpan(account,backend,dialog,topic,m.getId(),order.toString()),range.start,range.end,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
++                            m.messageText=text;m.generateLayout(null);if(!hintMessages.contains(m))hintMessages.add(m);changed=true;
++                        }
++                        if(changed)host.futoonOrderHintsChanged();
++                    });
++                }
++            }catch(Exception ignored){/* Read-only hints are optional; existing chat links and manual recognition remain available. */}
++        });
++    }
++    public void openOrderHint(FutoonOrderSpan span){
++        if(!valid()||paused||span.account!=account||span.dialog!=dialogId||span.topic!=topicId||!span.backend.equals(store.address())){toast("会话已变化，请重新识别订单");return;}
++        try{JSONObject order=new JSONObject(span.order);String trade=order.getString("trade_no");
++            order.put("_source",new JSONObject().put("dialog",dialogId).put("topic",topicId).put("message",span.message));
++            sourceMessage=span.message;open("");panel.openShortcutTarget("order-actions",trade,order.toString());
++        }catch(Exception error){toast("订单信息已变化，请重新查询");}
++    }
 +    private JSONObject context=new JSONObject();
 +    private String initialText="",activeOrder="";
 +    private String exportText="";
@@ -16841,10 +16942,10 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +            public void removeEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index>=0&&index<photos.size()){photos.remove(index);syncDraft();}});}
 +            public void editEvidence(int index){AndroidUtilities.runOnUIThread(()->{if(index<0||index>=photos.size())return;File original=photos.get(index);int gen=generation;new FutoonImageEditor(host.getParentActivity(),original,file->{if(valid()&&gen==generation&&index<photos.size()&&photos.get(index).equals(original)){photos.set(index,file);syncDraft();}},()->{}).show();});}
 +            public boolean hasSession(){return valid() && com.futoonpay.admin.ChannelSessionStatus.hasSession(FutoonNativeBridge.session(account,store));}
-+            public void configure(String address,String username)throws Exception{synchronized(FutoonPanel.this){String normalized=FutoonApi.normalizeAddress(address);store.address(normalized);store.username(username);api=new FutoonApi(normalized,store.session(normalized));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));generation++;AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});}}
++            public void configure(String address,String username)throws Exception{synchronized(FutoonPanel.this){String normalized=FutoonApi.normalizeAddress(address);store.address(normalized);store.username(username);api=new FutoonApi(normalized,store.session(normalized));nativeEngine=FutoonNativeBridge.create(account,store);business=new FutoonBusinessApi(api,nativeEngine);generation++;AndroidUtilities.runOnUIThread(()->{clearOrderHints();scheduleOrderHints();if(channelBar!=null)channelBar.reloadSettings();});}}
 +            public byte[] captcha()throws Exception{synchronized(FutoonPanel.this){ensureClient();return api.captcha();}}
-+            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);store.username(username);AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
-+            public void logout()throws Exception{synchronized(FutoonPanel.this){ensureClient();api.logout();AndroidUtilities.runOnUIThread(()->{if(channelBar!=null)channelBar.reloadSettings();});}}
++            public String login(String username,String password,String captcha)throws Exception{synchronized(FutoonPanel.this){ensureClient();String message=api.login(username,password,captcha);nativeEngine=null;api=null;store.username(username);AndroidUtilities.runOnUIThread(()->{scheduleOrderHints();if(channelBar!=null)channelBar.reloadSettings();});return new JSONObject().put("success",true).put("code",0).put("msg",message).toString();}}
++            public void logout()throws Exception{synchronized(FutoonPanel.this){ensureClient();api.logout();nativeEngine=null;api=null;AndroidUtilities.runOnUIThread(()->{clearOrderHints();if(channelBar!=null)channelBar.reloadSettings();});}}
 +            public String call(String operation,String params)throws Exception{return nativeCall(operation,new JSONObject(params));}
 +            public void collapse(){AndroidUtilities.runOnUIThread(FutoonPanel.this::collapse);}
 +            public void copy(String text){AndroidUtilities.runOnUIThread(()->{((ClipboardManager)root.getContext().getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("富通",text));toast("已复制");});}
@@ -16878,12 +16979,12 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +            syncDraft();
 +        } catch (Exception error) { toast("凭证页面已恢复，请重新选择失效的图片"); }
 +    }
-+    private void ensureClient()throws Exception{String address=store.address();if(address.isEmpty())throw new FutoonApi.SessionExpired();if(api==null){api=new FutoonApi(address,store.session(address));business=new FutoonBusinessApi(api,FutoonNativeBridge.create(account,store));}}
++    private void ensureClient()throws Exception{String address=store.address();if(address.isEmpty())throw new FutoonApi.SessionExpired();if(api==null){api=new FutoonApi(address,store.session(address));if(nativeEngine==null)nativeEngine=FutoonNativeBridge.create(account,store);business=new FutoonBusinessApi(api,nativeEngine);}}
 +    private void applyContext(){if(panel!=null)panel.updateChatContext(context.optString("label"),context.optString("tgid"),context.optString("source"),account+":"+dialogId+":"+topicId+":"+context.optString("tgid"),dialogId,topicId,context.optString("ticket"),context.optString("role"));}
 +
 +    public boolean isView(View view){return view==root;}
 +    public void onBottomInsetChanged(int inset){if(lastBottomInset==inset)return;lastBottomInset=inset;root.requestLayout();}
-+    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){if(channelBar!=null)channelBar.bindChat(label,dialog,topic,identity==null?"":identity.telegramId,identity==null?"":identity.source);applyContext();return;}boolean reopen=expanded;if(dialogId!=dialog||topicId!=topic)releasePanel();dialogId=dialog;topicId=topic;generation++;photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}if(channelBar!=null)channelBar.bindChat(label,dialog,topic,identity==null?"":identity.telegramId,identity==null?"":identity.source);if(reopen){ensurePanel();panel.setVisibility(View.VISIBLE);panel.onShown();}applyContext();if(panel!=null)panel.updateEvidenceCount(photos.size());}
++    public void bind(FutoonIdentity identity,String label,long dialog,long topic){if(dialogId==dialog&&topicId==topic&&context.optString("tgid").equals(identity==null?"":identity.telegramId)){if(channelBar!=null)channelBar.bindChat(label,dialog,topic,identity==null?"":identity.telegramId,identity==null?"":identity.source);applyContext();return;}boolean reopen=expanded;if(dialogId!=dialog||topicId!=topic)releasePanel();dialogId=dialog;topicId=topic;generation++;clearOrderHints();photos.clear();activeOrder="";try{context=new JSONObject().put("label",label).put("dialog",""+dialog).put("topic",""+topic).put("tgid",identity==null?"":identity.telegramId).put("source",identity==null?"未识别商户":identity.source).put("ticket",identity==null?"":identity.ticket).put("role",identity==null?"":identity.role);}catch(Exception ignored){}if(channelBar!=null)channelBar.bindChat(label,dialog,topic,identity==null?"":identity.telegramId,identity==null?"":identity.source);if(reopen){ensurePanel();panel.setVisibility(View.VISIBLE);panel.onShown();}applyContext();if(panel!=null)panel.updateEvidenceCount(photos.size());}
 +    public void open(String text){if(destroyed)return;host.bindFutoonContext();ensurePanel();expanded=true;paused=false;ball.setVisibility(View.GONE);applyOptions();panel.setVisibility(View.VISIBLE);panel.onShown();resize();root.bringToFront();if(text!=null&&!text.isEmpty())panel.recognizeText(text,dialogId,topicId,sourceMessage,false);}
 +    public void recognizeSelected(String text,long messageId){sourceMessage=Math.max(0,messageId);open(text);}
 +    public void recognizeMessage(MessageObject message){if(message==null||message.messageOwner==null)return;ArrayList<MessageObject> messages=new ArrayList<>();messages.add(message);if(message.replyMessageObject!=null)messages.add(message.replyMessageObject);recognizeMessages(messages);}
@@ -16899,9 +17000,9 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +    public void collapse(){savePanelState();if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);if(!options().getPanel().getRemember())releasePanel();}
 +    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(240),fullscreen,keyboard,options().getPanel().getHeight());int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
-+    public void resume(){paused=false;if(channelBar!=null){host.bindFutoonContext();channelBar.onShown();}applyOptions();if(expanded&&panel!=null)panel.onShown();}
-+    public void pause(){paused=true;if(channelBar!=null)channelBar.onHidden();savePanelState();if(panel!=null)panel.onHidden();}
-+    public void destroy(){if(destroyed)return;destroyed=true;if(channelBar!=null){channelBar.close();channelBar=null;}generation++;NotificationCenter nc=NotificationCenter.getInstance(account);nc.removeObserver(this,NotificationCenter.fileLoaded);nc.removeObserver(this,NotificationCenter.fileLoadFailed);nc.removeObserver(this,NotificationCenter.updateInterfaces);releasePanel();ballImage.setImageDrawable(null);if(entryBitmap!=null){entryBitmap.recycle();entryBitmap=null;}if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);}
++    public void resume(){paused=false;if(channelBar!=null){host.bindFutoonContext();channelBar.onShown();}applyOptions();if(expanded&&panel!=null)panel.onShown();scheduleOrderHints();}
++    public void pause(){paused=true;clearOrderHints();if(channelBar!=null)channelBar.onHidden();savePanelState();if(panel!=null)panel.onHidden();}
++    public void destroy(){if(destroyed)return;clearOrderHints();destroyed=true;if(channelBar!=null){channelBar.close();channelBar=null;}generation++;NotificationCenter nc=NotificationCenter.getInstance(account);nc.removeObserver(this,NotificationCenter.fileLoaded);nc.removeObserver(this,NotificationCenter.fileLoadFailed);nc.removeObserver(this,NotificationCenter.updateInterfaces);releasePanel();ballImage.setImageDrawable(null);if(entryBitmap!=null){entryBitmap.recycle();entryBitmap=null;}if(root.getParent() instanceof ViewGroup)((ViewGroup)root.getParent()).removeView(root);}
 +
 +    private void prepareEvidence(String raw,String caption){try{JSONObject order=new JSONObject(raw);String next=order.optString("trade_no");if(next.isEmpty())throw new IOException("缺少订单号");if(!activeOrder.isEmpty()&&!activeOrder.equals(next)){generation++;photos.clear();}activeOrder=next;JSONObject source=order.optJSONObject("_source");FutoonStore.setDraft(account,store.address(),new FutoonApi.Order(order),caption,source==null?dialogId:source.optLong("dialog",dialogId));FutoonStore.Draft draft=FutoonStore.draft(account);draft.sourceMessage=source==null?sourceMessage:source.optLong("message");draft.sourceTopic=source==null?topicId:source.optLong("topic");syncDraft();}catch(Exception e){toast("订单凭证初始化失败："+e.getMessage());}}
 +    private void openGallery(){openImagePicker(false);}
@@ -21513,7 +21614,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..b176c0b210167688df6d0bb7b145601e19c5cb40
 --- /dev/null
 +++ b/Tools/futoon/run-tests.sh
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,44 @@
 +#!/usr/bin/env bash
 +set -euo pipefail
 +project_root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -21548,12 +21649,16 @@ index 0000000000000000000000000000000000000000..b176c0b210167688df6d0bb7b145601e
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonBusinessApi.java" \
 +    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonPanelLayout.java" \
++    "$project_root/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonRecentOrders.java" \
++    "$project_root/Tools/futoon/FutoonRecentOrdersTest.java" \
 +    "$project_root/Tools/futoon/FutoonPanelLayoutTest.java" \
 +    "$project_root/Tools/futoon/FutoonCoreTest.java" "$project_root/Tools/futoon/FutoonExtendedTest.java" "$project_root/Tools/futoon/FutoonModuleTest.java"
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonCoreTest
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonExtendedTest
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonModuleTest
 +java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonPanelLayoutTest
++
++java -cp "$test_dir/classes:$json_jar:$jsoup_jar" org.telegram.messenger.futoon.FutoonRecentOrdersTest
 diff --git a/build.gradle b/build.gradle
 index f7c8fcb7332c6dc85e1b5d9c1f0a85d115d525ec..8452051e44d7b7332a3de1bd211977f390857be1 100644
 --- a/build.gradle
@@ -21722,3 +21827,106 @@ index 627188c..02830c9 100644
                  items.add(ItemInner.asShadow(-1, null));
              } else {
                  int text;
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonRecentOrders.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonRecentOrders.java
+new file mode 100644
+--- /dev/null
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonRecentOrders.java
+@@ -0,0 +1,50 @@
++package org.telegram.messenger.futoon;
++
++import java.text.Normalizer;
++import java.util.*;
++
++/** Bounded local extraction only. Only candidate identifiers, never complete messages, leave the device. */
++public final class FutoonRecentOrders {
++    public static final int MESSAGE_LIMIT=20, QUERY_LIMIT=20;
++    public static final class Message {
++        public final long id,dialog,topic; public final String text;
++        public Message(long id,long dialog,long topic,String text){this.id=id;this.dialog=dialog;this.topic=topic;this.text=text==null?"":text;}
++    }
++    public static final class Candidate {
++        public final FutoonQuery query; public final List<Range> ranges=new ArrayList<>();
++        Candidate(FutoonQuery query){this.query=query;}
++        public String key(){return query.kind.name()+":"+query.value;}
++    }
++    public static final class Range {
++        public final long message;public final int start,end;
++        Range(long message,int start,int end){this.message=message;this.start=start;this.end=end;}
++    }
++    private static boolean token(char c){return Character.isLetterOrDigit(c)&&c<128 || "_.:@/+-*…●•".indexOf(c)>=0;}
++    public static List<Candidate> extract(List<Message> input,long dialog,long topic){
++        LinkedHashMap<String,Candidate> out=new LinkedHashMap<>();int examined=0;
++        for(Message m:input){
++            if(m.id<=0||m.dialog!=dialog||m.topic!=topic)continue;
++            if(examined++>=MESSAGE_LIMIT)break;
++            if(m.text.isEmpty()||m.text.length()>16384)continue;
++            StringBuilder normalized=new StringBuilder();ArrayList<Integer> starts=new ArrayList<>(),ends=new ArrayList<>();
++            for(int i=0;i<m.text.length();){int width=Character.charCount(m.text.codePointAt(i));String n=Normalizer.normalize(m.text.substring(i,i+width),Normalizer.Form.NFKC).replaceAll("[\\u200B-\\u200D\\uFEFF]","");for(int j=0;j<n.length();j++){normalized.append(n.charAt(j));starts.add(i);ends.add(i+width);}i+=width;}
++            String text=normalized.toString();
++            for(FutoonQuery q:FutoonQuery.extract(m.text)){
++                if(q.kind==FutoonQuery.Kind.PID)continue;
++                String key=q.kind.name()+":"+q.value;
++                if(!out.containsKey(key)&&out.size()>=QUERY_LIMIT)continue;
++                Candidate candidate=out.get(key);ArrayList<Range> ranges=new ArrayList<>();
++                for(int at=text.indexOf(q.value);at>=0;at=text.indexOf(q.value,at+q.value.length())){
++                    int end=at+q.value.length();
++                    boolean labeledSeparator=at>0&&":=#".indexOf(text.charAt(at-1))>=0&&(q.kind!=FutoonQuery.Kind.AUTO||text.substring(0,at).matches("(?s).*订单号\\s*[:=#]\\s*"));
++                    if(at>0&&token(text.charAt(at-1))&&!labeledSeparator||end<text.length()&&token(text.charAt(end)))continue;
++                    ranges.add(new Range(m.id,starts.get(at),ends.get(end-1)));
++                }
++                if(ranges.isEmpty())continue;
++                if(candidate==null){candidate=new Candidate(q);out.put(key,candidate);}
++                candidate.ranges.addAll(ranges);
++            }
++        }
++        return new ArrayList<>(out.values());
++    }
++}
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonOrderSpan.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonOrderSpan.java
+new file mode 100644
+--- /dev/null
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonOrderSpan.java
+@@ -0,0 +1,14 @@
++package org.telegram.messenger.futoon;
++
++import android.text.TextPaint;
++import org.telegram.ui.Components.URLSpanNoUnderline;
++
++/** Local action marker; it never navigates to an external URL. */
++public final class FutoonOrderSpan extends URLSpanNoUnderline {
++    public final int account;public final long dialog,topic,message;public final String backend,order;
++    public FutoonOrderSpan(int account,String backend,long dialog,long topic,long message,String order){
++        super("futoon://order-actions");this.account=account;this.backend=backend;this.dialog=dialog;this.topic=topic;this.message=message;this.order=order;
++    }
++    @Override public void onClick(android.view.View view){ /* Only the owning ChatActivity may dispatch this local action. */ }
++    @Override public void updateDrawState(TextPaint paint){super.updateDrawState(paint);paint.setUnderlineText(true);}
++}
+diff --git a/Tools/futoon/FutoonRecentOrdersTest.java b/Tools/futoon/FutoonRecentOrdersTest.java
+new file mode 100644
+--- /dev/null
++++ b/Tools/futoon/FutoonRecentOrdersTest.java
+@@ -0,0 +1,24 @@
++package org.telegram.messenger.futoon;
++import java.util.*;
++public final class FutoonRecentOrdersTest {
++    private static void check(boolean ok,String message){if(!ok)throw new AssertionError(message);}
++    public static void main(String[] args){
++        List<FutoonRecentOrders.Message> rows=new ArrayList<>();
++        for(int i=0;i<25;i++)rows.add(new FutoonRecentOrders.Message(100-i,9,3,"系统订单号: ORDER-20261030-"+i));
++        List<FutoonRecentOrders.Candidate> found=FutoonRecentOrders.extract(rows,9,3);
++        check(found.size()==20,"only twenty messages and unique candidates");
++        check(found.stream().noneMatch(c->c.query.value.endsWith("-20")),"twenty-first message excluded");
++        check(FutoonRecentOrders.extract(rows,9,4).isEmpty(),"topic isolation");
++        check(FutoonRecentOrders.extract(rows,10,3).isEmpty(),"dialog isolation");
++        rows=Arrays.asList(new FutoonRecentOrders.Message(1,9,3,"系统订单号: ORDER-20261030-01"),new FutoonRecentOrders.Message(2,9,3,"系统订单号: ORDER-20261030-01"));
++        found=FutoonRecentOrders.extract(rows,9,3);
++        check(found.size()==1&&found.get(0).ranges.size()==2,"deduplicate queries while preserving both messages");
++        String unicode="系统订单号：ＯＲＤＥＲ－２０２６１０３０－０１";
++        found=FutoonRecentOrders.extract(Collections.singletonList(new FutoonRecentOrders.Message(3,9,3,unicode)),9,3);
++        check(found.size()==1,"normalization uses existing parser");
++        FutoonRecentOrders.Range r=found.get(0).ranges.get(0);
++        check(unicode.substring(r.start,r.end).equals("ＯＲＤＥＲ－２０２６１０３０－０１"),"normalized offsets map to original text");
++        check(FutoonRecentOrders.extract(Collections.singletonList(new FutoonRecentOrders.Message(4,9,3,"PID: 123456")),9,3).isEmpty(),"merchant IDs cannot become order hints");
++        System.out.println("Recent-order bounded extraction, deduplication, Unicode range and scope tests passed");
++    }
++}

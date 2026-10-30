@@ -40,6 +40,12 @@ internal class EmbeddedEnvironment(private val bridge: NativePanelBridge) : Pane
         val scope = object : PanelSession by delegate {
             override fun isActive() = current == revision && delegate.isActive() && delegate.address() == address
         }
-        activeRepository = FutoonRepository(FutoonApiClient(PanelCookieJar(scope, address.toHttpUrl()) { runCatching { bridge.call("ui.channel.refresh", "{}") } }, address.toHttpUrl(), onSessionExpired = { expired.value = true }))
+        val pending = object : BalancePendingStore {
+            private val store = SessionBalancePendingStore(delegate)
+            private fun checkScope() { check(scope.isActive()) { "账号或后台已变化" } }
+            override fun read(uid: String): String { checkScope(); return store.read(uid) }
+            override fun write(uid: String, value: String) { checkScope(); store.write(uid, value) }
+        }
+        activeRepository = FutoonRepository(FutoonApiClient(PanelCookieJar(scope, address.toHttpUrl()) { runCatching { bridge.call("ui.channel.refresh", "{}") } }, address.toHttpUrl(), onSessionExpired = { expired.value = true }), pending)
     }
 }

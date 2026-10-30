@@ -60,24 +60,49 @@ class NativeUiRegressionTest {
         val state = AppUiState(orders = orders, orderTotal = 1284, orderChannelStats = mapOf("12" to stat))
         val vm = model()
         screen { Column { PayTopBar("订单"); OrdersScreen(state, vm) } }
+        compose.onNodeWithText("本页统计").performClick()
         compose.onNodeWithText("当前页 · 第 1 页 (2 条)").assertIsDisplayed()
         compose.onNodeWithText("订单金额").assertIsDisplayed()
         compose.onNodeWithText("¥1000.00").assertIsDisplayed()
-        compose.onAllNodesWithText("92.0%")[0].assertIsDisplayed()
+        compose.onNodeWithContentDescription("关闭").performClick()
         screenshot("02-orders")
-        compose.onAllNodesWithText("92.0%")[0].performClick()
+        compose.onAllNodesWithContentDescription("订单操作")[0].performClick()
+        compose.onNodeWithText("92.0% · 近5分钟").assertExists()
+        compose.onNodeWithText("通道健康").performClick()
         compose.onNodeWithText("近5分钟 · 全通道统计").assertExists()
         compose.onNodeWithText("全通道订单数量").assertExists()
         screenshot("03-order-channel-rate")
     }
+    @Test fun matchedChatOrderOpensCurrentActionsDirectlyWithoutMutating() {
+        val detail = org.json.JSONObject("""{"trade_no":"S2610081430158812","uid":"41882","money":"500.00","status":1,"channel":"12"}""").toOrderDetail()
+        val vm=model()
+        screen { OrdersScreen(AppUiState(orderDetailTradeNo=detail.tradeNo, orderDetail=detail),vm,quickActions=true) }
+        compose.onNodeWithText("查看完整详情").assertIsDisplayed()
+        compose.onNodeWithText("重新通知商户").assertExists()
+        compose.onNodeWithText("手动退款").assertExists()
+        screenshot("60-chat-order-actions-fixture")
+        compose.onNodeWithText("手动退款").performClick()
+        compose.onNodeWithText("退款金额").assertExists()
+        compose.onNodeWithText("确认").assertIsEnabled()
+    }
     @Test fun fullOrderSearchOpensAndScrollsToApplyButton() {
         val vm = model()
         screen { OrdersScreen(AppUiState(orders = orders), vm) }
-        compose.onNodeWithText("完整搜索").performClick()
+        compose.onNodeWithContentDescription("完整搜索").performClick()
         compose.onAllNodes(hasScrollAction()).onLast().performScrollToNode(hasText("开始日期 YYYY-MM-DD"))
         compose.onNodeWithText("开始日期 YYYY-MM-DD").assertIsDisplayed()
         compose.onNodeWithText("应用筛选").assertIsDisplayed()
         screenshot("04-order-search")
+    }
+    @Test fun embeddedOrderListKeepsQuickSearchAndAdvancedFiltersWithoutHostSearchButton() {
+        val vm=model()
+        screen { OrdersScreen(AppUiState(orders=orders),vm,showSearchEntry=false) }
+        compose.onNodeWithText("订单号 / 商户订单号 / 域名 / 金额 / 商户号").assertIsDisplayed()
+        compose.onNodeWithContentDescription("完整搜索").performClick()
+        compose.onNodeWithText("订单状态").assertExists()
+        compose.onNodeWithText("应用筛选").assertIsDisplayed()
+        compose.onNodeWithContentDescription("关闭").performClick()
+        compose.onAllNodesWithText(orders.first().tradeNo)[0].assertExists()
     }
     @Test fun monitoringSwitchesWindowsWithoutInventingMissingData() {
         val document = NativeDocument("监测", emptyList(), listOf(NativeTable("监测", listOf("ID", "名称", "状态", "5 分钟成功率", "total_count_5min", "success_count_5min", "processing_count_5min", "监测结果", "最近检测"),

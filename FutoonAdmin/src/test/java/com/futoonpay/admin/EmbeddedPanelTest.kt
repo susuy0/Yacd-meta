@@ -65,7 +65,7 @@ class EmbeddedPanelTest {
         assertEquals("settlements", navigator.current.kind)
         screenshot("21-embedded-settlements")
         assertEquals(0, bridge.sent.get())
-        compose.onNode(hasText("更多") and hasClickAction()).performClick()
+        compose.onNode(hasText("管理") and hasClickAction()).performClick()
         compose.onNodeWithText("支付通道").assertExists()
         compose.onNodeWithText("轮询组").assertExists()
         screenshot("22-embedded-more")
@@ -173,7 +173,7 @@ class EmbeddedPanelTest {
         compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(350.dp)) { PanelOverlayHost {
             OrdersScreen(AppUiState(), model)
         } } } }
-        compose.onNodeWithText("完整搜索").performClick()
+        compose.onNodeWithContentDescription("完整搜索").performClick()
         compose.onNodeWithText("应用筛选").assertIsDisplayed()
     }
 }

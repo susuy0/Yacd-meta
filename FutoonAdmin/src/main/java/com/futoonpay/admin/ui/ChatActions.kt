@@ -15,7 +15,7 @@ import com.futoonpay.admin.ui.theme.Line
 /** Shared business actions. Routes, enabled states, data and click lambdas remain at the call site. */
 @Composable
 internal fun ChatButton(onClick:()->Unit, modifier:Modifier=Modifier, enabled:Boolean=true,
-    shape:Shape=RoundedCornerShape(24.dp), colors:ButtonColors=ButtonDefaults.buttonColors(),
+    shape:Shape=RoundedCornerShape(8.dp), colors:ButtonColors=ButtonDefaults.buttonColors(),
     elevation:ButtonElevation?=null, border:BorderStroke?=null,
     contentPadding:PaddingValues=PaddingValues(horizontal=24.dp,vertical=8.dp), interactionSource:MutableInteractionSource?=null,
     content:@Composable RowScope.()->Unit) {
@@ -23,7 +23,7 @@ internal fun ChatButton(onClick:()->Unit, modifier:Modifier=Modifier, enabled:Bo
 }
 @Composable
 internal fun ChatOutlinedButton(onClick:()->Unit, modifier:Modifier=Modifier, enabled:Boolean=true,
-    shape:Shape=RoundedCornerShape(24.dp), colors:ButtonColors=ButtonDefaults.outlinedButtonColors(contentColor=GreenDark),
+    shape:Shape=RoundedCornerShape(8.dp), colors:ButtonColors=ButtonDefaults.outlinedButtonColors(contentColor=GreenDark),
     elevation:ButtonElevation?=null, border:BorderStroke?=BorderStroke(1.dp,Line),
     contentPadding:PaddingValues=PaddingValues(horizontal=24.dp,vertical=8.dp), interactionSource:MutableInteractionSource?=null,
     content:@Composable RowScope.()->Unit) {

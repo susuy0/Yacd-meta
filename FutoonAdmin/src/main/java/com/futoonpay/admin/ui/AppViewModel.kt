@@ -126,6 +126,16 @@ class AppViewModel(
     val modernBackend: Boolean get() = repositoryOverride?.modernBackend ?: (application.hasConfiguredEndpoint && application.repository.modernBackend)
     suspend fun settlementReason(id: String) = repository.settlementReason(id)
     suspend fun settlementInfo(id: String) = repository.settlementInfo(id)
+    suspend fun merchantBalanceInfo(uid: String) = repository.merchantBalanceInfo(uid)
+    suspend fun adjustMerchantBalance(session: BalanceSession, command: BalanceCommand, retry: Boolean): ApiResult {
+        if (_state.value.merchantBalanceUpdating || _state.value.batch?.running == true) return ApiResult(false, "请等待当前操作完成")
+        _state.update { it.copy(merchantBalanceUpdating = true) }
+        return try {
+            repository.adjustMerchantBalance(session, command, retry).also { result ->
+                if (result.success) loadMerchants(_state.value.merchantPage)
+            }
+        } finally { _state.update { it.copy(merchantBalanceUpdating = false) } }
+    }
     private var orderChannelStatsGeneration = 0L
     private var ordersGeneration = 0L
     private var settlementsGeneration = 0L

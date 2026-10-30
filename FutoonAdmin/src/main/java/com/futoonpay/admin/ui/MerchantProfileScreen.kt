@@ -35,8 +35,8 @@ internal fun MerchantProfileScreen(state: AppUiState, onClose: () -> Unit, onFie
     Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), containerColor = MaterialTheme.colorScheme.background,
         topBar = { PayTopBar("编辑商户 · PID ${state.merchantEditorUid}", ::close) },
         bottomBar = { Surface(shadowElevation = 6.dp) { Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            com.futoonpay.admin.ui.ChatOutlinedButton(onClick = ::close, shape = RoundedCornerShape(24.dp), enabled = !state.merchantEditorSaving, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            com.futoonpay.admin.ui.ChatButton(onClick = { if (state.merchantEditorUncertain) onRetry() else confirm = true }, shape = RoundedCornerShape(24.dp), enabled = (valid || state.merchantEditorUncertain) && !busy, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (state.merchantEditorSaving) "保存中…" else if (state.merchantEditorUncertain) "重新读取资料并对比" else "保存资料") }
+            com.futoonpay.admin.ui.ChatOutlinedButton(onClick = ::close, shape = RoundedCornerShape(8.dp), enabled = !state.merchantEditorSaving, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
+            com.futoonpay.admin.ui.ChatButton(onClick = { if (state.merchantEditorUncertain) onRetry() else confirm = true }, shape = RoundedCornerShape(8.dp), enabled = (valid || state.merchantEditorUncertain) && !busy, modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (state.merchantEditorSaving) "保存中…" else if (state.merchantEditorUncertain) "重新读取资料并对比" else "保存资料") }
         } } }) { padding ->
         LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (state.merchantEditorLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }

@@ -66,7 +66,7 @@ class UserGroupEditorUiTest {
         compose.onNodeWithText("此页面暂时没有可显示的数据或表单").assertDoesNotExist()
         compose.onNodeWithText("保存用户组").assertIsDisplayed().assertIsEnabled()
         compose.onNodeWithText("93.10").assertDoesNotExist()
-        compose.onNodeWithContentDescription("展开支付宝").performClick()
+        compose.onNodeWithText("支付配置").performClick()
         compose.onNode(hasText("93.10") and hasSetTextAction()).assertExists()
         assertEquals(0,writes.get());screenshot("50-group-editor-original-values")
         compose.onNodeWithText("取消编辑").performClick();assertNull(vm.state.value.groupEditorGid);assertEquals(0,writes.get())
@@ -80,6 +80,17 @@ class UserGroupEditorUiTest {
         compose.onNodeWithText("保存用户组").performClick();compose.onNodeWithText("确认保存").performClick()
         compose.waitUntil(5000) { writes.get()==1 && compose.onAllNodesWithText("Renamed group").fetchSemanticsNodes().isNotEmpty() }
         assertNull(vm.state.value.groupEditorGid);assertEquals(1,writes.get());screenshot("51-group-editor-saved-list")
+    }
+    @Test fun switchingEditorTabsRetainsUnsavedRoutingValuesAndCancelDoesNotWrite() {
+        val vm=open();edit()
+        compose.onNodeWithText("支付配置").performClick()
+        compose.onNode(hasText("93.10") and hasSetTextAction()).performTextReplacement("94.25")
+        compose.onNodeWithText("基础").performClick()
+        compose.onNode(hasText("Fixture group") and hasSetTextAction()).assertExists()
+        compose.onNodeWithText("支付配置").performClick()
+        compose.onNode(hasText("94.25") and hasSetTextAction()).assertExists()
+        compose.onNodeWithText("取消编辑").performClick()
+        assertNull(vm.state.value.groupEditorGid);assertEquals(0,writes.get())
     }
     @Test fun addStartsBlankAndCannotSaveUntilNamed() {
         val vm=open();compose.onNodeWithContentDescription("新增用户组").performClick()
@@ -115,7 +126,7 @@ class UserGroupEditorUiTest {
     @Test fun uncertainCreateCannotBeReplayedByRefreshingAnUnidentifiedNewRecord() {
         timeoutWrite=true;val vm=open();compose.onNodeWithContentDescription("新增用户组").performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("保存用户组").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasSetTextAction()).performTextReplacement("Pending creation")
+        compose.onNode(hasText("显示名称", substring = true) and hasSetTextAction()).performTextReplacement("Pending creation")
         compose.onNodeWithText("保存用户组").performClick();compose.onNodeWithText("确认保存").performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("等待核对").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("刷新").assertDoesNotExist();compose.onNodeWithText("等待核对").assertIsNotEnabled();assertEquals(1,writes.get())

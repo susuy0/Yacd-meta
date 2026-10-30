@@ -97,6 +97,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     private var chat by mutableStateOf(ChatScope())
     private var query by mutableStateOf(memory.query)
     private var evidenceRevision by mutableStateOf(0)
+    private var shortcutOrder by mutableStateOf("")
     private var closed = false
     private var palette by mutableStateOf(FutoonPalette())
     private var fullscreen by mutableStateOf(false)
@@ -114,7 +115,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
         compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         compose.setContent {
             CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides this) {
-                FutoonTheme(palette) { EmbeddedPanelRoot(environment, bridge, navigation, chat, query, evidenceRevision, fullscreen, keyboardVisible, options, memory) { fullscreenHandler?.run() } }
+                FutoonTheme(palette) { EmbeddedPanelRoot(environment, bridge, navigation, chat, query, evidenceRevision, fullscreen, keyboardVisible, options, memory, shortcutOrder = shortcutOrder) { fullscreenHandler?.run() } }
             }
         }
         addView(compose, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -150,6 +151,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     private fun navigatorEvidence(order: String, caption: String) { navigation.push(PanelRoute("evidence", module = JSONObject(order).put("_caption", caption).toString())) }
     fun openShortcutTarget(kind: String, id: String, order: String) {
         when (kind) {
+            "order-actions" -> if (id.matches(Regex("[A-Za-z0-9][A-Za-z0-9_.:@/+-]{0,127}"))) { shortcutOrder = order; navigation.push(PanelRoute("orders", module = "quick-actions", orderId = id)) }
             "merchant-more" -> if (id.matches(Regex("[1-9][0-9]{0,18}"))) navigation.push(PanelRoute("merchant_more", merchantId = id, module = chat.key + "|" + chat.telegramId))
             "merchant" -> navigation.merchants(id)
             "merchant-orders" -> navigation.orders(merchantId = id)
@@ -172,7 +174,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, fullscreen: Boolean = false, keyboard: Boolean = false, options: ExtensionOptions = ExtensionOptions(), memory: PanelMemory? = null, onFullscreen: () -> Unit = {}) {
+@Composable internal fun EmbeddedPanelRoot(environment: PanelEnvironment, bridge: NativePanelBridge, navigator: PanelNavigator, chat: ChatScope, query: RecognizedQuery?, evidenceRevision: Int, fullscreen: Boolean = false, keyboard: Boolean = false, options: ExtensionOptions = ExtensionOptions(), memory: PanelMemory? = null, shortcutOrder: String = "", onFullscreen: () -> Unit = {}) {
     val auth: AppViewModel = viewModel(key = "session", factory = AppViewModel.Factory(environment, initialAccountName = bridge.username().ifBlank { "管理员" }))
     val state by auth.state.collectAsState()
     val sessionKey = state.adminUrl + ":" + state.accountName + ":" + bridge.accountScope()
@@ -194,6 +196,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     }
     LaunchedEffect(chat, workflows, state.authStage) { if (state.authStage == AuthStage.AUTHENTICATED) workflows.updateChat(chat) }
     LaunchedEffect(query?.id, workflows) { query?.let(workflows::receive) }
+    LaunchedEffect(shortcutOrder, workflows) { if (shortcutOrder.isNotBlank()) runCatching { workflows.rememberOrder(JSONObject(shortcutOrder)) } }
     LaunchedEffect(workflowState.merchant) { workflowState.merchant?.let { contextModel.setCurrentMerchant(JSONObject(it).toMerchantSummary()) } }
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(workflowState.notice) { workflowState.notice?.let { snackbar.showSnackbar(it); workflows.consumeNotice() } }
@@ -235,7 +238,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                                     val chrome = PayPanelChrome(navigator.canPop, actions = {
                                         IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                                         IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
-                                    }, context = { if (route.kind in setOf("recognition", "orders", "settlements", "merchants", "merchant_records", "evidence")) PanelContextStrip(chat, workflowState, keyboard || compact) })
+                                    }, context = { if (route.kind == "evidence") PanelContextStrip(chat, workflowState, keyboard || compact) })
                                     CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
                                 }
                             }
@@ -248,7 +251,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                         ChatNavItem("orders", "订单", Icons.Outlined.ReceiptLong, Icons.Default.ReceiptLong),
                         ChatNavItem("merchants", "商户", Icons.Outlined.Storefront, Icons.Default.Storefront),
                         ChatNavItem("settlements", "结算", Icons.Outlined.AccountBalanceWallet, Icons.Default.AccountBalanceWallet),
-                        ChatNavItem("more", "更多", Icons.Outlined.MoreHoriz, Icons.Default.MoreHoriz))
+                        ChatNavItem("more", "管理", Icons.Outlined.GridView, Icons.Default.GridView))
                     ChatNavigationBar(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)
                 }
             }
@@ -353,7 +356,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     })
     val state by model.state.collectAsState()
     var search by remember { mutableIntStateOf(0) }
-    var merchantTab by rememberSaveable(route.id) { mutableStateOf(if (route.merchantId.isBlank()) "context" else "all") }
+    var merchantTab by rememberSaveable(route.id) { mutableStateOf("all") }
     var lookupError by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(route.id) {
         if (memory != null && !memory.initializedRoutes.add(route.id)) return@LaunchedEffect
@@ -369,18 +372,18 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
     LaunchedEffect(merchantTab) { if (route.kind == "merchants" && route.merchantId.isBlank() && merchantTab == "all") model.loadMerchants(1) }
     state.message?.let { msg -> LaunchedEffect(msg) { snackbar.showSnackbar(msg); model.consumeMessage() } }
     Column(Modifier.fillMaxSize()) {
-        val title = when (route.kind) { "orders" -> "订单"; "settlements" -> "结算"; "merchants" -> "商户"; else -> "更多" }
+        val title = when (route.kind) { "orders" -> "订单"; "settlements" -> "结算"; "merchants" -> "商户"; else -> "管理" }
         PayTopBar(title, if (route.kind == "more") null else back) {
-            if (route.kind in setOf("orders", "settlements", "merchants")) IconButton(onClick = { if (route.kind == "merchants") merchantTab = "all"; search++ }) { Icon(Icons.Default.Search, "完整搜索") }
+            if (route.kind == "merchants" && route.merchantId.isBlank() && merchantTab == "context") IconButton(onClick = { if (route.kind == "merchants") merchantTab = "all"; search++ }) { Icon(Icons.Default.Search, "完整搜索") }
             if (route.kind == "merchants") IconButton(onClick = navigator::merchantOpening) { Icon(Icons.Default.PersonAdd, "商户开户") }
             if (route.kind == "more") IconButton(onClick = { navigator.push(PanelRoute("settings")) }) { Icon(Icons.Default.Settings, "后台设置") }
         }
         lookupError?.let { Text(it, color = Danger, modifier = Modifier.padding(12.dp)) }
         when (route.kind) {
-            "orders" -> OrdersScreen(state, model, search, showSearchEntry = false)
+            "orders" -> OrdersScreen(state, model, search, showSearchEntry = false, quickActions = route.module == "quick-actions")
             "settlements" -> SettlementsScreen(state, model, search, showSearchEntry = false)
             "merchants" -> {
-                if (route.merchantId.isBlank()) PayPills(listOf("context" to "当前会话", "all" to "全部商户"), merchantTab) { merchantTab = it }
+                if (route.merchantId.isBlank()) PayPills(listOf("all" to "全部商户", "context" to "当前会话"), merchantTab) { merchantTab = it }
                 if (merchantTab == "context") LazyColumn(contentPadding = PaddingValues(12.dp)) { item { CurrentMerchantCard(workflows, merchantActions, chat, navigator) } }
                 else MerchantsScreen(state, model, search)
             }

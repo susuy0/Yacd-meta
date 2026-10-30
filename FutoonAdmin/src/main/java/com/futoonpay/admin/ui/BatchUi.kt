@@ -36,6 +36,18 @@ internal fun rememberRecordSelection(scope: Any, visibleIds: List<String>): Reco
     return selection
 }
 
+/** Counts, read-only overview and selection share one row until selection is explicitly entered. */
+@Composable
+internal fun FinanceListToolbar(selection: RecordSelection, visibleIds: List<String>, options: List<BatchRequest>, busy: Boolean,
+    summary: String, overviewLabel: String = "", onOverview: (() -> Unit)? = null, onRequest: (BatchRequest) -> Unit) {
+    if (selection.active) MultiSelectBar(selection, visibleIds, options, busy, onRequest)
+    else Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(summary, modifier = Modifier.weight(1f), color = Muted, fontSize = 12.sp)
+        onOverview?.let { ChatTextButton(onClick = it) { Text(overviewLabel, fontSize = 12.sp) } }
+        ChatTextButton(onClick = { selection.active = true }, enabled = !busy && visibleIds.any(String::isNotBlank)) { Text("多选", fontSize = 12.sp) }
+    }
+}
+
 @Composable
 internal fun MultiSelectBar(selection: RecordSelection, visibleIds: List<String>, options: List<BatchRequest>, busy: Boolean = false, onRequest: (BatchRequest) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
