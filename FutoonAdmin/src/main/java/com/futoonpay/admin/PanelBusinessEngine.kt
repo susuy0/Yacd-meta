@@ -23,8 +23,8 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
     private val documents=linkedMapOf<String,DocumentState>()
     private val forms=linkedMapOf<String,FormState>()
     private val actions=linkedMapOf<String,ActionState>()
-    private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor")
-    private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","payment_plugins","user_groups","group_purchase","announcements","payment_settings","site_settings","login_logs")
+    private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor","weixin_apps")
+    private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","payment_plugins","user_groups","group_purchase","announcements","payment_settings","site_settings","login_logs","account_settings")
     fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
     @Throws(Exception::class) fun execute(op: String,p: JSONObject): JSONObject = runBlocking {
         require(supports(op)) { "不支持的业务操作" }
@@ -103,7 +103,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
                 currentSettlements=r.rows
                 JSONObject().put("total",r.total).put("rows",JSONArray(r.rows.map {s -> JSONObject().put("id",s.id).put("uid",s.merchantId).put("username",s.username).put("type",s.payType).put("account",s.account).put("money",s.amount).put("realmoney",s.actualAmount).put("usdt_count",s.usdtAmount).put("usdt_rate",s.usdtRate).put("addtime",s.createdAt).put("endtime",s.completedAt).put("status",s.status).put("result",s.result).put("currency",s.currency)}))
             }
-            "settlement.status" -> {val status=p.getInt("status");require(status in 0..3);result(if(status==3)repository.failSettlementWithReason(id(p.getString("id")),p.getString("reason"),id(p.getString("uid")),p.optString("usdt_rate"),p.optString("usdt_count")) else repository.setSettlementStatus(id(p.getString("id")),status,id(p.getString("uid")),p.optString("usdt_rate"),p.optString("usdt_count")))}
+            "settlement.status" -> {val status=p.getInt("status");require(status in (if(repository.modernBackend)setOf(1,6) else (0..3).toSet()));if(repository.modernBackend)require(currentSettlements.firstOrNull {it.id==p.getString("id")}?.canSetModernStatus(status)==true){"当前结算状态不允许此操作，请刷新"};result(if(status==3)repository.failSettlementWithReason(id(p.getString("id")),p.getString("reason"),id(p.getString("uid")),p.optString("usdt_rate"),p.optString("usdt_count")) else repository.setSettlementStatus(id(p.getString("id")),status,id(p.getString("uid")),p.optString("usdt_rate"),p.optString("usdt_count")))}
             "settlement.info" -> result(repository.saveSettlementInfo(id(p.getString("id")),p.getString("pay_type"),p.getString("pay_account"),p.getString("pay_name")))
             "domains.list" -> {val r=repository.domainAudits(page(p),mapOf("uid" to p.optString("uid"),"dstatus" to p.optString("status","-1")));JSONObject().put("total",r.total).put("rows",JSONArray(r.rows.map { d -> JSONObject().put("id",d.id).put("uid",d.merchantId).put("domain",d.domain).put("status",d.status).put("addtime",d.createdAt).put("remark",d.remark)}))}
             "domain.action" -> result(when(p.getString("action")){"add"->repository.addDomain(id(p.getString("uid")),p.getString("domain"));"delete"->repository.deleteDomain(id(p.getString("id")));else->{val status=p.getInt("status");require(status in 0..2);repository.setDomainStatus(id(p.getString("id")),status,p.optString("remark"))}})
@@ -119,7 +119,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
                         val rows=selected.map {id -> currentOrders.firstOrNull {it.tradeNo==id} ?: repository.orderDetail(orderId(id)).let {d->OrderSummary(d.tradeNo,d.merchantTradeNo,d.merchantId,d.domain,d.name,d.amount,d.paidAmount,d.merchantIncome,d.paymentType,d.channelId,d.plugin,d.createdAt,d.completedAt,d.status,d.settlementStatus,d.currency)} }
                         orderBatchOptions(rows)
                     }
-                    "settlements" -> {require(currentSettlements.map {it.id}.containsAll(selected)){"结算记录已变化，请刷新"};settlementBatchOptions(currentSettlements.filter {it.id in selected})}
+                    "settlements" -> {require(currentSettlements.map {it.id}.containsAll(selected)){"结算记录已变化，请刷新"};settlementBatchOptions(currentSettlements.filter {it.id in selected}, repository.modernBackend)}
                     else -> {require(module==currentPaymentModule && currentPaymentRows.map {it.id}.containsAll(selected)){"配置记录已变化，请刷新"};paymentBatchOptions(module,currentPaymentRows.filter {it.id in selected})}
                 }
                 JSONObject().put("options",JSONArray(requests.map {b->val ticket=UUID.randomUUID().toString();batches[ticket]=System.currentTimeMillis()+600000 to b;JSONObject().put("ticket",ticket).put("title",b.title).put("warning",b.warning).put("targets",JSONArray(b.commands.map {it.label}))}))
@@ -147,7 +147,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
         if(p.optString("column").isNotBlank()){val c=p.getString("column");require(c in setOf("trade_no","out_trade_no","api_trade_no","uid","name","money","realmoney","getmoney","domain","buyer","ip"));put("column",c);put("value",p.optString("value"))}
     }
     private suspend fun readModule(p: JSONObject): JSONObject {
-        val module=p.getString("module");require(module in paymentModules || module in catalogueModules){"模块无效"}
+        val module=p.getString("module");require(!repository.modernBackend || OfficialBackendFeatures.available(module)){"新版后台已移除此模块"};require(module in paymentModules || module in catalogueModules){"模块无效"}
         if(module in paymentModules) {
             val roll=RollGroupTab.values().firstOrNull {it.key==p.optString("tab")} ?: RollGroupTab.ALL
             val channel=PaymentChannelTab.values().firstOrNull {it.key==p.optString("tab")} ?: PaymentChannelTab.ALL
@@ -211,11 +211,11 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient)
             val template=state.document.forms.filter {f->when(module){"channels"->f.fields.any {it.name=="plugin"}&&f.fields.any {it.name=="rate"};"payment_types"->f.fields.any {it.name=="showname"}&&f.fields.any {it.name=="device"};"rolls"->f.fields.any {it.name=="kind"}&&f.fields.any {it.name=="type"};else->f.fields.size>=3}}.maxByOrNull {it.fields.size}
             if(template==null) {val a=state.document.actions.firstOrNull {it.label.contains("新增")||it.label.contains("添加")} ?: error("后台没有提供新增表单");return prepareEditor(module,state.path,repository.paymentEditor(module,a,state.document))}
             val fields=template.fields.map {f->f.copy(value=when(f.name){"action"->"add";"id","name","showname","rate","plugin","daytop","paymin","paymax"->"";else->if(f.sensitive)"" else f.value})}
-            val suffix=when(module){"channels"->"Channel";"payment_types"->"PayType";"rolls"->"Roll";else->""}
+            val suffix=when(module){"channels"->"Channel";"payment_types"->"PayType";"rolls"->"Roll";"weixin_apps"->"Weixin";else->""}
             return prepareEditor(module,state.path,template.copy(title="新增配置",action=if(suffix.isBlank())template.action else "ajax_pay.php?act=save$suffix",method="POST",fields=fields))
         }
         val checked=id(id)
-        val endpoint=when(kind){"route"->"rollInfo";"account"->"channelInfo";else->when(module){"channels"->"getChannel";"payment_types"->"getPayType";"rolls"->"getRoll";else->"getProxy"}}
+        val endpoint=when(kind){"route"->"rollInfo";"account"->"channelInfo";else->when(module){"channels"->"getChannel";"payment_types"->"getPayType";"rolls"->"getRoll";"weixin_apps"->"getWeixin";else->"getProxy"}}
         return prepareEditor(module,state.path,repository.paymentEditor(module,NativeAction(if(kind=="route")"编辑路由" else "编辑配置","ajax_pay.php?act=$endpoint&id=$checked"),state.document))
     }
     /** Business flow ported from PaymentAdminViewModel: save primary, then account/member configuration. */

@@ -49,7 +49,7 @@ data class SettlementSearchFilters(
         if (value.isNotBlank()) put("value", value.trim())
         if (merchantId.isNotBlank()) put("uid", merchantId.trim())
         put("type", settlementType)
-        put("dstatus", status.toString())
+        put("dstatus", if (status == -2) "unfinished" else status.toString())
         if (usdtRate.isNotBlank()) put("usdt_rate", usdtRate.trim())
     }
 }
@@ -74,6 +74,10 @@ internal fun settlementStatusLabel(status: Int): String = when (status) {
     1 -> "已完成"
     2 -> "正在结算"
     3 -> "结算失败"
+    4 -> "队列中"
+    5 -> "链上确认失败"
+    6 -> "作废"
+    7 -> "待审核"
     else -> "状态 $status"
 }
 

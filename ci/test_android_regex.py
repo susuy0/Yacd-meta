@@ -21,11 +21,14 @@ import sys
 class IcuRegex:
     def __init__(self):
         library = ctypes.util.find_library("icui18n")
+        if not library and sys.platform == "darwin":
+            library = next((str(path.resolve()) for prefix in ("/opt/homebrew", "/usr/local")
+                            if (path := Path(prefix) / "opt/icu4c/lib/libicui18n.dylib").exists()), None)
         assert library, "ICU4C must be installed; the Android regex gate cannot be skipped"
         self.lib = C.CDLL(library)
-        version = re.search(r"\.so\.(\d+)", library)
-        self.version = version.group(1) if version else "unversioned"
-        suffix = "_" + version.group(1) if version else ""
+        version = re.search(r"\.so\.(\d+)|\.(\d+)(?:\.\d+)*\.dylib$", library)
+        self.version = next((group for group in version.groups() if group), "unversioned") if version else "unversioned"
+        suffix = "_" + self.version if version else ""
         self.open = self.function("uregex_open" + suffix, C.c_void_p,
                                   [C.POINTER(C.c_uint16), C.c_int32, C.c_uint32, C.c_void_p, C.POINTER(C.c_int32)])
         self.close = self.function("uregex_close" + suffix, None, [C.c_void_p])

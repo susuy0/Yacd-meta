@@ -4,6 +4,9 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 
 object NativeDocumentParser {
+    private fun isBackendEndpoint(value: String): Boolean =
+        Regex("^(?:\\./)?[A-Za-z][A-Za-z0-9_]*(?:\\.php)?\\?act=[A-Za-z0-9_]+(?:&[^\\s]*)?$").matches(value)
+
     // Android's regex engine rejects an unescaped closing brace even though the JVM accepts it.
     private val DATA_FIELDS_REGEX = Regex("data\\s*:\\s*\\{([^}]*)\\}")
 
@@ -23,18 +26,18 @@ object NativeDocumentParser {
     fun listEndpoints(html: String): List<String> {
         val scripts = Jsoup.parse(html).select("script:not([src])").joinToString("\n") { it.data() }
         val explicitUrls = Regex(
-            "(?:url|ajaxUrl)\\s*[:=]\\s*['\"]([^'\"]+\\.php(?:\\?[^'\"]*)?)['\"]",
+            "(?:url|ajaxUrl)\\s*[:=]\\s*['\"]((?:\\./)?[A-Za-z][A-Za-z0-9_]*(?:\\.php)?\\?[^'\"]*)['\"]",
             setOf(RegexOption.IGNORE_CASE),
         ).findAll(scripts).map { it.groupValues[1] }
         val quotedEndpoints = Regex(
-            "['\"]([^'\"]+\\.php\\?[^'\"]*act=[^'\"]+)['\"]",
+            "['\"]((?:\\./)?[A-Za-z][A-Za-z0-9_]*(?:\\.php)?\\?[^'\"]*act=[^'\"]+)['\"]",
             setOf(RegexOption.IGNORE_CASE),
         ).findAll(scripts).map { it.groupValues[1] }
-        val mutating = listOf("save", "set", "del", "delete", "remove", "reset", "check", "detect", "add", "update")
+        val mutating = listOf("save", "set", "del", "delete", "remove", "reset", "check", "detect", "add", "update", "test", "approve", "review", "operation", "ops", "notify", "refund", "transfer")
         return (explicitUrls + quotedEndpoints)
             .filter { endpoint ->
                 val action = endpoint.substringAfter("act=", "").substringBefore('&')
-                endpoint.contains("act=", true) && mutating.none { action.startsWith(it, true) }
+                isBackendEndpoint(endpoint) && mutating.none { action.startsWith(it, true) }
             }
             .distinct()
             .toList()
@@ -85,7 +88,7 @@ object NativeDocumentParser {
             val urlExpression = Regex("url\\s*:\\s*([^,}\\r\\n]+)").find(function.body)?.groupValues?.getOrNull(1)
                 ?.trim()?.trimEnd(',') ?: return@mapNotNull null
             val endpoint = resolveExpression(urlExpression, values) ?: return@mapNotNull null
-            if (!endpoint.contains(".php") || !endpoint.contains("act=")) return@mapNotNull null
+            if (!isBackendEndpoint(endpoint)) return@mapNotNull null
             val method = Regex("type\\s*:\\s*['\"](GET|POST)['\"]", RegexOption.IGNORE_CASE)
                 .find(function.body)?.groupValues?.getOrNull(1)?.uppercase() ?: "GET"
             val fields = DATA_FIELDS_REGEX.find(function.body)?.groupValues?.getOrNull(1)
@@ -208,7 +211,7 @@ object NativeDocumentParser {
 
     private fun parseAction(element: Element, functions: Map<String, ScriptFunction>): NativeAction? {
         val href = element.attr("href").trim()
-        if (element.attr("onclick").isBlank() && href.contains(".php") && href.contains("act=")) {
+        if (element.attr("onclick").isBlank() && isBackendEndpoint(href)) {
             val label = element.text().trim().ifBlank { "操作" }
             if (ACTION_WORDS.none { label.contains(it) }) return null
             return NativeAction(
@@ -224,7 +227,7 @@ object NativeDocumentParser {
         val urlExpression = Regex("url\\s*:\\s*([^,}\\r\\n]+)").find(function.body)?.groupValues?.getOrNull(1)
             ?.trim()?.trimEnd(',') ?: return null
         val endpoint = resolveExpression(urlExpression, values) ?: return null
-        if (!endpoint.contains(".php") || (!endpoint.contains("act=") && !endpoint.startsWith("ajax_"))) return null
+        if (!isBackendEndpoint(endpoint)) return null
 
         val method = Regex("type\\s*:\\s*['\"](GET|POST)['\"]", RegexOption.IGNORE_CASE)
             .find(function.body)?.groupValues?.getOrNull(1)?.uppercase() ?: "GET"
@@ -236,7 +239,7 @@ object NativeDocumentParser {
                     resolveExpression(parts[1].trim(), values)?.let { key to it }
                 }
             }?.toMap().orEmpty()
-        var label = element.text().trim().ifBlank { ACTION_LABELS[functionName] ?: functionName }
+        var label = if (functionName == "testweixin") "连通测试" else element.text().trim().ifBlank { ACTION_LABELS[functionName] ?: functionName }
         val status = Regex("(?:[?&]|^)status=([01])(?:&|$)").find(endpoint)?.groupValues?.getOrNull(1)
             ?: fields["status"]
         if (status != null && (functionName.contains("status", true) || label == "修改状态")) {
@@ -407,11 +410,11 @@ object NativeDocumentParser {
     private val SENSITIVE_PARTS = setOf("pwd", "password", "secret", "token", "private", "certno", "appkey", "key")
     private val ACTION_WORDS = setOf(
         "新增", "添加", "编辑", "修改", "配置", "账户", "路由", "通道",
-        "开启", "启用", "关闭", "停用", "禁用", "删除", "移除", "检测", "监测", "恢复", "重置", "清空", "刷新",
+        "开启", "启用", "关闭", "停用", "禁用", "删除", "移除", "检测", "监测", "恢复", "重置", "清空", "刷新", "测试",
     )
     private val DESTRUCTIVE_WORDS = setOf("关闭", "停用", "删除", "移除", "重置", "清空", "禁用")
     private val ACTION_LABELS = mapOf(
         "delItem" to "删除", "setStatus" to "修改状态", "reset" to "重置", "check" to "检测",
-        "editframe" to "编辑", "addframe" to "新增", "delProxy" to "删除", "setProxy" to "修改状态",
+        "testweixin" to "连通测试", "editframe" to "编辑", "addframe" to "新增", "delProxy" to "删除", "setProxy" to "修改状态",
     )
 }

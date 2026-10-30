@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.futoonpay.admin.PanelEnvironment as FutoonApplication
+import com.futoonpay.admin.data.*
 import com.futoonpay.admin.data.associatedOrders
 import com.futoonpay.admin.data.ApiResult
 import com.futoonpay.admin.data.BatchProgress
@@ -107,6 +108,7 @@ data class SettlementCommand(
     val usdtRate: String = "",
     val usdtAmount: String = "",
     val status: Int? = null,
+    val reviewFields: Map<String, String> = emptyMap(),
 )
 
 class AppViewModel(
@@ -121,6 +123,8 @@ class AppViewModel(
     private val _state = MutableStateFlow(AppUiState(accountName = initialAccountName))
     val state: StateFlow<AppUiState> = _state.asStateFlow()
     private val repository: FutoonRepository get() = repositoryOverride ?: application.repository
+    val modernBackend: Boolean get() = repositoryOverride?.modernBackend ?: (application.hasConfiguredEndpoint && application.repository.modernBackend)
+    suspend fun settlementReason(id: String) = repository.settlementReason(id)
     private var orderChannelStatsGeneration = 0L
     private var ordersGeneration = 0L
     private var settlementsGeneration = 0L
@@ -494,8 +498,13 @@ class AppViewModel(
         _state.update { it.copy(refreshing = true, message = null) }
         runCatching {
             when (command.action) {
+                "approve_full_settlement", "approve_settlement_review" -> repository.reviewSettlement(command.id, command.action, command.reviewFields + ("note" to command.result))
                 "setStatus" -> {
                 val targetStatus = command.status ?: command.result.toIntOrNull() ?: return@runCatching ApiResult(false, "请选择结算状态")
+                if (modernBackend) {
+                    val current = _state.value.settlements.firstOrNull { it.id == command.id }
+                    if (current == null || !current.canSetModernStatus(targetStatus)) return@runCatching ApiResult(false, "当前结算状态不允许此操作，请刷新核对")
+                }
                 if (targetStatus == 3 && command.status != null && command.result.isBlank()) return@runCatching ApiResult(false, "请填写失败理由")
                 if (targetStatus == 3 && command.status != null) return@runCatching repository.failSettlementWithReason(command.id, command.result, command.merchantId, command.usdtRate, command.usdtAmount)
                 val updated = repository.setSettlementStatus(

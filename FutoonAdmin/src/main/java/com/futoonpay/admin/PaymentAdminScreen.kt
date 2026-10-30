@@ -157,6 +157,7 @@ internal object PaymentAdminCatalog {
         PaymentAdminSpec("payment_types", "支付方式", "调用值、设备、状态与关联通道", "pay_type.php", true),
         PaymentAdminSpec("rolls", "通道轮询", "规则模式、状态与通道路由", "pay_roll.php", true),
         PaymentAdminSpec("channel_monitor", "通道监测", "检测、恢复、禁用与结果重置", "pay_channel_monitor.php", false),
+        PaymentAdminSpec("weixin_apps", "公众号小程序", "公众号、小程序、授权配置与连通测试", "pay_weixin.php", true),
         PaymentAdminSpec("proxies", "中转代理", "代理配置、运行状态与删除", "proxy.php", true),
     )
 
@@ -364,6 +365,7 @@ internal class PaymentAdminViewModel(
             "channels" -> "ajax_pay.php?act=saveChannel"
             "payment_types" -> "ajax_pay.php?act=savePayType"
             "rolls" -> "ajax_pay.php?act=saveRoll"
+            "weixin_apps" -> "ajax_pay.php?act=saveWeixin"
             else -> template.action
         }
         _state.update { it.copy(editor = restoreEditor(template.copy(title = "新增${it.spec.title}", action = action, method = "POST", fields = fields)), accountForm = null, primarySaved = false) }

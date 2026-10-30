@@ -31,7 +31,7 @@ def callbacks(source):
         value=balanced(source,m.end())if tail.startswith('{')else re.match(r'[\w.:?]+',tail).group()
         values.append(hashlib.sha256(value.encode()).hexdigest())
     return values
-manifest=json.loads((repo/'reference/ui-callbacks-v0.9.3.json').read_text())
+manifest=json.loads((repo/'reference/ui-callbacks-backend-2026-10-30.json').read_text())
 for name,expected in manifest.items():assert callbacks((repo/name).read_text())==expected,'Business callback changed: '+name
 rules={
 'gallery':{'Components/ChatAttachAlertPhotoLayout.java':['ChatChrome.galleryColumns','ChatChrome.galleryTile','int paddingTop = insetsTop + listAdditionalH + dp(8)'],'PhotoPickerActivity.java':['ChatChrome.galleryColumns','ChatChrome.galleryTile'],'Cells/PhotoPickerAlbumsCell.java':['imageView.setRoundRadius(AndroidUtilities.dp(12))']},
@@ -60,7 +60,7 @@ with tempfile.TemporaryDirectory()as folder:
     p=Path(folder);java=p/'NativeBlurDetachTest.java';java.write_text(program);subprocess.run(['javac',str(java)],check=True);subprocess.run(['java','-cp',folder,'NativeBlurDetachTest'],check=True)
     broken=program.replace('if (backgroundDrawable != null) backgroundDrawable.setCallback(this);','backgroundDrawable.setCallback(this);');java.write_text(broken);subprocess.run(['javac',str(java)],check=True);negative=subprocess.run(['java','-cp',folder,'NativeBlurDetachTest'],capture_output=True,text=True);assert negative.returncode!=0 and 'NullPointerException'in negative.stderr
 print('PASS: actual native null-background transition, callback detach, and crashing negative control')
-print('PASS:',sum(len(x)for x in manifest.values()),'unchanged business click expressions across',len(manifest),'files; common native and Compose action contracts')
+print('PASS:',sum(len(x)for x in manifest.values()),'reviewed business click expressions across',len(manifest),'files; common native and Compose action contracts')
 # Execute native inline-keyboard placement formulas, not a second implementation of the layout.
 message=(ui/'Cells/ChatMessageCell.java').read_text()
 height=re.search(r'substractBackgroundHeight = keyboardHeight = (.*);',message).group(1)

@@ -18,6 +18,7 @@ internal data class ModuleDefinition(val id: String, val title: String, val subt
 
 internal object ModuleCatalog {
     private val definitions = listOf(
+        ModuleDefinition("account_settings", "管理员账号", "官网提供的管理员账号设置", docs(ModulePage("管理员", "set.php?mod=account"))),
         ModuleDefinition("funds", "资金明细", "账户余额变化与交易流水", ajax(
             "ajax_user.php?act=recordList", "record.php", "id",
             listOf("uid", "type", "money", "oldmoney", "newmoney", "trade_no", "date", "addtime", "action"),

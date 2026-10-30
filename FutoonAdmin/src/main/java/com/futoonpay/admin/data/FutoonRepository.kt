@@ -15,6 +15,7 @@ class FutoonRepository(
     private val api: FutoonApiClient,
 ) {
     val backendAddress: String get() = api.baseUrl.toString()
+    val modernBackend: Boolean get() = com.futoonpay.admin.BackendRoutes.usesPlainRoutes(api.baseUrl.encodedPath)
     private val batchRunner = BatchRunner()
 
     suspend fun runBatch(commands: List<BatchCommand>, onProgress: (List<BatchOutcome>) -> Unit = {}): List<BatchOutcome> =
@@ -45,7 +46,7 @@ class FutoonRepository(
                 orderAction(fields.getValue("action"), command.id)
             }
             BatchKind.SETTLEMENT_STATUS -> {
-                if (fields["status"] !in setOf("0", "1", "2")) return BatchOutcome(command, BatchOutcomeStatus.FAILED, "不支持的结算状态")
+                if (fields["status"] !in (if (modernBackend) setOf("1", "6") else setOf("0", "1", "2"))) return BatchOutcome(command, BatchOutcomeStatus.FAILED, "不支持的结算状态")
                 setSettlementStatus(command.id, fields.getValue("status").toInt(), fields["uid"].orEmpty(), fields["usdt_rate"].orEmpty(), fields["usdt"].orEmpty())
             }
             BatchKind.SETTLEMENT_ACTION -> {
@@ -58,10 +59,11 @@ class FutoonRepository(
         return BatchOutcome(command, if (result.success) BatchOutcomeStatus.SUCCESS else if (result.partial) BatchOutcomeStatus.UNCERTAIN else BatchOutcomeStatus.FAILED, result.message)
     }
     private val discoveredPaymentPaths = mutableMapOf<String, String>()
+    private val weixinSecrets = mutableMapOf<String, String>()
     suspend fun captcha() = api.loadCaptcha()
     suspend fun login(username: String, password: String, captcha: String) = api.login(username, password, captcha)
     suspend fun sessionIsValid() = api.sessionIsValid()
-    suspend fun logout() = api.logout()
+    suspend fun logout() { weixinSecrets.clear(); api.logout() }
 
     internal suspend fun merchantOpening(): NativeForm = merchantOpeningForm(api.document(MERCHANT_OPENING_PAGE))
 
@@ -393,7 +395,12 @@ class FutoonRepository(
         merchantId: String,
         usdtRate: String,
         usdtAmount: String,
-    ): ApiResult = api.getAction(
+    ): ApiResult {
+        if (modernBackend) {
+            if (status !in setOf(1, 6)) return ApiResult(false, "新版后台只允许标记已完成或作废")
+            return api.postAction("ajax_settle.php?act=setSettleStatus", "slist.php", mapOf("id" to id, "status" to status.toString()))
+        }
+        return api.getAction(
         endpoint = "ajax_settle.php",
         referer = "slist.php",
         query = mapOf(
@@ -405,8 +412,27 @@ class FutoonRepository(
             "usdt" to usdtAmount,
         ),
     )
+    }
+
+    suspend fun settlementReason(id: String): SettlementReason {
+        val response = api.jsonGet("ajax_settle.php?act=settle_reason", "slist.php", mapOf("id" to id))
+        check(response.optInt("code", -1) == 0) { response.optString("msg", "结算详情读取失败") }
+        return parseSettlementReason(response.getJSONObject("detail"))
+    }
+
+    suspend fun reviewSettlement(id: String, action: String, fields: Map<String, String>): ApiResult {
+        require(action in setOf("approve_full_settlement", "approve_settlement_review"))
+        require(Regex("[0-9a-f]{64}").matches(fields["token"].orEmpty())) { "审核详情已失效，请重新读取" }
+        if (action == "approve_settlement_review") {
+            require(fields["category"] in setOf("frequency", "address", "ledger", "recheck"))
+            require(Regex("[0-9a-f]{64}").matches(fields["fingerprint"].orEmpty()))
+            require(fields["note"].orEmpty().length in 1..500) { "请填写 1–500 字的核实依据" }
+        }
+        return api.postAction("ajax_settle.php?act=$action", "slist.php", fields + ("id" to id))
+    }
 
     suspend fun failSettlementWithReason(id: String, reason: String, merchantId: String, usdtRate: String, usdtAmount: String): ApiResult {
+        if (modernBackend) return ApiResult(false, "新版后台不允许手动设为结算失败")
         if (reason.isBlank()) return ApiResult(false, "请填写失败理由")
         val status = setSettlementStatus(id, 3, merchantId, usdtRate, usdtAmount)
         if (!status.success) return status
@@ -491,7 +517,7 @@ class FutoonRepository(
 
         // 支付通道、支付方式、轮询组和中转代理均由 PHP 直接输出 HTML 表格。
         // 不再构造后台并不存在的 channelList/rollList/proxyList 接口。
-        if (moduleId in setOf("channels", "payment_types", "rolls", "proxies")) {
+        if (moduleId in setOf("channels", "payment_types", "rolls", "proxies", "weixin_apps")) {
             return enhanced
         }
 
@@ -593,9 +619,11 @@ class FutoonRepository(
             action.endpoint.contains("getChannel") -> "ajax_pay.php?act=saveChannel"
             action.endpoint.contains("getPayType") -> "ajax_pay.php?act=savePayType"
             action.endpoint.contains("getRoll") -> "ajax_pay.php?act=saveRoll"
+            action.endpoint.contains("getWeixin") -> "ajax_pay.php?act=saveWeixin"
             else -> template.action
         }
         val id = action.endpoint.queryValue("id")
+        if (moduleId == "weixin_apps" && id.isNotBlank()) weixinSecrets[id] = data.text("appsecret")
         val pluginOptions = buildList {
             current.forms.flatMap { it.fields }.firstOrNull { it.name.equals("plugin", true) }?.options?.let(::addAll)
             listOf("plugins", "pluginList", "plugin_list").forEach { key ->
@@ -629,7 +657,7 @@ class FutoonRepository(
             } else field.copy(value = if (field.sensitive) "" else value,
                 readOnly = field.readOnly || (moduleId == "payment_types" && field.name == "name" && id.isNotBlank()))
         }
-        return template.copy(title = action.label, action = saveEndpoint, method = "POST", fields = fields)
+        return template.copy(title = action.label, action = saveEndpoint, method = "POST", fields = fields.map { if (moduleId == "weixin_apps" && it.name in setOf("name", "appid", "appsecret")) it.copy(required = true) else it })
     }
 
     /** 官网在选择支付方式后，使用该接口动态填充支付插件下拉框。 */
@@ -760,6 +788,15 @@ class FutoonRepository(
     }
 
     suspend fun submitPaymentForm(moduleId: String, form: NativeForm, values: Map<String, String>): ApiResult {
+        if (moduleId == "weixin_apps") {
+            val submitted = values.toMutableMap()
+            val id = form.fields.firstOrNull { it.name == "id" }?.value.orEmpty()
+            if (submitted["appsecret"].isNullOrBlank() && id.isNotBlank()) submitted["appsecret"] = weixinSecrets[id].orEmpty()
+            if (listOf("name", "appid", "appsecret").any { submitted[it].isNullOrBlank() }) return ApiResult(false, "请填写名称、AppID 与 AppSecret；编辑时请先重新读取原配置")
+            val response = submitNativeForm(paymentPath(moduleId), form, submitted)
+            if (response.success) weixinSecrets.remove(id)
+            return response
+        }
         if (moduleId != "payment_types") return submitNativeForm(paymentPath(moduleId), form, values)
         form.methodFeeField()?.let { field ->
             val rate = values[field.name]?.toBigDecimalOrNull()
@@ -842,6 +879,11 @@ class FutoonRepository(
                             NativeAction("删除", "ajax_pay.php?act=delPayType&id=$id", destructive = true),
                         )
                     }
+                    "weixin_apps" -> parsed.ensureActions(
+                        NativeAction("编辑", "ajax_pay.php?act=getWeixin&id=$id"),
+                        NativeAction("连通测试", "ajax_pay.php?act=testweixin", "POST", mapOf("id" to id)),
+                        NativeAction("删除", "ajax_pay.php?act=delWeixin&id=$id", destructive = true),
+                    )
                     "rolls" -> {
                         val enabled = row.any { it.contains("开启") || it.contains("启用") || it.contains("正常") }
                         parsed.ensureActions(
@@ -859,7 +901,9 @@ class FutoonRepository(
         val notice = if (moduleId == "payment_types") {
             document.notices + "支付方式费率向商户收取；通道成本在通道中单独设置。"
         } else document.notices
-        return document.copy(tables = tables, notices = notice.distinct())
+        return document.copy(tables = tables, notices = notice.distinct(), forms = document.forms.map { form ->
+            if (moduleId == "weixin_apps") form.copy(fields = form.fields.map { field -> if (field.name in setOf("name", "appid", "appsecret")) field.copy(required = true) else field }) else form
+        })
     }
 
     private fun rollRouteForm(endpoint: String, json: JSONObject): NativeForm {
@@ -894,6 +938,7 @@ class FutoonRepository(
             "payment_types" -> "pay_type.php"
             "rolls" -> "pay_roll.php"
             "channel_monitor" -> "pay_channel_monitor.php"
+            "weixin_apps" -> "pay_weixin.php"
             "proxies" -> "proxy.php"
             else -> throw IllegalArgumentException("未知支付管理模块")
         }
@@ -902,11 +947,12 @@ class FutoonRepository(
             "payment_types" -> listOf("支付方式")
             "rolls" -> listOf("通道轮询", "通道轮训")
             "channel_monitor" -> listOf("通道监测", "通道监控", "通道检测")
+            "weixin_apps" -> listOf("公众号小程序")
             "proxies" -> listOf("中转代理", "代理管理")
             else -> emptyList()
         }
         val discovered = runCatching {
-            NativeDocumentParser.navigationPath(api.document("index.php"), labels)
+            NativeDocumentParser.navigationPath(api.document(if (modernBackend) "./" else "index.php"), labels)
         }.getOrNull()
         val resolved = (discovered ?: fallback).let { path ->
             if (moduleId == "channels" || moduleId == "rolls") path.withQueryValue("tab", "all") else path

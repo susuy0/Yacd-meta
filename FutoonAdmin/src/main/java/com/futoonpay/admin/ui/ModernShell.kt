@@ -125,40 +125,25 @@ private fun LoginField(label: String, value: String, onChange: (String) -> Unit,
 
 @Composable
 internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onSettings: () -> Unit) {
-    val groups = listOf(
-        "支付配置" to listOf(Triple("支付通道", "通道、账户配置、测试支付", "channels"), Triple("支付方式", "费率、关联通道", "payment_types"), Triple("轮询组", "选路策略、成员通道", "rolls")),
-        "监测与网络" to listOf(Triple("通道监测", "成功率、检测结果、手动检测", "channel_monitor"), Triple("中转代理", "代理地址、启停", "proxies")),
-    )
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        groups.forEach { (name, entries) ->
+        com.futoonpay.admin.OfficialBackendFeatures.sections.forEach { (name, entries) ->
             item { SectionLabel(name) }
-            item { PayCard { entries.forEachIndexed { i, (title, subtitle, id) ->
-                MenuRow(title, subtitle, when (id) { "channels" -> Icons.Outlined.Power; "payment_types" -> Icons.Outlined.Payments; "rolls" -> Icons.Outlined.AccountTree; "channel_monitor" -> Icons.Outlined.Insights; else -> Icons.Outlined.Dns }, { onModule(id) })
+            item { PayCard { entries.forEachIndexed { i, entry ->
+                MenuRow(entry.title, entry.subtitle, when (entry.id) {
+                    "channels" -> Icons.Outlined.Power
+                    "payment_types", "payment_plugins", "weixin_apps" -> Icons.Outlined.Payments
+                    "rolls", "user_groups", "group_purchase" -> Icons.Outlined.AccountTree
+                    "channel_monitor", "merchant_stats", "inactive" -> Icons.Outlined.Insights
+                    "funds" -> Icons.Outlined.AccountBalanceWallet
+                    "domain_audit" -> Icons.Outlined.Language
+                    "blacklist" -> Icons.Outlined.Block
+                    else -> Icons.Outlined.Settings
+                }, { if (entry.id == "domain_audit") onDomains() else onModule(entry.id) })
                 if (i != entries.lastIndex) HorizontalDivider(color = Line)
             } } }
         }
-        item { SectionLabel("审核与账号") }
-        item { PayCard {
-            MenuRow("域名审核", "查看与处理支付域名", Icons.Outlined.Language, onDomains)
-            HorizontalDivider(color = Line)
-            MenuRow("设置", "后台地址、退出登录、版本", Icons.Outlined.Settings, onSettings)
-        } }
-        item { SectionLabel("其他业务") }
-        item { PayCard {
-            MenuRow("资金明细", "余额变化与交易流水", Icons.Outlined.AccountBalanceWallet, { onModule("funds") })
-            HorizontalDivider(color = Line)
-            MenuRow("风控记录", "请求与风险命中", Icons.Outlined.Shield, { onModule("risk") })
-            HorizontalDivider(color = Line)
-            MenuRow("支付黑名单", "添加与移除拦截规则", Icons.Outlined.Block, { onModule("blacklist") })
-        } }
-        item { SectionLabel("运营与系统") }
-        item { PayCard {
-            val additional = listOf("商户统计" to "merchant_stats", "5 日无流水商户" to "inactive", "公告管理" to "announcements", "支付与结算设置" to "payment_settings", "站点与账号设置" to "site_settings", "登录日志" to "login_logs")
-            additional.forEachIndexed { index, (label, id) ->
-                MenuRow(label, "原生管理", Icons.Outlined.Settings, { onModule(id) })
-                if (index < additional.lastIndex) HorizontalDivider(color = Line)
-            }
-        } }
+        item { SectionLabel("App 设置") }
+        item { PayCard { MenuRow("后台连接", "后台地址、登录会话、版本", Icons.Outlined.Settings, onSettings) } }
     }
 }
 

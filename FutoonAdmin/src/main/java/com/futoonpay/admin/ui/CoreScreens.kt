@@ -103,6 +103,7 @@ import com.futoonpay.admin.data.OrderChannelStat
 import com.futoonpay.admin.data.ChannelRateSource
 import com.futoonpay.admin.data.OrderSearchFilters
 import com.futoonpay.admin.data.SettlementSearchFilters
+import com.futoonpay.admin.data.*
 import com.futoonpay.admin.data.SettlementSummary
 import com.futoonpay.admin.data.SETTLEMENT_CHECKED_RESULT
 import com.futoonpay.admin.data.merchantAccountStatusLabel
@@ -656,7 +657,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
                 keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { viewModel.loadSettlements(1, com.futoonpay.admin.data.SmartSearch.settlements(quick, state.settlementSearch)) }),
             )
         }
-        item { StatusFilters(listOf(-1 to "全部", 0 to "待结算", 2 to "正在结算", 1 to "已完成", 3 to "结算失败"), state.settlementSearch.status) { viewModel.loadSettlements(1, state.settlementSearch.copy(status = it)) } }
+        item { StatusFilters(if (viewModel.modernBackend) MODERN_SETTLEMENT_FILTERS else listOf(-1 to "全部", 0 to "待结算", 2 to "正在结算", 1 to "已完成", 3 to "结算失败"), state.settlementSearch.status) { viewModel.loadSettlements(1, state.settlementSearch.copy(status = it)) } }
         item { Row(verticalAlignment = Alignment.CenterVertically) {
             Text("共 ${state.settlementTotal} 笔 · 服务器查询", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
             com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Text("完整搜索") }
@@ -669,8 +670,8 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
             }
         }
         item { ListFeedback(state.settlementsLoading && state.settlements.isEmpty(), state.settlementsError, !state.settlementsLoading && state.settlements.isEmpty(), { viewModel.loadSettlements(state.settlementPage) }) }
-        item { MultiSelectBar(selection, state.settlements.map { it.id }, com.futoonpay.admin.data.settlementBatchOptions(state.settlements.filter { it.id in selection.selected }), state.refreshing || state.settlementsLoading, viewModel::offerBatch) }
-        items(state.settlements, key = { it.id }) { row -> SelectableRecord(selection, row.id, "结算 #${row.id}") { SettlementCard(row, { detail = row }) { pending = it } } }
+        item { MultiSelectBar(selection, state.settlements.map { it.id }, com.futoonpay.admin.data.settlementBatchOptions(state.settlements.filter { it.id in selection.selected }, viewModel.modernBackend), state.refreshing || state.settlementsLoading, viewModel::offerBatch) }
+        items(state.settlements, key = { it.id }) { row -> SelectableRecord(selection, row.id, "结算 #${row.id}") { SettlementCard(row, viewModel.modernBackend, { detail = row }) { pending = it } } }
         item { PaginationBar(state.settlementPage, state.settlementTotal, state.settlements.size) { viewModel.loadSettlements(it) } }
     }
     if (advanced) PaySheet("结算完整搜索", { advanced = false }) {
@@ -678,7 +679,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
             item { OutlinedTextField(filters.value, { filters = filters.copy(value = it) }, label = { Text("结算账号或姓名") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { OutlinedTextField(filters.merchantId, { filters = filters.copy(merchantId = it) }, label = { Text("商户 UID") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { ChoicePicker("结算方式", filters.settlementType, SETTLEMENT_TYPES) { filters = filters.copy(settlementType = it) } }
-            item { OutlinedTextField(filters.usdtRate, { filters = filters.copy(usdtRate = it) }, label = { Text("USDT 汇率") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
+            if (!viewModel.modernBackend) item { OutlinedTextField(filters.usdtRate, { filters = filters.copy(usdtRate = it) }, label = { Text("USDT 汇率") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             item { Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { filters = SettlementSearchFilters(status = filters.status) }, modifier = Modifier.weight(1f)) { Text("重置") }
                 com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { viewModel.loadSettlements(1, filters); advanced = false }, modifier = Modifier.weight(2f)) { Text("应用筛选") }
@@ -687,14 +688,21 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
     }
     detail?.let { row -> PaySheet("结算 #${row.id}", { detail = null }) {
         LazyColumn(Modifier.heightIn(max = 580.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { DetailBlock("结算信息", listOf("状态" to settlementStatusLabel(row.status), "商户" to "${row.username} · UID ${row.merchantId}", "申请金额" to money(row.amount), "实际金额" to money(row.actualAmount), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.chain, "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
-            item { DetailBlock("收款资料", listOf("结算方式" to row.chain.ifBlank { row.payType }, "账号 / 地址" to row.account, "申请时间" to row.createdAt, "完成时间" to row.completedAt, "处理结果" to row.result)) }
-            items(settlementActions(row)) { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
+            item { DetailBlock("结算信息", listOf("状态" to row.displayStatus(), "商户" to "${row.username} · UID ${row.merchantId}", "结算金额" to row.displayAmount(), "实际到账" to row.displayActualAmount(), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.displayChain(), "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
+            item { DetailBlock("收款资料", listOf("结算方式" to row.displayPayType(), "账号 / 地址" to row.account, "申请时间" to row.createdAt, "完成时间" to row.completedAt, "处理结果" to row.result)) }
+            if (viewModel.modernBackend) item {
+                OfficialSettlementDetails(row, viewModel) { label, action, fields, note ->
+                    detail = null
+                    pending = PendingSettlementAction(label, action, row, resultInput = note, reviewFields = fields)
+                }
+            }
+            if (viewModel.modernBackend && row.status == 2) item { Text("正在结算，禁止手动修改状态", color = Muted) }
+            items(settlementActions(row, viewModel.modernBackend)) { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
         }
     } }
-    pending?.let { action -> SettlementActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.item.id in state.uncertainSettlements, onVerify = { pending = null; actionError = null; viewModel.loadSettlements(state.settlementPage) }) { result, type, account, name ->
+    pending?.let { action -> SettlementActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.item.id in state.uncertainSettlements, onVerify = { pending = null; actionError = null; if (action.reviewFields.isNotEmpty()) detail = action.item else viewModel.loadSettlements(state.settlementPage) }) { result, type, account, name ->
         actionLoading = true; actionError = null
-        viewModel.runSettlementAction(SettlementCommand(action.action, action.item.id, result, type, account, name, action.item.merchantId, action.item.usdtRate, action.item.usdtAmount, status = action.status)) { response ->
+        viewModel.runSettlementAction(SettlementCommand(action.action, action.item.id, result, type, account, name, action.item.merchantId, action.item.usdtRate, action.item.usdtAmount, status = action.status, reviewFields = action.reviewFields)) { response ->
             actionLoading = false
             if (response.success) { pending = null; actionError = null } else actionError = response.message
             if (response.partial) pending = action.copy(action = "settle_setresult", status = null, resultInput = true)
@@ -710,10 +718,11 @@ private data class PendingSettlementAction(
     val resultInput: Boolean = false,
     val accountInput: Boolean = false,
     val resultPreset: String = "",
+    val reviewFields: Map<String, String> = emptyMap(),
 )
 
 @Composable
-private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onAction: (PendingSettlementAction) -> Unit) {
+private fun SettlementCard(item: SettlementSummary, modernBackend: Boolean, onDetail: () -> Unit, onAction: (PendingSettlementAction) -> Unit) {
     val context = LocalContext.current
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var expanded by remember { mutableStateOf(false) }
@@ -724,11 +733,12 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
                     Text("结算 #${item.id}", fontWeight = FontWeight.SemiBold)
                     Text("商户 ${item.merchantId} ${item.username}", color = Muted, fontSize = 12.sp)
                 }
-                StatusPill(settlementStatusLabel(item.status), settlementStatusColor(item.status))
+                StatusPill(item.displayStatus(), settlementStatusColor(item.status))
                 Box {
                     IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "结算操作") }
                     DropdownMenu(expanded, { expanded = false }) {
-                        settlementActions(item).forEach { action ->
+                        if (modernBackend) DropdownMenuItem(text = { Text(if (item.status == 1) "完成详情" else "原因与处理建议") }, onClick = { expanded = false; onDetail() })
+                        settlementActions(item, modernBackend).forEach { action ->
                             DropdownMenuItem(text = { Text(action.label) }, onClick = { expanded = false; onAction(action) })
                         }
                     }
@@ -736,10 +746,11 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
             }
             Spacer(Modifier.height(12.dp))
             Text(item.displayAmount(), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-            Text("手续费 ${item.displayFee()} ${item.currency} · 实际到账 ${displayOrderAmount(item.actualAmount, item.currency)}", color = Muted, fontSize = 12.sp)
+            Text("实际到账 ${item.displayActualAmount()}", color = Muted, fontSize = 13.sp)
+            if (item.fee.isNotBlank()) Text("手续费 ${item.displayFee()} ${item.currency}", color = Muted, fontSize = 12.sp)
             if (item.usdtAmount.isNotBlank()) Text("${item.usdtAmount} USDT  ·  汇率 ${item.usdtRate}", color = GreenDark, fontSize = 13.sp)
             Spacer(Modifier.height(9.dp))
-            Text("${item.chain.ifBlank { item.payType }}  ·  ${maskAccount(item.account)}", color = Muted, fontSize = 12.sp)
+            Text("${listOf(item.displayPayType(), item.displayChain()).filter(String::isNotBlank).joinToString(" · ")}  ·  ${maskAccount(item.account)}", color = Muted, fontSize = 12.sp)
             Text("申请 ${item.createdAt}", color = Muted, fontSize = 12.sp)
             if (item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
             if (item.merchantId.isNotBlank()) {
@@ -751,7 +762,13 @@ private fun SettlementCard(item: SettlementSummary, onDetail: () -> Unit, onActi
     }
 }
 
-private fun settlementActions(item: SettlementSummary) = buildList {
+private fun settlementActions(item: SettlementSummary, modernBackend: Boolean = false) = buildList {
+    if (modernBackend) {
+        if (item.canSetModernStatus(1)) add(PendingSettlementAction("标记已完成", "setStatus", item, status = 1))
+        if (item.canSetModernStatus(6)) add(PendingSettlementAction("作废结算", "setStatus", item, status = 6))
+        add(PendingSettlementAction("修改收款资料", "settle_save", item, accountInput = true))
+        return@buildList
+    }
     if (item.status == 3) add(PendingSettlementAction("检查完成", "settle_setresult", item, resultPreset = SETTLEMENT_CHECKED_RESULT))
     add(PendingSettlementAction("查询结算结果", "settle_result", item))
     add(PendingSettlementAction("设为待结算", "setStatus", item, status = 0))
@@ -781,7 +798,7 @@ private fun SettlementActionDialog(
             item { Text("结算 #${pending.item.id} · ${pending.item.displayAmount()}", color = Muted) }
             error?.let { item { Text(it, color = Danger, fontSize = 12.sp) } }
             if (pending.resultInput || pending.resultPreset.isNotBlank()) item {
-                OutlinedTextField(result, { result = it }, label = { Text("处理结果") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                OutlinedTextField(result, { result = it }, label = { Text(if (pending.reviewFields.isNotEmpty()) "核实依据（最多 500 字）" else "处理结果") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
             if ((pending.item.status == 3 || pending.status == 3) && (pending.resultInput || pending.resultPreset.isNotBlank())) item {
                 com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { result = SETTLEMENT_CHECKED_RESULT }) { Text("检查完成 · 填写 checked") }
@@ -792,12 +809,16 @@ private fun SettlementActionDialog(
                 item { OutlinedTextField(name, { name = it }, label = { Text("收款人姓名") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             }
             if (!pending.resultInput && !pending.accountInput && pending.resultPreset.isBlank()) item {
-                Text("该操作会更新结算状态，请确认链上或通道实际结果。")
+                Text(when {
+                    pending.status in setOf(1, 6) -> settlementStatusConfirmation(pending.status!!)
+                    pending.action == "approve_full_settlement" -> "审核通过后，本笔进入付款队列；付款资格、余额和防重复检查仍会执行。请核实原因和结算信息。"
+                    else -> "该操作会更新结算记录，请确认链上或通道实际结果。"
+                })
             }
         }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || result.isNotBlank()), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null) "重试" else "确认") }
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain || (error != null && pending.reviewFields.isNotEmpty())) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || (result.isNotBlank() && (pending.reviewFields.isEmpty() || result.length <= 500))), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null && pending.reviewFields.isNotEmpty()) "重新读取审核详情" else if (error != null) "重试" else "确认") }
         }
     }
 }
@@ -1243,29 +1264,9 @@ internal fun MerchantActionDialog(
 internal fun MoreScreen(onLogout: () -> Unit) {
     val context = LocalContext.current
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
-    val groups = listOf(
-        "运营与账务" to listOf(
-            ModuleLink("资金明细", "funds", Icons.Default.Assessment),
-            ModuleLink("商户统计", "merchant_stats", Icons.Default.History),
-            ModuleLink("域名审核", "domain_audit", Icons.Default.AdminPanelSettings),
-            ModuleLink("风控记录", "risk", Icons.Default.Security),
-            ModuleLink("支付黑名单", "blacklist", Icons.Default.Block),
-            ModuleLink("5 日无流水商户", "inactive", Icons.Default.Groups),
-        ),
-        "支付与通道" to listOf(
-            ModuleLink("支付通道", "channels", Icons.Default.AddBusiness),
-            ModuleLink("支付方式", "payment_types", Icons.Default.Payments),
-            ModuleLink("通道轮询", "rolls", Icons.Default.SwapHoriz),
-            ModuleLink("通道监测", "channel_monitor", Icons.Default.Assessment),
-            ModuleLink("中转代理", "proxies", Icons.Default.AddBusiness),
-        ),
-        "系统管理" to listOf(
-            ModuleLink("公告管理", "announcements", Icons.Default.Campaign),
-            ModuleLink("支付与结算设置", "payment_settings", Icons.Default.Settings),
-            ModuleLink("站点与账号设置", "site_settings", Icons.Default.AdminPanelSettings),
-            ModuleLink("登录日志", "login_logs", Icons.Default.History),
-        ),
-    )
+    val groups = com.futoonpay.admin.OfficialBackendFeatures.sections.map { (name, entries) ->
+        name to entries.map { ModuleLink(it.title, it.id, Icons.Default.Settings) }
+    }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {

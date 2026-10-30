@@ -87,7 +87,18 @@ fun orderBatchOptions(orders: List<OrderSummary>): List<BatchRequest> = buildLis
         }))
     }
 }
-fun settlementBatchOptions(rows: List<SettlementSummary>): List<BatchRequest> = buildList {
+fun settlementBatchOptions(rows: List<SettlementSummary>, modernBackend: Boolean = false): List<BatchRequest> = buildList {
+    if (modernBackend) {
+        listOf(1 to "标记已完成", 6 to "作废结算").forEach { (status, label) ->
+            add(BatchRequest("settlements", label, rows.map { row -> BatchCommand(row.id, "结算 #${row.id} · 商户 ${row.merchantId}", BatchKind.SETTLEMENT_STATUS,
+                mapOf("status" to status.toString()), skipReason = when {
+                    row.status == 2 -> "正在结算，禁止手动修改"
+                    row.status == 1 && status == 6 -> "已完成的结算不能作废"
+                    else -> ""
+                }) }, settlementStatusConfirmation(status)))
+        }
+        return@buildList
+    }
     listOf(0 to "设为待结算", 1 to "设为已完成", 2 to "设为正在结算").forEach { (status, label) ->
         add(BatchRequest("settlements", label, rows.map { BatchCommand(it.id, "结算 #${it.id} · 商户 ${it.merchantId}", BatchKind.SETTLEMENT_STATUS,
             mapOf("status" to "$status", "uid" to it.merchantId, "usdt_rate" to it.usdtRate, "usdt" to it.usdtAmount)) }))

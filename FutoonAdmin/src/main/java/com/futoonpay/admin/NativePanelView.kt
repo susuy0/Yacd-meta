@@ -323,6 +323,13 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
         return
     }
     if (route.kind == "module") {
+        if (environment.repository.modernBackend && !OfficialBackendFeatures.available(route.module)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("新版后台已移除此模块")
+                com.futoonpay.admin.ui.ChatTextButton(onClick = back) { Text("返回管理") }
+            }
+            return
+        }
         if (PaymentAdminCatalog.contains(route.module)) {
             val model: PaymentAdminViewModel = viewModel(viewModelStoreOwner = owner, key = modelKey, factory = PaymentAdminViewModel.Factory(environment.repository, PaymentAdminCatalog.find(route.module), route.channelType, route.channelId, FormDraftStore(androidx.compose.ui.platform.LocalContext.current, bridge.accountScope())))
             PaymentAdminRoot(model, back)
