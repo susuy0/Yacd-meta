@@ -39,19 +39,13 @@ internal fun OfficialSettlementDetails(
             ChatOutlinedButton(onClick = { generation++ }) { Text("重新读取详情") }
         }
         reason?.let { detail ->
-            SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                detail.sections.forEach { (label, value) ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(label, color = Muted, fontSize = 12.sp)
-                        Text(value, fontSize = 14.sp)
-                    }
-                }
-            } }
+            ReasonSections(detail.sections.filter { it.first in setOf("当前状态", "结算审核", "原因", "处理方式") })
             detail.reviews.forEach { review ->
                 HorizontalDivider()
                 Text("${review.title} · ${review.state}", fontWeight = FontWeight.Medium)
                 SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(review.reason)
+                    if (review.counts.isNotBlank()) Text(review.counts, color = Muted, fontSize = 13.sp)
                     review.records.forEach { Text(it, fontSize = 13.sp) }
                     if (review.note.isNotBlank()) Text("核实依据：${review.note}")
                 } }
@@ -59,6 +53,7 @@ internal fun OfficialSettlementDetails(
                     onReview("通过${review.title}", "approve_settlement_review", detail.reviewFields(review), true)
                 }) { Text("通过${review.title}") }
             }
+            ReasonSections(detail.sections.filterNot { it.first in setOf("当前状态", "结算审核", "原因", "处理方式") })
             if (detail.canRecheck) ChatOutlinedButton(onClick = {
                 onReview("重新核验（不批准）", "approve_settlement_review", detail.recheckFields(), true)
             }) { Text("重新核验（不批准）") }
@@ -69,4 +64,14 @@ internal fun OfficialSettlementDetails(
             ChatTextButton(onClick = { generation++ }) { Text("刷新详情") }
         }
     }
+}
+
+@Composable
+private fun ReasonSections(sections: List<Pair<String, String>>) {
+    SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        sections.forEach { (label, value) -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label, color = Muted, fontSize = 12.sp)
+            Text(value, fontSize = 14.sp)
+        } }
+    } }
 }

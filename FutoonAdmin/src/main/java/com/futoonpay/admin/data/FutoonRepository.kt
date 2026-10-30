@@ -301,6 +301,20 @@ class FutoonRepository(
         return json.mapRows { row -> row.toMerchantSummary() }
     }
 
+    internal suspend fun inactiveMerchants(filters: InactiveMerchantFilters): InactiveMerchantScan =
+        parseInactiveMerchants(api.jsonPost("ajax_user.php?act=scanInactiveMerchants", "inactive_merchant.php", filters.fields()))
+
+    internal suspend fun freezeInactiveMerchants(ids: Collection<String>): ApiResult {
+        require(ids.isNotEmpty() && ids.all { it.toLongOrNull()?.let { value -> value > 0 } == true }) { "请选择有效商户" }
+        return api.postAction("ajax_user.php?act=batchFreezeInactiveMerchants", "inactive_merchant.php", mapOf("uids" to ids.distinct().joinToString(",")))
+    }
+
+    internal suspend fun merchantStatistics(day: String, method: String): NativeTable {
+        java.time.LocalDate.parse(day)
+        require(method in setOf("type", "channel")) { "不支持的统计方式" }
+        return parseMerchantStatistics(api.jsonPost("ajax_user.php?act=userPayStat", "ustat.php", mapOf("day" to day, "method" to method)))
+    }
+
     suspend fun merchantFlows(
         merchantIds: Collection<String>,
         endDate: LocalDate = LocalDate.now(),

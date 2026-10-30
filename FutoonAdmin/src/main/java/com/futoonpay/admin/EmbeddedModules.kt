@@ -88,6 +88,9 @@ import com.futoonpay.admin.data.FutoonRepository
 import com.futoonpay.admin.data.GenericRow
 import com.futoonpay.admin.data.NativeDocument
 import com.futoonpay.admin.data.NativeField
+import com.futoonpay.admin.data.InactiveMerchantFilters
+import com.futoonpay.admin.data.InactiveMerchantScan
+import com.futoonpay.admin.data.NativeTable
 import com.futoonpay.admin.data.NativeForm
 import com.futoonpay.admin.data.NativeAction
 import com.futoonpay.admin.data.opensNativeDocument
@@ -116,6 +119,13 @@ internal data class NativeModuleState(
     val documentDepth: Int = 0,
     val writeUncertain: Boolean = false,
     val message: String? = null,
+    val loadError: String? = null,
+    val statisticsDay: String = java.time.LocalDate.now().toString(),
+    val statisticsMethod: String = "type",
+    val statistics: NativeTable? = null,
+    val inactiveFilters: InactiveMerchantFilters = InactiveMerchantFilters(),
+    val inactiveScan: InactiveMerchantScan? = null,
+    val inactiveRevision: Int = 0,
 )
 
 internal class NativeModuleViewModel(
@@ -133,7 +143,7 @@ internal class NativeModuleViewModel(
 
     fun load(page: Int = _state.value.page, query: String = _state.value.query, path: String = _state.value.selectedPath) = viewModelScope.launch {
         val generation = ++loadGeneration
-        _state.update { it.copy(loading = true, page = page, query = query, selectedPath = path, message = null) }
+        _state.update { it.copy(loading = true, page = page, query = query, selectedPath = path, message = null, loadError = null) }
         runCatching {
             when (val source = _state.value.definition.source) {
                 is ModuleSource.Ajax -> {
@@ -144,6 +154,16 @@ internal class NativeModuleViewModel(
                     _state.update { it.copy(loading = false, total = result.total, rows = result.rows, document = null, message = feedback) }
                 }
                 is ModuleSource.Documents -> {
+                    if (_state.value.definition.id == "inactive") {
+                        val scan = repository.inactiveMerchants(_state.value.inactiveFilters)
+                        if (generation == loadGeneration) _state.update { it.copy(loading = false, inactiveScan = scan, inactiveRevision = it.inactiveRevision + 1, writeUncertain = false, message = feedbackAfterLoad.also { feedbackAfterLoad = null }) }
+                        return@runCatching
+                    }
+                    if (_state.value.definition.id == "merchant_stats") {
+                        val table = repository.merchantStatistics(_state.value.statisticsDay, _state.value.statisticsMethod)
+                        if (generation == loadGeneration) _state.update { it.copy(loading = false, statistics = table) }
+                        return@runCatching
+                    }
                     val document = repository.nativeDocument(path.ifBlank { source.pages.first().path })
                     if (generation != loadGeneration) return@runCatching
                     val feedback = feedbackAfterLoad.also { feedbackAfterLoad = null }
@@ -152,8 +172,29 @@ internal class NativeModuleViewModel(
             }
         }.onFailure { error ->
             if (error is kotlinx.coroutines.CancellationException) throw error
-            if (generation == loadGeneration) _state.update { it.copy(loading = false, message = error.message ?: "加载失败") }
+            if (generation == loadGeneration) _state.update { it.copy(loading = false, loadError = error.message ?: "加载失败") }
         }
+    }
+
+    fun scanInactive(filters: InactiveMerchantFilters) {
+        if (runCatching { filters.fields() }.isFailure || _state.value.loading) return
+        _state.update { it.copy(inactiveFilters = filters, inactiveScan = null) }
+        load()
+    }
+
+    fun freezeInactive(ids: Set<String>) {
+        val available = _state.value.inactiveScan?.rows.orEmpty().filter { it.status > 0 }.map { it.uid }.toSet()
+        if (ids.isEmpty() || !available.containsAll(ids)) return
+        runAction { repository.freezeInactiveMerchants(ids) }
+    }
+
+    fun queryStatistics(day: String, method: String) {
+        if (runCatching { java.time.LocalDate.parse(day) }.isFailure) {
+            _state.update { it.copy(message = "请输入有效日期，例如 2026-10-30") }; return
+        }
+        if (method !in setOf("type", "channel")) return
+        _state.update { it.copy(statisticsDay = day, statisticsMethod = method, statistics = null) }
+        load()
     }
 
     fun submit(form: NativeForm, values: Map<String, String>) = runAction(form.method.equals("GET", true)) {
@@ -184,7 +225,7 @@ internal class NativeModuleViewModel(
     fun consumeMessage() = _state.update { it.copy(message = null) }
 
     private fun runAction(queryOnly: Boolean = false, action: suspend () -> ApiResult) = viewModelScope.launch {
-        if (_state.value.loading || (_state.value.writeUncertain && !queryOnly)) return@launch
+        if (_state.value.loading || (!queryOnly && (_state.value.writeUncertain || _state.value.loadError != null))) return@launch
         _state.update { it.copy(loading = true, message = null) }
         runCatching { action() }
             .onSuccess { result ->
@@ -227,11 +268,17 @@ internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Un
             }
         },
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
-            when (val source = state.definition.source) {
+        Column(Modifier.padding(padding).fillMaxSize()) {
+            state.loadError?.let { error -> Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text(error, color = Danger)
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { viewModel.load() }) { Text("重新加载") }
+            } }
+            Box(Modifier.weight(1f)) { when (val source = state.definition.source) {
                 is ModuleSource.Ajax -> AjaxModuleScreen(state, source, viewModel::load, viewModel::deleteBlacklist)
-                is ModuleSource.Documents -> DocumentModuleScreen(state, source, viewModel::load, viewModel::submit, viewModel::openAction)
-            }
+                is ModuleSource.Documents -> if (state.definition.id == "merchant_stats") MerchantStatisticsScreen(state, viewModel::queryStatistics)
+                    else if (state.definition.id == "inactive") InactiveMerchantsScreen(state, viewModel::scanInactive, viewModel::freezeInactive)
+                    else DocumentModuleScreen(state, source, viewModel::load, viewModel::submit, viewModel::openAction)
+            } }
         }
     }
     if (addBlacklist) BlacklistDialog({ addBlacklist = false }) { type, content, reason, days, remark ->
@@ -262,7 +309,7 @@ private fun AjaxModuleScreen(
         items(state.rows) { row ->
             GenericRowCard(row, source) { deleteRow = row }
         }
-        if (!state.loading && state.rows.isEmpty()) item { EmptyModule("没有找到记录") }
+        if (!state.loading && state.loadError == null && state.rows.isEmpty()) item { EmptyModule("没有找到记录") }
         item {
             val next = state.page * 30 < state.total && state.rows.isNotEmpty()
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -287,25 +334,22 @@ private fun AjaxModuleScreen(
 }
 
 @Composable
-private fun GenericRowCard(row: GenericRow, source: ModuleSource.Ajax, onDelete: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = CardColor),
-        border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp),
-    ) {
-        Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+internal fun GenericRowCard(row: GenericRow, source: ModuleSource.Ajax, onDelete: () -> Unit) {
+    var expanded by remember(row.id) { mutableStateOf(false) }
+    val blacklist = source.referer == "blacklist.php"
+    val title = if (blacklist) row.values["content"].orEmpty().ifBlank { "记录 #${row.id}" }
+        else row.values["uid"]?.takeIf(String::isNotBlank)?.let { "商户 #$it" } ?: "记录 #${row.id}"
+    val primary = if (blacklist) setOf("type", "addtime", "remark") else setOf("type", "money", "date", "addtime")
+    Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(row.values.values.firstOrNull { it.isNotBlank() } ?: "#${row.id}", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (source.referer == "blacklist.php") IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Default.DeleteOutline, "移除", tint = Danger)
-                }
+                Text(title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                if (blacklist) IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.DeleteOutline, "移除", tint = Danger) }
             }
-            HorizontalDivider(color = Line)
-            row.values.forEach { (key, value) ->
-                if (value.isNotBlank()) Row(Modifier.fillMaxWidth()) {
-                    Text(source.labels[key] ?: key, color = Muted, fontSize = 12.sp, modifier = Modifier.width(92.dp))
-                    Text(value, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 3, overflow = TextOverflow.Ellipsis)
-                }
+            row.values.filter { (key, value) -> value.isNotBlank() && (expanded || key in primary) }.forEach { (key, value) ->
+                com.futoonpay.admin.ui.DataRow(source.labels[key] ?: key, value)
             }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起详情" else "展开详情") }
         }
     }
 }
@@ -334,18 +378,18 @@ private fun DocumentModuleScreen(
         }
         if (state.writeUncertain) item { NoticeCard("操作结果待核对。请点右上角刷新，确认后台现状后再操作。") }
         state.document?.actions?.takeIf { it.isNotEmpty() }?.let { actions -> item {
-            NativeActionButtons(actions, !state.loading && !state.writeUncertain, ::action)
+            NativeActionButtons(actions, !state.loading && !state.writeUncertain && state.loadError == null, ::action)
         } }
         state.document?.notices?.forEach { notice -> item { NoticeCard(notice) } }
         state.document?.tables?.forEach { table ->
-            item { Text(table.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 5.dp)) }
+            if (table.title.isNotBlank() && !Regex("数据表 \\d+").matches(table.title)) item { Text(table.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 5.dp)) }
             itemsIndexed(table.rows) { index, row -> Column {
                 NativeTableRow(table.headers, row)
-                NativeActionButtons(table.rowActions.getOrNull(index).orEmpty(), !state.loading && !state.writeUncertain, ::action)
+                NativeActionButtons(table.rowActions.getOrNull(index).orEmpty(), !state.loading && !state.writeUncertain && state.loadError == null, ::action)
             } }
         }
-        state.document?.forms?.forEach { form -> item { NativeFormCard(form, onSubmit, state.loading || state.writeUncertain) } }
-        if (!state.loading && state.document?.let { it.forms.isEmpty() && it.tables.isEmpty() } != false) {
+        state.document?.forms?.forEach { form -> item { NativeFormCard(form, onSubmit, state.loading || state.writeUncertain || state.loadError != null) } }
+        if (!state.loading && state.loadError == null && state.document?.let { it.forms.isEmpty() && it.tables.all { table -> table.rows.isEmpty() } } != false) {
             item { EmptyModule("此页面暂时没有可显示的数据或表单") }
         }
     }
@@ -379,14 +423,13 @@ private fun NoticeCard(text: String) {
 
 @Composable
 internal fun NativeTableRow(headers: List<String>, row: List<String>) {
+    var expanded by remember(row) { mutableStateOf(false) }
+    val fields = row.mapIndexedNotNull { index, value -> if (value.isBlank()) null else
+        (headers.getOrNull(index)?.ifBlank { "字段 ${index + 1}" } ?: "字段 ${index + 1}") to value }
     Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
-        Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            row.forEachIndexed { index, value ->
-                if (value.isNotBlank()) Row(Modifier.fillMaxWidth()) {
-                    Text(headers.getOrNull(index)?.ifBlank { "字段 ${index + 1}" } ?: "字段 ${index + 1}", color = Muted, fontSize = 12.sp, modifier = Modifier.width(100.dp))
-                    Text(value, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 4, overflow = TextOverflow.Ellipsis)
-                }
-            }
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            (if (expanded) fields else fields.take(3)).forEach { (label, value) -> com.futoonpay.admin.ui.DataRow(label, value) }
+            if (fields.size > 3) com.futoonpay.admin.ui.ChatTextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起详情" else "展开详情") }
         }
     }
 }
@@ -397,8 +440,8 @@ internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String,
     var confirm by remember { mutableStateOf(false) }
     Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(form.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            Text("敏感字段不会从网页回填；留空表示不修改", color = Muted, fontSize = 12.sp)
+            if (!Regex("配置 \\d+").matches(form.title)) Text(form.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            if (form.fields.any { it.sensitive } && !form.method.equals("GET", true)) Text("密钥留空时保留现有值", color = Muted, fontSize = 12.sp)
             form.fields.filter { it.type != "hidden" }.forEach { field ->
                 NativeFieldEditor(field.copy(readOnly = field.readOnly || busy), values[field.name].orEmpty()) { values[field.name] = it }
             }

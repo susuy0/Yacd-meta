@@ -116,18 +116,21 @@ object NativeDocumentParser {
         val functions = extractFunctions(scripts)
 
         val pageActions = document.select("a[onclick],button[onclick],a[href*='act=']")
-            .filter { it.closest("table,form") == null }
+            .filter { it.closest("table,form,.modal,template,[hidden],[aria-hidden=true]") == null }
             .mapNotNull { parseAction(it, functions) }
             .distinctBy { it.label to it.endpoint }
 
         document.select("nav,script,style,link,.navbar,.pagination").remove()
 
         val notices = document.select(".alert,.well,.help-block,.panel-body > p")
+            .filter { element -> element.closest(".modal,template,[hidden],[aria-hidden=true]") == null &&
+                (element.parents().toList() + element).none { Regex("display\\s*:\\s*none", RegexOption.IGNORE_CASE).containsMatchIn(it.attr("style")) } }
             .map { it.text().trim() }
             .filter { it.length in 2..300 }
             .distinct()
 
-        val tables = document.select("table").mapIndexedNotNull { index, table ->
+        // Editor templates belong to native forms, never to the visible record list.
+        val tables = document.select("table").filter { it.closest(".modal,template,[hidden],[aria-hidden=true]") == null }.mapIndexedNotNull { index, table ->
             val headers = table.select("thead th").map { it.text().trim() }.filter { it.isNotBlank() }
                 .ifEmpty { table.select("tr").firstOrNull()?.select("th")?.map { it.text().trim() }.orEmpty() }
             val bodyRows = table.select("tbody tr")

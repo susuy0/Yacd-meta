@@ -125,33 +125,43 @@ private fun LoginField(label: String, value: String, onChange: (String) -> Unit,
 
 @Composable
 internal fun ModernManage(onModule: (String) -> Unit, onDomains: () -> Unit, onSettings: () -> Unit) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        com.futoonpay.admin.OfficialBackendFeatures.sections.forEach { (name, entries) ->
+    var query by rememberSaveable { mutableStateOf("") }
+    val groups = com.futoonpay.admin.OfficialBackendFeatures.sections.map { (name, entries) ->
+        name to entries.filter { query.isBlank() || it.title.contains(query.trim(), true) || it.subtitle.contains(query.trim(), true) }
+    }.filter { it.second.isNotEmpty() }
+    LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item { OutlinedTextField(query, { query = it }, singleLine = true, placeholder = { Text("查找管理功能") },
+            leadingIcon = { Icon(Icons.Default.Search, null) }, modifier = Modifier.fillMaxWidth(), colors = ChatFieldColors()) }
+        groups.forEach { (name, entries) ->
             item { SectionLabel(name) }
-            item { PayCard { entries.forEachIndexed { i, entry ->
-                MenuRow(entry.title, entry.subtitle, when (entry.id) {
-                    "channels" -> Icons.Outlined.Power
-                    "payment_types", "payment_plugins", "weixin_apps" -> Icons.Outlined.Payments
-                    "rolls", "user_groups", "group_purchase" -> Icons.Outlined.AccountTree
-                    "channel_monitor", "merchant_stats", "inactive" -> Icons.Outlined.Insights
-                    "funds" -> Icons.Outlined.AccountBalanceWallet
-                    "domain_audit" -> Icons.Outlined.Language
-                    "blacklist" -> Icons.Outlined.Block
-                    else -> Icons.Outlined.Settings
-                }, { if (entry.id == "domain_audit") onDomains() else onModule(entry.id) })
-                if (i != entries.lastIndex) HorizontalDivider(color = Line)
+            item { Surface(shape = RoundedCornerShape(10.dp), color = CardColor) { Column(Modifier.padding(horizontal = 8.dp)) {
+                entries.forEachIndexed { i, entry ->
+                    MenuRow(entry.title, when (entry.id) {
+                        "channels" -> Icons.Outlined.Power
+                        "payment_types", "payment_plugins", "weixin_apps" -> Icons.Outlined.Payments
+                        "rolls", "user_groups", "group_purchase" -> Icons.Outlined.AccountTree
+                        "channel_monitor", "merchant_stats", "inactive" -> Icons.Outlined.Insights
+                        "funds" -> Icons.Outlined.AccountBalanceWallet
+                        "domain_audit" -> Icons.Outlined.Language
+                        "blacklist" -> Icons.Outlined.Block
+                        else -> Icons.Outlined.Settings
+                    }, { if (entry.id == "domain_audit") onDomains() else onModule(entry.id) })
+                    if (i != entries.lastIndex) HorizontalDivider(color = Line, modifier = Modifier.padding(start = 48.dp))
+                }
             } } }
         }
-        item { SectionLabel("App 设置") }
-        item { PayCard { MenuRow("后台连接", "后台地址、登录会话、版本", Icons.Outlined.Settings, onSettings) } }
+        if (query.isBlank() || listOf("后台连接", "后台地址", "登录会话", "版本").any { it.contains(query.trim(), true) }) {
+            item { SectionLabel("App 设置") }
+            item { Surface(shape = RoundedCornerShape(10.dp), color = CardColor) { MenuRow("后台连接", Icons.Outlined.Settings, onSettings) } }
+        } else if (groups.isEmpty()) item { Text("没有找到相关功能", color = Muted, modifier = Modifier.padding(12.dp)) }
     }
 }
 
 @Composable
-private fun MenuRow(title: String, subtitle: String, icon: ImageVector, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp).clickable(onClick = onClick).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(icon, null, tint = Muted, modifier = Modifier.size(24.dp)) }
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium); Text(subtitle, color = Muted, fontSize = 13.sp) }
+private fun MenuRow(title: String, icon: ImageVector, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) { Icon(icon, null, tint = Muted, modifier = Modifier.size(22.dp)) }
+        Text(title, modifier = Modifier.weight(1f).padding(horizontal = 12.dp), fontSize = 15.sp, fontWeight = FontWeight.Medium)
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted, modifier = Modifier.size(18.dp))
     }
 }

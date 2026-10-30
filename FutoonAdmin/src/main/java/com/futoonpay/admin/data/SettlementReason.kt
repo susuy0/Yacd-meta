@@ -26,6 +26,7 @@ class SettlementReview internal constructor(
     val canApprove: Boolean,
     internal val category: String,
     internal val fingerprint: String,
+    val counts: String = "",
 )
 
 internal fun parseSettlementReason(data: JSONObject): SettlementReason {
@@ -59,7 +60,7 @@ internal fun parseSettlementReason(data: JSONObject): SettlementReason {
             row.optJSONArray("records")?.let { records -> (0 until records.length()).mapNotNull { j -> records.optJSONObject(j)?.let { record ->
                 val reasons = record.optJSONArray("reasons")?.let { r -> (0 until r.length()).joinToString("；") { r.optString(it) } }.orEmpty()
                 "流水 #${record.text("id")} · ${record.text("money")} 元 · ${record.text("type")}\n$reasons\n来源编号：${record.text("trade_no").ifBlank { "未记录" }}"
-            } } }.orEmpty(), row.text("approval_note"), row.optBoolean("can_approve") && validToken && category in setOf("frequency", "address", "ledger") && Regex("[0-9a-f]{64}").matches(fingerprint), category, fingerprint)
+            } } }.orEmpty(), row.text("approval_note"), row.optBoolean("can_approve") && validToken && category in setOf("frequency", "address", "ledger") && Regex("[0-9a-f]{64}").matches(fingerprint), category, fingerprint, if (!row.isNull("count") && !row.isNull("limit")) "近 24 小时 ${row.text("count")} 笔；限制 ${row.text("limit")} 笔" else "")
     } }.orEmpty()
     val explorerUrl = completion?.text("explorer_url").orEmpty().takeIf { Regex("^https://(?:tronscan\\.org/#/transaction/[a-fA-F0-9]{64}|(?:polygonscan\\.com|bscscan\\.com)/tx/0x[a-fA-F0-9]{64})$").matches(it) }.orEmpty()
     return SettlementReason(data.text("status_label"), sections, reviews, completion == null && validToken && approval?.optBoolean("allowed") == true, completion == null && validToken && data.optBoolean("review_can_recheck"), explorerUrl, token)

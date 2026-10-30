@@ -689,14 +689,23 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
     }
     detail?.let { row -> PaySheet("结算 #${row.id}", { detail = null }) {
         LazyColumn(Modifier.heightIn(max = 580.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { DetailBlock("结算信息", listOf("状态" to row.displayStatus(), "商户" to "${row.username} · UID ${row.merchantId}", "结算金额" to row.displayAmount(), "实际到账" to row.displayActualAmount(), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.displayChain(), "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
-            item { DetailBlock("收款资料", listOf("结算方式" to row.displayPayType(), "账号 / 地址" to row.account, "申请时间" to row.createdAt, "完成时间" to row.completedAt, "处理结果" to row.result)) }
             if (viewModel.modernBackend) item {
                 OfficialSettlementDetails(row, viewModel) { label, action, fields, note ->
                     detail = null
                     pending = PendingSettlementAction(label, action, row, resultInput = note, reviewFields = fields)
                 }
             }
+            item { DetailBlock("结算信息", if (viewModel.modernBackend) listOf(
+                "商户" to "${row.username} · UID ${row.merchantId}", "结算金额" to row.displayAmount(), "实际到账" to row.displayActualAmount(),
+                "结算方式" to row.displayPayType(), "结算链" to row.displayChain(),
+                "自动结算" to if (row.automatic) "是" else "否", "满额结算" to if (row.fullSettlement) "是" else "否",
+            ) else listOf("状态" to row.displayStatus(), "商户" to "${row.username} · UID ${row.merchantId}", "结算金额" to row.displayAmount(), "实际到账" to row.displayActualAmount(), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.displayChain(), "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
+            item { DetailBlock("收款资料", buildList {
+                if (!viewModel.modernBackend) add("结算方式" to row.displayPayType())
+                add("账号 / 地址" to row.account); add("申请时间" to row.createdAt)
+                if (!viewModel.modernBackend || !row.completedAt.startsWith("0000-")) add("完成时间" to row.completedAt)
+                if (!viewModel.modernBackend || row.result.lowercase() !in setOf("risk_review", "checked", "confirmed", "ready", "pending", "success", "failed", "unknown", "held")) add("处理结果" to row.result)
+            }) }
             if (viewModel.modernBackend && row.status == 2) item { Text("正在结算，禁止手动修改状态", color = Muted) }
             items(settlementActions(row, viewModel.modernBackend)) { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
         }
@@ -749,11 +758,11 @@ private fun SettlementCard(item: SettlementSummary, modernBackend: Boolean, onDe
             Text(item.displayAmount(), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             Text("实际到账 ${item.displayActualAmount()}", color = Muted, fontSize = 13.sp)
             if (item.fee.isNotBlank()) Text("手续费 ${item.displayFee()} ${item.currency}", color = Muted, fontSize = 12.sp)
-            if (item.usdtAmount.isNotBlank()) Text("${item.usdtAmount} USDT  ·  汇率 ${item.usdtRate}", color = GreenDark, fontSize = 13.sp)
+            if (!modernBackend && item.usdtAmount.isNotBlank()) Text("${item.usdtAmount} USDT  ·  汇率 ${item.usdtRate}", color = GreenDark, fontSize = 13.sp)
             Spacer(Modifier.height(9.dp))
             Text("${listOf(item.displayPayType(), item.displayChain()).filter(String::isNotBlank).joinToString(" · ")}  ·  ${maskAccount(item.account)}", color = Muted, fontSize = 12.sp)
             Text("申请 ${item.createdAt}", color = Muted, fontSize = 12.sp)
-            if (item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
+            if (!modernBackend && item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
             if (item.merchantId.isNotBlank()) {
                 com.futoonpay.admin.ui.ChatTextButton(onClick = {
                     navigation.merchants(merchantId = item.merchantId)
@@ -791,7 +800,7 @@ private fun SettlementActionDialog(
     onVerify: () -> Unit = {},
     onConfirm: (String, String, String, String) -> Unit,
 ) {
-    var result by rememberSaveable { mutableStateOf(pending.resultPreset.ifBlank { if (pending.resultInput) pending.item.result else pending.status?.toString() ?: pending.item.result }) }
+    var result by rememberSaveable { mutableStateOf(if (pending.reviewFields.isNotEmpty()) "" else pending.resultPreset.ifBlank { if (pending.resultInput) pending.item.result else pending.status?.toString() ?: pending.item.result }) }
     var payType by rememberSaveable { mutableStateOf(pending.item.payType) }
     var account by rememberSaveable { mutableStateOf(pending.item.account) }
     var name by rememberSaveable { mutableStateOf("") }
@@ -817,7 +826,7 @@ private fun SettlementActionDialog(
             if (pending.resultInput || pending.resultPreset.isNotBlank()) item {
                 OutlinedTextField(result, { result = it }, label = { Text(if (pending.reviewFields.isNotEmpty()) "核实依据（最多 500 字）" else "处理结果") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
-            if ((pending.item.status == 3 || pending.status == 3) && (pending.resultInput || pending.resultPreset.isNotBlank())) item {
+            if (pending.reviewFields.isEmpty() && (pending.item.status == 3 || pending.status == 3) && (pending.resultInput || pending.resultPreset.isNotBlank())) item {
                 com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { result = SETTLEMENT_CHECKED_RESULT }) { Text("检查完成 · 填写 checked") }
             }
             if (pending.accountInput && !accountReady) item {

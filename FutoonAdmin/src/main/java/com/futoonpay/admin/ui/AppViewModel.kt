@@ -499,7 +499,8 @@ class AppViewModel(
         _state.update { it.copy(refreshing = true, message = null) }
         runCatching {
             when (command.action) {
-                "approve_full_settlement", "approve_settlement_review" -> repository.reviewSettlement(command.id, command.action, command.reviewFields + ("note" to command.result))
+                "approve_full_settlement" -> repository.reviewSettlement(command.id, command.action, command.reviewFields)
+                "approve_settlement_review" -> repository.reviewSettlement(command.id, command.action, command.reviewFields + ("note" to command.result))
                 "setStatus" -> {
                 val targetStatus = command.status ?: command.result.toIntOrNull() ?: return@runCatching ApiResult(false, "请选择结算状态")
                 if (modernBackend) {

@@ -128,4 +128,34 @@ class OfficialBackendParityTest {
         try { parseSettlementAccountInfo(JSONObject().put("code",0).put("pay_type",5).put("data","<div>incomplete</div>")); fail() } catch (_: IllegalStateException) { }
     }
 
+    @Test fun hiddenEditorTablesNeverLeakIntoTheVisibleListButFormsRemainEditable() {
+        val html = """<div class="modal" aria-hidden="true"><form id="group-editor"><table><tr><th>支付方式</th></tr><tr><td><select name="type"><option value="1">支付宝</option></select></td></tr></table><input name="name"></form></div>
+            <table><tr><th>GID</th><th>名称</th></tr><tr><td>12</td><td>真实用户组</td></tr></table>"""
+        val doc = NativeDocumentParser.parse(html, "glist")
+        assertEquals(1, doc.tables.size); assertEquals(listOf("12", "真实用户组"), doc.tables.single().rows.single())
+        assertEquals("select", doc.forms.single().fields.single { it.name == "type" }.type)
+    }
+    @Test fun statisticsUseReturnedColumnsPreserveMerchantIdsAndRejectErrorResponses() {
+        val result = parseMerchantStatistics(JSONObject("""{"code":0,"columns":{"uid":"商户号","channel_999":"新增通道","total":"合计"},"data":[{"uid":"10001","channel_999":null,"total":"20.125"}]}"""))
+        assertEquals(listOf("商户号", "合计", "新增通道"), result.headers)
+        assertEquals(mapOf("商户号" to "10001", "合计" to "20.13", "新增通道" to "0.00"), result.headers.zip(result.rows.single()).toMap())
+        try { parseMerchantStatistics(JSONObject("""{"code":-1,"msg":"没有权限"}""")); fail() } catch (e: IllegalStateException) { assertEquals("没有权限", e.message) }
+    }
+
+    @Test fun inactiveScanUsesTheOfficialReadEndpointAndFreezeOnlyUsesExplicitIds() = runBlocking {
+        val requests = mutableListOf<Request>()
+        val repo = modern { request -> requests += request
+            if (request.url.queryParameter("act") == "scanInactiveMerchants") """{"code":0,"total":1,"window_start":"2026-10-26","rows":[{"uid":"18","merchant_name":"Fixture","status":1,"recent_order_count":0}]}""" else """{"code":0,"msg":"完成"}"""
+        }
+        val scan = repo.inactiveMerchants(InactiveMerchantFilters("no", "normal", " Fixture "))
+        assertEquals("scanInactiveMerchants", requests.single().url.queryParameter("act"))
+        assertEquals(mapOf("whitelist" to "no", "account_status" to "normal", "keyword" to "Fixture"), fields(requests.single()))
+        assertEquals("18", scan.rows.single().uid); assertEquals(1, scan.total)
+        try { repo.freezeInactiveMerchants(listOf("")); fail() } catch (_: IllegalArgumentException) { }
+        assertEquals(1, requests.size)
+        assertTrue(repo.freezeInactiveMerchants(listOf("18", "18")).success)
+        assertEquals("batchFreezeInactiveMerchants", requests.last().url.queryParameter("act"))
+        assertEquals(mapOf("uids" to "18"), fields(requests.last()))
+    }
+
 }

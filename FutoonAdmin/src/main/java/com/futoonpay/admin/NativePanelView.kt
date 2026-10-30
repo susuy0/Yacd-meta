@@ -235,7 +235,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                                     val chrome = PayPanelChrome(navigator.canPop, actions = {
                                         IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                                         IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
-                                    }, context = { if (route.kind != "merchant_more") PanelContextStrip(chat, workflowState, keyboard || compact) })
+                                    }, context = { if (route.kind in setOf("recognition", "orders", "settlements", "merchants", "merchant_records", "evidence")) PanelContextStrip(chat, workflowState, keyboard || compact) })
                                     CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
                                 }
                             }
@@ -441,7 +441,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
             Text(chat.label.ifBlank { "当前会话" }, Modifier.weight(1f), color = Ink, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "收起会话信息" else "展开会话信息", tint = GreenDark, modifier = Modifier.size(20.dp))
         }
-        if (!keyboard || expanded) Text(when { state.merchantLoading -> "正在识别商户…"; merchant != null -> "PID ${merchant.optString("uid")} · ${state.merchantSource}"; else -> "${state.merchantSource.ifBlank { "未指定商户" }} · 可在商户页手动查询" }, color = Muted, fontSize = 12.sp, maxLines = if (expanded) 3 else 1, overflow = TextOverflow.Ellipsis)
+        if (expanded) Text(when { state.merchantLoading -> "正在识别商户…"; merchant != null -> "PID ${merchant.optString("uid")} · ${state.merchantSource}"; else -> "${state.merchantSource.ifBlank { "未指定商户" }} · 可在商户页手动查询" }, color = Muted, fontSize = 12.sp, maxLines = if (expanded) 3 else 1, overflow = TextOverflow.Ellipsis)
         if (expanded) {
             Text("Telegram ID：${chat.telegramId.ifBlank { "未识别" }}", color = Ink, fontSize = 13.sp)
             if (chat.ticket.isNotBlank()) Text("工单 ${chat.ticket} · ${chat.role}", color = Muted, fontSize = 12.sp)
