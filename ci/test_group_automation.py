@@ -86,7 +86,9 @@ def method(name):
         end += 1
     return selector[start:end]
 methods = '\n'.join(method(name) for name in ['isFutoonAutomationGroupSelection','futoonAutomationGroupAllowed','addOrRemoveSelectedDialog'])
+long_press_guard = next(line.strip() for line in selector.splitlines() if 'isFutoonAutomationGroupSelection()' in line and 'viewPage.dialogsAdapter' in line)
 selector_test = '''import java.util.*;
+interface OnItemLongClickListenerExtended {boolean onItemClick(View view,int position,float x,float y);}
 class View{} class DialogCell extends View{void setChecked(boolean checked,boolean animated){}} class ProfileSearchCell extends View{void setChecked(boolean checked,boolean animated){}}
 class TLRPC{static class Chat{boolean megagroup,channel;Chat(boolean channel,boolean mega){this.channel=channel;megagroup=mega;}}}
 class ChatObject{static boolean isChannel(TLRPC.Chat c){return c.channel;}}
@@ -96,6 +98,9 @@ public class AutomationGroupPickerTest{
  boolean onlySelect=true;Arguments arguments=new Arguments();ArrayList<Long> selectedDialogs=new ArrayList<>();MessagesController controller=new MessagesController();
  MessagesController getMessagesController(){return controller;}Object getParentActivity(){return this;}
  METHODS
+ boolean routed;static class ViewPage {Object dialogsAdapter=new Object();}ViewPage viewPage=new ViewPage();
+ void onItemClick(View view,int position,Object adapter,float x,float y){routed=true;addOrRemoveSelectedDialog(-42,view);}
+ OnItemLongClickListenerExtended listener=new OnItemLongClickListenerExtended(){public boolean onItemClick(View view,int position,float x,float y){LONG_PRESS_GUARD return false;}};
  static void check(boolean value,String detail){if(!value)throw new AssertionError(detail);}
  public static void main(String[]args){AutomationGroupPickerTest picker=new AutomationGroupPickerTest();
   for(long id=42;id<100;id++)picker.controller.chats.put(id,new TLRPC.Chat(true,true));picker.controller.chats.put(42L,new TLRPC.Chat(false,false));picker.controller.chats.put(1000L,new TLRPC.Chat(true,false));
@@ -103,13 +108,20 @@ public class AutomationGroupPickerTest{
   check(!picker.addOrRemoveSelectedDialog(42,new View()),"Private users must be rejected");check(!picker.addOrRemoveSelectedDialog(-1000,new View()),"Broadcast channels must be rejected");
   for(long id=44;id<92;id++)picker.addOrRemoveSelectedDialog(-id,new View());check(picker.selectedDialogs.size()==50,"Picker must cap at fifty groups");check(!picker.addOrRemoveSelectedDialog(-92,new View()),"Fifty-first group must be rejected");
   check(!picker.addOrRemoveSelectedDialog(-43,new View())&&!picker.selectedDialogs.contains(-43L),"An already selected forum must be removable even at the cap");check(picker.addOrRemoveSelectedDialog(-92,new View()),"Removing one group must allow selecting another");
+  check(picker.listener.onItemClick(new DialogCell(),0,0,0)&&picker.routed&&!picker.selectedDialogs.contains(-42L),"Long press must route to the outer group selector without shadowing itself");
   System.out.println("PASS: production multi-group picker normal/forum toggling, group-only boundary and selection cap");
  }
-}'''.replace('METHODS',methods)
+}'''.replace('METHODS',methods).replace('LONG_PRESS_GUARD',long_press_guard.replace('DialogsActivity.this','AutomationGroupPickerTest.this'))
 with tempfile.TemporaryDirectory(prefix='futoon-group-picker-') as folder:
     work=Path(folder);target=work/'AutomationGroupPickerTest.java';target.write_text(selector_test)
     toast=work/'android/widget/Toast.java';toast.parent.mkdir(parents=True);toast.write_text('package android.widget;public class Toast{public static final int LENGTH_SHORT=0;public static Toast makeText(Object context,String text,int length){return new Toast();}public void show(){}}')
     subprocess.run(['javac',str(target),str(toast)],cwd=work,check=True)
     subprocess.run(['java','AutomationGroupPickerTest'],cwd=work,check=True)
+    target.write_text(selector_test.replace('AutomationGroupPickerTest.this.onItemClick','onItemClick'))
+    old_compile=subprocess.run(['javac',str(target),str(toast)],cwd=work,capture_output=True,text=True)
+    assert old_compile.returncode != 0 and 'onItemClick' in old_compile.stderr, old_compile.stderr
+    print('PASS: the old unqualified long-press callback reproduces the client Java compile failure')
 assert 'ChatOrderHintMarks.restore(this, messageText)' in (root/'TMessagesProj/src/main/java/org/telegram/messenger/MessageObject.java').read_text(), 'Entity rebuilding must restore verified order markers before creating text layouts'
 assert 'hintSignature="";hintRetryAfter=' in (root/'TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java').read_text(), 'Failed order lookups must allow a bounded rescan'
+
+assert "clearOrderHints();hintFailures=0;hintRetryAfter=0;scheduleOrderHints();" in (root/"TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java").read_text(), "New backend/login sessions must clear the old failed scan and retry deadline"
