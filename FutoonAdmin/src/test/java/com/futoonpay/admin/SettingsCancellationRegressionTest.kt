@@ -107,6 +107,23 @@ class SettingsCancellationRegressionTest {
         assertFalse(ChatToolsConfig.parse(host.saved).extensions.rules.single().enabled)
     }
 
+    @Test fun severalGroupsAndBlankSenderCanBeSavedAfterNativePickerRecreation() {
+        root(); compose.onNodeWithText("新增群规则").performClick()
+        compose.onNode(hasSetTextAction() and hasText("消息包含文字（点击按钮时可留空）")).performScrollTo().performTextReplacement("补单")
+        compose.onNodeWithText("选择群组").performScrollTo().performClick()
+        compose.runOnIdle { mounted.value = false }; compose.waitForIdle()
+        host.group = """{"groups":[{"dialog":"-42","title":"第一测试群","topic":"0"},{"dialog":"-73","title":"第二测试群","topic":"0"}]}"""
+        compose.runOnIdle { revision.intValue++; mounted.value = true }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("选择群组").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("已选择 2 个群组，可再次选择增删").assertExists()
+        compose.onNodeWithText("确定规则").performScrollTo().performClick()
+        compose.onNodeWithText("保存设置").performClick()
+        compose.waitUntil(10000) { host.writes.get() == 1 }
+        val saved = ChatToolsConfig.parse(host.saved).extensions.rules.single()
+        assertEquals(listOf(-42L,-73L), saved.targets().map { it.dialog }); assertEquals(0L,saved.sender)
+        assertEquals("补单",saved.keyword); assertFalse(saved.enabled)
+    }
+
     @Test fun cancellingNativePickerKeepsUnsavedRuleFieldsAfterRecreation() {
         root(fromHome = true)
         compose.onNodeWithTag("chat-tools-list").performScrollToNode(hasText("群自动化"))

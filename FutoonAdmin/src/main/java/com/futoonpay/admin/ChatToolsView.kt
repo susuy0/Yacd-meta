@@ -72,6 +72,7 @@ interface ChatToolsNavigationBridge : ChatToolsBridge {
 interface ChatToolsHostBridge : ChatToolsNavigationBridge {
     fun settingsTitle(title: String)
     fun pickEntryImage()
+    fun pickAutomationGroups(selection: String) { pickAutomationGroup() }
     fun pickAutomationGroup()
     fun selectedGroup(): String
     fun automationLog(): String

@@ -37,12 +37,43 @@ class ExtensionOptionsTest {
             ExtensionOptions(appearance = AppearanceOptions(dim = 90)),
         ).forEach { assertThrows(IllegalArgumentException::class.java) { ExtensionOptions.parse(it.json()) } }
     }
-    @Test fun rulesRequireAnExactGroupAndPositiveSenderAndExplicitAction() {
-        listOf(GroupAutomationRule(dialog = 42, sender = 7), GroupAutomationRule(dialog = -42, sender = 0),
+    @Test fun rulesRequireAnExactGroupAndValidOptionalSenderAndExplicitAction() {
+        listOf(GroupAutomationRule(dialog = 42, sender = 7), GroupAutomationRule(dialog = -42, sender = -7),
             GroupAutomationRule(dialog = -42, sender = 7, button = ""), GroupAutomationRule(dialog = -42, sender = 7, action = "draft", draft = ""),
             GroupAutomationRule(dialog = -42, sender = 7, cooldown = 0)).forEach { rule ->
             assertThrows(IllegalArgumentException::class.java) { ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule)).json()) }
         }
+    }
+    @Test fun multipleGroupsKeepTheirOwnTopicsAndOptionalSenderAcrossPersistence() {
+        val groups = listOf(AutomationGroup(-42, "普通群"), AutomationGroup(-73, "话题群", 77))
+        val rule = GroupAutomationRule(dialog = -42, groupName = "普通群", sender = 0, groups = groups, enabled = true, since = 100)
+        val restored = ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule)).json()).rules.single()
+        assertEquals(rule, restored)
+        assertTrue(restored.acceptsEvent(-42, 0, 7, "补单案例", 105, 110))
+        assertTrue(restored.acceptsEvent(-73, 77, 999, "补单案例", 105, 110))
+        assertFalse(restored.acceptsEvent(-73, 78, 7, "补单案例", 105, 110))
+        assertFalse(restored.acceptsEvent(-99, 77, 7, "补单案例", 105, 110))
+        assertFalse(restored.copy(sender = 8).acceptsEvent(-42, 0, 7, "补单案例", 105, 110))
+        assertThrows(IllegalArgumentException::class.java) { ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule.copy(groups = groups + groups.first()))).json()) }
+    }
+    @Test fun blankSenderAndTopicSaveWithoutParsingErrorsAndInvalidValuesHaveFieldMessages() {
+        val rule = GroupAutomationRule(dialog = -42, sender = 0)
+        val draft = AutomationRuleDraft(rule); draft.sender.value = ""; draft.topic.value = ""
+        assertEquals(0L, draft.build(rule).sender); assertEquals(0L, draft.build(rule).topic)
+        draft.sender.value = "abc"
+        val error = assertThrows(IllegalArgumentException::class.java) { draft.build(rule) }
+        assertTrue(error.message!!.contains("发送者 ID")); assertFalse(error.message!!.contains("For input string"))
+    }
+    @Test fun selectingSeveralGroupsRetainsExistingTopicAndCancelDoesNotModifyRule() {
+        val original = GroupAutomationRule(dialog = -42, topic = 77, sender = 0)
+        val draft = AutomationRuleDraft(original); draft.keyword.value = "补单"
+        draft.applySelection(listOf(AutomationGroup(-42,"第一群"),AutomationGroup(-73,"第二群")))
+        assertEquals(77L,draft.selection().first().topic); assertEquals(2,draft.build(original).targets().size)
+        assertEquals("补单",draft.keyword.value)
+        draft.applySelection(emptyList()); assertEquals(2,draft.selection().size)
+        assertTrue(original.groups.isEmpty())
+        draft.applySelection(listOf(AutomationGroup(-73,"第二群")))
+        assertEquals(-73L,draft.build(original).dialog); assertEquals(1,draft.selection().size)
     }
     private val rule = GroupAutomationRule(dialog = -42, topic = 12, sender = 5824870757, keyword = "补单案例", enabled = true, since = 100)
     @Test fun ruleOnlyMatchesItsEnabledGroupTopicSenderAndMessageText() {

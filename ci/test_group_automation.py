@@ -10,7 +10,7 @@ stubs={
 'android/text/format/DateFormat.java': '''package android.text.format;public class DateFormat {public static String format(String format,long time){return "fixture-time";}}''',
 # Only storage encoding is faked; production dispatch/matching/claiming/execution remains intact.
 'org/json/JSONArray.java': '''package org.json;import java.util.*;import java.nio.charset.StandardCharsets;public class JSONArray {private final List<String> rows=new ArrayList<>();public JSONArray(Collection<?> input){for(Object item:input)rows.add(item.toString());}public JSONArray(String input){if(input.equals("[]")||input.isEmpty())return;for(String item:input.split(";"))rows.add(new String(Base64.getDecoder().decode(item),StandardCharsets.UTF_8));}public int length(){return rows.size();}public String getString(int i){return rows.get(i);}public String toString(){List<String> encoded=new ArrayList<>();for(String row:rows)encoded.add(Base64.getEncoder().encodeToString(row.getBytes(StandardCharsets.UTF_8)));return String.join(";",encoded);}}''',
-'com/futoonpay/admin/GroupAutomationRule.java': '''package com.futoonpay.admin;public class GroupAutomationRule {public String id="rule",title="case",keyword="补单案例",button="补单案例",action="click",draft="",group="fixture";public long dialog=-42,topic=0,sender=7,since=0;public boolean enabled=true;public int cooldown=2;public String getId(){return id;}public String getTitle(){return title;}public String getKeyword(){return keyword;}public String getButton(){return button;}public String getAction(){return action;}public String getDraft(){return draft;}public String getGroupName(){return group;}public long getDialog(){return dialog;}public long getTopic(){return topic;}public long getSender(){return sender;}public long getSince(){return since;}public boolean getEnabled(){return enabled;}public int getCooldown(){return cooldown;}public boolean acceptsEvent(long dialog,long topic,long sender,String text,long date,long now){return enabled&&this.dialog==dialog&&(this.topic==0||this.topic==topic)&&this.sender==sender&&date>=since&&now-date<=300&&(keyword.isEmpty()||text.contains(keyword));}}''',
+'com/futoonpay/admin/GroupAutomationRule.java': '''package com.futoonpay.admin;import java.util.*;public class GroupAutomationRule {public String id="rule",title="case",keyword="补单案例",button="补单案例",action="click",draft="",group="fixture";public long dialog=-42,topic=0,sender=7,since=0;public Set<Long> dialogs=new HashSet<>();public boolean enabled=true;public int cooldown=2;public String getId(){return id;}public String getTitle(){return title;}public String getKeyword(){return keyword;}public String getButton(){return button;}public String getAction(){return action;}public String getDraft(){return draft;}public String getGroupName(){return group;}public long getDialog(){return dialog;}public boolean watchesDialog(long value){return dialogs.isEmpty()?dialog==value:dialogs.contains(value);}public String groupTitle(long value){return "group-"+value;}public long getTopic(){return topic;}public long getSender(){return sender;}public long getSince(){return since;}public boolean getEnabled(){return enabled;}public int getCooldown(){return cooldown;}public boolean acceptsEvent(long dialog,long topic,long sender,String text,long date,long now){return enabled&&watchesDialog(dialog)&&(this.topic==0||this.topic==topic)&&(this.sender==0||this.sender==sender)&&date>=since&&now-date<=300&&(keyword.isEmpty()||text.contains(keyword));}}''',
 'org/telegram/messenger/ApplicationLoader.java': '''package org.telegram.messenger;public class ApplicationLoader {public static android.content.Context applicationContext=new android.content.Context();}''',
 'org/telegram/messenger/UserConfig.java': '''package org.telegram.messenger;public class UserConfig {public static final int MAX_ACCOUNT_COUNT=4;public static long owner=101;public static UserConfig getInstance(int account){return new UserConfig();}public long getClientUserId(){return owner;}public boolean isClientActivated(){return owner>0;}}''',
 'org/telegram/messenger/AndroidUtilities.java': '''package org.telegram.messenger;import java.util.*;public class AndroidUtilities {static List<Runnable> queue=new ArrayList<>();public static void runOnUIThread(Runnable task){task.run();}public static void runOnUIThread(Runnable task,long delay){queue.add(task);}public static void cancelRunOnUIThread(Runnable task){queue.remove(task);}public static void flush(){List<Runnable> copy=new ArrayList<>(queue);queue.clear();for(Runnable task:copy)task.run();}}''',
@@ -52,6 +52,11 @@ public class AutomationDispatchTest {
   emit(restarted,message(23,true),1);MessageObject removed=message(23,false);removed.messageOwner.message="普通消息";emit(restarted,removed,NotificationCenter.replaceMessagesObjects);for(int i=400;i<650;i++){MessageObject noise=message(i,false);noise.messageOwner.message="普通消息";emit(restarted,noise,1);}AndroidUtilities.flush();check(ConnectionsManager.sent.size()==5,"Queued actions must use the latest edit and skip a removed button even after heavy traffic");
   rule.action="draft";rule.topic=77;LaunchActivity.current=null;MediaDataController.drafts.clear();restarted.reload();MessageObject forum=message(700,false);forum.topic=77;forum.messageOwner.topic=77;emit(restarted,forum,1);AndroidUtilities.flush();check(MediaDataController.drafts.containsKey("-42:77"),"Forum draft must retain its real topic ID");
   MessageObject otherTopic=message(701,false);otherTopic.topic=78;otherTopic.messageOwner.topic=78;emit(restarted,otherTopic,1);AndroidUtilities.flush();check(!MediaDataController.drafts.containsKey("-42:78"),"Topic-limited rules must not create drafts in other topics");
+  int before=ConnectionsManager.sent.size();rule.action="click";rule.topic=0;rule.sender=0;rule.dialogs=new HashSet<>(List.of(-42L,-43L));restarted.reload();
+  MessageObject groupOne=message(801,true);groupOne.sender=88;emit(restarted,groupOne,1);MessageObject groupTwo=message(801,true);groupTwo.dialog=-43;groupTwo.sender=99;emit(restarted,groupTwo,1);AndroidUtilities.flush();check(ConnectionsManager.sent.size()==before+2,"A sender-free multi-group rule must execute for each selected group and different actual bots, including equal message IDs");
+  MessageObject unselected=message(802,true);unselected.dialog=-44;emit(restarted,unselected,1);AndroidUtilities.flush();check(ConnectionsManager.sent.size()==before+2,"Multi-group dispatcher must ignore unselected groups");
+  MessagesController.bot=false;emit(restarted,message(803,true),1);AndroidUtilities.flush();MessagesController.bot=true;check(ConnectionsManager.sent.size()==before+2,"Sender-free matching must still reject non-bot callback messages");
+  rule.action="draft";rule.draft="{群名称}/{发送者ID}";MediaDataController.drafts.clear();restarted.reload();MessageObject actual=message(804,false);actual.dialog=-43;actual.sender=99;emit(restarted,actual,1);AndroidUtilities.flush();check(MediaDataController.drafts.get("-43:0").message.equals("group--43/99"),"Wildcard sender drafts must use the actual message group and sender");
   System.out.println("PASS: "+cases+" production automation dispatch, durable deduplication, edit, account/group, callback and draft checks");
  }
 }'''
@@ -68,3 +73,43 @@ with tempfile.TemporaryDirectory(prefix='futoon-automation-') as folder:
     old = subprocess.run(['java','AutomationDispatchTest'],cwd=work,capture_output=True,text=True)
     assert old.returncode != 0 and 'Normal group draft must use' in old.stderr, old.stderr
     print('PASS: the real-device ordinary-group draft regression fails with the old forced-forum resolver')
+
+# Execute the actual multi-select toggle and group filter (including forum groups), not a duplicate selector.
+selector = (root/'TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java').read_text()
+def method(name):
+    start = selector.index(' ' + name + '(')
+    start = selector.rfind('\n', 0, start) + 1
+    opening = selector.index('{', start); level = 1; end = opening + 1
+    while level:
+        if selector[end] == '{': level += 1
+        elif selector[end] == '}': level -= 1
+        end += 1
+    return selector[start:end]
+methods = '\n'.join(method(name) for name in ['isFutoonAutomationGroupSelection','futoonAutomationGroupAllowed','addOrRemoveSelectedDialog'])
+selector_test = '''import java.util.*;
+class View{} class DialogCell extends View{void setChecked(boolean checked,boolean animated){}} class ProfileSearchCell extends View{void setChecked(boolean checked,boolean animated){}}
+class TLRPC{static class Chat{boolean megagroup,channel;Chat(boolean channel,boolean mega){this.channel=channel;megagroup=mega;}}}
+class ChatObject{static boolean isChannel(TLRPC.Chat c){return c.channel;}}
+class MessagesController{Map<Long,TLRPC.Chat> chats=new HashMap<>();TLRPC.Chat getChat(long id){return chats.get(id);}boolean isForum(long id){return id==-43;}}
+class Arguments{boolean getBoolean(String key,boolean fallback){return true;}}
+public class AutomationGroupPickerTest{
+ boolean onlySelect=true;Arguments arguments=new Arguments();ArrayList<Long> selectedDialogs=new ArrayList<>();MessagesController controller=new MessagesController();
+ MessagesController getMessagesController(){return controller;}Object getParentActivity(){return this;}
+ METHODS
+ static void check(boolean value,String detail){if(!value)throw new AssertionError(detail);}
+ public static void main(String[]args){AutomationGroupPickerTest picker=new AutomationGroupPickerTest();
+  for(long id=42;id<100;id++)picker.controller.chats.put(id,new TLRPC.Chat(true,true));picker.controller.chats.put(42L,new TLRPC.Chat(false,false));picker.controller.chats.put(1000L,new TLRPC.Chat(true,false));
+  check(picker.addOrRemoveSelectedDialog(-42,new DialogCell()),"Normal group must be selected");check(picker.addOrRemoveSelectedDialog(-43,new DialogCell()),"Forum group must be selected without entering topics");check(picker.selectedDialogs.equals(List.of(-42L,-43L)),"Two groups must remain selected together");
+  check(!picker.addOrRemoveSelectedDialog(42,new View()),"Private users must be rejected");check(!picker.addOrRemoveSelectedDialog(-1000,new View()),"Broadcast channels must be rejected");
+  for(long id=44;id<92;id++)picker.addOrRemoveSelectedDialog(-id,new View());check(picker.selectedDialogs.size()==50,"Picker must cap at fifty groups");check(!picker.addOrRemoveSelectedDialog(-92,new View()),"Fifty-first group must be rejected");
+  check(!picker.addOrRemoveSelectedDialog(-43,new View())&&!picker.selectedDialogs.contains(-43L),"An already selected forum must be removable even at the cap");check(picker.addOrRemoveSelectedDialog(-92,new View()),"Removing one group must allow selecting another");
+  System.out.println("PASS: production multi-group picker normal/forum toggling, group-only boundary and selection cap");
+ }
+}'''.replace('METHODS',methods)
+with tempfile.TemporaryDirectory(prefix='futoon-group-picker-') as folder:
+    work=Path(folder);target=work/'AutomationGroupPickerTest.java';target.write_text(selector_test)
+    toast=work/'android/widget/Toast.java';toast.parent.mkdir(parents=True);toast.write_text('package android.widget;public class Toast{public static final int LENGTH_SHORT=0;public static Toast makeText(Object context,String text,int length){return new Toast();}public void show(){}}')
+    subprocess.run(['javac',str(target),str(toast)],cwd=work,check=True)
+    subprocess.run(['java','AutomationGroupPickerTest'],cwd=work,check=True)
+assert 'ChatOrderHintMarks.restore(this, messageText)' in (root/'TMessagesProj/src/main/java/org/telegram/messenger/MessageObject.java').read_text(), 'Entity rebuilding must restore verified order markers before creating text layouts'
+assert 'hintSignature="";hintRetryAfter=' in (root/'TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java').read_text(), 'Failed order lookups must allow a bounded rescan'

@@ -108,22 +108,16 @@ import java.util.UUID
             } }
             item { com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { working = working.copy(templates = (working.templates + defaultBusinessTemplates.filter { d -> working.templates.none { it.id == d.id } })) }) { Text("补回缺少的默认模板") } }
         } else if (page == "automation") {
-            item { Text("每个群单独开启；可再限定话题与发送者。只处理 5 分钟内、启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
+            item { Text("一条规则可选择多个群组；发送者可留空，也可按群限定话题。只处理 5 分钟内、启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
             item { Row { com.futoonpay.admin.ui.ChatButton(enabled = !saving, onClick = { editRule = GroupAutomationRule(dialog = -1, sender = 0) }) { Text("新增群规则") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { log = host?.automationLog() ?: "暂无执行记录" }) { Text("执行记录") } } }
-            working.rules.groupBy { it.dialog }.forEach { (_, rules) ->
-                item { PayCard {
-                    Text(rules.first().groupName.ifBlank { "群 ${rules.first().dialog}" }, fontWeight = FontWeight.Medium)
-                    ExtensionToggle("此群自动化", rules.any { it.enabled }) { enabled -> val ids = rules.map { it.id }.toSet(); val now = System.currentTimeMillis() / 1000
-                        working = working.copy(rules = working.rules.map { if (it.id in ids) it.copy(enabled = enabled, since = if (enabled) now else it.since) else it }) }
-                    rules.forEach { rule ->
-                        HorizontalDivider(color = Line)
-                        ExtensionToggle(rule.title, rule.enabled) { enabled -> val now = System.currentTimeMillis() / 1000; working = working.copy(rules = working.rules.map { if (it.id == rule.id) it.copy(enabled = enabled, since = if (enabled) now else it.since) else it }) }
-                        Text("发送者 ${rule.sender} · ${if (rule.topic == 0L) "全部话题" else "话题 ${rule.topic}"}\n${if (rule.action == "click") "点击「${rule.button}」" else "生成回复草稿"}", color = Muted, fontSize = 12.sp)
-                        Row { com.futoonpay.admin.ui.ChatTextButton(onClick = { editRule = rule }) { Text("编辑规则") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { deleteRule = rule }) { Text("删除", color = Danger) } }
-                    }
-                } }
-            }
-            if (working.rules.isEmpty()) item { Text("还没有群规则。选择群组后填写实际机器人 ID 和按钮全名。", color = Muted) }
+            items(working.rules, key = { it.id }) { rule -> PayCard {
+                Text(rule.targets().joinToString("、") { it.title.ifBlank { "群 ${it.dialog}" } }, fontWeight = FontWeight.Medium)
+                ExtensionToggle(rule.title, rule.enabled) { enabled -> val now = System.currentTimeMillis() / 1000
+                    working = working.copy(rules = working.rules.map { if (it.id == rule.id) it.copy(enabled = enabled, since = if (enabled) now else it.since) else it }) }
+                Text("${rule.targets().size} 个群组 · ${if (rule.sender == 0L) "不限发送者" else "发送者 ${rule.sender}"}\n${if (rule.action == "click") "点击「${rule.button}」" else "生成回复草稿"}", color = Muted, fontSize = 12.sp)
+                Row { com.futoonpay.admin.ui.ChatTextButton(onClick = { editRule = rule }) { Text("编辑规则") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { deleteRule = rule }) { Text("删除", color = Danger) } }
+            } }
+            if (working.rules.isEmpty()) item { Text("还没有群规则。可多选群组，填写消息文字和按钮全名；无需填写发送者 ID。", color = Muted) }
             item { Text("应用在线并收到消息时执行。按钮动作仅支持机器人回调按钮；超时或结果不明不自动重试。", color = Muted, fontSize = 12.sp) }
         }
     }
@@ -190,28 +184,44 @@ import java.util.UUID
     var draft by state.draft
     var cooldown by state.cooldown
     var awaitingPick by state.awaitingPick
+    var additionalGroups by state.additionalGroups
     var error by remember { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
-    val dirty = title != initial.title || dialog != (if (initial.dialog == -1L) "" else initial.dialog.toString()) || groupName != initial.groupName || topic != initial.topic.toString() || sender != (if (initial.sender <= 0) "" else initial.sender.toString()) || keyword != initial.keyword || button != initial.button || action != initial.action || draft != initial.draft || cooldown != initial.cooldown.toString()
+    val dirty = additionalGroups != initial.groups.drop(1) || title != initial.title || dialog != (if (initial.dialog == -1L) "" else initial.dialog.toString()) || groupName != initial.groupName || topic != initial.topic.toString() || sender != (if (initial.sender <= 0) "" else initial.sender.toString()) || keyword != initial.keyword || button != initial.button || action != initial.action || draft != initial.draft || cooldown != initial.cooldown.toString()
     fun back() { if (dirty) discard = true else close() }
-    LaunchedEffect(revision) { if (awaitingPick) { val picked = runCatching { JSONObject(host?.selectedGroup().orEmpty()) }.getOrNull(); if (picked != null && picked.optLong("dialog") < 0) { dialog = picked.optString("dialog"); groupName = picked.optString("title"); topic = picked.optString("topic", "0"); awaitingPick = false } } }
+    LaunchedEffect(revision) { if (awaitingPick) {
+        val picked = runCatching { JSONObject(host?.selectedGroup().orEmpty()) }.getOrNull()
+        if (picked != null) {
+            val groups = picked.optJSONArray("groups")?.let { array -> (0 until array.length()).map { i -> val g = array.getJSONObject(i); AutomationGroup(g.getString("dialog").toLong(), g.optString("title"), g.optLong("topic")) } }
+                ?: picked.optLong("dialog").takeIf { it < 0 }?.let { listOf(AutomationGroup(it, picked.optString("title"), picked.optLong("topic"))) }.orEmpty()
+            state.applySelection(groups); awaitingPick = false
+        }
+    } }
     PaySheet("群自动化规则", ::back) { Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text("规则名称") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        com.futoonpay.admin.ui.ChatButton(enabled = host != null, onClick = { awaitingPick = true; host?.pickAutomationGroup() }) { Text("选择群组") }
+        com.futoonpay.admin.ui.ChatButton(enabled = host != null, onClick = { awaitingPick = true; host?.pickAutomationGroups(org.json.JSONArray(state.selection().map { org.json.JSONObject().put("dialog", it.dialog.toString()) }).toString()) }) { Text("选择群组") }
+        if (dialog.isNotBlank()) Text("已选择 ${additionalGroups.size + 1} 个群组，可再次选择增删", color = Muted)
         Text(groupName.ifBlank { "尚未选择群组" }, color = Muted)
         OutlinedTextField(dialog, { dialog = it }, label = { Text("客户端群 ID（选择群组自动填写）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(topic, { topic = it }, label = { Text("话题 ID；0 表示全部话题") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        OutlinedTextField(sender, { sender = it }, label = { Text("指定机器人／发送者 Telegram ID") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        additionalGroups.forEach { group ->
+            Column(Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) { Text(group.title.ifBlank { "群 ${group.dialog}" }, Modifier.weight(1f)); com.futoonpay.admin.ui.ChatTextButton(onClick = { additionalGroups = additionalGroups.filterNot { it.dialog == group.dialog } }) { Text("移除") } }
+                Text("群 ID：${group.dialog}", color = Muted, fontSize = 12.sp)
+                var topicText by remember(group.dialog) { mutableStateOf(group.topic.toString()) }
+                OutlinedTextField(topicText, { value -> if (value.isEmpty() || value.toLongOrNull()?.let { it >= 0 } == true) { topicText = value; additionalGroups = additionalGroups.map { if (it.dialog == group.dialog) it.copy(topic = value.toLongOrNull() ?: 0) else it } } }, label = { Text("此群话题 ID；0 表示全部话题") }, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
+            }
+        }
+        OutlinedTextField(sender, { sender = it }, label = { Text("指定机器人／发送者 Telegram ID") }, supportingText = { Text("选填，留空不限制发送者") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(keyword, { keyword = it }, label = { Text("消息包含文字（点击按钮时可留空）") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Row { FilterChip(action == "click", { action = "click" }, label = { Text("点击机器人按钮") }); Spacer(Modifier.width(8.dp)); FilterChip(action == "draft", { action = "draft" }, label = { Text("生成回复草稿") }) }
         if (action == "click") OutlinedTextField(button, { button = it }, label = { Text("按钮完整文字，精确匹配") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()); Text("可用 {消息文字}、{群名称}、{发送者ID}；已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
         OutlinedTextField(cooldown, { cooldown = it }, label = { Text("执行间隔（2～3600 秒）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        Text("新增规则默认关闭，保存规则后再按群开启。点击只执行指定按钮，不延伸到后续确认。", color = Muted, fontSize = 12.sp)
+        Text("新增规则默认关闭，保存规则后再开启。点击只执行指定按钮，不延伸到后续确认。", color = Muted, fontSize = 12.sp)
         error?.let { Text(it, color = Danger) }
         Row { com.futoonpay.admin.ui.ChatTextButton(onClick = ::back) { Text("取消") }; com.futoonpay.admin.ui.ChatButton(onClick = { try {
-            val edited = initial.copy(title = title.trim(), dialog = dialog.trim().toLong(), groupName = groupName, topic = topic.trim().toLong(), sender = sender.trim().toLong(), keyword = keyword, button = button, action = action, draft = draft, cooldown = cooldown.trim().toInt(), since = if (initial.enabled) System.currentTimeMillis() / 1000 else initial.since)
-            ExtensionOptions.parse(ExtensionOptions(rules = listOf(edited)).json()); save(edited)
+            save(state.build(initial))
         } catch (e: Exception) { error = e.message ?: "请检查群 ID、发送者 ID 和规则内容" } }) { Text("确定规则") } }
     } }
     if (discard) PaySheet("放弃规则修改？", { discard = false }) { Row(Modifier.padding(16.dp)) { com.futoonpay.admin.ui.ChatTextButton(onClick = { discard = false }) { Text("继续编辑") }; com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("放弃修改") } } }
