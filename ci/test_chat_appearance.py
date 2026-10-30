@@ -30,7 +30,7 @@ panel=(repo/'FutoonAdmin/src/main/java/com/futoonpay/admin/NativePanelView.kt').
 assert 'ChatNavigationBar(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)' in panel
 assert 'Role.Tab' in components and 'selectableGroup()' in components
 assert 'MainTab.entries.find { it.name == id }?.let(onSelect)' in components
-assert 'ChatFilterTabs(options, selected, onSelect)' in components
+assert re.search(r'ChatFilterTabs\(options,\s*selected,\s*(?:onSelect\s*=\s*)?onSelect\)', components), 'Shared filter wrapper must pass the original selection callback'
 assert 'ChatFieldColors()' in components
 print('PASS: shared native tab routing, configured order, accessibility selection, scrollable filters and field styles')
 
