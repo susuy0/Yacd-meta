@@ -378,7 +378,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
         lookupError?.let { Text(it, color = Danger, modifier = Modifier.padding(12.dp)) }
         when (route.kind) {
             "orders" -> OrdersScreen(state, model, search, showSearchEntry = false)
-            "settlements" -> SettlementsScreen(state, model, search)
+            "settlements" -> SettlementsScreen(state, model, search, showSearchEntry = false)
             "merchants" -> {
                 if (route.merchantId.isBlank()) PayPills(listOf("context" to "当前会话", "all" to "全部商户"), merchantTab) { merchantTab = it }
                 if (merchantTab == "context") LazyColumn(contentPadding = PaddingValues(12.dp)) { item { CurrentMerchantCard(workflows, merchantActions, chat, navigator) } }

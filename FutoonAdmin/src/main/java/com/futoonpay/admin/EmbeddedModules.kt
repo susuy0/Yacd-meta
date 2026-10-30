@@ -36,6 +36,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -126,6 +128,9 @@ internal data class NativeModuleState(
     val inactiveFilters: InactiveMerchantFilters = InactiveMerchantFilters(),
     val inactiveScan: InactiveMerchantScan? = null,
     val inactiveRevision: Int = 0,
+    val groupEditorGid: String? = null,
+    val groupEditorRevision: Int = 0,
+    val groupDraft: Map<String, String> = emptyMap(),
 )
 
 internal class NativeModuleViewModel(
@@ -154,6 +159,12 @@ internal class NativeModuleViewModel(
                     _state.update { it.copy(loading = false, total = result.total, rows = result.rows, document = null, message = feedback) }
                 }
                 is ModuleSource.Documents -> {
+                    if (_state.value.groupEditorGid != null) {
+                        val template = documentHistory.lastOrNull()?.second ?: error("用户组编辑上下文已失效，请返回列表重试")
+                        val form = repository.userGroupEditor(_state.value.selectedPath, template, _state.value.groupEditorGid?.takeIf(String::isNotEmpty))
+                        if (generation == loadGeneration) _state.update { it.copy(loading = false, writeUncertain = if (it.groupEditorGid?.isNotEmpty() == true) false else it.writeUncertain, groupEditorRevision = it.groupEditorRevision + 1, groupDraft = emptyMap(), document = NativeDocument(form.title, emptyList(), emptyList(), listOf(form))) }
+                        return@runCatching
+                    }
                     if (_state.value.definition.id == "inactive") {
                         val scan = repository.inactiveMerchants(_state.value.inactiveFilters)
                         if (generation == loadGeneration) _state.update { it.copy(loading = false, inactiveScan = scan, inactiveRevision = it.inactiveRevision + 1, writeUncertain = false, message = feedbackAfterLoad.also { feedbackAfterLoad = null }) }
@@ -174,6 +185,23 @@ internal class NativeModuleViewModel(
             if (error is kotlinx.coroutines.CancellationException) throw error
             if (generation == loadGeneration) _state.update { it.copy(loading = false, loadError = error.message ?: "加载失败") }
         }
+    }
+
+    fun openUserGroup(gid: String? = null) {
+        if (_state.value.loading || _state.value.definition.id != "user_groups" || _state.value.groupEditorGid != null) return
+        val document = _state.value.document ?: return
+        documentHistory += _state.value.selectedPath to document
+        _state.update { it.copy(groupEditorGid = gid.orEmpty(), groupDraft = emptyMap(), documentDepth = documentHistory.size, document = null) }
+        load()
+    }
+
+    fun updateGroupDraft(revision: Int, values: Map<String, String>) {
+        val state = _state.value
+        if (state.groupEditorGid == null || revision != state.groupEditorRevision || state.loading || state.writeUncertain) return
+        val allowed = state.document?.forms?.firstOrNull()?.fields.orEmpty().filter {
+            !it.sensitive && (it.type != "hidden" || Regex("info\\[\\d+]\\[type]").matches(it.name))
+        }.map { it.name }.toSet()
+        _state.update { it.copy(groupDraft = values.filterKeys(allowed::contains)) }
     }
 
     fun scanInactive(filters: InactiveMerchantFilters) {
@@ -203,7 +231,11 @@ internal class NativeModuleViewModel(
 
     fun openAction(action: NativeAction) {
         if (_state.value.loading) return
-        if (action.opensNativeDocument()) {
+        if (_state.value.definition.id == "user_groups" && action.opensNativeDocument() && action.endpoint.substringAfter("act=").substringBefore('&') == "getGroup") {
+            val gid = android.net.Uri.parse(action.documentPath()).getQueryParameter("gid")
+            if (gid?.matches(Regex("[0-9]+")) == true) openUserGroup(gid)
+            else _state.update { it.copy(message = "用户组编号不正确") }
+        } else if (action.opensNativeDocument()) {
             _state.value.document?.let { documentHistory += _state.value.selectedPath to it }
             _state.update { it.copy(documentDepth = documentHistory.size) }
             load(path = action.documentPath())
@@ -212,7 +244,7 @@ internal class NativeModuleViewModel(
     fun popDocument(): Boolean {
         val previous = documentHistory.removeLastOrNull() ?: return false
         loadGeneration++
-        _state.update { it.copy(selectedPath = previous.first, document = previous.second, documentDepth = documentHistory.size, message = null) }
+        _state.update { it.copy(selectedPath = previous.first, document = previous.second, documentDepth = documentHistory.size, message = null, groupEditorGid = null, groupDraft = emptyMap(), loadError = null) }
         return true
     }
 
@@ -231,6 +263,10 @@ internal class NativeModuleViewModel(
             .onSuccess { result ->
                 if (result.success) {
                     feedbackAfterLoad = result.message
+                    if (_state.value.groupEditorGid != null) {
+                        documentHistory.removeLastOrNull()
+                        _state.update { it.copy(groupEditorGid = null, groupDraft = emptyMap(), documentDepth = documentHistory.size, document = null) }
+                    }
                     load()
                 } else {
                     _state.update { it.copy(loading = false, message = result.message) }
@@ -261,10 +297,11 @@ internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Un
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            com.futoonpay.admin.ui.PayTopBar(state.definition.title, back) {
+            com.futoonpay.admin.ui.PayTopBar(if (state.groupEditorGid != null) if (state.groupEditorGid?.isEmpty() == true) "新增用户组" else "修改用户组" else state.definition.title, back) {
+                if (state.definition.id == "user_groups" && state.groupEditorGid == null) IconButton(onClick = { viewModel.openUserGroup() }, enabled = !state.loading && state.loadError == null) { Icon(Icons.Default.Add, "新增用户组") }
                 if (state.definition.id == "blacklist") IconButton(onClick = { addBlacklist = true }) { Icon(Icons.Default.Add, "添加黑名单") }
                 if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
-                else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
+                else if (state.groupEditorGid?.isNotEmpty() != false) IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
             }
         },
     ) { padding ->
@@ -275,7 +312,9 @@ internal fun NativeModuleRoot(viewModel: NativeModuleViewModel, onBack: () -> Un
             } }
             Box(Modifier.weight(1f)) { when (val source = state.definition.source) {
                 is ModuleSource.Ajax -> AjaxModuleScreen(state, source, viewModel::load, viewModel::deleteBlacklist)
-                is ModuleSource.Documents -> if (state.definition.id == "merchant_stats") MerchantStatisticsScreen(state, viewModel::queryStatistics)
+                is ModuleSource.Documents -> if (state.groupEditorGid != null) {
+                        state.document?.forms?.firstOrNull()?.let { form -> UserGroupEditorScreen(form, viewModel::submit, state.loading || state.loadError != null, back, uncertain = state.writeUncertain, revision = state.groupEditorRevision, draft = state.groupDraft, onDraft = viewModel::updateGroupDraft) }
+                    } else if (state.definition.id == "merchant_stats") MerchantStatisticsScreen(state, viewModel::queryStatistics)
                     else if (state.definition.id == "inactive") InactiveMerchantsScreen(state, viewModel::scanInactive, viewModel::freezeInactive)
                     else DocumentModuleScreen(state, source, viewModel::load, viewModel::submit, viewModel::openAction)
             } }
@@ -344,12 +383,12 @@ internal fun GenericRowCard(row: GenericRow, source: ModuleSource.Ajax, onDelete
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(48.dp)) { Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "收起详情" else "展开详情") }
                 if (blacklist) IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.DeleteOutline, "移除", tint = Danger) }
             }
             row.values.filter { (key, value) -> value.isNotBlank() && (expanded || key in primary) }.forEach { (key, value) ->
                 com.futoonpay.admin.ui.DataRow(source.labels[key] ?: key, value)
             }
-            com.futoonpay.admin.ui.ChatTextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起详情" else "展开详情") }
         }
     }
 }
@@ -380,7 +419,7 @@ private fun DocumentModuleScreen(
         state.document?.actions?.takeIf { it.isNotEmpty() }?.let { actions -> item {
             NativeActionButtons(actions, !state.loading && !state.writeUncertain && state.loadError == null, ::action)
         } }
-        state.document?.notices?.forEach { notice -> item { NoticeCard(notice) } }
+        state.document?.notices?.forEach { notice -> item { NoticeCard(if (state.definition.id == "user_groups") notice.removeSuffix("新增").trim() else notice) } }
         state.document?.tables?.forEach { table ->
             if (table.title.isNotBlank() && !Regex("数据表 \\d+").matches(table.title)) item { Text(table.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.padding(top = 5.dp)) }
             itemsIndexed(table.rows) { index, row -> Column {
@@ -388,7 +427,7 @@ private fun DocumentModuleScreen(
                 NativeActionButtons(table.rowActions.getOrNull(index).orEmpty(), !state.loading && !state.writeUncertain && state.loadError == null, ::action)
             } }
         }
-        state.document?.forms?.forEach { form -> item { NativeFormCard(form, onSubmit, state.loading || state.writeUncertain || state.loadError != null) } }
+        if (state.definition.id != "user_groups") state.document?.forms?.forEach { form -> item { NativeFormCard(form, onSubmit, state.loading || state.writeUncertain || state.loadError != null) } }
         if (!state.loading && state.loadError == null && state.document?.let { it.forms.isEmpty() && it.tables.all { table -> table.rows.isEmpty() } } != false) {
             item { EmptyModule("此页面暂时没有可显示的数据或表单") }
         }
@@ -422,14 +461,28 @@ private fun NoticeCard(text: String) {
 }
 
 @Composable
-internal fun NativeTableRow(headers: List<String>, row: List<String>) {
+internal fun NativeTableRow(headers: List<String>, row: List<String>, summaryFields: Int = 3, foldZeroDetails: Boolean = false) {
+    var showZero by remember(row) { mutableStateOf(false) }
     var expanded by remember(row) { mutableStateOf(false) }
     val fields = row.mapIndexedNotNull { index, value -> if (value.isBlank()) null else
         (headers.getOrNull(index)?.ifBlank { "字段 ${index + 1}" } ?: "字段 ${index + 1}") to value }
     Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            (if (expanded) fields else fields.take(3)).forEach { (label, value) -> com.futoonpay.admin.ui.DataRow(label, value) }
-            if (fields.size > 3) com.futoonpay.admin.ui.ChatTextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起详情" else "展开详情") }
+            val hasZero = foldZeroDetails && fields.drop(summaryFields).any { it.second.toBigDecimalOrNull()?.compareTo(java.math.BigDecimal.ZERO) == 0 }
+            val details = if (!foldZeroDetails || showZero) fields.drop(summaryFields) else fields.drop(summaryFields).filter { it.second.toBigDecimalOrNull()?.compareTo(java.math.BigDecimal.ZERO) != 0 }
+            if (foldZeroDetails && fields.size >= 2) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) { Text(fields[0].first, color = Muted); Text(fields[0].second, fontWeight = FontWeight.Medium) }
+                    Column(horizontalAlignment = Alignment.End) { Text(fields[1].first, color = Muted); Text(fields[1].second, fontWeight = FontWeight.SemiBold, fontSize = 20.sp) }
+                    IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(48.dp)) { Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "收起详情" else "展开详情") }
+                }
+                if (expanded) details.forEach { (label, value) -> com.futoonpay.admin.ui.DataRow(label, value) }
+            } else {
+                (if (expanded) fields.take(summaryFields) + details else fields.take(summaryFields)).forEach { (label, value) -> com.futoonpay.admin.ui.DataRow(label, value) }
+                if (fields.size > summaryFields) com.futoonpay.admin.ui.ChatTextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "收起详情" else "展开详情") }
+            }
+            if (expanded && hasZero) com.futoonpay.admin.ui.ChatTextButton(onClick = { showZero = !showZero }) { Text(if (showZero) "隐藏零交易项" else "显示零交易项") }
+
         }
     }
 }
@@ -441,7 +494,7 @@ internal fun NativeFormCard(form: NativeForm, onSubmit: (NativeForm, Map<String,
     Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(13.dp)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!Regex("配置 \\d+").matches(form.title)) Text(form.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            if (form.fields.any { it.sensitive } && !form.method.equals("GET", true)) Text("密钥留空时保留现有值", color = Muted, fontSize = 12.sp)
+            if (form.fields.any { it.sensitive && !it.required } && !form.method.equals("GET", true)) Text("密钥留空时保留现有值", color = Muted, fontSize = 12.sp)
             form.fields.filter { it.type != "hidden" }.forEach { field ->
                 NativeFieldEditor(field.copy(readOnly = field.readOnly || busy), values[field.name].orEmpty()) { values[field.name] = it }
             }
@@ -479,7 +532,7 @@ internal fun NativeFieldEditor(field: NativeField, value: String, onValueChange:
         else -> OutlinedTextField(
             value = value, onValueChange = onValueChange, enabled = !field.readOnly,
             label = { Text(field.label + if (field.required) " *" else "") },
-            supportingText = if (field.sensitive) ({ Text("留空则保留现有值") }) else null,
+            supportingText = if (field.sensitive && !field.required) ({ Text("留空则保留现有值") }) else null,
             visualTransformation = if ((field.sensitive || field.type == "password") && !reveal) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
             trailingIcon = if (field.sensitive || field.type == "password") ({ com.futoonpay.admin.ui.ChatTextButton(onClick = { reveal = !reveal }) { Text(if (reveal) "隐藏" else "显示", fontSize = 12.sp) } }) else null,
             keyboardOptions = KeyboardOptions(

@@ -303,10 +303,15 @@ object NativeDocumentParser {
         }
         if (type in setOf("submit", "button", "reset", "file")) return null
         val container = element.closest(".form-group,.input-group,td")
-        val label = container?.selectFirst("label,.input-group-addon")?.text()?.trim()
+        val ordinaryLabel = container?.selectFirst("label,.input-group-addon")?.text()?.trim()
             ?.takeIf { it.isNotBlank() }
             ?: element.attr("placeholder").trim().takeIf { it.isNotBlank() }
             ?: humanize(name)
+        val groupField = Regex("info\\[(\\d+)]\\[(channel|rate|type|complaint_action)]").matchEntire(name)
+        val label = if (groupField != null) {
+            val payment = element.closest("tr")?.selectFirst("td")?.text()?.trim().orEmpty().ifBlank { "支付方式 #${groupField.groupValues[1]}" }
+            payment + " · " + when (groupField.groupValues[2]) { "channel" -> "通道"; "rate" -> "分成比例（%）"; "complaint_action" -> "投诉处理"; else -> "路由类型" }
+        } else ordinaryLabel
         val sensitive = type == "password" || SENSITIVE_PARTS.any { name.lowercase().contains(it) }
         if (type == "radio") type = "select"
         if (type == "checkbox" && name.endsWith("[]")) type = "multiselect"
@@ -326,7 +331,7 @@ object NativeDocumentParser {
             else -> element.attr("value")
         }
         val options = when {
-            element.tagName() == "select" -> element.select("option").map { NativeOption(it.attr("value"), it.text().trim()) }
+            element.tagName() == "select" -> element.select("option").map { NativeOption(it.attr("value"), it.text().trim(), it.attr("type"), it.attr("rate")) }
             syntheticOptions.isNotEmpty() -> syntheticOptions
             sameName.any { it.attr("type").equals("radio", true) } -> sameName.map { radio ->
                 val optionLabel = radio.closest("label")?.text()?.trim()

@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -41,15 +44,17 @@ internal fun InactiveMerchantsScreen(state: NativeModuleState, onScan: (Inactive
                 if (rows.isEmpty()) item { Text("没有符合条件的商户", color = Muted) }
             }
             items(rows, key = { it.uid }) { merchant ->
+                var expanded by remember(merchant.uid) { mutableStateOf(false) }
                 PayCard(compact = true) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(modifier = Modifier.semantics { contentDescription = "选择商户 #${merchant.uid}" }, checked = merchant.uid in selected, enabled = !busy && merchant.status > 0, onCheckedChange = { checked -> selected = if (checked) selected + merchant.uid else selected - merchant.uid })
                         Column(Modifier.weight(1f)) { Text("${merchant.name.ifBlank { "商户" }} #${merchant.uid}"); Text(merchant.statusText, color = Muted) }
+                        IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(48.dp)) { Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "收起商户详情" else "展开商户详情") }
                     }
                     DataRow("最近下单", merchant.lastOrder.ifBlank { "无记录" })
                     DataRow("近 5 日订单", merchant.recentOrders)
-                    DataRow("注册时间", merchant.registered)
-                    DataRow("白名单", merchant.whitelistText)
+                    if (merchant.whitelistText.isNotBlank() && merchant.whitelistText != "—") PayBadge(merchant.whitelistText)
+                    if (expanded) DataRow("注册时间", merchant.registered)
                 }
             }
         }

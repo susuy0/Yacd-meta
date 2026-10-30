@@ -637,7 +637,7 @@ private fun OrderActionDialog(
 }
 
 @Composable
-internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searchSignal: Int = 0) {
+internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searchSignal: Int = 0, showSearchEntry: Boolean = true) {
     val selection = rememberRecordSelection(listOf(state.adminUrl, state.settlementPage, state.settlementSearch), state.settlements.map { it.id })
     var filters by remember { mutableStateOf(state.settlementSearch) }
     var advanced by rememberSaveable { mutableStateOf(false) }
@@ -660,8 +660,8 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
         }
         item { StatusFilters(if (viewModel.modernBackend) MODERN_SETTLEMENT_FILTERS else listOf(-1 to "全部", 0 to "待结算", 2 to "正在结算", 1 to "已完成", 3 to "结算失败"), state.settlementSearch.status) { viewModel.loadSettlements(1, state.settlementSearch.copy(status = it)) } }
         item { Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("共 ${state.settlementTotal} 笔 · 服务器查询", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
-            com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Text("完整搜索") }
+            Text("共 ${state.settlementTotal} 笔", color = Muted, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            if (showSearchEntry) com.futoonpay.admin.ui.ChatTextButton(onClick = { advanced = true }) { Text("完整搜索") }
         } }
         if (state.settlementSearch.value.isNotBlank() || state.settlementSearch.merchantId.isNotBlank() || state.settlementSearch.settlementType != "0" || state.settlementSearch.usdtRate.isNotBlank()) item {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -751,6 +751,7 @@ private fun SettlementCard(item: SettlementSummary, modernBackend: Boolean, onDe
                         settlementActions(item, modernBackend).forEach { action ->
                             DropdownMenuItem(text = { Text(action.label) }, onClick = { expanded = false; onAction(action) })
                         }
+                        if (item.merchantId.isNotBlank()) DropdownMenuItem(text = { Text("查看关联商户") }, onClick = { expanded = false; navigation.merchants(merchantId = item.merchantId) })
                     }
                 }
             }
@@ -763,11 +764,6 @@ private fun SettlementCard(item: SettlementSummary, modernBackend: Boolean, onDe
             Text("${listOf(item.displayPayType(), item.displayChain()).filter(String::isNotBlank).joinToString(" · ")}  ·  ${maskAccount(item.account)}", color = Muted, fontSize = 12.sp)
             Text("申请 ${item.createdAt}", color = Muted, fontSize = 12.sp)
             if (!modernBackend && item.result.isNotBlank()) Text("处理结果：${item.result}", color = if (item.status == 3) Danger else Muted, fontSize = 12.sp)
-            if (item.merchantId.isNotBlank()) {
-                com.futoonpay.admin.ui.ChatTextButton(onClick = {
-                    navigation.merchants(merchantId = item.merchantId)
-                }) { Text("查看关联商户", fontSize = 12.sp) }
-            }
         }
     }
 }

@@ -854,7 +854,6 @@ private fun PaymentChannelCard(
                 Column(Modifier.weight(1f)) {
                     Text(item.name.ifBlank { "未命名支付通道" } + " #${item.id}", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     val subtitle = listOfNotNull(
-                        item.id.takeIf(String::isNotBlank)?.let { "ID $it" },
                         item.paymentType.takeIf(String::isNotBlank),
                         item.plugin.takeIf(String::isNotBlank),
                     ).joinToString(" · ")

@@ -35,14 +35,14 @@ internal val LocalPayPanelChrome = staticCompositionLocalOf<PayPanelChrome?> { n
 @Composable
 internal fun PayCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
     Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), color = CardColor) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 10.dp), content = content)
+        Column(Modifier.padding(horizontal = if (compact) 12.dp else 16.dp, vertical = if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 10.dp), content = content)
     }
 }
 
 @Composable
 internal fun SectionLabel(text: String) {
-    Text(text, color = GreenDark, fontSize = 14.sp, fontWeight = FontWeight.Medium,
-        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+    Text(text, color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 }
 
 @Composable

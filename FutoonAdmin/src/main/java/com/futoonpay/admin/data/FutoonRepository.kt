@@ -301,6 +301,16 @@ class FutoonRepository(
         return json.mapRows { row -> row.toMerchantSummary() }
     }
 
+    internal suspend fun userGroupEditor(path: String, document: NativeDocument, gid: String?): NativeForm {
+        val template = document.forms.firstOrNull { it.action.substringAfter("act=").substringBefore('&') == "saveGroup" }
+            ?: error("后台未提供用户组编辑表单，请刷新重试")
+        val data = if (gid != null) {
+            require(gid.matches(Regex("[0-9]+"))) { "用户组编号不正确" }
+            api.jsonGet("ajax_user.php?act=getGroup", path, mapOf("gid" to gid))
+        } else null
+        return userGroupForm(template, gid, data)
+    }
+
     internal suspend fun inactiveMerchants(filters: InactiveMerchantFilters): InactiveMerchantScan =
         parseInactiveMerchants(api.jsonPost("ajax_user.php?act=scanInactiveMerchants", "inactive_merchant.php", filters.fields()))
 
@@ -786,6 +796,8 @@ class FutoonRepository(
     }
 
     suspend fun submitNativeForm(path: String, form: NativeForm, values: Map<String, String>): ApiResult {
+        if (form.action.substringAfter("act=").substringBefore('&') == "saveGroup" &&
+            (values["name"].isNullOrBlank() || values["action"] !in setOf("add", "edit") || (values["action"] == "edit" && !values["gid"].orEmpty().matches(Regex("[0-9]+"))))) return ApiResult(false, "请先读取原用户组并填写显示名称")
         val submitted = if (form.action.contains("saveRollInfo")) {
             val activeIndexes = values.mapNotNull { (name, value) ->
                 Regex("list\\[(\\d+)]\\[channel]").matchEntire(name)?.groupValues?.getOrNull(1)

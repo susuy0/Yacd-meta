@@ -214,7 +214,7 @@ data class GenericRow(
     val values: Map<String, String>,
 )
 
-data class NativeOption(val value: String, val label: String)
+data class NativeOption(val value: String, val label: String, val routeType: String = "", val suggestedRate: String = "")
 
 data class NativeField(
     val name: String,

@@ -139,11 +139,13 @@ class OfficialBackendUiTest {
         val repo = FutoonRepository(FutoonApiClient(TestCookies(), "https://fixture.example/svc_aabbcc/".toHttpUrl(), transport = transport))
         val vm = NativeModuleViewModel(repo, ModuleCatalog.find("merchant_stats"))
         compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp)) { NativeModuleRoot(vm, {}) } } }
-        compose.waitUntil(5000) { compose.onAllNodesWithText("示例新通道").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5000) { compose.onAllNodesWithText("125.50").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("展开详情").performClick()
+        compose.onNodeWithText("示例新通道").assertExists()
         compose.onNodeWithText("敏感字段不会从网页回填；留空表示不修改").assertDoesNotExist()
         compose.onNodeWithText("查询日期").performTextReplacement("2026-10-29")
-        compose.onNodeWithText("按支付通道").performClick(); compose.onNodeWithText("查询", useUnmergedTree = true).performClick()
-        compose.waitUntil(5000) { requests.size >= 2 && compose.onAllNodesWithText("2026-10-29 · 1 个商户").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("统计方式").performClick(); compose.onNodeWithText("按支付通道").performClick(); compose.onNodeWithText("查询", useUnmergedTree = true).performClick()
+        compose.waitUntil(5000) { requests.size >= 2 && compose.onAllNodesWithText("2026-10-29 · 按支付通道 · 1 个商户").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(mapOf("day" to "2026-10-29", "method" to "channel"), requests.last())
         screenshot("46-native-merchant-statistics")
     }
