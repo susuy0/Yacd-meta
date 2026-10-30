@@ -64,3 +64,18 @@ internal fun parseSettlementReason(data: JSONObject): SettlementReason {
     val explorerUrl = completion?.text("explorer_url").orEmpty().takeIf { Regex("^https://(?:tronscan\\.org/#/transaction/[a-fA-F0-9]{64}|(?:polygonscan\\.com|bscscan\\.com)/tx/0x[a-fA-F0-9]{64})$").matches(it) }.orEmpty()
     return SettlementReason(data.text("status_label"), sections, reviews, completion == null && validToken && approval?.optBoolean("allowed") == true, completion == null && validToken && data.optBoolean("review_can_recheck"), explorerUrl, token)
 }
+
+/** Existing recipient data must be loaded before showing an editable settlement form. */
+data class SettlementAccountInfo(val payType: String, val account: String, val name: String, val types: List<NativeOption>)
+
+internal fun parseSettlementAccountInfo(response: JSONObject): SettlementAccountInfo {
+    check(response.optInt("code", -1) == 0) { response.optString("msg", "收款资料读取失败") }
+    val document = org.jsoup.Jsoup.parseBodyFragment(response.optString("data"))
+    fun input(name: String): String = document.selectFirst("[name=$name],#$name")?.attr("value")
+        ?: error("后台未返回完整收款资料，请刷新重试")
+    val select = document.selectFirst("[name=pay_type],#pay_type")
+    val options = select?.select("option")?.map { NativeOption(it.attr("value"), it.text()) }.orEmpty()
+    val payType = response.text("pay_type").ifBlank { select?.selectFirst("option[selected]")?.attr("value").orEmpty() }
+    check(payType.isNotBlank() && options.any { it.value == payType }) { "后台未返回有效结算方式，请刷新重试" }
+    return SettlementAccountInfo(payType, input("pay_account"), input("pay_name"), options)
+}

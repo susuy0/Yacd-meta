@@ -111,4 +111,21 @@ class OfficialBackendParityTest {
         assertFalse(repo.submitPaymentForm("weixin_apps", loaded.copy(fields = loaded.fields.map { if(it.name=="id")it.copy(value="9") else it }), values).success)
         assertEquals(1, submissions.size)
     }
+    @Test fun recipientEditLoadsOriginalNameAndPaymentTypeInsteadOfUsingChainCode() = runBlocking {
+        var saved = emptyMap<String, String>()
+        val html = """<select id="pay_type" name="pay_type"><option value="2">微信</option><option value="5">USDT-Polygon</option></select><input id="pay_account" value="fixture-address"><input id="pay_name" value="Fixture recipient">"""
+        val repo = modern { request -> when (request.url.queryParameter("act")) {
+            "settle_info" -> { assertEquals("GET", request.method); JSONObject().put("code",0).put("pay_type",5).put("data",html).toString() }
+            "settle_save" -> { saved = fields(request); "{\"code\":0}" }
+            else -> error("Unexpected call")
+        } }
+        val info = repo.settlementInfo("42")
+        assertEquals("5", info.payType); assertEquals("Fixture recipient", info.name)
+        assertTrue(repo.saveSettlementInfo("42", info.payType, info.account, info.name).success)
+        assertEquals("5", saved["pay_type"]); assertNotEquals("2", saved["pay_type"])
+        assertEquals("Fixture recipient", saved["pay_name"])
+        assertFalse(repo.saveSettlementInfo("42", info.payType, info.account, "").success)
+        try { parseSettlementAccountInfo(JSONObject().put("code",0).put("pay_type",5).put("data","<div>incomplete</div>")); fail() } catch (_: IllegalStateException) { }
+    }
+
 }

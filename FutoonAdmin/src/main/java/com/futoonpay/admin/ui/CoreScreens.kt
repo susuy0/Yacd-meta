@@ -72,6 +72,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -700,7 +701,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
             items(settlementActions(row, viewModel.modernBackend)) { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { detail = null; pending = action }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
         }
     } }
-    pending?.let { action -> SettlementActionDialog(action, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.item.id in state.uncertainSettlements, onVerify = { pending = null; actionError = null; if (action.reviewFields.isNotEmpty()) detail = action.item else viewModel.loadSettlements(state.settlementPage) }) { result, type, account, name ->
+    pending?.let { action -> SettlementActionDialog(action, viewModel, actionLoading, actionError, { if (!actionLoading) { pending = null; actionError = null } }, uncertain = action.item.id in state.uncertainSettlements, onVerify = { pending = null; actionError = null; if (action.reviewFields.isNotEmpty()) detail = action.item else viewModel.loadSettlements(state.settlementPage) }) { result, type, account, name ->
         actionLoading = true; actionError = null
         viewModel.runSettlementAction(SettlementCommand(action.action, action.item.id, result, type, account, name, action.item.merchantId, action.item.usdtRate, action.item.usdtAmount, status = action.status, reviewFields = action.reviewFields)) { response ->
             actionLoading = false
@@ -782,6 +783,7 @@ private fun settlementActions(item: SettlementSummary, modernBackend: Boolean = 
 @Composable
 private fun SettlementActionDialog(
     pending: PendingSettlementAction,
+    model: AppViewModel,
     loading: Boolean,
     error: String?,
     onDismiss: () -> Unit,
@@ -790,9 +792,24 @@ private fun SettlementActionDialog(
     onConfirm: (String, String, String, String) -> Unit,
 ) {
     var result by rememberSaveable { mutableStateOf(pending.resultPreset.ifBlank { if (pending.resultInput) pending.item.result else pending.status?.toString() ?: pending.item.result }) }
-    var payType by rememberSaveable { mutableStateOf(pending.item.chain.ifBlank { pending.item.payType }) }
+    var payType by rememberSaveable { mutableStateOf(pending.item.payType) }
     var account by rememberSaveable { mutableStateOf(pending.item.account) }
     var name by rememberSaveable { mutableStateOf("") }
+    var accountReady by remember { mutableStateOf(!pending.accountInput) }
+    var accountError by remember { mutableStateOf<String?>(null) }
+    var accountGeneration by remember { mutableIntStateOf(0) }
+    var accountTypes by remember { mutableStateOf(emptyList<NativeOption>()) }
+    LaunchedEffect(pending.item.id, pending.accountInput, accountGeneration) {
+        if (pending.accountInput) {
+            accountReady = false; accountError = null
+            try {
+                val info = model.settlementInfo(pending.item.id)
+                payType = info.payType; account = info.account; name = info.name; accountTypes = info.types
+                accountReady = true
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { accountError = e.message ?: "收款资料读取失败" }
+        }
+    }
     PaySheet(pending.label, onDismiss) {
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 460.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Text("结算 #${pending.item.id} · ${pending.item.displayAmount()}", color = Muted) }
@@ -803,8 +820,12 @@ private fun SettlementActionDialog(
             if ((pending.item.status == 3 || pending.status == 3) && (pending.resultInput || pending.resultPreset.isNotBlank())) item {
                 com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = { result = SETTLEMENT_CHECKED_RESULT }) { Text("检查完成 · 填写 checked") }
             }
-            if (pending.accountInput) {
-                item { OutlinedTextField(payType, { payType = it }, label = { Text("支付类型/链") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
+            if (pending.accountInput && !accountReady) item {
+                Text(accountError ?: "正在读取原收款资料…", color = if (accountError == null) Muted else Danger)
+                if (accountError != null) com.futoonpay.admin.ui.ChatTextButton(onClick = { accountGeneration++ }) { Text("重新读取收款资料") }
+            }
+            if (pending.accountInput && accountReady) {
+                item { ChoicePicker("结算方式", payType, accountTypes.map { it.value to it.label }) { payType = it } }
                 item { OutlinedTextField(account, { account = it }, label = { Text("收款账号/地址") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
                 item { OutlinedTextField(name, { name = it }, label = { Text("收款人姓名") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             }
@@ -818,7 +839,7 @@ private fun SettlementActionDialog(
         }
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(24.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain || (error != null && pending.reviewFields.isNotEmpty())) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || (result.isNotBlank() && (pending.reviewFields.isEmpty() || result.length <= 500))), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null && pending.reviewFields.isNotEmpty()) "重新读取审核详情" else if (error != null) "重试" else "确认") }
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(24.dp), onClick = { if (uncertain || (error != null && pending.reviewFields.isNotEmpty())) onVerify() else onConfirm(result, payType, account, name) }, enabled = !loading && (!pending.accountInput || (accountReady && account.isNotBlank() && name.isNotBlank() && accountTypes.any { it.value == payType })) && (!(pending.resultInput || pending.resultPreset.isNotBlank()) || (result.isNotBlank() && (pending.reviewFields.isEmpty() || result.length <= 500))), modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对结算" else if (error != null && pending.reviewFields.isNotEmpty()) "重新读取审核详情" else if (error != null) "重试" else "确认") }
         }
     }
 }

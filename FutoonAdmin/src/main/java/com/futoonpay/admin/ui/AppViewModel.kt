@@ -125,6 +125,7 @@ class AppViewModel(
     private val repository: FutoonRepository get() = repositoryOverride ?: application.repository
     val modernBackend: Boolean get() = repositoryOverride?.modernBackend ?: (application.hasConfiguredEndpoint && application.repository.modernBackend)
     suspend fun settlementReason(id: String) = repository.settlementReason(id)
+    suspend fun settlementInfo(id: String) = repository.settlementInfo(id)
     private var orderChannelStatsGeneration = 0L
     private var ordersGeneration = 0L
     private var settlementsGeneration = 0L

@@ -74,4 +74,21 @@ class OfficialBackendUiTest {
         assertEquals("approve_full_settlement", action); assertEquals(token, payload["token"]); assertEquals(0, writes.get())
         screenshot("42-official-settlement-reason")
     }
+    @Test fun recipientFormLoadsServerValuesAndCancelNeverSubmitsAChange() {
+        val writes = AtomicInteger()
+        val html = """<select id="pay_type" name="pay_type"><option value="2">微信</option><option value="5">USDT-Polygon</option></select><input id="pay_account" value="fixture-address"><input id="pay_name" value="Fixture recipient">"""
+        val vm = model { request ->
+            if (request.method != "GET") writes.incrementAndGet()
+            org.json.JSONObject().put("code",0).put("pay_type",5).put("data",html).toString()
+        }
+        val state = AppUiState(settlements = listOf(row()), settlementTotal = 1, settlementsLoading = false)
+        compose.setContent { FutoonTheme { Box(Modifier.width(390.dp).height(650.dp)) { PanelOverlayHost { SettlementsScreen(state, vm) } } } }
+        compose.onNodeWithContentDescription("结算操作").performClick()
+        compose.onNodeWithText("修改收款资料").performClick()
+        compose.waitUntil(5000) { compose.onAllNodes(hasSetTextAction() and hasText("Fixture recipient")).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("USDT-Polygon").assertExists()
+        compose.onNodeWithText("支付类型/链").assertDoesNotExist()
+        assertEquals(0, writes.get()); compose.onNodeWithText("取消").performClick(); assertEquals(0, writes.get())
+    }
+
 }

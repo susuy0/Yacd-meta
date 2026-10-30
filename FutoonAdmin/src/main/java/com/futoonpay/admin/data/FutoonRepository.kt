@@ -441,11 +441,14 @@ class FutoonRepository(
         return if (result.success) result else result.copy(partial = true, message = "状态已更新，失败理由保存失败：${result.message}")
     }
 
-    suspend fun saveSettlementInfo(id: String, payType: String, account: String, name: String): ApiResult =
-        settlementAction(
-            "settle_save", id,
-            mapOf("pay_type" to payType, "pay_account" to account, "pay_name" to name),
-        )
+    suspend fun settlementInfo(id: String): SettlementAccountInfo = parseSettlementAccountInfo(
+        api.jsonGet("ajax_settle.php?act=settle_info", "slist.php", mapOf("id" to id)))
+
+    suspend fun saveSettlementInfo(id: String, payType: String, account: String, name: String): ApiResult {
+        if (payType.isBlank() || account.isBlank() || name.isBlank()) return ApiResult(false, "结算方式、收款账号和姓名不能为空")
+        return settlementAction("settle_save", id,
+            mapOf("pay_type" to payType, "pay_account" to account, "pay_name" to name))
+    }
 
     suspend fun setMerchantStatus(uid: String, type: String, enabled: Boolean): ApiResult = api.postAction(
         endpoint = "ajax_user.php?act=setUser",
