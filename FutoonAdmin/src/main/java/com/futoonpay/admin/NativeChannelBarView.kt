@@ -94,11 +94,28 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
         val channelHeight = if (!showChannels) 0 else if (!linked || compact) 48 else if (large) (48 * scale).toInt() + 47 else 75
         val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() + 47 else 75
-        val height = if (!state.visible) 0 else 1 + channelHeight + merchantHeight
+        val height = when {
+            state.loginRequired -> 49
+            state.visible -> 1 + channelHeight + merchantHeight
+            else -> 0
+        }
         visibility = if (height == 0) GONE else VISIBLE
         if (lastHeight != dp(height)) { lastHeight = dp(height); host.heightChanged(lastHeight) }
         if (height == 0) return
         addView(View(context).apply { setBackgroundColor(palette.divider.toArgb()) }, LayoutParams(-1, dp(1)))
+        if (state.loginRequired) {
+            val scope = state.scope ?: return
+            val login = text("会话快捷栏 · 登录富通后台", 13f, palette.accentText.toArgb()).apply {
+                setPadding(dp(12), 0, dp(12), 0)
+                isFocusable = true
+                setOnClickListener {
+                    runCatching { model.bridge.call("ui.channel.login", org.json.JSONObject().put("dialog", scope.dialog).put("topic", scope.topic).toString()) }
+                        .onFailure { Toast.makeText(context, "会话已变化，请重新打开", Toast.LENGTH_SHORT).show() }
+                }
+            }
+            addView(login, LayoutParams(-1, dp(48)))
+            return
+        }
         if (merchantRow) addMerchantRow(state, merchantHeight, large)
         if (!showChannels) return
         val current = state.link ?: ChannelLink("", "全部关联通道（${state.channels.size}）")

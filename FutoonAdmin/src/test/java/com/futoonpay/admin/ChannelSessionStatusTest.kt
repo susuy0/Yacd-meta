@@ -43,6 +43,30 @@ class ChannelSessionStatusTest {
         assertEquals(1,notifications);assertTrue(model.state.value.visible)
         jar.clear();assertEquals(2,notifications);assertFalse(model.state.value.visible);model.close()
     }
+    @Test fun rememberedChatOffersLoginWithoutEnablingBusinessActions() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<Application>()
+        val session = Session()
+        val bridge = object : FixtureBridge() {
+            override fun address() = session.address()
+            override fun session(): PanelSession = session
+            override fun hasSession() = ChannelSessionStatus.hasSession(session)
+        }
+        val model = ChannelShortcutModel(context, bridge)
+        model.store.prefs.edit().clear().commit()
+        model.bind("测试群", -100, 1)
+        model.resume()
+        val scope = requireNotNull(model.state.value.scope)
+        assertFalse(model.state.value.loginRequired)
+        model.store.replaceChannels(scope, listOf(ChannelLink("11", "测试通道")))
+        model.reloadSettings()
+        assertTrue(model.state.value.loginRequired)
+        assertFalse(model.state.value.visible)
+        model.store.hide(scope, true)
+        model.reloadSettings()
+        assertFalse(model.state.value.loginRequired)
+        model.close()
+    }
+
     @Test fun inactiveSessionCannotSaveCookiesOrEmitAChange(){
         val session=Session();var notifications=0;val base=session.address().toHttpUrl();val jar=PanelCookieJar(session,base){notifications++};session.active=false
         try{jar.saveFromResponse(base,emptyList());fail()}catch(_:java.io.IOException){}

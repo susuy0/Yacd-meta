@@ -64,7 +64,8 @@ internal data class ChannelShortcutState(val scope: ChannelScope? = null, val la
     val channels: List<ChannelLink> = emptyList(), val telegramId: String = "", val identitySource: String = "",
     val merchant: MerchantSummary? = null, val merchantLoading: Boolean = false, val merchantError: String? = null,
     val merchantCandidates: List<MerchantSummary> = emptyList(),
-    val snapshots: Map<String, ChannelSnapshot> = emptyMap(), val channelErrors: Map<String, String> = emptyMap()) {
+    val snapshots: Map<String, ChannelSnapshot> = emptyMap(), val channelErrors: Map<String, String> = emptyMap(),
+    val loginRequired: Boolean = false) {
     val targets: List<ChannelLink> get() = link?.let(::listOf) ?: channels
 }
 
@@ -111,8 +112,11 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
     }
     fun reloadSettings() {
         val key = state.value.scope ?: return
-        val visible = active && store.enabled && !store.hidden(key) && key.backend.isNotBlank() && bridge.hasSession() && bridge.accountScope() == key.account && bridge.address() == key.backend && accountSession.isActive()
+        val available = active && key.dialog != 0L && store.enabled && !store.hidden(key) && key.backend.isNotBlank() &&
+            bridge.accountScope() == key.account && bridge.address() == key.backend && accountSession.isActive()
+        val visible = available && bridge.hasSession()
         val channels = store.channels(key)
+        val loginRequired = available && !visible && (channels.isNotEmpty() || state.value.telegramId.isNotBlank())
         val changed = channels != state.value.channels || state.value.window != store.window
         val shown = visible && !state.value.visible
         val hidden = !visible && state.value.visible
@@ -120,7 +124,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         if (hidden) { merchantRequest++; merchantJob?.cancel() }
         mutable.update { old ->
             val link = if (old.source == "已记住" && changed) channels.firstOrNull { it.id == old.link?.id } ?: channels.singleOrNull() else old.link
-            old.copy(visible = visible, window = store.window, channels = channels, link = link,
+            old.copy(visible = visible, loginRequired = loginRequired, window = store.window, channels = channels, link = link,
                 snapshot = if (changed || hidden) null else old.snapshot, snapshots = if (changed || hidden) emptyMap() else old.snapshots,
                 channelErrors = if (changed || hidden) emptyMap() else old.channelErrors, error = if (changed || hidden) null else old.error,
                 loading = if (changed || hidden) false else old.loading, invalid = if (changed) false else old.invalid,
@@ -130,7 +134,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         if (visible && (shown || state.value.merchant == null && state.value.telegramId.isNotBlank() && !state.value.merchantLoading && state.value.merchantError == null && state.value.merchantCandidates.isEmpty())) refreshMerchant()
     }
     fun resume() { if (closed) return; active = true; reloadSettings() }
-    fun pause() { active = false; generation++; request++; merchantRequest++; job?.cancel(); merchantJob?.cancel(); mutable.update { it.copy(visible = false, loading = false, merchantLoading = false) } }
+    fun pause() { active = false; generation++; request++; merchantRequest++; job?.cancel(); merchantJob?.cancel(); mutable.update { it.copy(visible = false, loginRequired = false, loading = false, merchantLoading = false) } }
     fun close() { if (closed) return; closed = true; store.prefs.unregisterOnSharedPreferenceChangeListener(listener); scope.cancel() }
     fun associate(values: List<ChannelLink>) {
         val s = state.value; val key = s.scope ?: return

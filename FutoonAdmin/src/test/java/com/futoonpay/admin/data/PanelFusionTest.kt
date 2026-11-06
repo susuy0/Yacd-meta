@@ -17,6 +17,31 @@ class PanelFusionTest {
         assertEquals("18",fields["uid"]);assertEquals("1",fields["dstatus"]);assertEquals("30",fields["offset"])
         assertEquals("SYS10001",out.getJSONArray("rows").getJSONObject(0).getString("trade_no"))
     }
+    @Test fun recentOrderVerifiesTheRequestedColumnAndRejectsAmbiguousResults() {
+        var merchantTrade = "SYSTEM1"
+        val calls = mutableListOf<String>()
+        val engine = PanelBusinessEngine(fixtureClient({ request ->
+            assertEquals("orderList", request.url.queryParameter("act"))
+            val body = request.body as FormBody
+            val fields = (0 until body.size).associate { body.name(it) to body.value(it) }
+            assertEquals("FIXTURE7", fields["value"])
+            val column = fields.getValue("column")
+            calls += column
+            val row = when (column) {
+                "out_trade_no" -> """{"trade_no":"$merchantTrade","out_trade_no":"FIXTURE7"}"""
+                "api_trade_no" -> """{"trade_no":"SYSTEM1","api_trade_no":"FIXTURE7"}"""
+                else -> """{"trade_no":"UNRELATED"}"""
+            }
+            200 to """{"total":1,"rows":[$row]}"""
+        }))
+        val columns = listOf("trade_no", "out_trade_no", "api_trade_no")
+        assertEquals("SYSTEM1", engine.findRecentOrder("FIXTURE7", columns)?.getString("trade_no"))
+        assertEquals(columns, calls)
+        assertNull(engine.findRecentOrder("FIXTURE7", listOf("trade_no")))
+        merchantTrade = "SYSTEM2"
+        assertNull(engine.findRecentOrder("FIXTURE7", columns))
+    }
+
     @Test fun settingsStayInPanelAndSaveOriginalHiddenFields() {
         var sent=emptyMap<String,String>()
         val engine=PanelBusinessEngine(fixtureClient({r->

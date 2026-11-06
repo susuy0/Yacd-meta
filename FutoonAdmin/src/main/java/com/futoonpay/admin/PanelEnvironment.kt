@@ -25,7 +25,10 @@ internal class EmbeddedEnvironment(private val bridge: NativePanelBridge) : Pane
     override val hasConfiguredEndpoint get() = activeRepository != null
     override val repository get() = activeRepository ?: error("请先连接后台")
     init { if (adminBaseUrl.isNotBlank()) activate(adminBaseUrl) }
-    override fun markAuthenticated() { expired.value = false }
+    override fun markAuthenticated() {
+        expired.value = false
+        runCatching { bridge.call("ui.session.authenticated", "{}") }
+    }
     override fun configureEndpoint(raw: String): Result<String> = runCatching {
         val normalized = normalizeAdminBaseUrl(raw).toString()
         bridge.configure(normalized, bridge.username())

@@ -7189,7 +7189,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAut
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,176 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -7291,9 +7291,14 @@ new file mode 100644
 +        String text=message.messageOwner.message==null?"":message.messageOwner.message;
 +        for(GroupAutomationRule rule:rules) {
 +            if(!rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,now))continue;
-+            String key=messageKey+":"+(rule.getAction().equals("click")?"button:"+rule.getButton():"draft");
++            String key=messageKey+":"+(rule.getAction().equals("click")?"button:"+rule.getButton().trim():"draft");
 +            if(completed.contains(key)||pending.containsKey(key)||pending.size()>=50)continue;
-+            if(rule.getAction().equals("click")&&button(message,rule)==null)continue;
++            if (rule.getAction().equals("click") && button(message, rule) == null) {
++                if (!rule.getKeyword().isEmpty() || message.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
++                    record(rule, message, "已匹配规则，未找到唯一可执行的机器人按钮「" + rule.getButton().trim() + "」");
++                }
++                continue;
++            }
 +            final GroupAutomationRule snapshot=rule;
 +            long due=Math.max(System.currentTimeMillis(),Math.max(nextDue,ruleDue.getOrDefault(rule.getId(),0L)));
 +            nextDue=due+500;ruleDue.put(rule.getId(),due+rule.getCooldown()*1000L);
@@ -7307,7 +7312,7 @@ new file mode 100644
 +        if(user==null||!user.bot||!(message.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup))return null;
 +        TL_keyboard.KeyboardInlineButton found=null;
 +        for(TL_keyboard.KeyboardInlineButtonRow row:((TLRPC.TL_replyInlineMarkup)message.messageOwner.reply_markup).rows)for(TL_keyboard.KeyboardInlineButton candidate:row.buttons)
-+            if(rule.getButton().equals(candidate.getText()==null?"":candidate.getText().trim())) {
++            if(rule.getButton().trim().equals(candidate.getText()==null?"":candidate.getText().trim())) {
 +                if(found!=null || !(candidate.getType() instanceof TL_keyboard.TL_inlineButtonTypeCallback))return null;
 +                TL_keyboard.TL_inlineButtonTypeCallback type=(TL_keyboard.TL_inlineButtonTypeCallback)candidate.getType();
 +                if(type.requires_password||type.data==null)return null;found=candidate;
@@ -7323,7 +7328,12 @@ new file mode 100644
 +        long now=System.currentTimeMillis()/1000;
 +        if(!rule.acceptsEvent(message.getDialogId(),message.getTopicId(),message.getFromChatId(),message.messageOwner.message==null?"":message.messageOwner.message,message.messageOwner.date,now))return;
 +        if(rule.getAction().equals("draft")){draft(rule,message,key);return;}
-+        TL_keyboard.KeyboardInlineButton selected=button(message,rule);if(selected==null||!claim(key))return;
++        TL_keyboard.KeyboardInlineButton selected=button(message,rule);
++        if (selected == null) {
++            record(rule, message, "等待期间机器人按钮已变化，已跳过");
++            return;
++        }
++        if (!claim(key)) return;
 +        TLRPC.TL_messages_getBotCallbackAnswer request=new TLRPC.TL_messages_getBotCallbackAnswer();
 +        request.peer=MessagesController.getInstance(account).getInputPeer(message.getDialogId());request.msg_id=message.getId();request.flags|=1;request.data=selected.getData();
 +        record(rule,message,"已提交按钮动作");
@@ -8093,10 +8103,10 @@ index 0000000000000000000000000000000000000000..02cf9eedd29e151e4083c1a1539e5c02
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8e52b2304f1bae1fbe9267462d17c68ecfbd48fe
+index 0000000000000000000000000000000000000000..99ec5143b1d6e28cf22e017a4572babddba5daff
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,38 @@
 +package org.telegram.messenger.futoon;
 +
 +import com.futoonpay.admin.PanelBusinessEngine;
@@ -8110,10 +8120,13 @@ index 0000000000000000000000000000000000000000..8e52b2304f1bae1fbe9267462d17c68e
 +public final class FutoonNativeBridge {
 +    private FutoonNativeBridge() {}
 +    public static PanelSession session(int account,FutoonStore store) {
++        return session(account, store, () -> true);
++    }
++    public static PanelSession session(int account, FutoonStore store, java.util.function.BooleanSupplier active) {
 +        final long owner=UserConfig.getInstance(account).getClientUserId();
 +        final String address=store.address();
 +        return new PanelBalanceSession(){
-+            public boolean isActive(){return UserConfig.getInstance(account).isClientActivated()&&UserConfig.getInstance(account).getClientUserId()==owner;}
++            public boolean isActive(){return active.getAsBoolean()&&UserConfig.getInstance(account).isClientActivated()&&UserConfig.getInstance(account).getClientUserId()==owner;}
 +            public String address(){return store.address();}
 +            public String loadCookies(){try{return store.session(address).load();}catch(Exception e){throw new IllegalStateException(e);}}
 +            public void saveCookies(String json){try{store.session(address).save(json);}catch(Exception e){throw new IllegalStateException(e);}}
@@ -16794,10 +16807,10 @@ index 0000000000000000000000000000000000000000..fae8d2ebe47e3e395f2db2372cb48389
 +}
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a30c5a6fb
+index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb06339d504d4a
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,442 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -16891,14 +16904,30 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +        HINT_WORK.execute(()->{
 +            try{
 +                if(!valid()||paused||scan!=hintGeneration||!backend.equals(store.address()))return;
-+                FutoonApi hintApi=new FutoonApi(backend,store.session(backend));
-+                FutoonBusinessApi hintBusiness=new FutoonBusinessApi(hintApi);
++                com.futoonpay.admin.PanelBusinessEngine engine = new com.futoonpay.admin.PanelBusinessEngine(
++                    FutoonNativeBridge.session(account, store, () -> scan == hintGeneration));
++                Exception failure = null;
 +                for(FutoonRecentOrders.Candidate candidate:FutoonRecentOrders.extract(input,dialog,topic)){
 +                    if(!valid()||paused||scan!=hintGeneration||!backend.equals(store.address()))return;
-+                    JSONObject response=hintBusiness.call("orders.search",new JSONObject().put("text",candidate.query.value).put("kind",candidate.query.kind.name()).put("page",1));
-+                    JSONArray rows=response.optJSONArray("rows");
-+                    if(rows==null||rows.length()!=1||response.optInt("total",rows.length())!=1||"PID".equals(response.optString("kind")))continue;
-+                    final JSONObject order=rows.getJSONObject(0);if(order.optString("trade_no").isEmpty())continue;
++                    ArrayList<String> columns = new ArrayList<>();
++                    for (FutoonQuery.Kind kind : candidate.query.searchKinds()) {
++                        switch (kind) {
++                            case SYSTEM_ORDER: columns.add("trade_no"); break;
++                            case MERCHANT_ORDER: columns.add("out_trade_no"); break;
++                            case CHANNEL_ORDER: columns.add("api_trade_no"); break;
++                            default: break;
++                        }
++                    }
++                    final JSONObject order;
++                    try {
++                        order = engine.findRecentOrder(candidate.query.value, columns);
++                    } catch (com.futoonpay.admin.data.SessionExpiredException expired) {
++                        throw expired;
++                    } catch (Exception error) {
++                        failure = error;
++                        continue;
++                    }
++                    if (order == null) continue;
 +                    AndroidUtilities.runOnUIThread(()->{
 +                        if(!valid()||paused||scan!=hintGeneration||dialog!=dialogId||topic!=topicId||!backend.equals(store.address()))return;
 +                        boolean changed=false;
@@ -16917,7 +16946,15 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +                        if(changed)host.futoonOrderHintsChanged();
 +                    });
 +                }
++                if (failure != null) throw failure;
 +                AndroidUtilities.runOnUIThread(()->{if(scan==hintGeneration)hintFailures=0;});
++            } catch (com.futoonpay.admin.data.SessionExpiredException expired) {
++                AndroidUtilities.runOnUIThread(() -> {
++                    if (!valid() || paused || scan != hintGeneration) return;
++                    clearOrderHints();
++                    host.futoonOrderHintsChanged();
++                    if (channelBar != null) channelBar.reloadSettings();
++                });
 +            }catch(Exception ignored){
 +                AndroidUtilities.runOnUIThread(()->{
 +                    if(!valid()||paused||scan!=hintGeneration)return;
@@ -17128,10 +17165,27 @@ index 0000000000000000000000000000000000000000..2251b0001886b6081d4e2fee97fddb4a
 +        if(!valid())throw new IOException("Telegram 账号已变化，请重新打开面板");
 +        final String backend=store.address();final int requestGeneration=generation;
 +        if(operation.equals("chat.tools.read"))return FutoonChatPreferences.get(account).raw();
-+        if(operation.equals("ui.channel.refresh")) {
-+            AndroidUtilities.runOnUIThread(()->{if(valid() && requestGeneration==generation && backend.equals(store.address()) && channelBar!=null)channelBar.reloadSettings();});
++        if(operation.equals("ui.channel.refresh") || operation.equals("ui.session.authenticated")) {
++            AndroidUtilities.runOnUIThread(() -> {
++                if (!valid() || requestGeneration != generation || !backend.equals(store.address())) return;
++                boolean authenticated = com.futoonpay.admin.ChannelSessionStatus.hasSession(FutoonNativeBridge.session(account, store));
++                if (operation.equals("ui.session.authenticated") || !authenticated) {
++                    boolean hadHints = !hintMessages.isEmpty();
++                    clearOrderHints();
++                    hintFailures = 0;
++                    hintRetryAfter = 0;
++                    if (authenticated) scheduleOrderHints();
++                    else if (hadHints) host.futoonOrderHintsChanged();
++                }
++                if (channelBar != null) channelBar.reloadSettings();
++            });
 +            return "{}";
 +        }
++        if (operation.equals("ui.channel.login")) return onUi(requestGeneration, backend, () -> {
++            if (paused || params.optLong("dialog") != dialogId || params.optLong("topic") != topicId) throw new IOException("会话已变化");
++            open("");
++            return "{}";
++        });
 +        if(operation.equals("ui.channel.order") || operation.equals("ui.channel.open")) {
 +            if(params.optLong("dialog")!=dialogId || params.optLong("topic")!=topicId) throw new IOException("会话已变化");
 +            AndroidUtilities.runOnUIThread(()->{

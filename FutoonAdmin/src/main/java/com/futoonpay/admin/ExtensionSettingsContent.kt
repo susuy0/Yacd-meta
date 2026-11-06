@@ -108,7 +108,7 @@ import java.util.UUID
             } }
             item { com.futoonpay.admin.ui.ChatTextButton(enabled = !saving, onClick = { working = working.copy(templates = (working.templates + defaultBusinessTemplates.filter { d -> working.templates.none { it.id == d.id } })) }) { Text("补回缺少的默认模板") } }
         } else if (page == "automation") {
-            item { Text("一条规则可选择多个群组；发送者可留空，也可按群限定话题。只处理 5 分钟内、启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
+            item { Text("一条规则可选择多个群组；发送者可留空，也可按群限定话题。开启后点「保存设置」生效。只处理 5 分钟内、启用后的新消息及其按钮更新，同一动作最多执行一次。", color = Muted, fontSize = 13.sp) }
             item { Row { com.futoonpay.admin.ui.ChatButton(enabled = !saving, onClick = { editRule = GroupAutomationRule(dialog = -1, sender = 0) }) { Text("新增群规则") }; com.futoonpay.admin.ui.ChatTextButton(onClick = { log = host?.automationLog() ?: "暂无执行记录" }) { Text("执行记录") } } }
             items(working.rules, key = { it.id }) { rule -> PayCard {
                 Text(rule.targets().joinToString("、") { it.title.ifBlank { "群 ${it.dialog}" } }, fontWeight = FontWeight.Medium)

@@ -27,6 +27,26 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient,
     private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor","weixin_apps")
     private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","payment_plugins","user_groups","group_purchase","announcements","payment_settings","site_settings","login_logs","account_settings")
     fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","merchant.balance.info","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
+    /** Verify a chat candidate with the same authenticated transport as the order list. */
+    @Throws(Exception::class)
+    fun findRecentOrder(value: String, columns: List<String>): JSONObject? = runBlocking {
+        require(value.matches(Regex("[A-Za-z0-9][A-Za-z0-9_.:@/+\\-]{0,127}")) && !value.contains("://"))
+        require(columns.isNotEmpty() && columns.all { it in setOf("trade_no", "out_trade_no", "api_trade_no") })
+        val matches = linkedMapOf<String, JSONObject>()
+        for (column in columns.distinct()) {
+            val filters = OrderSearchFilters(column = column, value = value).toRequest()
+            val response = api.page("ajax_order.php?act=orderList", "order.php", 1, 30, filters)
+            val rows = response.getJSONArray("rows")
+            if (response.optInt("total", rows.length()) > rows.length()) return@runBlocking null
+            for (row in rows.objects()) {
+                val trade = row.optString("trade_no")
+                if (trade.isNotBlank() && row.optString(column) == value) matches[trade] = row
+                if (matches.size > 1) return@runBlocking null
+            }
+        }
+        matches.values.singleOrNull()
+    }
+
     @Throws(Exception::class) fun execute(op: String,p: JSONObject): JSONObject = runBlocking {
         require(supports(op)) { "不支持的业务操作" }
         when(op) {
