@@ -167,12 +167,15 @@ class FutoonRepository(
         ids.map { id -> async {
             semaphore.withPermit {
                 val json = api.jsonGet("ajax_pay.php?act=getChannel&id=$id", path)
-                check(!json.has("code") || json.optInt("code") in setOf(0, 200)) { json.optString("msg", "通道详情读取失败") }
+                val ok = !json.has("code") || json.optInt("code") in setOf(0, 200)
+                // The backend refuses to describe a quarantined channel; it cannot be linked anyway, so it must not hide every other channel.
+                if (!ok && json.optString("msg").contains("隔离")) return@withPermit null
+                check(ok) { json.optString("msg", "通道详情读取失败") }
                 val row = json.optJSONObject("data") ?: error("后台未提供通道 #$id 的详情")
                 check(row.text("id") == id) { "通道详情 ID 不匹配" }
                 configurationChannel(row)
             }
-        } }.awaitAll()
+        } }.awaitAll().filterNotNull()
     }
 
     suspend fun dashboard(forceRefresh: Boolean = false): DashboardStats = coroutineScope {

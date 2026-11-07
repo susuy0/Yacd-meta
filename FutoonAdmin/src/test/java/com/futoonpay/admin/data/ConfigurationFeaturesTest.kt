@@ -198,4 +198,21 @@ class ConfigurationFeaturesTest {
         assertFalse(acts.contains("channelList"))
         assertEquals(2, acts.count { it == "getChannel" })
     }
+    @Test fun aQuarantinedChannelDoesNotHideTheOtherChannelsButOtherErrorsStillFail() = runBlocking {
+        fun repo(failure: String) = FutoonRepository(fixtureClient({ request ->
+            val act = request.url.queryParameter("act").orEmpty()
+            when {
+                act == "getChannel" -> {
+                    val id = request.url.queryParameter("id")!!
+                    if (id == "13") 200 to "{\"code\":-1,\"msg\":\"$failure\"}"
+                    else 200 to "{\"code\":0,\"data\":{\"id\":$id,\"name\":\"通道$id\",\"type\":2}}"
+                }
+                request.url.encodedPath.endsWith("pay_channel.php") ->
+                    200 to "<table><thead><tr><th>ID</th></tr></thead><tbody><tr><td>12</td></tr><tr><td>13</td></tr><tr><td>14</td></tr></tbody></table>"
+                else -> 200 to "<html/>"
+            }
+        }))
+        assertEquals(listOf("12", "14"), repo("该支付通道已安全隔离，禁止启用、编辑、配置或测试").configurationChannels().map { it.id })
+        try { repo("通道详情暂时不可用").configurationChannels(); fail("other failures must still surface") } catch (e: IllegalStateException) { assertTrue(e.message!!.contains("暂时不可用")) }
+    }
 }
