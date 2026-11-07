@@ -69,6 +69,20 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val ripple = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.accentText.toArgb() and 0x00FFFFFF) or 0x33000000), null, mask)
         return android.graphics.drawable.InsetDrawable(android.graphics.drawable.LayerDrawable(arrayOf(tint, ripple)), 0, verticalInset, 0, verticalInset)
     }
+    /** A floating capsule: the strip itself is transparent, so only this rounded surface sits over the chat. */
+    private fun capsule(verticalInset: Int = 6, horizontalInset: Int = 8): android.graphics.drawable.Drawable {
+        val body = GradientDrawable().apply { setColor(palette.surface.toArgb()); cornerRadius = dp(24).toFloat(); setStroke(dp(1), palette.divider.toArgb()) }
+        return android.graphics.drawable.InsetDrawable(body, dp(horizontalInset), dp(verticalInset), dp(horizontalInset), dp(verticalInset))
+    }
+    /** Plain accent text action inside a capsule; the ripple is a 36dp pill inside the 48dp touch target. */
+    private fun capsuleAction(label: String, kind: String) = text(label, 13f, palette.accentText.toArgb()).apply {
+        gravity = Gravity.CENTER; isFocusable = true; isClickable = true; minWidth = dp(48); setPadding(dp(8), 0, dp(8), 0)
+        contentDescription = "$label，按钮"; typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
+        val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(18).toFloat() }
+        background = android.graphics.drawable.InsetDrawable(android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.accentText.toArgb() and 0x00FFFFFF) or 0x33000000), null, mask), 0, dp(6), 0, dp(6))
+        setOnClickListener { open(kind) }
+        layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT)
+    }
     private fun button(label: String, weight: Float, action: () -> Unit) = text(label, 13f, palette.accentText.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; contentDescription = label.replace('\n', ' ') + "，按钮"
         typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
@@ -80,27 +94,27 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val merchant = state.merchant
         if (merchant == null) {
             val label = when { state.merchantLoading -> "正在识别商户 · TG ${state.telegramId}"; state.merchantCandidates.isNotEmpty() -> "选择商户（${state.merchantCandidates.size}） · TG ${state.telegramId}"; else -> "${state.merchantError ?: "识别商户"} · 重试" }
-            addView(text(label, 13f, palette.accentText.toArgb()).apply { setPadding(dp(12),0,dp(12),0); isFocusable=true; contentDescription=label+"，按钮"; setOnClickListener { if(state.merchantCandidates.isNotEmpty()) open("merchant-select") else model.refreshMerchant() } }, LayoutParams(-1,dp(height)))
+            addView(text(label, 13f, palette.accentText.toArgb()).apply { setPadding(dp(24),0,dp(24),0); background = capsule(if (height >= 48) 6 else 2); isFocusable=true; contentDescription=label+"，按钮"; setOnClickListener { if(state.merchantCandidates.isNotEmpty()) open("merchant-select") else model.refreshMerchant() } }, LayoutParams(-1,dp(height)))
             return
         }
-        val column=LinearLayout(context).apply { orientation=VERTICAL }
         val name = merchant.username.ifBlank { "当前商户" }
-        val ids = "  ID ${merchant.uid} · TG ${state.telegramId}"
-        val identity = android.text.SpannableString(name + ids).apply {
+        val identity = android.text.SpannableString("$name  ${merchant.uid}").apply {
             setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, name.length, 0)
             setSpan(android.text.style.ForegroundColorSpan(palette.secondaryText.toArgb()), name.length, length, 0)
             setSpan(android.text.style.RelativeSizeSpan(.85f), name.length, length, 0)
         }
-        column.addView(text("",13f).apply { text = identity; setPadding(dp(10),0,dp(10),0);maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END;contentDescription="当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}" },LayoutParams(-1,dp(if(large)47 else 27)))
-        val actions=LinearLayout(context).apply { orientation=HORIZONTAL;setPadding(dp(4),0,dp(4),0) }
-        listOf("更多" to "merchant-more", "商户订单" to "merchant-orders", "结算" to "merchant-settlements", "域名审核" to "merchant-domains").forEach { (label,kind) -> actions.addView(button(label,1f){open(kind)}) }
-        column.addView(actions,LayoutParams(-1,dp(height-if(large)47 else 27)))
-        addView(column,LayoutParams(-1,dp(height)))
+        val row = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = capsule(); setPadding(dp(14), 0, dp(14), 0) }
+        row.addView(text("", 13f).apply {
+            text = identity; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+            contentDescription = "当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}"
+        }, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
+        listOf("更多" to "merchant-more", "商户订单" to "merchant-orders", "结算" to "merchant-settlements", "域名审核" to "merchant-domains").forEach { (label, kind) -> row.addView(capsuleAction(label, kind)) }
+        addView(row, LayoutParams(-1, dp(height)))
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); if (!closed) render(model.state.value) }
     internal fun render(state: ChannelShortcutState) {
         if (closed) return
-        removeAllViews(); setBackgroundColor(palette.surface.toArgb())
+        removeAllViews(); setBackgroundColor(0)
         val scale = resources.configuration.fontScale * palette.fontScale
         val large = scale >= 1.3f
         val linked = state.targets.isNotEmpty()
@@ -108,7 +122,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val showChannels = linked || !merchantRow || (state.scope?.dialog ?: 0) < 0
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
         val channelHeight = if (!showChannels) 0 else if (!linked || compact) 48 else if (large) (48 * scale).toInt() + 47 else 75
-        val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() + 47 else 75
+        val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() else 48
         val height = when {
             state.loginRequired -> 49
             state.visible -> 1 + channelHeight + merchantHeight
@@ -117,11 +131,11 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         visibility = if (height == 0) GONE else VISIBLE
         if (lastHeight != dp(height)) { lastHeight = dp(height); host.heightChanged(lastHeight) }
         if (height == 0) return
-        addView(View(context).apply { setBackgroundColor(palette.divider.toArgb()) }, LayoutParams(-1, dp(1)))
+        addView(View(context), LayoutParams(-1, dp(1)))
         if (state.loginRequired) {
             val scope = state.scope ?: return
             val login = text("会话快捷栏 · 登录富通后台", 13f, palette.accentText.toArgb()).apply {
-                setPadding(dp(12), 0, dp(12), 0)
+                setPadding(dp(24), 0, dp(24), 0); background = capsule()
                 isFocusable = true
                 setOnClickListener {
                     runCatching { model.bridge.call("ui.channel.login", org.json.JSONObject().put("dialog", scope.dialog).put("topic", scope.topic).toString()) }
@@ -136,13 +150,13 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val current = state.link ?: ChannelLink("", "全部关联通道（${state.channels.size}）")
         if (!linked) {
             val row = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
-            row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { setPadding(dp(16),0,dp(16),0); typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD); background = pill(dp(8)); setOnClickListener { open("select") }; isFocusable = true; isClickable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(-2,-1).apply { leftMargin = dp(10) })
-            row.addView(View(context), LayoutParams(0,-1,1f))
+            row.background = capsule(); row.setPadding(dp(14), 0, dp(10), 0)
+            row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD); setOnClickListener { open("select") }; isFocusable = true; isClickable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(0,-1,1f))
             row.addView(text("×", 24f, palette.secondaryText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "隐藏此话题的通道入口，可在 Futoonpay 设置恢复"; setOnClickListener { model.hide() }; isFocusable = true }, LayoutParams(dp(48),-1))
             addView(row, LayoutParams(-1,dp(48))); return
         }
         if (compact) {
-            val row=LinearLayout(context).apply{orientation=HORIZONTAL;setPadding(dp(4),0,dp(4),0)}
+            val row=LinearLayout(context).apply{orientation=HORIZONTAL;background=capsule();setPadding(dp(12),0,dp(12),0)}
             row.addView(text("${current.name}${if(current.id.isBlank()) "" else " #${current.id}"}",12f).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.MIDDLE;contentDescription="当前通道 ${current.name}，ID ${current.id}，点击切换";setOnClickListener{open("select")};isFocusable=true},LayoutParams(0,dp(48),1f))
             row.addView(button("通道订单",.9f){open("orders")}.apply{isEnabled=!state.invalid})
             row.addView(button("成功率 ${if(state.loading) "更新中" else if(state.error!=null) "获取失败" else state.snapshot?.rateText?:"—"}",1.2f){open("stats")}.apply{isEnabled=!state.invalid})
@@ -150,7 +164,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             row.addView(text("切换",12f,palette.accentText.toArgb()).apply{gravity=Gravity.CENTER;setOnClickListener{open("select")};isFocusable=true;contentDescription="切换支付通道，按钮"},LayoutParams(dp(48),dp(48)))
             addView(row,LayoutParams(-1,dp(48)));return
         }
-        val body = LinearLayout(context).apply { orientation = HORIZONTAL }
+        val body = LinearLayout(context).apply { orientation = HORIZONTAL; background = capsule(2, 8) }
         val left = LinearLayout(context).apply { orientation = VERTICAL }
         val info = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10),0,dp(4),0) }
         // Identity is a readable label, not a 27dp click target. Full name is repeated in the switch sheet.
