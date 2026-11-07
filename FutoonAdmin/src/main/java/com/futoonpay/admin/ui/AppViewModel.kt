@@ -336,19 +336,31 @@ class AppViewModel(
 
     fun loadOrders(page: Int = 1, search: OrderSearchFilters = _state.value.orderSearch) = loadScopedOrders(page, search.copy(channelId = lockedChannelId.ifBlank { search.channelId }, merchantId = lockedMerchantId.ifBlank { search.merchantId }))
 
+    private suspend fun fetchOrders(page: Int, filters: OrderSearchFilters) =
+        if (allowedChannelIds.isEmpty()) repository.orders(page, filters.toRequest()) else repository.associatedOrders(page, filters.toRequest(), allowedChannelIds)
+
     private fun loadScopedOrders(page: Int, search: OrderSearchFilters) = viewModelScope.launch {
         val generation = ++ordersGeneration
         orderChannelStatsGeneration += 1
         _state.update { it.copy(refreshing = true, ordersLoading = true, ordersError = null, message = null, orderSearch = search) }
         runCatching {
-            val result = if (allowedChannelIds.isEmpty()) repository.orders(page, search.toRequest()) else repository.associatedOrders(page, search.toRequest(), allowedChannelIds)
+            var used = search
+            var result = fetchOrders(page, used)
+            // A long number can be the system, merchant or upstream order number; the typed text cannot say which, so try the others before giving up.
+            if (result.rows.isEmpty() && page == 1 && search.column == "trade_no" && Regex("^\\d{9,}$").matches(search.value.trim())) {
+                for (column in listOf("out_trade_no", "api_trade_no")) {
+                    val retry = fetchOrders(page, search.copy(column = column))
+                    if (retry.rows.isNotEmpty()) { used = search.copy(column = column); result = retry; break }
+                }
+            }
             check(lockedMerchantId.isBlank() || result.rows.all { it.merchantId == lockedMerchantId }) { "后台返回了其他商户订单" }
-            result
+            used to result
         }
-            .onSuccess { result ->
+            .onSuccess { (used, result) ->
                 if (generation != ordersGeneration) return@onSuccess
                 _state.update {
                     it.copy(
+                        orderSearch = used,
                         refreshing = false, ordersLoading = false, ordersError = null, orders = result.rows, uncertainOrders = it.uncertainOrders - result.rows.map { row -> row.tradeNo }.toSet(), orderTotal = result.total, orderPage = page,
                         orderChannelStats = emptyMap(), orderChannelStatsMessage = null,
                     )
