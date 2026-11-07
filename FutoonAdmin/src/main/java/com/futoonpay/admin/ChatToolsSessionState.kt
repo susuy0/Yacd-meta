@@ -26,6 +26,7 @@ internal class AutomationRuleDraft(initial: GroupAutomationRule) {
     val action = mutableStateOf(initial.action)
     val draft = mutableStateOf(initial.draft)
     val cooldown = mutableStateOf(initial.cooldown.toString())
+    val window = mutableStateOf(initial.windowMinutes.toString())
     val awaitingPick = mutableStateOf(false)
     fun selection(): List<AutomationGroup> = listOfNotNull(dialog.value.trim().toLongOrNull()?.takeIf { it < 0 }?.let { AutomationGroup(it, groupName.value, topic.value.trim().toLongOrNull() ?: 0) }) + additionalGroups.value
     fun applySelection(picked: List<AutomationGroup>) {
@@ -40,9 +41,10 @@ internal class AutomationRuleDraft(initial: GroupAutomationRule) {
         val tid = requireNotNull(topic.value.trim().ifBlank { "0" }.toLongOrNull()?.takeIf { it >= 0 }) { "话题 ID 应为 0 或正整数" }
         val sid = requireNotNull(sender.value.trim().ifBlank { "0" }.toLongOrNull()?.takeIf { it >= 0 }) { "发送者 ID 可留空；填写时应为正整数" }
         val seconds = requireNotNull(cooldown.value.trim().toIntOrNull()?.takeIf { it in 2..3600 }) { "执行间隔应为 2～3600 秒" }
+        val minutes = requireNotNull(window.value.trim().toIntOrNull()?.takeIf { it in 1..60 }) { "有效时间应为 1～60 分钟" }
         val targets = listOf(AutomationGroup(did, groupName.value, tid)) + additionalGroups.value
         return initial.copy(title = title.value.trim(), dialog = did, groupName = groupName.value, topic = tid, sender = sid,
-            keyword = keyword.value, button = button.value, action = action.value, draft = draft.value, cooldown = seconds,
+            keyword = keyword.value, button = button.value, action = action.value, draft = draft.value, cooldown = seconds, windowMinutes = minutes,
             groups = if (targets.size > 1 || initial.groups.isNotEmpty()) targets else emptyList(),
             since = if (initial.enabled) System.currentTimeMillis() / 1000 else initial.since).also {
             ExtensionOptions.parse(ExtensionOptions(rules = listOf(it)).json())

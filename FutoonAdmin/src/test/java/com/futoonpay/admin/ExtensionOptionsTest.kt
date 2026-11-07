@@ -56,6 +56,25 @@ class ExtensionOptionsTest {
         assertFalse(restored.copy(sender = 8).acceptsEvent(-42, 0, 7, "补单案例", 105, 110))
         assertThrows(IllegalArgumentException::class.java) { ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule.copy(groups = groups + groups.first()))).json()) }
     }
+    @Test fun messageWindowDefaultsToFiveMinutesAndIsAdjustablePerRule() {
+        val rule = GroupAutomationRule(dialog = -42, sender = 0, enabled = true, since = 100)
+        assertEquals(5, rule.windowMinutes)
+        assertTrue(rule.acceptsEvent(-42, 0, 7, "补单案例", 105, 105 + 300))
+        assertFalse(rule.acceptsEvent(-42, 0, 7, "补单案例", 105, 105 + 301))
+        val wide = rule.copy(windowMinutes = 60)
+        val restored = ExtensionOptions.parse(ExtensionOptions(rules = listOf(wide)).json()).rules.single()
+        assertEquals(60, restored.windowMinutes)
+        assertTrue(restored.acceptsEvent(-42, 0, 7, "补单案例", 105, 105 + 3600))
+        assertFalse(restored.acceptsEvent(-42, 0, 7, "补单案例", 105, 105 + 3601))
+        // Rules saved before the field existed keep the old five-minute behaviour.
+        val legacy = ExtensionOptions(rules = listOf(rule)).json().also { it.getJSONArray("rules").getJSONObject(0).remove("windowMinutes") }
+        assertEquals(5, ExtensionOptions.parse(legacy).rules.single().windowMinutes)
+        for (bad in listOf(0, 61)) assertThrows(IllegalArgumentException::class.java) { ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule.copy(windowMinutes = bad))).json()) }
+        val draft = AutomationRuleDraft(rule); draft.window.value = "30"
+        assertEquals(30, draft.build(rule).windowMinutes)
+        draft.window.value = "90"
+        assertThrows(IllegalArgumentException::class.java) { draft.build(rule) }
+    }
     @Test fun blankSenderAndTopicSaveWithoutParsingErrorsAndInvalidValuesHaveFieldMessages() {
         val rule = GroupAutomationRule(dialog = -42, sender = 0)
         val draft = AutomationRuleDraft(rule); draft.sender.value = ""; draft.topic.value = ""

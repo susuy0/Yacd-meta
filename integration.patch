@@ -7189,7 +7189,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAut
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,186 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -7222,6 +7222,7 @@ new file mode 100644
 +    }
 +    private final HashMap<String, PendingAction> pending = new HashMap<>();
 +    private final HashMap<String, Long> ruleDue = new HashMap<>();
++    private final LinkedHashSet<String> staleLogged = new LinkedHashSet<>();
 +    private long nextDue;
 +    private boolean stopped;
 +    private List<GroupAutomationRule> rules = Collections.emptyList();
@@ -7290,7 +7291,16 @@ new file mode 100644
 +        long topic=message.getTopicId(), sender=message.getFromChatId();
 +        String text=message.messageOwner.message==null?"":message.messageOwner.message;
 +        for(GroupAutomationRule rule:rules) {
-+            if(!rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,now))continue;
++            if(!rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,now)) {
++                // Matched everything except age: say so, otherwise a message caught up after a reconnect vanishes without a trace.
++                String staleKey=messageKey+":"+rule.getId();
++                if(rule.getEnabled()&&!staleLogged.contains(staleKey)&&now-message.messageOwner.date>rule.getWindowMinutes()*60L
++                    &&rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,message.messageOwner.date)) {
++                    staleLogged.add(staleKey);while(staleLogged.size()>200)staleLogged.remove(staleLogged.iterator().next());
++                    record(rule,message,"消息已超过 "+rule.getWindowMinutes()+" 分钟（收到时已晚 "+((now-message.messageOwner.date)/60)+" 分钟），已跳过");
++                }
++                continue;
++            }
 +            String key=messageKey+":"+(rule.getAction().equals("click")?"button:"+rule.getButton().trim():"draft");
 +            if(completed.contains(key)||pending.containsKey(key)||pending.size()>=50)continue;
 +            if (rule.getAction().equals("click") && button(message, rule) == null) {
