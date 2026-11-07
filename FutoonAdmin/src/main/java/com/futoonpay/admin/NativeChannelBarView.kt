@@ -90,7 +90,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         setOnClickListener { action() }
         layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply { setMargins(dp(2), 0, dp(2), 0) }
     }
-    private fun addMerchantRow(state: ChannelShortcutState, height: Int, large: Boolean) {
+    private fun addMerchantRow(state: ChannelShortcutState, height: Int, large: Boolean, foldSelect: Boolean = false) {
         val merchant = state.merchant
         if (merchant == null) {
             val label = when { state.merchantLoading -> "正在识别商户 · TG ${state.telegramId}"; state.merchantCandidates.isNotEmpty() -> "选择商户（${state.merchantCandidates.size}） · TG ${state.telegramId}"; else -> "${state.merchantError ?: "识别商户"} · 重试" }
@@ -105,10 +105,15 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         }
         val row = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = capsule(); setPadding(dp(14), 0, dp(14), 0) }
         row.addView(text("", 13f).apply {
-            text = identity; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
-            contentDescription = "当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}"
+            text = identity; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; isFocusable = true; isClickable = true
+            contentDescription = "当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}，点击查看详情"
+            setOnClickListener { open("merchant-more") }
         }, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
-        listOf("更多" to "merchant-more", "商户订单" to "merchant-orders", "结算" to "merchant-settlements", "域名审核" to "merchant-domains").forEach { (label, kind) -> row.addView(capsuleAction(label, kind)) }
+        listOf("订单" to "merchant-orders", "结算" to "merchant-settlements", "域名" to "merchant-domains").forEach { (label, kind) -> row.addView(capsuleAction(label, kind)) }
+        if (foldSelect) row.addView(capsuleAction("通道▾", "select").apply {
+            contentDescription = "选择支付通道，按钮；长按隐藏此话题的通道入口"
+            setOnLongClickListener { model.hide(); true }
+        })
         addView(row, LayoutParams(-1, dp(height)))
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); if (!closed) render(model.state.value) }
@@ -119,7 +124,9 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val large = scale >= 1.3f
         val linked = state.targets.isNotEmpty()
         val merchantRow = state.telegramId.isNotBlank()
-        val showChannels = linked || !merchantRow || (state.scope?.dialog ?: 0) < 0
+        // With a known merchant and no linked channel, "choose channel" folds into the merchant capsule instead of a second row.
+        val foldSelect = state.merchant != null && !linked && (state.scope?.dialog ?: 0) < 0
+        val showChannels = (linked || !merchantRow || (state.scope?.dialog ?: 0) < 0) && !foldSelect
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
         val channelHeight = if (!showChannels) 0 else if (!linked || compact) 48 else if (large) (48 * scale).toInt() + 47 else 75
         val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() else 48
@@ -145,7 +152,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             addView(login, LayoutParams(-1, dp(48)))
             return
         }
-        if (merchantRow) addMerchantRow(state, merchantHeight, large)
+        if (merchantRow) addMerchantRow(state, merchantHeight, large, foldSelect)
         if (!showChannels) return
         val current = state.link ?: ChannelLink("", "全部关联通道（${state.channels.size}）")
         if (!linked) {
