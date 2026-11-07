@@ -12985,7 +12985,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
      public void drawBackground(Canvas canvas, boolean withComposeShadowDrawable) {
 +        if (isFutoonComposer()) {
 +            backgroundPaint.setColor(com.futoonpay.admin.appearance.ChatLook.wallpaper(org.telegram.ui.FutoonChatAppearance.dark()));
-+            canvas.drawRect(0, 0, getWidth(), getHeight(), backgroundPaint);
++            canvas.drawRect(0, futoonChannelBarHeight, getWidth(), getHeight(), backgroundPaint);
 +            return;
 +        }
          if (!shouldDrawBackground) {

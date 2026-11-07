@@ -98,22 +98,28 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             return
         }
         val name = merchant.username.ifBlank { "当前商户" }
-        val identity = android.text.SpannableString("$name  ${merchant.uid}").apply {
-            setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, name.length, 0)
-            setSpan(android.text.style.ForegroundColorSpan(palette.secondaryText.toArgb()), name.length, length, 0)
-            setSpan(android.text.style.RelativeSizeSpan(.85f), name.length, length, 0)
-        }
         val row = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = capsule(); setPadding(dp(14), 0, dp(14), 0) }
-        row.addView(text("", 13f).apply {
-            text = identity; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; isFocusable = true; isClickable = true
+        row.addView(IdentityLabel(context, name, "ID ${merchant.uid} · TG ${state.telegramId}", palette.secondaryText.toArgb()).apply {
+            textSize = 13f * palette.fontScale; setTextColor(palette.text.toArgb()); gravity = Gravity.CENTER_VERTICAL
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES; isFocusable = true; isClickable = true
             contentDescription = "当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}，点击查看详情"
             setOnClickListener { open("merchant-more") }
         }, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
         listOf("订单" to "merchant-orders", "结算" to "merchant-settlements", "域名" to "merchant-domains").forEach { (label, kind) -> row.addView(capsuleAction(label, kind)) }
-        if (foldSelect) row.addView(capsuleAction("通道▾", "select").apply {
-            contentDescription = "选择支付通道，按钮；长按隐藏此话题的通道入口"
-            setOnLongClickListener { model.hide(); true }
-        })
+        if (foldSelect) {
+            row.addView(capsuleAction("通道 ▾", "select").apply {
+                contentDescription = "选择支付通道，按钮；长按隐藏此话题的通道入口"
+                setPadding(dp(12), 0, dp(12), 0); background = pill(dp(6))
+                (layoutParams as LayoutParams).leftMargin = dp(4)
+                setOnLongClickListener { model.hide(); true }
+            })
+            // Separate file: the channel store's own prefs file triggers a full strip reload on every write.
+            val prefs = context.applicationContext.getSharedPreferences("futoon_channel_hints", Context.MODE_PRIVATE)
+            if (!prefs.getBoolean("hideHintShown", false)) {
+                prefs.edit().putBoolean("hideHintShown", true).apply()
+                post { Toast.makeText(context, "长按「通道」可隐藏此入口，可在 Futoonpay 设置里恢复", Toast.LENGTH_LONG).show() }
+            }
+        }
         addView(row, LayoutParams(-1, dp(height)))
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); if (!closed) render(model.state.value) }
@@ -194,5 +200,24 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         body.addView(left, LayoutParams(0,-1,1f))
         body.addView(text(if (state.invalid) "重新\n选择" else "⇄\n切换", 12f, palette.accentText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "切换支付通道，按钮"; isFocusable = true; setOnClickListener { open("select") } }, LayoutParams(dp(48),-1))
         addView(body, LayoutParams(-1,dp(channelHeight)))
+    }
+}
+
+/** Two lines in one label: bold merchant name and a quiet "ID · TG" line. Each line is ellipsized on its own, so a long name never pushes the ID out of sight. */
+private class IdentityLabel(context: Context, private val name: String, private val sub: String, private val subColor: Int) : TextView(context) {
+    private fun compose(first: CharSequence, second: CharSequence) = android.text.SpannableStringBuilder().apply {
+        append(first); setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, length, 0)
+        val start = length; append("\n").append(second)
+        setSpan(android.text.style.ForegroundColorSpan(subColor), start, length, 0)
+        setSpan(android.text.style.RelativeSizeSpan(.8f), start, length, 0)
+    }
+    init { text = compose(name, sub); maxLines = 2 }
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        super.onSizeChanged(w, h, ow, oh)
+        val room = (w - compoundPaddingLeft - compoundPaddingRight).toFloat()
+        if (room <= 0f) return
+        val bold = android.text.TextPaint(paint).apply { typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD) }
+        val small = android.text.TextPaint(paint).apply { textSize *= .8f }
+        text = compose(android.text.TextUtils.ellipsize(name, bold, room, android.text.TextUtils.TruncateAt.END), android.text.TextUtils.ellipsize(sub, small, room, android.text.TextUtils.TruncateAt.END))
     }
 }
