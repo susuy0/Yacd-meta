@@ -52,6 +52,15 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     override val savedStateRegistry get() = saved.savedStateRegistry
     override val onBackPressedDispatcher = OnBackPressedDispatcher { requestDismiss() }
     init {
+        // The host BottomSheet paints its own rounded top; square content corners used to poke out below that arc as a visible step.
+        // Round the content's top with the same radius so the two shapes meet exactly.
+        clipToOutline = true
+        outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
+                val r = com.futoonpay.admin.appearance.ChatChrome.SHEET_RADIUS * view.resources.displayMetrics.density
+                outline.setRoundRect(0, 0, view.width, view.height + r.toInt(), r)
+            }
+        }
         saved.performAttach(); saved.performRestore(null); registry.currentState = Lifecycle.State.CREATED
         setViewTreeLifecycleOwner(this); setViewTreeViewModelStoreOwner(this); setViewTreeSavedStateRegistryOwner(this)
         compose.id = android.view.View.generateViewId(); compose.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)

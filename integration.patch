@@ -16820,7 +16820,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb06339d504d4a
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,442 @@
+@@ -0,0 +1,443 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -17038,6 +17038,7 @@ index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb0633
 +                    @Override public void dismiss() { if (view.requestClose()) super.dismiss(); }
 +                    @Override public void onBackPressed() { view.handleBack(); }
 +                };
++                sheet.setApplyTopPadding(false);
 +                sheet.setCustomView(view); sheet.setCanDismissWithSwipe(!kind.equals("edit"));
 +                channelSheet = sheet;
 +                if (host.showDialog(sheet, ignored -> {
