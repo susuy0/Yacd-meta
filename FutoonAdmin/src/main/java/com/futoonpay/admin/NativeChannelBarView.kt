@@ -62,9 +62,17 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         text = value; textSize = size * palette.fontScale; setTextColor(color); gravity = Gravity.CENTER_VERTICAL
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
     }
+    /** Soft accent-tinted pill: reads as a control without the hard white boxes. The view stays 48dp tall for touch; only the drawn pill is smaller. */
+    private fun pill(verticalInset: Int): android.graphics.drawable.Drawable {
+        val tint = GradientDrawable().apply { setColor((palette.accentText.toArgb() and 0x00FFFFFF) or 0x1F000000); cornerRadius = dp(18).toFloat() }
+        val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(18).toFloat() }
+        val ripple = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.accentText.toArgb() and 0x00FFFFFF) or 0x33000000), null, mask)
+        return android.graphics.drawable.InsetDrawable(android.graphics.drawable.LayerDrawable(arrayOf(tint, ripple)), 0, verticalInset, 0, verticalInset)
+    }
     private fun button(label: String, weight: Float, action: () -> Unit) = text(label, 13f, palette.accentText.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; contentDescription = label.replace('\n', ' ') + "，按钮"
-        background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x16000000), null, GradientDrawable().apply { setColor(android.graphics.Color.WHITE); cornerRadius = dp(8).toFloat() })
+        typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
+        background = pill(dp(6))
         setOnClickListener { action() }
         layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply { setMargins(dp(2), 0, dp(2), 0) }
     }
@@ -76,7 +84,14 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             return
         }
         val column=LinearLayout(context).apply { orientation=VERTICAL }
-        column.addView(text("${merchant.username.ifBlank { "当前商户" }} · ID ${merchant.uid} · TG ${state.telegramId}",13f).apply { setPadding(dp(10),0,dp(10),0);maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END;contentDescription="当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}" },LayoutParams(-1,dp(if(large)47 else 27)))
+        val name = merchant.username.ifBlank { "当前商户" }
+        val ids = "  ID ${merchant.uid} · TG ${state.telegramId}"
+        val identity = android.text.SpannableString(name + ids).apply {
+            setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, name.length, 0)
+            setSpan(android.text.style.ForegroundColorSpan(palette.secondaryText.toArgb()), name.length, length, 0)
+            setSpan(android.text.style.RelativeSizeSpan(.85f), name.length, length, 0)
+        }
+        column.addView(text("",13f).apply { text = identity; setPadding(dp(10),0,dp(10),0);maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END;contentDescription="当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}" },LayoutParams(-1,dp(if(large)47 else 27)))
         val actions=LinearLayout(context).apply { orientation=HORIZONTAL;setPadding(dp(4),0,dp(4),0) }
         listOf("更多" to "merchant-more", "商户订单" to "merchant-orders", "结算" to "merchant-settlements", "域名审核" to "merchant-domains").forEach { (label,kind) -> actions.addView(button(label,1f){open(kind)}) }
         column.addView(actions,LayoutParams(-1,dp(height-if(large)47 else 27)))
@@ -121,7 +136,8 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val current = state.link ?: ChannelLink("", "全部关联通道（${state.channels.size}）")
         if (!linked) {
             val row = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
-            row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { setPadding(dp(12),0,0,0); setOnClickListener { open("select") }; isFocusable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(0,-1,1f))
+            row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { setPadding(dp(16),0,dp(16),0); typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD); background = pill(dp(8)); setOnClickListener { open("select") }; isFocusable = true; isClickable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(-2,-1).apply { leftMargin = dp(10) })
+            row.addView(View(context), LayoutParams(0,-1,1f))
             row.addView(text("×", 24f, palette.secondaryText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "隐藏此话题的通道入口，可在 Futoonpay 设置恢复"; setOnClickListener { model.hide() }; isFocusable = true }, LayoutParams(dp(48),-1))
             addView(row, LayoutParams(-1,dp(48))); return
         }
