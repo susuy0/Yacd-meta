@@ -69,11 +69,12 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val ripple = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.accentText.toArgb() and 0x00FFFFFF) or 0x33000000), null, mask)
         return android.graphics.drawable.InsetDrawable(android.graphics.drawable.LayerDrawable(arrayOf(tint, ripple)), 0, verticalInset, 0, verticalInset)
     }
-    /** A floating capsule: the strip itself is transparent, so only this rounded surface sits over the chat. */
-    private fun capsule(verticalInset: Int = 6, horizontalInset: Int = 8): android.graphics.drawable.Drawable {
-        val body = GradientDrawable().apply { setColor(palette.surface.toArgb()); cornerRadius = dp(24).toFloat(); setStroke(dp(1), palette.divider.toArgb()) }
-        return android.graphics.drawable.InsetDrawable(body, dp(horizontalInset), dp(verticalInset), dp(horizontalInset), dp(verticalInset))
-    }
+    /**
+     * Rows draw no outline of their own. The chat already paints a white, rounded-top panel behind the strip; an extra bordered capsule
+     * on top of it read as a double outline, so the controls now sit directly on that panel.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    private fun capsule(verticalInset: Int = 6, horizontalInset: Int = 8): android.graphics.drawable.Drawable = android.graphics.drawable.ColorDrawable(0)
     /** Plain accent text action inside a capsule; the ripple is a 36dp pill inside the 48dp touch target. */
     private fun capsuleAction(label: String, kind: String) = text(label, 13f, palette.accentText.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; minWidth = dp(48); setPadding(dp(8), 0, dp(8), 0)
