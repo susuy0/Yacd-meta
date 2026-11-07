@@ -27,6 +27,13 @@ class ChannelSessionStatusTest {
     @Test fun sessionStatusReadsFreshCookiesAfterLoginAndLogout(){
         val session=Session();assertFalse(ChannelSessionStatus.hasSession(session));session.raw=token();assertTrue(ChannelSessionStatus.hasSession(session));session.clearCookies();assertFalse(ChannelSessionStatus.hasSession(session))
     }
+    @Test fun renamedAuthCookieOnTheNewBackendStillCountsButTheCaptchaSessionDoesNot(){
+        val session=Session()
+        fun cookie(name:String)=JSONArray().put(JSONObject().put("name",name).put("value","synthetic-cookie").put("domain","fixture.example").put("path","/").put("expiry",-1)).toString()
+        session.raw=cookie("PHPSESSID");assertFalse(ChannelSessionStatus.hasSession(session))
+        session.raw=cookie("phpsessid");assertFalse(ChannelSessionStatus.hasSession(session))
+        for(name in listOf("admin_token","svc_session","token")){session.raw=cookie(name);assertTrue(name,ChannelSessionStatus.hasSession(session))}
+    }
     @Test fun expiredOtherHostAndOtherPathCookiesDoNotShowTheStrip(){
         val session=Session()
         for(raw in listOf(token(expiry=0),token(domain="other.example"),token(path="/other/"),"invalid")){session.raw=raw;assertFalse(ChannelSessionStatus.hasSession(session))}
