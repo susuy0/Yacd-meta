@@ -7,6 +7,9 @@ internal data class ChannelSnapshot(val window: MonitorWindow, val rate: Double?
     val empty get() = total == 0
     val rateText get() = if (empty) "暂无订单" else rate?.let { String.format(java.util.Locale.ROOT, "%.1f%%", it) } ?: "暂未提供"
 }
+/** All six time windows of one monitor row, longest first, so a chart can read them left to right as "older to newer". */
+internal val CHANNEL_WINDOWS_OLDEST_FIRST = listOf(MonitorWindow.DAY, MonitorWindow.TWELVE_HOURS, MonitorWindow.SIX_HOURS, MonitorWindow.HOUR, MonitorWindow.HALF_HOUR, MonitorWindow.FIVE_MINUTES)
+internal fun parseChannelWindows(row: JSONObject): Map<MonitorWindow, ChannelSnapshot> = CHANNEL_WINDOWS_OLDEST_FIRST.associateWith { parseChannelSnapshot(row, it) }
 internal fun parseChannelSnapshot(row: JSONObject, window: MonitorWindow): ChannelSnapshot {
     val key = window.key
     fun count(vararg names: String): Int? = names.firstNotNullOfOrNull { n -> row.optString(n).replace(",", "").toIntOrNull()?.takeIf { it >= 0 } }

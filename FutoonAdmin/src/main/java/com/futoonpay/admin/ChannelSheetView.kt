@@ -198,13 +198,13 @@ class ChannelSheetView internal constructor(context: Context, internal val model
     LaunchedEffect(model,lifecycle,state.targets.map{it.id},state.window) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { model.refresh(all=true); while(isActive){delay(30_000);if(!model.state.value.loading)model.refresh(all=true)} } }
     Column(Modifier.fillMaxSize()) {
         ChannelFilters(model)
-        FlowWindows(state.window,model::changeWindow)
+        // The all-channels page shows every window on each card, so the window switch only applies to a single channel.
+        if(state.link!=null) FlowWindows(state.window,model::changeWindow)
         LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
             if(state.loading) item{LinearProgressIndicator(Modifier.fillMaxWidth())}
             state.error?.let{item{Text("读取失败：$it",color=Danger)}}
             if(state.link==null) items(state.channels,key={it.id}){row->
-                val stats=state.snapshots[row.id]
-                PayCard{Text("${row.name} #${row.id}",fontWeight=FontWeight.SemiBold);Text(stats?.rateText?:"—",fontSize=28.sp);Text("近${state.window.label} · 总订单 ${stats?.total?:"—"} · 成功 ${stats?.successful?:"—"}",color=Muted);state.channelErrors[row.id]?.let{Text(it,color=Danger)}}
+                ChannelStatCard(row.name,row.id,state.windows[row.id],state.channelErrors[row.id])
             }
             val data=state.snapshot
             if(state.link!=null)item{Text(data?.rateText?:"—",fontSize=36.sp,fontWeight=FontWeight.SemiBold);Text("近${state.window.label} · 官方通道监测",color=Muted)}

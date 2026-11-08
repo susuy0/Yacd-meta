@@ -294,12 +294,19 @@ class FutoonRepository(
         return configurationChannel(data)
     }
 
-    internal suspend fun shortcutSnapshot(id: String, window: MonitorWindow): ChannelSnapshot {
+    private suspend fun monitorRow(id: String): JSONObject? {
         val json = requestChannelMonitor(id)
         val candidates = json.rows().objectRows().ifEmpty { listOfNotNull(json.optJSONObject("data"), json.takeIf { it.has("id") || it.has("channel_id") }) }
-        val row = candidates.firstOrNull { it.optString("id", it.optString("channel_id")) == id }
-            ?: return ChannelSnapshot(window, null, null, null, null)
+        return candidates.firstOrNull { it.optString("id", it.optString("channel_id")) == id }
+    }
+    internal suspend fun shortcutSnapshot(id: String, window: MonitorWindow): ChannelSnapshot {
+        val row = monitorRow(id) ?: return ChannelSnapshot(window, null, null, null, null)
         return parseChannelSnapshot(row, window)
+    }
+    /** Every time window of a channel from a single monitor request; windows the website does not report come back empty, never as 0% or 100%. */
+    internal suspend fun shortcutWindows(id: String): Map<MonitorWindow, ChannelSnapshot> {
+        val row = monitorRow(id) ?: return CHANNEL_WINDOWS_OLDEST_FIRST.associateWith { ChannelSnapshot(it, null, null, null, null) }
+        return parseChannelWindows(row)
     }
 
     suspend fun channelStatistics(channelIds: Collection<String>): Map<String, OrderChannelStat> {

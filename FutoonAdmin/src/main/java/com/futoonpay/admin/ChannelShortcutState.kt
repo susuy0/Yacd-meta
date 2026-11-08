@@ -65,7 +65,9 @@ internal data class ChannelShortcutState(val scope: ChannelScope? = null, val la
     val merchant: MerchantSummary? = null, val merchantLoading: Boolean = false, val merchantError: String? = null,
     val merchantCandidates: List<MerchantSummary> = emptyList(),
     val snapshots: Map<String, ChannelSnapshot> = emptyMap(), val channelErrors: Map<String, String> = emptyMap(),
-    val loginRequired: Boolean = false) {
+    val loginRequired: Boolean = false,
+    /** Per channel: every time window from the same monitor request as [snapshots]. */
+    val windows: Map<String, Map<MonitorWindow, ChannelSnapshot>> = emptyMap()) {
     val targets: List<ChannelLink> get() = link?.let(::listOf) ?: channels
 }
 
@@ -125,7 +127,7 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         mutable.update { old ->
             val link = if (old.source == "已记住" && changed) channels.firstOrNull { it.id == old.link?.id } ?: channels.singleOrNull() else old.link
             old.copy(visible = visible, loginRequired = loginRequired, window = store.window, channels = channels, link = link,
-                snapshot = if (changed || hidden) null else old.snapshot, snapshots = if (changed || hidden) emptyMap() else old.snapshots,
+                snapshot = if (changed || hidden) null else old.snapshot, snapshots = if (changed || hidden) emptyMap() else old.snapshots, windows = if (changed || hidden) emptyMap() else old.windows,
                 channelErrors = if (changed || hidden) emptyMap() else old.channelErrors, error = if (changed || hidden) null else old.error,
                 loading = if (changed || hidden) false else old.loading, invalid = if (changed) false else old.invalid,
                 merchant = if (hidden) null else old.merchant, merchantCandidates = if (hidden) emptyList() else old.merchantCandidates, merchantLoading = if (hidden) false else old.merchantLoading)
@@ -192,16 +194,17 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         val targets = if (all) s.targets else listOfNotNull(s.link)
         if (!valid(key) || !s.visible || targets.isEmpty()) return
         val token = generation; val sequence = ++request; job?.cancel()
-        mutable.update { it.copy(loading = true, error = null, snapshot = null, snapshots = emptyMap(), channelErrors = emptyMap()) }
+        mutable.update { it.copy(loading = true, error = null, snapshot = null, snapshots = emptyMap(), windows = emptyMap(), channelErrors = emptyMap()) }
         job = scope.launch {
             for (link in targets) {
                 try {
                     val repo = repository()
                     val identity = repo.shortcutChannel(link.id)
-                    val stats = repo.shortcutSnapshot(link.id, s.window)
+                    val all = repo.shortcutWindows(link.id)
+                    val stats = all.getValue(s.window)
                     ensureActive()
                     if (!current(key, token) || sequence != request) return@launch
-                    mutable.update { old -> old.copy(link = if (old.link?.id == link.id) old.link?.copy(name = identity.name) else old.link, snapshot = if (s.link?.id == link.id) stats else old.snapshot, snapshots = old.snapshots + (link.id to stats), invalid = false) }
+                    mutable.update { old -> old.copy(link = if (old.link?.id == link.id) old.link?.copy(name = identity.name) else old.link, snapshot = if (s.link?.id == link.id) stats else old.snapshot, snapshots = old.snapshots + (link.id to stats), windows = old.windows + (link.id to all), invalid = false) }
                 } catch (e: CancellationException) { throw e }
                 catch (e: Exception) {
                     if (!current(key, token) || sequence != request) return@launch
