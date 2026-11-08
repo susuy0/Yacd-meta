@@ -7189,7 +7189,7 @@ diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAut
 new file mode 100644
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonAutomation.java
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,217 @@
 +package org.telegram.messenger.futoon;
 +
 +import android.content.Context;
@@ -7212,7 +7212,9 @@ new file mode 100644
 +    private final int account;
 +    private final long owner;
 +    private final SharedPreferences preferences;
-+    private final long started = System.currentTimeMillis()/1000;
++    /** Messages older than this are ignored. It is the last time this account was seen alive, so messages missed while the app was not running are still handled (bounded by each rule's window). */
++    private final long floor;
++    private long lastAlive;
 +    private final LinkedHashSet<String> completed = new LinkedHashSet<>();
 +    private final LinkedHashMap<String, MessageObject> latest = new LinkedHashMap<>();
 +    private static final class PendingAction {
@@ -7241,6 +7243,8 @@ new file mode 100644
 +    private FutoonAutomation(int account, long owner) {
 +        this.account=account; this.owner=owner;
 +        preferences = ApplicationLoader.applicationContext.getSharedPreferences("futoon_automation_"+owner, Context.MODE_PRIVATE);
++        long bootSeconds=System.currentTimeMillis()/1000,savedAlive=0; try{savedAlive=Long.parseLong(preferences.getString("alive","0"));}catch(Exception ignored){}
++        floor=(savedAlive>0&&savedAlive<=bootSeconds)?savedAlive:bootSeconds;
 +        try { JSONArray data=new JSONArray(preferences.getString("completed", "[]")); for(int i=0;i<data.length();i++)completed.add(data.getString(i)); } catch(Exception ignored) {}
 +        NotificationCenter center=NotificationCenter.getInstance(account);
 +        center.addObserver(this, NotificationCenter.didReceiveNewMessages);
@@ -7262,13 +7266,19 @@ new file mode 100644
 +        ruleDue.keySet().retainAll(enabledIds);
 +        if(pending.isEmpty())nextDue=0;
 +    }
++    /** Remembers when this account was last seen alive; written at most every 30 seconds while messages flow, and on stop. */
++    private void touchAlive(boolean force) {
++        long nowMs=System.currentTimeMillis(); if(!force&&nowMs-lastAlive<30000)return; lastAlive=nowMs;
++        preferences.edit().putString("alive",Long.toString(nowMs/1000)).apply();
++    }
 +    private void stop() {
-+        if(stopped)return;stopped=true;
++        if(stopped)return;stopped=true;touchAlive(true);
 +        for(PendingAction action:pending.values())AndroidUtilities.cancelRunOnUIThread(action.task); pending.clear(); latest.clear(); rules=Collections.emptyList();
 +        NotificationCenter center=NotificationCenter.getInstance(account); center.removeObserver(this,NotificationCenter.didReceiveNewMessages);center.removeObserver(this,NotificationCenter.replaceMessagesObjects);center.removeObserver(this,NotificationCenter.appDidLogout);
 +    }
 +    @Override public void didReceivedNotification(int event,int eventAccount,Object... args) {
 +        if(eventAccount!=account)return;
++        if(event==NotificationCenter.didReceiveNewMessages||event==NotificationCenter.replaceMessagesObjects)touchAlive(false);
 +        if(event==NotificationCenter.appDidLogout){stop();return;}
 +        if(event!=NotificationCenter.didReceiveNewMessages && event!=NotificationCenter.replaceMessagesObjects)return;
 +        if(!active()||rules.isEmpty()||args.length<2||!(args[0] instanceof Long)||!(args[1] instanceof ArrayList))return;
@@ -7278,7 +7288,7 @@ new file mode 100644
 +        for(Object item:(ArrayList<?>)args[1])if(item instanceof MessageObject)receive((MessageObject)item);
 +    }
 +    private void receive(MessageObject message) {
-+        if(message==null||message.messageOwner==null||message.getId()<=0||message.isOutOwner()||message.messageOwner instanceof TLRPC.TL_messageService||message.messageOwner.date<started)return;
++        if(message==null||message.messageOwner==null||message.getId()<=0||message.isOutOwner()||message.messageOwner instanceof TLRPC.TL_messageService||message.messageOwner.date<floor)return;
 +        String messageKey=message.getDialogId()+":"+message.getId(); latest.remove(messageKey);latest.put(messageKey,message);
 +        // Retain the latest edit of queued messages even in a busy group.
 +        Iterator<String> cached=latest.keySet().iterator();
