@@ -7,7 +7,8 @@ android {
     namespace = "com.futoonpay.admin"
     compileSdk = 36
     defaultConfig {
-        minSdk = 23
+        // 24 because the glass library needs it; the host app (minSdk 23) opts in with tools:overrideLibrary and only calls it on API 24+.
+        minSdk = 24
         consumerProguardFiles("consumer-rules.pro")
         buildConfigField("String", "VERSION_NAME", "\"1.3.4\"")
     }
