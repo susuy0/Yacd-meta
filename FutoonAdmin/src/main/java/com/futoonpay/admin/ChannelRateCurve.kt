@@ -93,8 +93,12 @@ private fun rateText(rate: Double?) = rate?.let { String.format(java.util.Locale
             else -> {
                 ChannelRateCurve(curvePoints(windows))
                 Text("横轴从长时间窗到最近 5 分钟；每个点是该时间窗内的成功率，不是逐分钟历史。", color = Muted, fontSize = 11.sp)
+                val columns = statColumns(windows)
                 Row(Modifier.fillMaxWidth()) {
-                    listOf("时间窗" to 1.2f, "成功率" to 1f, "成功/总数" to 1.4f, "处理中" to .9f).forEach { (title, weight) -> Text(title, Modifier.weight(weight), color = Muted, fontSize = 11.sp) }
+                    Text("时间窗", Modifier.weight(1.2f), color = Muted, fontSize = 11.sp)
+                    Text("成功率", Modifier.weight(1f), color = Muted, fontSize = 11.sp)
+                    if (columns.counts) Text("成功/总数", Modifier.weight(1.4f), color = Muted, fontSize = 11.sp)
+                    if (columns.processing) Text("处理中", Modifier.weight(.9f), color = Muted, fontSize = 11.sp)
                 }
                 CHANNEL_WINDOWS_OLDEST_FIRST.reversed().forEach { window ->
                     val s = windows[window]
@@ -102,12 +106,19 @@ private fun rateText(rate: Double?) = rate?.let { String.format(java.util.Locale
                     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
                         Text(window.label, Modifier.weight(1.2f), fontSize = 12.sp)
                         Text(if (s?.empty == true) "暂无订单" else rateText(s?.rate), Modifier.weight(1f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                        Text("${s?.successful?.toString() ?: "—"}/${s?.total?.toString() ?: "—"}" + if (few) " 样本少" else "", Modifier.weight(1.4f), fontSize = 12.sp, color = if (few) Warning else Muted)
-                        Text(s?.processing?.toString() ?: "—", Modifier.weight(.9f), fontSize = 12.sp, color = Muted)
+                        if (columns.counts) Text("${s?.successful?.toString() ?: "—"}/${s?.total?.toString() ?: "—"}" + if (few) " 样本少" else "", Modifier.weight(1.4f), fontSize = 12.sp, color = if (few) Warning else Muted)
+                        if (columns.processing) Text(s?.processing?.toString() ?: "—", Modifier.weight(.9f), fontSize = 12.sp, color = Muted)
                     }
                 }
+                if (!columns.counts) Text("后台这次没有返回订单数，只显示成功率。", color = Muted, fontSize = 11.sp)
                 if (error != null) Text(error, color = Danger, fontSize = 12.sp)
             }
         }
     }
 }
+
+/** Which optional columns of the window table have at least one real value; an all-"—" column is hidden instead of shown. */
+internal data class StatColumns(val counts: Boolean, val processing: Boolean)
+internal fun statColumns(windows: Map<MonitorWindow, ChannelSnapshot>) = StatColumns(
+    counts = windows.values.any { it.total != null || it.successful != null },
+    processing = windows.values.any { it.processing != null })

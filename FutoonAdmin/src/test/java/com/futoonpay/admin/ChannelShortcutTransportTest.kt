@@ -64,6 +64,15 @@ class ChannelShortcutTransportTest {
         assertEquals(listOf(3,3,0,2,0,1),points.map{rateColorLevel(it.rate)})
         assertTrue(curvePoints(null).all{it.rate==null&&it.total==null});assertTrue(curveGeometry(curvePoints(null)).runs.isEmpty())
     }
+    @Test fun emptyCountColumnsAreHiddenOnlyWhenNoWindowHasARealValue(){
+        val ratesOnly=parseChannelWindows(JSONObject("""{"success_rate_5min":"100%","success_rate_1hour":"70.1%"}"""))
+        assertEquals(StatColumns(counts=false,processing=false),statColumns(ratesOnly))
+        val withTotals=parseChannelWindows(JSONObject("""{"success_rate_5min":"90%","total_count_5min":10,"success_count_5min":9}"""))
+        assertEquals(StatColumns(counts=true,processing=false),statColumns(withTotals))
+        val withProcessing=parseChannelWindows(JSONObject("""{"success_rate_5min":"90%","processing_count_5min":2}"""))
+        assertEquals(StatColumns(counts=false,processing=true),statColumns(withProcessing))
+        assertEquals(StatColumns(counts=false,processing=false),statColumns(emptyMap()))
+    }
     @Test fun mismatchedChannelIdentityCannotEnableEditing()=runBlocking{
         val repo=FutoonRepository(fixtureClient({200 to """{"code":0,"data":{"id":"99","name":"Other"}}"""}))
         try{repo.shortcutChannel("12");fail("Must reject another channel")}catch(_:ChannelUnavailableException){}
