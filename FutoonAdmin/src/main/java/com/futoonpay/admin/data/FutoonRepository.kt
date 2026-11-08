@@ -277,6 +277,12 @@ class FutoonRepository(
         return json
     }
 
+    /** Stops a payment channel from the order sheet. The id comes from a freshly loaded order, never from free text. */
+    suspend fun pauseChannel(id: String): ApiResult {
+        require(id.matches(Regex("[1-9][0-9]*"))) { "通道 ID 无效" }
+        return api.getAction("ajax_pay.php?act=setChannel&id=$id&status=0", paymentPath("channels"))
+    }
+
     internal suspend fun shortcutChannel(id: String): ConfigurationChannel {
         require(id.matches(Regex("[1-9][0-9]*")))
         val json = api.jsonGet("ajax_pay.php?act=getChannel&id=$id", paymentPath("channels"))

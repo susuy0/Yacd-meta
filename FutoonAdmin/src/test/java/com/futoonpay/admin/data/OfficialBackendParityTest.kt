@@ -65,6 +65,14 @@ class OfficialBackendParityTest {
         assertEquals(listOf(BatchOutcomeStatus.SUCCESS, BatchOutcomeStatus.SKIPPED, BatchOutcomeStatus.FAILED), results.map { it.status })
         assertEquals(1, posts.size); assertEquals(mapOf("token" to token, "id" to "42"), posts.single().second)
     }
+    @Test fun pausingAChannelSendsExactlyOneStopRequestAndRejectsMalformedIds() = runBlocking {
+        val requests = mutableListOf<Request>(); val repo = modern { requests += it; """{"code":0,"msg":"ok"}""" }
+        assertTrue(repo.pauseChannel("7").success)
+        val stop = requests.single { it.url.queryParameter("act") == "setChannel" }
+        assertEquals("7", stop.url.queryParameter("id")); assertEquals("0", stop.url.queryParameter("status")); assertEquals("GET", stop.method)
+        for (bad in listOf("", "0", "-1", "7;x", "a", "07")) assertThrows(IllegalArgumentException::class.java) { runBlocking { repo.pauseChannel(bad) } }
+        assertEquals(1, requests.count { it.url.queryParameter("act") == "setChannel" })
+    }
     @Test fun officialStatusesAndUnfinishedFilterPreserveServerMeaning() {
         assertEquals("unfinished", SettlementSearchFilters(status = -2).toRequest()["dstatus"])
         assertEquals("待审核", row().displayStatus()); assertEquals("队列中", row(4).displayStatus())

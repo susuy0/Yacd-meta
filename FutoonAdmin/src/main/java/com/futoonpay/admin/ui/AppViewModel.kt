@@ -30,6 +30,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 enum class AuthStage { CHECKING, LOGIN, AUTHENTICATED }
+/** What the order sheet shows about the order's channel: loading, an error, or name + five-minute success rate. */
+data class ChannelQuick(val id: String, val name: String = "", val rateText: String = "", val detail: String = "", val loading: Boolean = true, val error: String? = null)
+
 enum class MainTab(val title: String) { DASHBOARD("概览"), ORDERS("订单"), SETTLEMENTS("结算"), MERCHANTS("商户"), MORE("管理") }
 
 data class AppUiState(
@@ -60,6 +63,7 @@ data class AppUiState(
     val orderDetailTradeNo: String = "",
     val orderDetail: OrderDetail? = null,
     val orderDetailLoading: Boolean = false,
+    val channelQuick: ChannelQuick? = null,
     val orderChannelStats: Map<String, OrderChannelStat> = emptyMap(),
     val orderChannelStatsLoading: Boolean = false,
     val orderChannelStatsMessage: String? = null,
@@ -418,7 +422,27 @@ class AppViewModel(
     }
 
     fun dismissOrderDetail() = _state.update {
-        it.copy(orderDetailTradeNo = "", orderDetail = null, orderDetailLoading = false)
+        it.copy(orderDetailTradeNo = "", orderDetail = null, orderDetailLoading = false, channelQuick = null)
+    }
+
+    /** Success rate of the order's own channel over the last five minutes, for the order sheet opened from an alert. */
+    fun loadChannelQuick(channelId: String) = viewModelScope.launch {
+        if (!channelId.matches(Regex("[1-9][0-9]*"))) { _state.update { it.copy(channelQuick = null) }; return@launch }
+        _state.update { it.copy(channelQuick = ChannelQuick(channelId)) }
+        val name = runCatching { repository.shortcutChannel(channelId).name }.getOrDefault("")
+        runCatching { repository.shortcutSnapshot(channelId, MonitorWindow.FIVE_MINUTES) }
+            .onSuccess { snapshot -> _state.update { if (it.channelQuick?.id == channelId) it.copy(channelQuick = ChannelQuick(channelId, name, snapshot.rateText,
+                "成功 ${snapshot.successful ?: "—"} / 共 ${snapshot.total ?: "—"}", false)) else it } }
+            .onFailure { error -> handleFailure(error); _state.update { if (it.channelQuick?.id == channelId) it.copy(channelQuick = ChannelQuick(channelId, name, loading = false, error = error.userMessage())) else it } }
+    }
+
+    /** Stops the channel after the user confirmed. A lost reply is reported as unconfirmed and never retried. */
+    fun pauseChannel(channelId: String, onResult: (ApiResult) -> Unit) = viewModelScope.launch {
+        val result = try { repository.pauseChannel(channelId) }
+        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) { handleFailure(e); ApiResult(false, "请求结果未确认，请到「管理 → 支付通道」核对，不要重复提交") }
+        onResult(result)
+        if (result.success) loadChannelQuick(channelId)
     }
 
     fun loadSettlements(page: Int = 1, search: SettlementSearchFilters = _state.value.settlementSearch) = loadScopedSettlements(page, search.copy(merchantId = lockedMerchantId.ifBlank { search.merchantId }))

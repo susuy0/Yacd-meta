@@ -210,8 +210,27 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
     } }
     if (state.orderDetailTradeNo.isNotBlank()) OrderDetailDialog(state.orderDetailTradeNo, state.orderDetail, state.orderDetailLoading,
         state.orders.firstOrNull { it.tradeNo == state.orderDetailTradeNo }, viewModel::dismissOrderDetail, quickActions,
+        state.channelQuick, { viewModel.loadChannelQuick(it) }, { id, done -> viewModel.pauseChannel(id, done) },
         { viewModel.dismissOrderDetail(); pending = it })
     if (selectedChannelId.isNotBlank()) ChannelHealthDialog(selectedChannelId, state.orderChannelStats[selectedChannelId], state.orderChannelStatsLoading, { selectedChannelId = "" })
+}
+
+@Composable
+private fun ChannelQuickCard(channelId: String, info: ChannelQuick?, message: String?, onPause: () -> Unit) {
+    PayCard {
+        Text("支付通道", color = Muted, fontSize = 12.sp)
+        when {
+            info == null || info.loading -> Text("正在读取通道 #$channelId 近 5 分钟成功率…", color = Muted, fontSize = 13.sp)
+            info.error != null -> Text("通道 #$channelId：${info.error}", color = Danger, fontSize = 13.sp)
+            else -> {
+                Text("${info.name.ifBlank { "通道" }} #$channelId", fontWeight = FontWeight.Medium)
+                DataRow("近 5 分钟成功率", info.rateText)
+                if (info.detail.isNotBlank()) DataRow("订单数", info.detail)
+            }
+        }
+        message?.let { Text(it, color = if (it.startsWith("已提交")) GreenDark else Warning, fontSize = 13.sp) }
+        ChatOutlinedButton(onClick = onPause, enabled = info?.loading != true, modifier = Modifier.fillMaxWidth()) { Text("暂停该通道…", color = Danger) }
+    }
 }
 
 private data class PendingOrderAction(
@@ -434,7 +453,8 @@ private fun HealthHeroMetric(label: String, value: Int?, modifier: Modifier) {
 
 @Composable
 private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Boolean,
-    summary: OrderSummary?, onDismiss: () -> Unit, quickActions: Boolean = false, onAction: (PendingOrderAction) -> Unit) {
+    summary: OrderSummary?, onDismiss: () -> Unit, quickActions: Boolean = false, channelQuick: ChannelQuick? = null, onLoadChannel: (String) -> Unit = {},
+    onPauseChannel: (String, (ApiResult) -> Unit) -> Unit = { _, _ -> }, onAction: (PendingOrderAction) -> Unit) {
     var quick by rememberSaveable(tradeNo, quickActions) { mutableStateOf(quickActions) }
     val context = LocalContext.current
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
@@ -442,6 +462,22 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
     if (detail != null) workflows?.rememberDetail(detail)
     val channelFound = com.futoonpay.admin.LocalChannelOrderFound.current
     LaunchedEffect(detail?.tradeNo, detail?.channelId) { detail?.channelId?.takeIf { it.isNotBlank() }?.let { channelFound?.invoke(it) } }
+    LaunchedEffect(detail?.tradeNo, detail?.channelId, quick) { if (quick) detail?.channelId?.takeIf { it.isNotBlank() }?.let(onLoadChannel) }
+    var confirmPause by remember { mutableStateOf(false) }
+    var pausing by remember { mutableStateOf(false) }
+    var pauseMessage by remember(detail?.tradeNo) { mutableStateOf<String?>(null) }
+    if (confirmPause && detail != null && detail.channelId.isNotBlank()) com.futoonpay.admin.PanelAlertDialog(shape = RoundedCornerShape(8.dp),
+        onDismissRequest = { if (!pausing) confirmPause = false }, title = { Text("暂停通道 #${detail.channelId}？") },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("将向后台提交停用「${channelQuick?.name.orEmpty().ifBlank { "通道 #${detail.channelId}" }}」。停用后商户可能无法再通过它收款。")
+            channelQuick?.takeIf { !it.loading && it.error == null }?.let { Text("近 5 分钟成功率 ${it.rateText}（${it.detail}），请确认确实异常。", color = Muted, fontSize = 13.sp) }
+            Text("可在「管理 → 支付通道」重新启用。", color = Muted, fontSize = 13.sp)
+        } },
+        confirmButton = { com.futoonpay.admin.ui.ChatTextButton(enabled = !pausing, onClick = {
+            pausing = true
+            onPauseChannel(detail.channelId) { result -> pausing = false; confirmPause = false; pauseMessage = (if (result.success) "已提交停用：" else "未能停用：") + result.message }
+        }) { Text(if (pausing) "正在提交…" else "确认暂停", color = Danger) } },
+        dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { confirmPause = false }, enabled = !pausing) { Text("取消") } })
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -453,6 +489,7 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                     // Fetch the current order before offering any mutation; cached chat hints are never authority.
                     LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         item { Text(detail.tradeNo, fontWeight = FontWeight.SemiBold); DataRow("商户", "UID ${detail.merchantId}"); DataRow("金额", displayOrderAmount(detail.amount, detail.currency)); DataRow("当前状态", orderStatusLabel(detail.status)) }
+                        if (detail.channelId.isNotBlank()) item { ChannelQuickCard(detail.channelId, channelQuick, pauseMessage) { confirmPause = true } }
                         item { ChatOutlinedButton(onClick = { quick = false }, modifier = Modifier.fillMaxWidth()) { Text("查看完整详情") } }
                         items(orderActions(detail.toSummary())) { action -> ChatOutlinedButton(onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth()) { Text(action.label) } }
                     }
