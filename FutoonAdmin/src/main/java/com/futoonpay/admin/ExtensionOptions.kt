@@ -15,7 +15,8 @@ data class PanelOptions(
 data class AppearanceOptions(val theme: String = "telegram", val accent: String = "", val font: Int = 100,
     val radius: Int = 18, val opacity: Int = 100, val dim: Int = 0)
 data class BusinessReplyTemplate(val id: String = UUID.randomUUID().toString(), val title: String, val body: String)
-data class AutomationGroup(val dialog: Long, val title: String = "", val topic: Long = 0)
+/** [windowMinutes] 0 means "follow the rule"; 1-60 overrides the rule's message validity window for this group only. */
+data class AutomationGroup(val dialog: Long, val title: String = "", val topic: Long = 0, val windowMinutes: Int = 0)
 
 data class GroupAutomationRule(
     val id: String = UUID.randomUUID().toString(), val title: String = "补单案例", val dialog: Long,
@@ -29,9 +30,11 @@ data class GroupAutomationRule(
     fun targets(): List<AutomationGroup> = groups.ifEmpty { listOf(AutomationGroup(dialog, groupName, topic)) }
     fun watchesDialog(dialog: Long): Boolean = targets().any { it.dialog == dialog }
     fun groupTitle(dialog: Long): String = targets().firstOrNull { it.dialog == dialog }?.title.orEmpty()
+    /** Validity window in minutes for a message in [dialog]: that group's own setting when it has one, otherwise the rule's. */
+    fun windowFor(dialog: Long): Int = targets().firstOrNull { it.dialog == dialog }?.windowMinutes?.takeIf { it > 0 } ?: windowMinutes
     fun acceptsEvent(dialog: Long, topic: Long, sender: Long, text: String, messageDate: Long, now: Long): Boolean =
         enabled && dialog < 0 && targets().any { it.dialog == dialog && (it.topic == 0L || it.topic == topic) } && (this.sender == 0L || this.sender == sender) &&
-            messageDate >= since && messageDate <= now + 60 && now - messageDate <= windowMinutes * 60L &&
+            messageDate >= since && messageDate <= now + 60 && now - messageDate <= windowFor(dialog) * 60L &&
             (keyword.isBlank() || text.contains(keyword, ignoreCase = true))
 }
 
@@ -46,7 +49,7 @@ data class ExtensionOptions(val panel: PanelOptions = PanelOptions(), val appear
         .put("rules", JSONArray(rules.map { JSONObject().put("id", it.id).put("title", it.title).put("dialog", it.dialog.toString())
             .put("groupName", it.groupName).put("topic", it.topic.toString()).put("sender", it.sender.toString()).put("keyword", it.keyword)
             .put("button", it.button).put("action", it.action).put("draft", it.draft).put("enabled", it.enabled).put("since", it.since).put("cooldown", it.cooldown).put("windowMinutes", it.windowMinutes)
-            .put("groups", JSONArray(it.groups.map { g -> JSONObject().put("dialog", g.dialog.toString()).put("title", g.title).put("topic", g.topic.toString()) })) }))
+            .put("groups", JSONArray(it.groups.map { g -> JSONObject().put("dialog", g.dialog.toString()).put("title", g.title).put("topic", g.topic.toString()).put("windowMinutes", g.windowMinutes) })) }))
     companion object {
         @JvmStatic fun parse(value: JSONObject?): ExtensionOptions {
             if (value == null) return ExtensionOptions()
@@ -69,10 +72,10 @@ data class ExtensionOptions(val panel: PanelOptions = PanelOptions(), val appear
                 GroupAutomationRule(t.getString("id"), t.optString("title", "群规则"), t.getString("dialog").toLong(), t.optString("groupName"), t.optLong("topic"), t.optString("sender", "0").ifBlank { "0" }.toLong(),
                     t.optString("keyword"), t.optString("button"), t.optString("action", "click"), t.optString("draft"), t.optBoolean("enabled"), t.optLong("since"), t.optInt("cooldown", 5),
                     t.optJSONArray("groups")?.let { list -> (0 until list.length()).map { n -> val g = list.getJSONObject(n)
-                        AutomationGroup(g.getString("dialog").toLong(), g.optString("title"), g.optLong("topic")) } } ?: emptyList(), windowMinutes = t.optInt("windowMinutes", 5)).also { rule ->
+                        AutomationGroup(g.getString("dialog").toLong(), g.optString("title"), g.optLong("topic"), g.optInt("windowMinutes", 0)) } } ?: emptyList(), windowMinutes = t.optInt("windowMinutes", 5)).also { rule ->
                     require(rule.id.isNotBlank() && rule.title.isNotBlank() && rule.title.length <= 80 && rule.groupName.length <= 120 && rule.dialog < 0 && rule.topic >= 0 && rule.sender >= 0 && rule.cooldown in 2..3600 && rule.windowMinutes in 1..60 && rule.since >= 0) { "请填写有效的群组和规则名称；发送者 ID 可留空" }
-                    require(rule.targets().size in 1..50 && rule.targets().all { it.dialog < 0 && it.topic >= 0 && it.title.length <= 120 } && rule.targets().map { it.dialog }.distinct().size == rule.targets().size) { "请选择 1～50 个不重复的群组，话题 ID 不能小于 0" }
-                    require(rule.groups.isEmpty() || rule.groups.first() == AutomationGroup(rule.dialog, rule.groupName, rule.topic)) { "所选群组信息不一致，请重新选择" }
+                    require(rule.targets().size in 1..50 && rule.targets().all { it.dialog < 0 && it.topic >= 0 && it.title.length <= 120 && it.windowMinutes in 0..60 } && rule.targets().map { it.dialog }.distinct().size == rule.targets().size) { "请选择 1～50 个不重复的群组，话题 ID 不能小于 0" }
+                    require(rule.groups.isEmpty() || rule.groups.first().let { it.dialog == rule.dialog && it.title == rule.groupName && it.topic == rule.topic }) { "所选群组信息不一致，请重新选择" }
                     require(rule.keyword.length <= 300 && rule.button.length <= 100 && rule.draft.length <= 4096 && rule.action in listOf("click", "draft")) { "自动化规则内容不正确" }
                     require(if (rule.action == "click") rule.button.isNotBlank() else rule.draft.isNotBlank() && rule.keyword.isNotBlank()) { "点击动作需要按钮全名；草稿动作需要关键词和文案" }
                 }

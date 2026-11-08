@@ -7294,10 +7294,10 @@ new file mode 100644
 +            if(!rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,now)) {
 +                // Matched everything except age: say so, otherwise a message caught up after a reconnect vanishes without a trace.
 +                String staleKey=messageKey+":"+rule.getId();
-+                if(rule.getEnabled()&&!staleLogged.contains(staleKey)&&now-message.messageOwner.date>rule.getWindowMinutes()*60L
++                if(rule.getEnabled()&&!staleLogged.contains(staleKey)&&now-message.messageOwner.date>rule.windowFor(message.getDialogId())*60L
 +                    &&rule.acceptsEvent(message.getDialogId(),topic,sender,text,message.messageOwner.date,message.messageOwner.date)) {
 +                    staleLogged.add(staleKey);while(staleLogged.size()>200)staleLogged.remove(staleLogged.iterator().next());
-+                    record(rule,message,"消息已超过 "+rule.getWindowMinutes()+" 分钟（收到时已晚 "+((now-message.messageOwner.date)/60)+" 分钟），已跳过");
++                    record(rule,message,"消息已超过 "+rule.windowFor(message.getDialogId())+" 分钟（收到时已晚 "+((now-message.messageOwner.date)/60)+" 分钟），已跳过");
 +                }
 +                continue;
 +            }

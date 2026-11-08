@@ -184,11 +184,12 @@ import java.util.UUID
     var draft by state.draft
     var cooldown by state.cooldown
     var window by state.window
+    var firstWindow by state.firstWindow
     var awaitingPick by state.awaitingPick
     var additionalGroups by state.additionalGroups
     var error by remember { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
-    val dirty = additionalGroups != initial.groups.drop(1) || title != initial.title || dialog != (if (initial.dialog == -1L) "" else initial.dialog.toString()) || groupName != initial.groupName || topic != initial.topic.toString() || sender != (if (initial.sender <= 0) "" else initial.sender.toString()) || keyword != initial.keyword || button != initial.button || action != initial.action || draft != initial.draft || cooldown != initial.cooldown.toString() || window != initial.windowMinutes.toString()
+    val dirty = additionalGroups != initial.groups.drop(1) || title != initial.title || dialog != (if (initial.dialog == -1L) "" else initial.dialog.toString()) || groupName != initial.groupName || topic != initial.topic.toString() || sender != (if (initial.sender <= 0) "" else initial.sender.toString()) || keyword != initial.keyword || button != initial.button || action != initial.action || draft != initial.draft || cooldown != initial.cooldown.toString() || window != initial.windowMinutes.toString() || firstWindow != (initial.groups.firstOrNull()?.windowMinutes ?: 0).toString()
     fun back() { if (dirty) discard = true else close() }
     LaunchedEffect(revision) { if (awaitingPick) {
         val picked = runCatching { JSONObject(host?.selectedGroup().orEmpty()) }.getOrNull()
@@ -205,12 +206,15 @@ import java.util.UUID
         Text(groupName.ifBlank { "尚未选择群组" }, color = Muted)
         OutlinedTextField(dialog, { dialog = it }, label = { Text("客户端群 ID（选择群组自动填写）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(topic, { topic = it }, label = { Text("话题 ID；0 表示全部话题") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        OutlinedTextField(firstWindow, { if (it.isEmpty() || it.toIntOrNull() != null) firstWindow = it }, label = { Text("此群消息有效时间（分钟）；0 表示跟随规则") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
         additionalGroups.forEach { group ->
             Column(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) { Text(group.title.ifBlank { "群 ${group.dialog}" }, Modifier.weight(1f)); com.futoonpay.admin.ui.ChatTextButton(onClick = { additionalGroups = additionalGroups.filterNot { it.dialog == group.dialog } }) { Text("移除") } }
                 Text("群 ID：${group.dialog}", color = Muted, fontSize = 12.sp)
                 var topicText by remember(group.dialog) { mutableStateOf(group.topic.toString()) }
                 OutlinedTextField(topicText, { value -> if (value.isEmpty() || value.toLongOrNull()?.let { it >= 0 } == true) { topicText = value; additionalGroups = additionalGroups.map { if (it.dialog == group.dialog) it.copy(topic = value.toLongOrNull() ?: 0) else it } } }, label = { Text("此群话题 ID；0 表示全部话题") }, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
+                var windowText by remember(group.dialog) { mutableStateOf(group.windowMinutes.toString()) }
+                OutlinedTextField(windowText, { value -> if (value.isEmpty() || value.toIntOrNull()?.let { it in 0..60 } == true) { windowText = value; additionalGroups = additionalGroups.map { if (it.dialog == group.dialog) it.copy(windowMinutes = value.toIntOrNull() ?: 0) else it } } }, label = { Text("此群消息有效时间（分钟）；0 表示跟随规则") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
         }
         OutlinedTextField(sender, { sender = it }, label = { Text("指定机器人／发送者 Telegram ID") }, supportingText = { Text("选填，留空不限制发送者") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
@@ -220,7 +224,7 @@ import java.util.UUID
         else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()); Text("可用 {消息文字}、{群名称}、{发送者ID}、{发送者名称}、{订单号}（取消息里第一个订单号，没有就不生成）、{消息时间}、{话题ID}。草稿会作为对触发消息的回复；输入框已有文字、已有回复或编辑、已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
         OutlinedTextField(cooldown, { cooldown = it }, label = { Text("执行间隔（2～3600 秒）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(window, { window = it }, label = { Text("消息有效时间（1～60 分钟，默认 5）") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
-        Text("只处理这个时间内收到的消息。App 在后台断线、重新联网后补收的旧消息，超过该时间会跳过并写入执行记录；放宽后可能点到已被人工处理过的旧按钮。", color = Muted, fontSize = 12.sp)
+        Text("只处理这个时间内收到的消息。App 在后台断线、重新联网后补收的旧消息，超过该时间会跳过并写入执行记录；放宽后可能点到已被人工处理过的旧按钮。每个群也可以单独设置有效时间，用来先在个别群里试验。", color = Muted, fontSize = 12.sp)
         Text("新增规则默认关闭，保存规则后再开启。点击只执行指定按钮，不延伸到后续确认。", color = Muted, fontSize = 12.sp)
         error?.let { Text(it, color = Danger) }
         Row { com.futoonpay.admin.ui.ChatTextButton(onClick = ::back) { Text("取消") }; com.futoonpay.admin.ui.ChatButton(onClick = { try {

@@ -75,6 +75,24 @@ class ExtensionOptionsTest {
         draft.window.value = "90"
         assertThrows(IllegalArgumentException::class.java) { draft.build(rule) }
     }
+    @Test fun aGroupCanOverrideTheMessageWindowAndFallsBackToTheRuleOtherwise() {
+        val groups = listOf(AutomationGroup(-42, "试验群", 0, 30), AutomationGroup(-73, "普通群"))
+        val rule = GroupAutomationRule(dialog = -42, groupName = "试验群", sender = 0, groups = groups, enabled = true, since = 100, windowMinutes = 5)
+        assertEquals(30, rule.windowFor(-42)); assertEquals(5, rule.windowFor(-73)); assertEquals(5, rule.windowFor(-99))
+        assertTrue(rule.acceptsEvent(-42, 0, 7, "x", 105, 105 + 1800)); assertFalse(rule.acceptsEvent(-42, 0, 7, "x", 105, 105 + 1801))
+        assertTrue(rule.acceptsEvent(-73, 0, 7, "x", 105, 105 + 300)); assertFalse(rule.acceptsEvent(-73, 0, 7, "x", 105, 105 + 301))
+        val restored = ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule)).json()).rules.single()
+        assertEquals(rule, restored); assertEquals(30, restored.groups.first().windowMinutes)
+        val legacy = ExtensionOptions(rules = listOf(rule)).json().also { json -> val rows = json.getJSONArray("rules").getJSONObject(0).getJSONArray("groups"); for (i in 0 until rows.length()) rows.getJSONObject(i).remove("windowMinutes") }
+        assertEquals(listOf(0, 0), ExtensionOptions.parse(legacy).rules.single().groups.map { it.windowMinutes })
+        for (bad in listOf(-1, 61)) assertThrows(IllegalArgumentException::class.java) { ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule.copy(groups = listOf(groups[0].copy(windowMinutes = bad), groups[1])))).json()) }
+        val draft = AutomationRuleDraft(rule); draft.firstWindow.value = "15"
+        assertEquals(15, draft.build(rule).groups.first().windowMinutes)
+        val single = GroupAutomationRule(dialog = -42, sender = 0); val d2 = AutomationRuleDraft(single); d2.firstWindow.value = "20"
+        assertEquals(listOf(20), d2.build(single).groups.map { it.windowMinutes })
+        d2.firstWindow.value = "0"; assertTrue(d2.build(single).groups.isEmpty())
+        d2.firstWindow.value = "90"; assertThrows(IllegalArgumentException::class.java) { d2.build(single) }
+    }
     @Test fun blankSenderAndTopicSaveWithoutParsingErrorsAndInvalidValuesHaveFieldMessages() {
         val rule = GroupAutomationRule(dialog = -42, sender = 0)
         val draft = AutomationRuleDraft(rule); draft.sender.value = ""; draft.topic.value = ""

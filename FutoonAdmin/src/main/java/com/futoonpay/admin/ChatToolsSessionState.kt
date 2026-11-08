@@ -27,13 +27,14 @@ internal class AutomationRuleDraft(initial: GroupAutomationRule) {
     val draft = mutableStateOf(initial.draft)
     val cooldown = mutableStateOf(initial.cooldown.toString())
     val window = mutableStateOf(initial.windowMinutes.toString())
+    val firstWindow = mutableStateOf((initial.groups.firstOrNull()?.windowMinutes ?: 0).toString())
     val awaitingPick = mutableStateOf(false)
-    fun selection(): List<AutomationGroup> = listOfNotNull(dialog.value.trim().toLongOrNull()?.takeIf { it < 0 }?.let { AutomationGroup(it, groupName.value, topic.value.trim().toLongOrNull() ?: 0) }) + additionalGroups.value
+    fun selection(): List<AutomationGroup> = listOfNotNull(dialog.value.trim().toLongOrNull()?.takeIf { it < 0 }?.let { AutomationGroup(it, groupName.value, topic.value.trim().toLongOrNull() ?: 0, firstWindow.value.trim().toIntOrNull() ?: 0) }) + additionalGroups.value
     fun applySelection(picked: List<AutomationGroup>) {
         if (picked.isEmpty()) return
         val old = selection().associateBy { it.dialog }
         val groups = picked.distinctBy { it.dialog }.map { old[it.dialog]?.copy(title = it.title) ?: it }
-        dialog.value = groups.first().dialog.toString(); groupName.value = groups.first().title; topic.value = groups.first().topic.toString()
+        dialog.value = groups.first().dialog.toString(); groupName.value = groups.first().title; topic.value = groups.first().topic.toString(); firstWindow.value = groups.first().windowMinutes.toString()
         additionalGroups.value = groups.drop(1)
     }
     fun build(initial: GroupAutomationRule): GroupAutomationRule {
@@ -42,10 +43,12 @@ internal class AutomationRuleDraft(initial: GroupAutomationRule) {
         val sid = requireNotNull(sender.value.trim().ifBlank { "0" }.toLongOrNull()?.takeIf { it >= 0 }) { "发送者 ID 可留空；填写时应为正整数" }
         val seconds = requireNotNull(cooldown.value.trim().toIntOrNull()?.takeIf { it in 2..3600 }) { "执行间隔应为 2～3600 秒" }
         val minutes = requireNotNull(window.value.trim().toIntOrNull()?.takeIf { it in 1..60 }) { "有效时间应为 1～60 分钟" }
-        val targets = listOf(AutomationGroup(did, groupName.value, tid)) + additionalGroups.value
+        val firstMinutes = requireNotNull(firstWindow.value.trim().ifBlank { "0" }.toIntOrNull()?.takeIf { it in 0..60 }) { "群的有效时间应为 0～60 分钟，0 表示跟随规则" }
+        require(additionalGroups.value.all { it.windowMinutes in 0..60 }) { "群的有效时间应为 0～60 分钟，0 表示跟随规则" }
+        val targets = listOf(AutomationGroup(did, groupName.value, tid, firstMinutes)) + additionalGroups.value
         return initial.copy(title = title.value.trim(), dialog = did, groupName = groupName.value, topic = tid, sender = sid,
             keyword = keyword.value, button = button.value, action = action.value, draft = draft.value, cooldown = seconds, windowMinutes = minutes,
-            groups = if (targets.size > 1 || initial.groups.isNotEmpty()) targets else emptyList(),
+            groups = if (targets.size > 1 || initial.groups.isNotEmpty() || targets.any { it.windowMinutes > 0 }) targets else emptyList(),
             since = if (initial.enabled) System.currentTimeMillis() / 1000 else initial.since).also {
             ExtensionOptions.parse(ExtensionOptions(rules = listOf(it)).json())
         }
