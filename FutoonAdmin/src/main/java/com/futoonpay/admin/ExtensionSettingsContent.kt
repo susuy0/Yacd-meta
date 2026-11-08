@@ -217,7 +217,7 @@ import java.util.UUID
         OutlinedTextField(keyword, { keyword = it }, label = { Text("消息包含文字（点击按钮时可留空）") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         Row { FilterChip(action == "click", { action = "click" }, label = { Text("点击机器人按钮") }); Spacer(Modifier.width(8.dp)); FilterChip(action == "draft", { action = "draft" }, label = { Text("生成回复草稿") }) }
         if (action == "click") OutlinedTextField(button, { button = it }, label = { Text("按钮完整文字，精确匹配") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()); Text("可用 {消息文字}、{群名称}、{发送者ID}；已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
+        else { OutlinedTextField(draft, { draft = it }, label = { Text("草稿文案") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()); Text("可用 {消息文字}、{群名称}、{发送者ID}、{发送者名称}、{订单号}（取消息里第一个订单号，没有就不生成）、{消息时间}、{话题ID}。草稿会作为对触发消息的回复；输入框已有文字、已有回复或编辑、已有聊天草稿时跳过，不覆盖。", color = Muted, fontSize = 12.sp) }
         OutlinedTextField(cooldown, { cooldown = it }, label = { Text("执行间隔（2～3600 秒）") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
         OutlinedTextField(window, { window = it }, label = { Text("消息有效时间（1～60 分钟，默认 5）") }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = com.futoonpay.admin.ui.ChatFieldColors())
         Text("只处理这个时间内收到的消息。App 在后台断线、重新联网后补收的旧消息，超过该时间会跳过并写入执行记录；放宽后可能点到已被人工处理过的旧按钮。", color = Muted, fontSize = 12.sp)
