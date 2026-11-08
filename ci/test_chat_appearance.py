@@ -18,7 +18,7 @@ assert 'POSITION_CONTACTS = -1' in main and 'TABS_COUNT = 2' in main
 assert 'setChatAppearance("chat")' in main
 view=(src/'DialogsActivity.java').read_text();assert 'hasChatQuickFilters()' in view and '!onlySelect && folderId == 0 && communityId == 0' in view
 assert 'dialog.unread_count > 0 || dialog.unread_mark' in view and 'chat.megagroup' in view
-assert 'getChatSearchHeight()' in view and '"未读"' in view
+assert 'getChatSearchHeight()' in view and 'updateFolderBar()' in view and '"未读"' not in view, 'The header lists the chat folders; the 未读/群组 quick filter buttons are gone'
 assert 'new ArrayList<>()' in view and 'return filtered;' in view
 assert 'FutoonPanel' in (src/'ChatActivity.java').read_text()
 assert 'ChatLook.bubblePath' in (src/'ActionBar/MessageDrawable.java').read_text()
