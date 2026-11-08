@@ -26,6 +26,10 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
     private var sheet: ChannelSheetView? = null
     private var closed = false
     private var lastHeight = -1
+    // Declared before init{}: render() runs from the init block (Dispatchers.Main.immediate), so these must already exist.
+    private val glassAllowed = android.os.Build.VERSION.SDK_INT >= 24 && !android.os.Build.FINGERPRINT.equals("robolectric", ignoreCase = true)
+    private val glassViews = mutableListOf<com.example.liquidglass.LiquidGlassView>()
+    private var backdrop: View? = null
     private fun dp(v: Int) = (v * resources.displayMetrics.density + .5f).toInt()
     init {
         orientation = VERTICAL; importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -78,9 +82,6 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
 
     // Liquid glass (MIT, com.github.QWEA0:liquidglass, vendored in local-maven). It is only a surface: if it cannot be created
     // (unit tests, an unexpected device) the rows simply stay transparent over the chat, exactly as before.
-    private val glassAllowed = android.os.Build.VERSION.SDK_INT >= 24 && !android.os.Build.FINGERPRINT.equals("robolectric", ignoreCase = true)
-    private val glassViews = mutableListOf<com.example.liquidglass.LiquidGlassView>()
-    private var backdrop: View? = null
     private fun glassFrame(): FrameLayout {
         if (glassAllowed) try {
             val glass = com.example.liquidglass.LiquidGlassView(context)
