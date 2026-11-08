@@ -14335,7 +14335,7 @@ index 9274278b46bdfd9e151a421afbce85e06b6d3599..4a52a7079f8122c76d2202b725a55498
      }
  
 +    public void setChatFilters(String[] labels, int selected, java.util.function.IntConsumer callback) {
-+        if (chatFilters != null) return;
++        if (chatFilters != null) { chatFilters.setLabels(labels, callback, selected); return; }
 +        chatFilters = new com.futoonpay.admin.appearance.ChatFilterBar(getContext(), labels, org.telegram.ui.FutoonChatAppearance.dark(), callback);
 +        chatFilters.select(selected);
 +        addView(chatFilters, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, 4, 52, 4, 0));
@@ -15398,20 +15398,12 @@ index 0c5dc3f..dcc142f 100644
          menu.setTranslationX(-dp(5));
          searchItem = menu.addItem(0, R.drawable.outline_header_search).setIsSearchField(true, false);
          searchItem.setOnClickListener(v -> {
-@@ -3287,6 +3326,16 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -3287,6 +3326,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
              }
          };
          fragmentSearchField.setPadding(dp(4), dp(4), dp(4), dp(4));
 +        if (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE) fragmentSearchField.showFutoonNote("zh".equals(LocaleController.getInstance().getCurrentLocale().getLanguage()) ? "有新消息时，这些聊天会自动取消归档。" : "These chats are unarchived when new messages are received.", getThemedColor(Theme.key_windowBackgroundWhite));
-+        if (hasChatQuickFilters()) fragmentSearchField.setChatFilters(new String[]{"全部", "未读", "群组", "列表 ⌄"}, chatQuickFilter, value -> {
-+            if (value == 3) { showChatFolderChooser(); return; }
-+            if (filterTabsView != null && filterTabsView.getCurrentTabId() != filterTabsView.getDefaultTabId()) filterTabsView.selectFirstTab();
-+            chatQuickFilter = value;
-+            if (viewPages != null) for (ViewPage page : viewPages) if (page != null && page.dialogsAdapter != null) {
-+                page.dialogsAdapter.notifyDataSetChanged();
-+                page.layoutManager.scrollToPositionWithOffset(0, 0);
-+            }
-+        });
++        if (hasChatQuickFilters()) updateFolderBar();
          fragmentSearchField.setPivotX(0);
          fragmentSearchField.setPivotY(0);
          if (initialDialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -15578,25 +15570,35 @@ index 0c5dc3f..dcc142f 100644
          }
      }
 
-@@ -6847,6 +6934,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6847,6 +6934,30 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
      }
 
-+    private void showChatFolderChooser() {
-+        if (getParentActivity() == null || filterTabsView == null) return;
++    /** The folder switcher in the home header: one button per chat folder plus manage, switching in place instead of a popup. */
++    private void updateFolderBar() {
++        if (fragmentSearchField == null || !hasChatQuickFilters()) return;
 +        final ArrayList<MessagesController.DialogFilter> folders = getMessagesController().getDialogFilters();
-+        CharSequence[] labels = new CharSequence[folders.size() + 1];
-+        for (int i = 0; i < folders.size(); i++) labels[i] = folders.get(i).isDefault() ? "全部聊天" : folders.get(i).name;
-+        labels[folders.size()] = "管理列表";
-+        showDialog(new AlertDialog.Builder(getParentActivity()).setTitle("聊天列表").setItems(labels, (dialog, which) -> {
-+            if (which == folders.size()) { presentFragment(new FiltersSetupActivity()); return; }
++        if (folders.size() < 2) { fragmentSearchField.setChatFilters(new String[]{"全部聊天", "文件夹"}, 0, value -> { if (value == 1) presentFragment(new FiltersSetupActivity()); }); return; }
++        final String[] labels = new String[folders.size() + 1];
++        int selected = 0;
++        for (int i = 0; i < folders.size(); i++) {
++            labels[i] = folders.get(i).isDefault() ? "全部聊天" : folders.get(i).name;
++            if (filterTabsView != null && !folders.get(i).isDefault() && filterTabsView.getCurrentTabId() == folders.get(i).id) selected = i;
++        }
++        labels[folders.size()] = "管理";
++        fragmentSearchField.setChatFilters(labels, selected, value -> {
++            if (value == folders.size()) { presentFragment(new FiltersSetupActivity()); updateFolderBar(); return; }
 +            chatQuickFilter = 0;
-+            fragmentSearchField.selectChatFilter(which == filterTabsView.getDefaultTabId() ? 0 : 3);
-+            filterTabsView.selectPosition(which);
-+        }).create(), dismissed -> fragmentSearchField.selectChatFilter(filterTabsView.getCurrentTabId() == filterTabsView.getDefaultTabId() ? chatQuickFilter : 3));
++            if (filterTabsView != null) filterTabsView.selectPosition(value);
++            if (viewPages != null) for (ViewPage page : viewPages) if (page != null && page.dialogsAdapter != null) {
++                page.dialogsAdapter.notifyDataSetChanged();
++                page.layoutManager.scrollToPositionWithOffset(0, 0);
++            }
++        });
 +    }
 +
      private void updateFilterTabs(boolean force, boolean animated) {
++        updateFolderBar();
          if (filterTabsView == null || inPreviewMode || searchIsShowed || (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
              return;
 @@ -6857,7 +6958,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.

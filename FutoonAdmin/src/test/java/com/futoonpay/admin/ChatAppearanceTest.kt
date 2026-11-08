@@ -76,6 +76,16 @@ class ChatAppearanceTest {
         }
     }
     private fun buttons(view:View):List<TextView> =(if(view is TextView)listOf(view)else emptyList())+(if(view is ViewGroup)(0 until view.childCount).flatMap{buttons(view.getChildAt(it))}else emptyList())
+    @Test fun folderLabelsCanBeReplacedInPlaceAndStillRouteToTheNewCallback() {
+        val first=mutableListOf<Int>();val second=mutableListOf<Int>()
+        val bar=ChatFilterBar(context,arrayOf("全部聊天","未读"),false){first+=it}
+        bar.setLabels(arrayOf("全部聊天","bot","groip","Personal","管理"),{second+=it},2)
+        bar.measure(View.MeasureSpec.makeMeasureSpec(320,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(48,View.MeasureSpec.EXACTLY));bar.layout(0,0,320,48)
+        val nodes=buttons(bar);assertEquals(5,nodes.size);assertEquals(2,bar.selectedFilter());assertTrue(nodes[2].isSelected);assertFalse(nodes[0].isSelected)
+        nodes.forEach{assertTrue(it.height>=48)}
+        nodes[4].performClick();assertEquals(listOf(4),second);assertTrue(first.isEmpty())
+        bar.setLabels(arrayOf("全部聊天"),{second+=it},9);assertEquals(1,buttons(bar).size);assertEquals(0,bar.selectedFilter())
+    }
     @Test fun realNativeFilterButtonsKeepRoutingSelectionAndTouchTargets() {
         val calls=mutableListOf<Int>();val bar=ChatFilterBar(context,arrayOf("全部","未读","群组"),false){calls+=it}
         bar.measure(View.MeasureSpec.makeMeasureSpec(320,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(48,View.MeasureSpec.EXACTLY));bar.layout(0,0,320,48)

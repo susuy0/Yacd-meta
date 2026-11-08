@@ -43,8 +43,8 @@ chat=(src/'Components/ChatActivityEnterView.java').read_text();dialogs=(src/'Dia
 assert 'iosAttachButton.setOnClickListener' in chat and 'delegate.didPressAttachButton();' in chat
 assert 'captionNearAttach && !isFutoonComposer()' in chat and 'isFutoonComposer() ? 44 : 0' in chat
 assert 'public void selectPosition(int position)' in tabs and 'delegate.canPerformActions()) scrollToTab' in tabs
-assert 'filterTabsView.selectPosition(which)' in dialogs and 'presentFragment(new FiltersSetupActivity())' in dialogs
-assert 'dismissed -> fragmentSearchField.selectChatFilter' in dialogs
+assert 'filterTabsView.selectPosition(value)' in dialogs and 'presentFragment(new FiltersSetupActivity())' in dialogs
+assert 'private void updateFolderBar()' in dialogs and 'showChatFolderChooser' not in dialogs and '列表 ⌄' not in dialogs, 'Folders switch in the header bar, not in a popup'
 assert 'newChat.setOnClickListener(v -> floatingButton3.performClick())' in dialogs
 assert 'listView.setSections(view ->' in profile and 'Telegram ID' in profile
 assert 'bgColor == BotInlineKeyboard.BackgroundColor.NONE ? Theme.getColor(Theme.key_chat_botKeyboardButtonText' in bot
