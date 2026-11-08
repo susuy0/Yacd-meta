@@ -1,0 +1,88 @@
+{
+  "formatVersion" : "1.1",
+  "component" : {
+    "group" : "com.github.QWEA0",
+    "module" : "liquidglass",
+    "version" : "v2.0.11",
+    "attributes" : {
+      "org.gradle.status" : "release"
+    }
+  },
+  "createdBy" : {
+    "gradle" : {
+      "version" : "8.11.1"
+    }
+  },
+  "variants" : [ {
+    "name" : "releaseVariantReleaseApiPublication",
+    "attributes" : {
+      "org.gradle.category" : "library",
+      "org.gradle.dependency.bundling" : "external",
+      "org.gradle.libraryelements" : "aar",
+      "org.gradle.usage" : "java-api"
+    },
+    "dependencies" : [ {
+      "group" : "org.jetbrains.kotlin",
+      "module" : "kotlin-stdlib",
+      "version" : {
+        "requires" : "2.0.21"
+      }
+    } ],
+    "files" : [ {
+      "name" : "liquidglass-v2.0.11.aar",
+      "url" : "liquidglass-v2.0.11.aar",
+      "size" : 468801,
+      "sha512" : "7b17d4792bc1722d20fe1532c43e9e791f2a2156c9d036bacc0ad885dcd7d512fe11d6393cd01c7900f2dc446a6c2b21ffbfcb99ebf035f554f0adfe53f15bd5",
+      "sha256" : "8218f8075c3c447241f2a1e96d502fc48718c6d007e9e05347bb9669901f13a9",
+      "sha1" : "0c4255084b9b00e4c85f217beea9062186c7197a",
+      "md5" : "a05cff7dbe4fa64bcf4cb6863ade13bc"
+    } ]
+  }, {
+    "name" : "releaseVariantReleaseRuntimePublication",
+    "attributes" : {
+      "org.gradle.category" : "library",
+      "org.gradle.dependency.bundling" : "external",
+      "org.gradle.libraryelements" : "aar",
+      "org.gradle.usage" : "java-runtime"
+    },
+    "dependencies" : [ {
+      "group" : "androidx.core",
+      "module" : "core-ktx",
+      "version" : {
+        "requires" : "1.13.1"
+      }
+    }, {
+      "group" : "org.jetbrains.kotlin",
+      "module" : "kotlin-stdlib",
+      "version" : {
+        "requires" : "2.0.21"
+      }
+    } ],
+    "files" : [ {
+      "name" : "liquidglass-v2.0.11.aar",
+      "url" : "liquidglass-v2.0.11.aar",
+      "size" : 468801,
+      "sha512" : "7b17d4792bc1722d20fe1532c43e9e791f2a2156c9d036bacc0ad885dcd7d512fe11d6393cd01c7900f2dc446a6c2b21ffbfcb99ebf035f554f0adfe53f15bd5",
+      "sha256" : "8218f8075c3c447241f2a1e96d502fc48718c6d007e9e05347bb9669901f13a9",
+      "sha1" : "0c4255084b9b00e4c85f217beea9062186c7197a",
+      "md5" : "a05cff7dbe4fa64bcf4cb6863ade13bc"
+    } ]
+  }, {
+    "name" : "releaseVariantReleaseSourcePublication",
+    "attributes" : {
+      "org.gradle.category" : "documentation",
+      "org.gradle.dependency.bundling" : "external",
+      "org.gradle.docstype" : "sources",
+      "org.gradle.usage" : "java-runtime"
+    },
+    "files" : [ {
+      "name" : "liquidglass-v2.0.11.jar",
+      "url" : "liquidglass-v2.0.11.jar",
+      "size" : 144528,
+      "sha512" : "4995359cf9e39e4253cb4c01ea92a9c2ca16f42afb563d077a630968f39e3a6b971a8b56f77692c5b22e692206b7319ec8e8a7ee3a7f129f09ad29ad992e7c1f",
+      "sha256" : "688e9cbe83e9cfe234ac56d935870b48ab3b2b0e01d2b7f8ce17cf805755a22d",
+      "sha1" : "60dcabddc86067be11d682bfcb4d9c31fed1e21f",
+      "md5" : "53b4618f69ed01d38b4005372fef8863"
+    } ]
+  } ]
+}

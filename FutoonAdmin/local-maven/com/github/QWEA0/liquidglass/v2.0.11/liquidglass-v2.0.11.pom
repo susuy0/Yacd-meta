@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- do_not_remove: published-with-gradle-metadata -->
+<modelVersion>4.0.0</modelVersion>
+  <groupId>com.github.QWEA0</groupId>
+  <artifactId>liquidglass</artifactId>
+  <version>v2.0.11</version>
+  <packaging>aar</packaging>
+  <name>QWEA0/Liquid-Glass-Android</name>
+  <description>Liquid Glass for the Android View system — real SDF refraction, physical dispersion, sensor-driven specular. Drop into existing XML layouts, no Compose required. API 24+</description>
+  <url>https://github.com/QWEA0/Liquid-Glass-Android</url>
+  <inceptionYear>2025</inceptionYear>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://api.github.com/licenses/mit</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>QWEA0</id>
+      <name>PandaDog</name>
+      <email></email>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git://github.com/QWEA0/Liquid-Glass-Android.git</connection>
+    <developerConnection>scm:git://github.com/QWEA0/Liquid-Glass-Android.git</developerConnection>
+    <url>git://github.com/QWEA0/Liquid-Glass-Android.git</url>
+  </scm>
+  <dependencies>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+      <version>2.0.21</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>androidx.core</groupId>
+      <artifactId>core-ktx</artifactId>
+      <version>1.13.1</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>

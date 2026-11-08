@@ -22349,3 +22349,14 @@ new file mode 100644
 +        try { Toast.makeText(parent.getParentActivity() != null ? parent.getParentActivity() : org.telegram.messenger.ApplicationLoader.applicationContext, summary, Toast.LENGTH_LONG).show(); } catch (Exception ignored) {}
 +    }
 +}
+diff --git a/TMessagesProj_App/src/main/AndroidManifest.xml b/TMessagesProj_App/src/main/AndroidManifest.xml
+--- a/TMessagesProj_App/src/main/AndroidManifest.xml
++++ b/TMessagesProj_App/src/main/AndroidManifest.xml
+@@ -2,6 +2,7 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:tools="http://schemas.android.com/tools"
+     android:installLocation="auto">
++    <uses-sdk tools:overrideLibrary="com.example.liquidglass" />
+ 
+     <application android:name="org.telegram.messenger.ApplicationLoaderImpl" tools:replace="name">
+         <service

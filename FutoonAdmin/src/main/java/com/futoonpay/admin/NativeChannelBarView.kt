@@ -75,6 +75,42 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
      */
     @Suppress("UNUSED_PARAMETER")
     private fun capsule(verticalInset: Int = 6, horizontalInset: Int = 8): android.graphics.drawable.Drawable = android.graphics.drawable.ColorDrawable(0)
+
+    // Liquid glass (MIT, com.github.QWEA0:liquidglass, vendored in local-maven). It is only a surface: if it cannot be created
+    // (unit tests, an unexpected device) the rows simply stay transparent over the chat, exactly as before.
+    private val glassAllowed = android.os.Build.VERSION.SDK_INT >= 24 && !android.os.Build.FINGERPRINT.equals("robolectric", ignoreCase = true)
+    private val glassViews = mutableListOf<com.example.liquidglass.LiquidGlassView>()
+    private var backdrop: View? = null
+    private fun glassFrame(): FrameLayout {
+        if (glassAllowed) try {
+            val glass = com.example.liquidglass.LiquidGlassView(context)
+            glass.cornerRadius = dp(24).toFloat()
+            glass.enableDynamicBackground = true
+            glass.material = com.example.liquidglass.GlassMaterial.REGULAR
+            glass.bevelWidth = dp(14).toFloat()
+            glass.refractionHeight = dp(12).toFloat()
+            glass.dispersionStrength = 0.06f
+            glass.enablePressEffect = false
+            glass.glassTint = (palette.surface.toArgb() and 0x00FFFFFF) or 0x4D000000
+            backdrop?.let { glass.backdropSource = it }
+            glassViews += glass
+            return glass
+        } catch (_: Throwable) { }
+        return FrameLayout(context)
+    }
+    /** The whole chat screen is the backdrop, so the glass refracts the wallpaper and messages scrolling under the strip. */
+    private fun bindBackdrop() {
+        val content = rootView?.findViewById<View>(android.R.id.content) ?: return
+        backdrop = content
+        glassViews.forEach { it.backdropSource = content }
+    }
+    override fun onAttachedToWindow() { super.onAttachedToWindow(); bindBackdrop() }
+    /** One row of controls on a glass pill. The row keeps its full height, so every touch target stays at least 48dp. */
+    private fun addGlass(content: View, heightDp: Int) {
+        val frame = glassFrame()
+        frame.addView(content, FrameLayout.LayoutParams(-1, -1))
+        addView(frame, LayoutParams(-1, dp(heightDp)).apply { setMargins(dp(8), 0, dp(8), 0) })
+    }
     /** Plain accent text action inside a capsule; the ripple is a 36dp pill inside the 48dp touch target. */
     private fun capsuleAction(label: String, kind: String) = text(label, 13f, palette.accentText.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; minWidth = dp(48); setPadding(dp(8), 0, dp(8), 0)
@@ -95,7 +131,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val merchant = state.merchant
         if (merchant == null) {
             val label = when { state.merchantLoading -> "正在识别商户 · TG ${state.telegramId}"; state.merchantCandidates.isNotEmpty() -> "选择商户（${state.merchantCandidates.size}） · TG ${state.telegramId}"; else -> "${state.merchantError ?: "识别商户"} · 重试" }
-            addView(text(label, 13f, palette.accentText.toArgb()).apply { setPadding(dp(24),0,dp(24),0); background = capsule(if (height >= 48) 6 else 2); isFocusable=true; contentDescription=label+"，按钮"; setOnClickListener { if(state.merchantCandidates.isNotEmpty()) open("merchant-select") else model.refreshMerchant() } }, LayoutParams(-1,dp(height)))
+            addGlass(text(label, 13f, palette.accentText.toArgb()).apply { setPadding(dp(24),0,dp(24),0); isFocusable=true; contentDescription=label+"，按钮"; setOnClickListener { if(state.merchantCandidates.isNotEmpty()) open("merchant-select") else model.refreshMerchant() } }, height)
             return
         }
         val name = merchant.username.ifBlank { "当前商户" }
@@ -121,12 +157,12 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
                 post { Toast.makeText(context, "长按「通道」可隐藏此入口，可在 Futoonpay 设置里恢复", Toast.LENGTH_LONG).show() }
             }
         }
-        addView(row, LayoutParams(-1, dp(height)))
+        addGlass(row, height)
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); if (!closed) render(model.state.value) }
     internal fun render(state: ChannelShortcutState) {
         if (closed) return
-        removeAllViews(); setBackgroundColor(0)
+        removeAllViews(); setBackgroundColor(0); glassViews.clear()
         val scale = resources.configuration.fontScale * palette.fontScale
         val large = scale >= 1.3f
         val linked = state.targets.isNotEmpty()
@@ -156,7 +192,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
                         .onFailure { Toast.makeText(context, "会话已变化，请重新打开", Toast.LENGTH_SHORT).show() }
                 }
             }
-            addView(login, LayoutParams(-1, dp(48)))
+            addGlass(login, 48)
             return
         }
         if (merchantRow) addMerchantRow(state, merchantHeight, large, foldSelect)
@@ -167,7 +203,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             row.background = capsule(); row.setPadding(dp(14), 0, dp(10), 0)
             row.addView(text("选择支付通道", 14f, palette.accentText.toArgb()).apply { typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD); setOnClickListener { open("select") }; isFocusable = true; isClickable = true; contentDescription = "选择支付通道，按钮" }, LayoutParams(0,-1,1f))
             row.addView(text("×", 24f, palette.secondaryText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "隐藏此话题的通道入口，可在 Futoonpay 设置恢复"; setOnClickListener { model.hide() }; isFocusable = true }, LayoutParams(dp(48),-1))
-            addView(row, LayoutParams(-1,dp(48))); return
+            addGlass(row, 48); return
         }
         if (compact) {
             val row=LinearLayout(context).apply{orientation=HORIZONTAL;background=capsule();setPadding(dp(12),0,dp(12),0)}
@@ -176,7 +212,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             row.addView(button("成功率 ${if(state.loading) "更新中" else if(state.error!=null) "获取失败" else state.snapshot?.rateText?:"—"}",1.2f){open("stats")}.apply{isEnabled=!state.invalid})
             row.addView(button("编辑通道",.9f){open("edit")}.apply{isEnabled=!state.invalid})
             row.addView(text("切换",12f,palette.accentText.toArgb()).apply{gravity=Gravity.CENTER;setOnClickListener{open("select")};isFocusable=true;contentDescription="切换支付通道，按钮"},LayoutParams(dp(48),dp(48)))
-            addView(row,LayoutParams(-1,dp(48)));return
+            addGlass(row,48);return
         }
         val body = LinearLayout(context).apply { orientation = HORIZONTAL; background = capsule(2, 8) }
         val left = LinearLayout(context).apply { orientation = VERTICAL }
@@ -200,7 +236,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         left.addView(buttons, LayoutParams(-1,dp(channelHeight - if (large) 47 else 27)))
         body.addView(left, LayoutParams(0,-1,1f))
         body.addView(text(if (state.invalid) "重新\n选择" else "⇄\n切换", 12f, palette.accentText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "切换支付通道，按钮"; isFocusable = true; setOnClickListener { open("select") } }, LayoutParams(dp(48),-1))
-        addView(body, LayoutParams(-1,dp(channelHeight)))
+        addGlass(body, channelHeight)
     }
 }
 

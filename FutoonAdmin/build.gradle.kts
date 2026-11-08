@@ -26,6 +26,13 @@ android {
         unitTests.all { it.maxHeapSize = "3g"; it.failFast = true }
     }
 }
+repositories {
+    // The glass library is vendored (MIT, pinned v2.0.11, see local-maven/THIRD-PARTY.md) and resolved only from here, never from JitPack.
+    exclusiveContent {
+        forRepository { maven { url = uri(layout.projectDirectory.dir("local-maven")) } }
+        filter { includeGroup("com.github.QWEA0") }
+    }
+}
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(composeBom)
@@ -44,6 +51,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jsoup:jsoup:1.19.1")
     implementation("com.google.zxing:core:3.5.4")
+    implementation("com.github.QWEA0:liquidglass:v2.0.11")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.6.1")
