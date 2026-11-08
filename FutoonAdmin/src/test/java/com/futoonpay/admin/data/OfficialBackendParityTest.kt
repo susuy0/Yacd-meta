@@ -39,6 +39,32 @@ class OfficialBackendParityTest {
         assertTrue(void.commands[1].skipReason.isNotBlank()); assertEquals("", void.commands[2].skipReason)
         assertTrue(void.warning.contains("余额不变"))
     }
+    @Test fun reviewBatchIsOfferedOnlyOnTheNewBackendAndSkipsRecordsThatAreAlreadyPastReview() {
+        val rows = listOf(row(7), row(1).copy(id = "43"), row(4).copy(id = "44"), row(3, "held").copy(id = "45", fullSettlement = true))
+        assertNull(settlementReviewBatchOption(rows, false)); assertNull(settlementReviewBatchOption(emptyList(), true))
+        val request = settlementReviewBatchOption(rows, true)!!
+        assertEquals(listOf("", "已完成，无需审核", "已在付款队列", ""), request.commands.map { it.skipReason }.map { if (it.isBlank()) "" else it })
+        assertTrue(request.commands.all { it.kind == BatchKind.SETTLEMENT_REVIEW && it.fields.isEmpty() })
+        assertTrue(request.commands.last().label.contains("满结")); assertFalse(request.commands.first().label.contains("满结"))
+        assertTrue(request.warning.contains("实际付款")); assertTrue(request.warning.contains("不会自动重试"))
+    }
+    @Test fun reviewBatchReadsEachDetailFreshAndOnlySubmitsWhatTheWebsiteAllows() = runBlocking {
+        val token = "b".repeat(64); val posts = mutableListOf<Pair<String, Map<String, String>>>()
+        val repo = modern { request ->
+            val act = request.url.queryParameter("act")
+            when {
+                act == "settle_reason" && request.url.queryParameter("id") == "42" -> """{"code":0,"detail":{"status_label":"待审核","approval_token":"$token","full_approval":{"allowed":true}}}"""
+                act == "settle_reason" && request.url.queryParameter("id") == "43" -> """{"code":0,"detail":{"status_label":"待审核","approval_token":"$token","reviews":[{"label":"频率审核","category":"frequency","state":"pending"}]}}"""
+                act == "settle_reason" -> """{"code":-1,"msg":"详情读取失败"}"""
+                act == "approve_full_settlement" -> { posts += request.url.queryParameter("id").orEmpty() to fields(request); """{"code":0,"msg":"已审核"}""" }
+                else -> "{}"
+            }
+        }
+        val request = settlementReviewBatchOption(listOf(row(7), row(7).copy(id = "43"), row(7).copy(id = "44")), true)!!
+        val results = repo.runBatch(request.commands)
+        assertEquals(listOf(BatchOutcomeStatus.SUCCESS, BatchOutcomeStatus.SKIPPED, BatchOutcomeStatus.FAILED), results.map { it.status })
+        assertEquals(1, posts.size); assertEquals(mapOf("token" to token, "id" to "42"), posts.single().second)
+    }
     @Test fun officialStatusesAndUnfinishedFilterPreserveServerMeaning() {
         assertEquals("unfinished", SettlementSearchFilters(status = -2).toRequest()["dstatus"])
         assertEquals("待审核", row().displayStatus()); assertEquals("队列中", row(4).displayStatus())

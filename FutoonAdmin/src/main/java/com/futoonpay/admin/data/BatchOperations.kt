@@ -3,7 +3,7 @@ package com.futoonpay.admin.data
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 
-enum class BatchKind { MERCHANT_STATUS, MERCHANT_KEY, ORDER_STATUS, ORDER_ACTION, SETTLEMENT_STATUS, SETTLEMENT_ACTION, PAYMENT_ACTION }
+enum class BatchKind { MERCHANT_STATUS, MERCHANT_KEY, ORDER_STATUS, ORDER_ACTION, SETTLEMENT_STATUS, SETTLEMENT_ACTION, SETTLEMENT_REVIEW, PAYMENT_ACTION }
 enum class BatchOutcomeStatus(val label: String) { SUCCESS("成功"), FAILED("失败"), UNCERTAIN("结果待核对"), NOT_RUN("未执行"), SKIPPED("已跳过") }
 
 data class BatchCommand(
@@ -86,6 +86,17 @@ fun orderBatchOptions(orders: List<OrderSummary>): List<BatchRequest> = buildLis
             BatchCommand(it.tradeNo, it.tradeNo, BatchKind.ORDER_ACTION, mapOf("action" to action), skipReason = if (eligible) "" else "当前订单状态不支持$label")
         }))
     }
+}
+/**
+ * Approve-and-queue for settlements waiting on review. Only the website's one-click approval is batched: each record's own
+ * single-use token is read fresh when its turn comes, and a record that needs a written risk review is skipped and left for the detail page.
+ */
+fun settlementReviewBatchOption(rows: List<SettlementSummary>, modernBackend: Boolean): BatchRequest? {
+    if (!modernBackend || rows.isEmpty()) return null
+    return BatchRequest("settlements", "审核通过并入队", rows.map { row ->
+        BatchCommand(row.id, "结算 #${row.id} · 商户 ${row.merchantId} · ${row.displayAmount()}${if (row.fullSettlement) " · 满结" else ""}", BatchKind.SETTLEMENT_REVIEW,
+            skipReason = when (row.status) { 1 -> "已完成，无需审核"; 2 -> "正在结算，无需审核"; 4 -> "已在付款队列"; 6 -> "已作废"; else -> "" })
+    }, "审核通过后，这些结算会进入付款队列并实际付款。逐条重新读取后台详情，只提交后台允许一键审核的记录；需要填写核实依据的风险审核会被跳过，请到详情中单独处理。付款资格、余额和防重复检查由后台执行；结果未确认的记录不会自动重试。")
 }
 fun settlementBatchOptions(rows: List<SettlementSummary>, modernBackend: Boolean = false): List<BatchRequest> = buildList {
     if (modernBackend) {

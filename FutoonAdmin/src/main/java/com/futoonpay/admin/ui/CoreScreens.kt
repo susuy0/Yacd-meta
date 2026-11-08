@@ -644,7 +644,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
             }
         }
         item { ListFeedback(state.settlementsLoading && state.settlements.isEmpty(), state.settlementsError, !state.settlementsLoading && state.settlements.isEmpty(), { viewModel.loadSettlements(state.settlementPage) }) }
-        item { FinanceListToolbar(selection, state.settlements.map { it.id }, com.futoonpay.admin.data.settlementBatchOptions(state.settlements.filter { it.id in selection.selected }, viewModel.modernBackend),
+        item { FinanceListToolbar(selection, state.settlements.map { it.id }, state.settlements.filter { it.id in selection.selected }.let { picked -> com.futoonpay.admin.data.settlementBatchOptions(picked, viewModel.modernBackend) + listOfNotNull(com.futoonpay.admin.data.settlementReviewBatchOption(picked, viewModel.modernBackend)) },
             state.refreshing || state.settlementsLoading, "共 ${state.settlementTotal} 笔", onRequest = viewModel::offerBatch) }
         items(state.settlements, key = { it.id }) { row -> SelectableRecord(selection, row.id, "结算 #${row.id}") { SettlementCard(row, viewModel.modernBackend, { detail = row }) { pending = it } } }
         item { PaginationBar(state.settlementPage, state.settlementTotal, state.settlements.size) { viewModel.loadSettlements(it) } }
@@ -724,7 +724,10 @@ private fun SettlementCard(item: SettlementSummary, modernBackend: Boolean, onDe
             }
             Column(Modifier.weight(.9f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(item.displayAmount(), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.End)
-                StatusPill(item.displayStatus(), settlementStatusColor(item.status))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (item.fullSettlement) StatusPill("满结", GreenDark)
+                    StatusPill(item.displayStatus(), settlementStatusColor(item.status))
+                }
             }
             Box {
                 IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "结算操作", tint = Muted, modifier = Modifier.size(20.dp)) }

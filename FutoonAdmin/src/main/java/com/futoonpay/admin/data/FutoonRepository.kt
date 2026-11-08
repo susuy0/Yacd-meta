@@ -63,6 +63,16 @@ class FutoonRepository(
                 if (fields["action"] !in setOf("settle_result", "settle_setresult")) return BatchOutcome(command, BatchOutcomeStatus.FAILED, "不支持的结算操作")
                 settlementAction(fields.getValue("action"), command.id, fields.filterKeys { it != "action" })
             }
+            BatchKind.SETTLEMENT_REVIEW -> {
+                if (!modernBackend) return BatchOutcome(command, BatchOutcomeStatus.SKIPPED, "旧版后台没有这项审核")
+                val detail = try { settlementReason(command.id) }
+                catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                catch (e: SessionExpiredException) { throw e }
+                catch (e: PermissionDeniedException) { throw e }
+                catch (e: Exception) { return BatchOutcome(command, BatchOutcomeStatus.FAILED, "读取审核详情失败，未提交：${e.message ?: "请重试"}") }
+                if (!detail.canApproveFull) return BatchOutcome(command, BatchOutcomeStatus.SKIPPED, "后台未开放一键审核（已处理，或需逐条风险核验），请在详情中查看")
+                reviewSettlement(command.id, "approve_full_settlement", detail.approvalFields())
+            }
             BatchKind.PAYMENT_ACTION -> runPaymentAction(fields.getValue("module"), requireNotNull(command.nativeAction))
             BatchKind.MERCHANT_KEY -> error("Handled above")
         }
