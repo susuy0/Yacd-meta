@@ -60,7 +60,7 @@ class MerchantOpeningUiTest {
     }
     private fun remark() {
         compose.onNodeWithTag("merchant-opening-list").performScrollToNode(hasText("备注 / 结算账号姓名 *"))
-        compose.onNodeWithText("备注 / 结算账号姓名 *").performTextInput("@fixture(业务)")
+        compose.onNodeWithText("备注 / 结算账号姓名 *").performTextReplacement("@fixture(业务)")
     }
     private fun awaitDraft(model: MerchantOpeningViewModel) {
         try {
@@ -78,6 +78,10 @@ class MerchantOpeningUiTest {
     }
     @Test fun d0SelectionControlsReviewPostAndAutomaticallyPreparedDraft() {
         val model = root()
+        // The conversation's Telegram ID fills the required remark, so the form can go on; emptying it blocks the step again.
+        compose.onNodeWithTag("opening-prefill-note").assertIsDisplayed()
+        compose.onNodeWithText("下一步 · 核对开户").assertIsEnabled()
+        compose.runOnIdle { model.edit("username", "") }
         compose.onNodeWithText("下一步 · 核对开户").assertIsNotEnabled()
         remark()
         compose.onNodeWithTag("merchant-opening-list").performScrollToNode(hasText("D1 · 不开启结算"))
