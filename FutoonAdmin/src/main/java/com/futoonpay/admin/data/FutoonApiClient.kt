@@ -73,10 +73,23 @@ class FutoonApiClient(
         ApiResult(success, message)
     }
 
-    suspend fun sessionIsValid(): Boolean = runCatching {
+    /**
+     * EXPIRED only when the website clearly says so (403, a login page, no permission). A failed request or an unexpected
+     * answer is UNKNOWN: it must not throw away a stored login that may still be good.
+     */
+    suspend fun sessionStatus(): SessionProbe = try {
         val json = getJson("ajax.php?act=getcount", "")
-        json.optInt("code", 0) != 403 && json.has("count1")
-    }.getOrDefault(false)
+        when {
+            json.optInt("code", 0) == 403 -> SessionProbe.EXPIRED
+            json.has("count1") -> SessionProbe.VALID
+            else -> SessionProbe.UNKNOWN
+        }
+    } catch (e: kotlinx.coroutines.CancellationException) { throw e
+    } catch (_: SessionExpiredException) { SessionProbe.EXPIRED
+    } catch (_: PermissionDeniedException) { SessionProbe.EXPIRED
+    } catch (_: Exception) { SessionProbe.UNKNOWN }
+
+    suspend fun sessionIsValid(): Boolean = sessionStatus() == SessionProbe.VALID
 
     suspend fun dashboard(forceRefresh: Boolean = false): JSONObject {
         val suffix = if (forceRefresh) "&getnew=1" else ""
@@ -312,6 +325,8 @@ class FutoonApiClient(
         return resolved
     }
 }
+
+enum class SessionProbe { VALID, EXPIRED, UNKNOWN }
 
 class SessionExpiredException : IOException("登录已过期，请重新登录")
 class PermissionDeniedException : IOException("没有查看或操作权限，请联系管理员开通")

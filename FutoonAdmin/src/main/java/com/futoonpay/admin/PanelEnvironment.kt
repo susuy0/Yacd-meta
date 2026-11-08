@@ -11,6 +11,8 @@ interface PanelEnvironment {
     val adminBaseUrl: String
     val hasConfiguredEndpoint: Boolean
     val sessionExpired: StateFlow<Boolean>
+    /** A login cookie for this backend is stored on the device (the chat strip and order hints already rely on exactly this). */
+    val hasStoredSession: Boolean get() = false
     fun configureEndpoint(raw: String): Result<String>
     fun markAuthenticated()
 }
@@ -20,6 +22,7 @@ internal class EmbeddedEnvironment(private val bridge: NativePanelBridge) : Pane
     private var activeRepository: FutoonRepository? = null
     private val expired = MutableStateFlow(false)
     override val sessionExpired: StateFlow<Boolean> = expired
+    override val hasStoredSession: Boolean get() = runCatching { bridge.hasSession() }.getOrDefault(false)
     override var adminBaseUrl = bridge.address()
         private set
     override val hasConfiguredEndpoint get() = activeRepository != null

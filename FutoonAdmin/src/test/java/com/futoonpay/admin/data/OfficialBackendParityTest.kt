@@ -73,6 +73,16 @@ class OfficialBackendParityTest {
         for (bad in listOf("", "0", "-1", "7;x", "a", "07")) assertThrows(IllegalArgumentException::class.java) { runBlocking { repo.pauseChannel(bad) } }
         assertEquals(1, requests.count { it.url.queryParameter("act") == "setChannel" })
     }
+    @Test fun sessionProbeOnlyReportsExpiredWhenTheWebsiteSaysSo() = runBlocking {
+        fun status(body: () -> String) = runBlocking { FutoonRepository(modernClient { body() }).sessionStatus() }
+        assertEquals(SessionProbe.VALID, status { """{"code":0,"count1":5}""" })
+        assertEquals(SessionProbe.EXPIRED, status { """{"code":403}""" })
+        assertEquals(SessionProbe.EXPIRED, status { "<html><form><input name='user'><input name='pass'></form></html>" })
+        assertEquals(SessionProbe.UNKNOWN, status { """{"code":0}""" })
+        assertEquals(SessionProbe.UNKNOWN, status { throw java.io.IOException("offline") })
+        assertTrue(FutoonRepository(modernClient { """{"code":0,"count1":1}""" }).sessionIsValid())
+        assertFalse(FutoonRepository(modernClient { """{"code":0}""" }).sessionIsValid())
+    }
     @Test fun officialStatusesAndUnfinishedFilterPreserveServerMeaning() {
         assertEquals("unfinished", SettlementSearchFilters(status = -2).toRequest()["dstatus"])
         assertEquals("待审核", row().displayStatus()); assertEquals("队列中", row(4).displayStatus())

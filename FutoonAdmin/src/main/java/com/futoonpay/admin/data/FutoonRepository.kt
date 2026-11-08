@@ -83,6 +83,7 @@ class FutoonRepository(
     suspend fun captcha() = api.loadCaptcha()
     suspend fun login(username: String, password: String, captcha: String) = api.login(username, password, captcha)
     suspend fun sessionIsValid() = api.sessionIsValid()
+    suspend fun sessionStatus() = api.sessionStatus()
     suspend fun logout() { weixinSecrets.clear(); api.logout() }
 
     internal suspend fun merchantOpening(): NativeForm = merchantOpeningForm(api.document(MERCHANT_OPENING_PAGE))

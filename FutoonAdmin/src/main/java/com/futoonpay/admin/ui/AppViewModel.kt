@@ -259,7 +259,10 @@ class AppViewModel(
             return@launch
         }
         _state.update { it.copy(adminUrl = application.adminBaseUrl, endpointReady = true) }
-        val valid = runCatching { repository.sessionIsValid() }.getOrDefault(false)
+        // A stored login is reused unless the website says it is gone; a failed or unclear probe does not ask for a new login.
+        val probe = runCatching { repository.sessionStatus() }.getOrDefault(com.futoonpay.admin.data.SessionProbe.UNKNOWN)
+        val valid = probe == com.futoonpay.admin.data.SessionProbe.VALID ||
+            probe == com.futoonpay.admin.data.SessionProbe.UNKNOWN && application.hasStoredSession
         if (valid) {
             _state.update { it.copy(authStage = AuthStage.AUTHENTICATED) }
             loadOrders()
