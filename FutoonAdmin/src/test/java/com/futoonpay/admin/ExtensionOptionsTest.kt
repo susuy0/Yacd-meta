@@ -79,8 +79,8 @@ class ExtensionOptionsTest {
         val groups = listOf(AutomationGroup(-42, "试验群", 0, 30), AutomationGroup(-73, "普通群"))
         val rule = GroupAutomationRule(dialog = -42, groupName = "试验群", sender = 0, groups = groups, enabled = true, since = 100, windowMinutes = 5)
         assertEquals(30, rule.windowFor(-42)); assertEquals(5, rule.windowFor(-73)); assertEquals(5, rule.windowFor(-99))
-        assertTrue(rule.acceptsEvent(-42, 0, 7, "x", 105, 105 + 1800)); assertFalse(rule.acceptsEvent(-42, 0, 7, "x", 105, 105 + 1801))
-        assertTrue(rule.acceptsEvent(-73, 0, 7, "x", 105, 105 + 300)); assertFalse(rule.acceptsEvent(-73, 0, 7, "x", 105, 105 + 301))
+        assertTrue(rule.acceptsEvent(-42, 0, 7, "补单案例", 105, 105 + 1800)); assertFalse(rule.acceptsEvent(-42, 0, 7, "补单案例", 105, 105 + 1801))
+        assertTrue(rule.acceptsEvent(-73, 0, 7, "补单案例", 105, 105 + 300)); assertFalse(rule.acceptsEvent(-73, 0, 7, "补单案例", 105, 105 + 301))
         val restored = ExtensionOptions.parse(ExtensionOptions(rules = listOf(rule)).json()).rules.single()
         assertEquals(rule, restored); assertEquals(30, restored.groups.first().windowMinutes)
         val legacy = ExtensionOptions(rules = listOf(rule)).json().also { json -> val rows = json.getJSONArray("rules").getJSONObject(0).getJSONArray("groups"); for (i in 0 until rows.length()) rows.getJSONObject(i).remove("windowMinutes") }
