@@ -40,8 +40,8 @@ internal data class CurveGeometry(val points: List<Pair<Float, Float>?>) {
         var open = false
         for (point in points) {
             if (point == null) { open = false; continue }
-            if (!open) { result += mutableListOf(); open = true }
-            result.last() += point
+            if (!open) { result.add(mutableListOf()); open = true }
+            result.last().add(point)
         }
         return result
     }
