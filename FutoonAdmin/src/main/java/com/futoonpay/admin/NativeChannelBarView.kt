@@ -92,7 +92,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             glass.refractionHeight = dp(12).toFloat()
             glass.dispersionStrength = 0.06f
             glass.enablePressEffect = false
-            glass.glassTint = (palette.surface.toArgb() and 0x00FFFFFF) or 0x4D000000
+            glass.glassTint = (palette.surface.toArgb() and 0x00FFFFFF) or 0x59000000
             backdrop?.let { glass.backdropSource = it }
             glassViews += glass
             return glass

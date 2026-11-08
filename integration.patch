@@ -22382,3 +22382,16 @@ diff --git a/TMessagesProj_App/src/main/AndroidManifest.xml b/TMessagesProj_App/
  
      <application android:name="org.telegram.messenger.ApplicationLoaderImpl" tools:replace="name">
          <service
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/chat/ChatInputViewsContainer.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/chat/ChatInputViewsContainer.java
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/chat/ChatInputViewsContainer.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/chat/ChatInputViewsContainer.java
+@@ -73,7 +73,8 @@ 
+ 
+ 
+ 
+-    public boolean drawInputBackground = true;
++    // The app draws its own composer surface; Telegram's white input island card would sit under the chat strip and hide it.
++    public boolean drawInputBackground = !org.telegram.messenger.BuildVars.FUTOON_LITE;
+     public BlurredBackgroundDrawable blurredBackgroundDrawable;
+     private BlurredBackgroundDrawable underKeyboardBackgroundDrawable;
+     public void setInputIslandBubbleDrawable(BlurredBackgroundDrawable drawable) {

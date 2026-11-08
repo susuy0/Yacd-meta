@@ -63,3 +63,4 @@ main_tabs=(src/'MainTabsActivity.java').read_text()
 assert 'tabsView.setPadding(dp(8), 0, dp(8), 0);' in main_tabs
 assert 'ChatTabGeometry.prepare(imageView, textView' in native_tabs
 assert native_tabs.count('ChatTabGeometry.LABEL_SP')==2
+assert 'drawInputBackground = !org.telegram.messenger.BuildVars.FUTOON_LITE' in (repo/'integration.patch').read_text(), "Telegram's white input card must stay off or the glass strip only sees white"
