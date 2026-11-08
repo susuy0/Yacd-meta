@@ -25,4 +25,4 @@ The reference's Android-hosted rendering is implemented using native Views and e
 
 Regression evidence covers actual shared native header geometry across widths and font scales, real search/filter callbacks, settings QR/profile routing, actual compact-title source execution with a failing original-header negative control, media/permission boundaries, business workflows and the complete host compile. Synthetic fixture images are not authenticated WhatsApp captures or Android17 device captures. A full runtime per-screen pixel-equivalence result is not claimed without those captures.
 
-The optional QWEA0 Liquid-Glass-Android library was reviewed. Its API24+ View glass and API33+ lens pipeline are technically applicable to selected native surfaces, but it is an iOS26 material layer and is not a dependency of this PDF-layout revision.
+The QWEA0 Liquid-Glass-Android library (MIT, v2.0.11) is used for selected native surfaces at the owner's request: an iOS 26 material layer on top of this PDF layout, vendored under `FutoonAdmin/local-maven` and pinned by hash. It first covers the chat strip above the composer.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the actual native collapsing header and check PDF integration boundaries."""
 from pathlib import Path
-import re,sys,subprocess,tempfile
+import hashlib,re,sys,subprocess,tempfile
 repo=Path(__file__).resolve().parents[1];host=Path(sys.argv[1]);src=host/'TMessagesProj/src/main/java/org/telegram/ui'
 settings=(src/'SettingsActivity.java').read_text();signature='private void updateActionBarVisible(boolean force, boolean animated)';a=settings.index(signature);start=settings.index('{',a);end=start+1;depth=1
 while depth:
