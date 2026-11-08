@@ -34,7 +34,21 @@ internal data class MerchantOpeningState(
     val form: NativeForm? = null, val loading: Boolean = false, val stage: OpeningStage = OpeningStage.FORM,
     val result: MerchantOpeningResult? = null, val binding: String = "", val linkLoading: Boolean = false,
     val dirty: Boolean = false, val error: String? = null, val draftInserted: Boolean = false, val inserting: Boolean = false,
+    /** Says where the pre-filled 备注 came from, or that nothing could be filled. Hidden once the user edits the field. */
+    val prefillNote: String? = null,
 )
+
+/**
+ * Fills 备注 / 结算账号姓名 with the Telegram ID of the conversation the account is being opened for: the peer in a private chat, the ticket-title ID in a
+ * topic, or the remembered merchant of a group. This is the same ID the merchant strip and 识别 use. It never overwrites text that is already there and
+ * is shown on the review page like any other value; nothing is submitted without the user confirming.
+ */
+internal fun openingPrefill(form: NativeForm, telegramId: String): Pair<NativeForm, String?> {
+    val field = form.fields.firstOrNull { it.name == "username" && it.type != "hidden" && !it.readOnly } ?: return form to null
+    if (field.value.isNotBlank()) return form to null
+    if (!Regex("[1-9][0-9]{4,12}").matches(telegramId)) return form to "当前会话没有可识别的 TG ID，请手动填写备注 / 结算账号姓名"
+    return form.copy(fields = form.fields.map { if (it === field) it.copy(value = telegramId) else it }) to "已按当前会话填入 TG ID，可修改"
+}
 
 internal class MerchantOpeningViewModel(
     private val repository: FutoonRepository,
@@ -46,17 +60,24 @@ internal class MerchantOpeningViewModel(
     val state = mutable.asStateFlow()
     private var initialValues = emptyMap<String, String>()
     private var submittedValues = emptyMap<String, String>()
+    private var prefilled = false
     fun load() = viewModelScope.launch {
         if (state.value.loading || state.value.stage != OpeningStage.FORM) return@launch
         mutable.update { it.copy(loading = true, error = null) }
-        try { val form = repository.merchantOpening(); initialValues = form.fields.associate { it.name to it.value }; mutable.update { it.copy(form = form, dirty = false) } }
+        try {
+            val loaded = repository.merchantOpening()
+            // Once per screen: a reload after a failure may fill again, a form the user already edited never is.
+            val (form, note) = if (prefilled) loaded to null else openingPrefill(loaded, chat.telegramId).also { prefilled = true }
+            initialValues = form.fields.associate { it.name to it.value }
+            mutable.update { it.copy(form = form, dirty = false, prefillNote = note) }
+        }
         catch (e: CancellationException) { throw e }
         catch (e: Exception) { mutable.update { it.copy(error = e.message ?: "开户资料读取失败") } }
         finally { mutable.update { it.copy(loading = false) } }
     }
     fun edit(name: String, value: String) {
         if (state.value.stage != OpeningStage.FORM || state.value.loading) return
-        mutable.update { s -> s.copy(error = null, form = s.form?.let { form -> form.copy(fields = form.fields.map { field ->
+        mutable.update { s -> s.copy(error = null, prefillNote = if (name == "username") null else s.prefillNote, form = s.form?.let { form -> form.copy(fields = form.fields.map { field ->
             if (field.name == name && field.type != "hidden" && !field.readOnly) field.copy(value = value) else field
         }) }) }
         mutable.update { it.copy(dirty = it.form?.fields?.any { field -> field.type != "hidden" && initialValues[field.name] != field.value } == true) }
@@ -166,6 +187,7 @@ internal class MerchantOpeningViewModel(
             if (state.loading || busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             state.error?.let { error -> item { PayCard { Text(error, color = Danger) } } }
             if (state.stage == OpeningStage.FORM) {
+                state.prefillNote?.let { note -> item { Text(note, color = Muted, fontSize = 12.sp, modifier = Modifier.testTag("opening-prefill-note")) } }
                 if (state.form == null && !state.loading) item { com.futoonpay.admin.ui.ChatTextButton(onClick = { model.load() }) { Text("重新加载开户资料") } }
                 val groups = state.form?.fields.orEmpty().filter { it.type != "hidden" }.groupBy { field -> openingFieldGroup(field.name) }
                 groups.forEach { (title, fields) -> item(key = title) {

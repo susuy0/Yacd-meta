@@ -39,6 +39,38 @@ class MerchantOpeningFlowTest {
             assertEquals(chat, destination); assertTrue(vm.state.value.draftInserted); assertNull(vm.state.value.form)
         }
     }
+    private fun openingFormFor(remark: String) = NativeForm("开户", "ajax_user.php?act=addUser", "POST", listOf(NativeField("email", "邮箱", "", "text"), NativeField("username", "*备注", remark, "text", required = true)))
+    private fun username(vm: MerchantOpeningViewModel) = vm.state.value.form!!.fields.first { it.name == "username" }.value
+    @Test fun theConversationTelegramIdFillsTheRemarkOnceAndIsNotAnEdit() = runBlocking {
+        val vm = model({ 200 to openingFixture() })
+        vm.load().join()
+        assertEquals("5824870757", username(vm)); assertEquals("已按当前会话填入 TG ID，可修改", vm.state.value.prefillNote); assertFalse(vm.state.value.dirty)
+        vm.edit("username", "手动备注"); assertEquals("手动备注", username(vm)); assertNull(vm.state.value.prefillNote); assertTrue(vm.state.value.dirty)
+        vm.edit("username", ""); vm.load().join(); assertEquals("", username(vm))
+    }
+    @Test fun aConversationWithoutAnIdLeavesTheRemarkEmptyAndSaysSo() = runBlocking {
+        for (id in listOf("", "abc", "123", "0123456", "12345678901234")) {
+            val vm = MerchantOpeningViewModel(FutoonRepository(fixtureClient({ 200 to openingFixture() })), ChatScope("某群", id, key = "g", dialog = -100), { ChatToolsConfig() }, { _, _ -> })
+            vm.load().join(); assertEquals(id, "", username(vm)); assertTrue(id, vm.state.value.prefillNote!!.contains("没有可识别")); assertFalse(vm.state.value.dirty)
+        }
+    }
+    @Test fun anExistingRemarkIsNeverOverwrittenAndNoNoteIsShown() {
+        val form = openingFormFor("已有备注")
+        assertEquals(form to null, openingPrefill(form, "5824870757"))
+        val filled = openingPrefill(openingFormFor(""), "5824870757")
+        assertEquals("5824870757", filled.first.fields.first { it.name == "username" }.value)
+        assertTrue(openingPrefill(NativeForm("", "", "POST", emptyList()), "5824870757").second == null)
+    }
+    @Test fun theFilledRemarkIsSubmittedOnlyAfterReviewAndAppearsInTheDraftVariables() = runBlocking {
+        var posted = emptyMap<String, String>(); var inserted = ""
+        val vm = model({ request -> when (request.url.queryParameter("act")) {
+            "addUser" -> { posted = request.openingFields(); 200 to openingSuccess }
+            "bind" -> 200 to JSONObject().put("code", 0).put("bind", fixtureBinding).toString()
+            else -> 200 to openingFixture()
+        } }, { text, _ -> inserted = text })
+        vm.load().join(); vm.create().join(); assertTrue("not reviewed yet", posted.isEmpty())
+        vm.review(); vm.create().join(); assertEquals("5824870757", posted["username"]); assertTrue(vm.state.value.draftInserted)
+    }
     @Test fun failedBindingOnlyRetriesBindingAndNeverRecreatesMerchant() = runBlocking {
         var creates = 0; var bindings = 0; var drafts = 0
         val vm = model({ request -> when (request.url.queryParameter("act")) {
