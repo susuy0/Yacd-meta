@@ -2,6 +2,17 @@ diff --git a/TMessagesProj/build.gradle b/TMessagesProj/build.gradle
 index 70c567de20a4fd80c4f9cb240f8cacb9d2cf2315..6f4f4e71c1a78278083c2091b86105d6a93335ae 100644
 --- a/TMessagesProj/build.gradle
 +++ b/TMessagesProj/build.gradle
+@@ -28,6 +28,10 @@
+ }
+ 
+ repositories {
++    exclusiveContent {
++        forRepository { maven { url = file("$rootDir/FutoonAdmin/local-maven") } }
++        filter { includeGroup("com.github.QWEA0") }
++    }
+     mavenCentral()
+     google()
+ }
 @@ -42,6 +42,9 @@ configurations.all {
  }
  
@@ -21326,6 +21337,17 @@ diff --git a/TMessagesProj_App/build.gradle b/TMessagesProj_App/build.gradle
 index 0bc330623b2f16823452417045c81537ec57e729..fc074ea1994b5bae636c374c08fa1b44560ca14b 100644
 --- a/TMessagesProj_App/build.gradle
 +++ b/TMessagesProj_App/build.gradle
+@@ -2,6 +2,10 @@
+ apply plugin: 'org.telegram.build-app-plugin'
+ 
+ repositories {
++    exclusiveContent {
++        forRepository { maven { url = file("$rootDir/FutoonAdmin/local-maven") } }
++        filter { includeGroup("com.github.QWEA0") }
++    }
+     mavenCentral()
+     google()
+ }
 @@ -70,12 +70,12 @@ android {
  
      buildTypes {
@@ -21915,18 +21937,6 @@ index 7d4f1ab10371a33d29979f1dee3520da048ef3a2..8cd1f7f62d557367443661337c02efb5
  include ':TMessagesProj'
  include ':TMessagesProj_App'
  include ':TMessagesProj_AppHuawei'
-@@ -9,6 +10,11 @@ project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')
- 
- dependencyResolutionManagement {
-     repositories {
-+        // The vendored, hash-pinned glass library is resolved only from this folder (see FutoonAdmin/local-maven/THIRD-PARTY.md).
-+        exclusiveContent {
-+            forRepository { maven { url = uri("$rootDir/FutoonAdmin/local-maven") } }
-+            filter { includeGroup("com.github.QWEA0") }
-+        }
-         google()
-         mavenCentral()
-     }
 diff --git a/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java b/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java
 index 79abb08e49ecfcf79ce3d1718201aa71a945d176..0847abb1fac401dfe94f5b3afa380097587f73c0 100644
 --- a/TMessagesProj/src/main/java/org/telegram/ui/LiteModeSettingsActivity.java

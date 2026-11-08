@@ -53,7 +53,7 @@ gradle=(repo/'FutoonAdmin/build.gradle.kts').read_text()
 assert 'com.github.QWEA0:liquidglass:v2.0.11' in gradle and 'includeGroup("com.github.QWEA0")' in gradle and 'jitpack.io' not in gradle.lower()
 assert hashlib.sha256((repo/'FutoonAdmin/local-maven/com/github/QWEA0/liquidglass/v2.0.11/liquidglass-v2.0.11.aar').read_bytes()).hexdigest()=='8218f8075c3c447241f2a1e96d502fc48718c6d007e9e05347bb9669901f13a9','Pinned LiquidGlass AAR changed'
 assert 'tools:overrideLibrary="com.example.liquidglass"' in (repo/'integration.patch').read_text()
-assert 'FutoonAdmin/local-maven' in (repo/'integration.patch').read_text() and 'includeGroup("com.github.QWEA0")' in (repo/'integration.patch').read_text(), 'The host settings must resolve the vendored glass library too'
+assert (repo/'integration.patch').read_text().count('forRepository { maven { url = file("$rootDir/FutoonAdmin/local-maven") } }')==2, 'The app and library modules must both resolve the vendored glass library (each declares its own repositories)'
 print('PASS: inline attachment uses native dispatch; folder locks/transitions and cancellation preserved; new-chat original handler; profile sections and TGID; readable bot label')
 subprocess.run([sys.executable,str(repo/'ci/test_settings_population.py'),str(host)],check=True)
 subprocess.run([sys.executable,str(repo/'ci/prepare_native_ui_tests.py'),str(host)],check=True)
