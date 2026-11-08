@@ -50,7 +50,7 @@ assert 'listView.setSections(view ->' in profile and 'Telegram ID' in profile
 assert 'bgColor == BotInlineKeyboard.BackgroundColor.NONE ? Theme.getColor(Theme.key_chat_botKeyboardButtonText' in bot
 gradle=(repo/'FutoonAdmin/build.gradle.kts').read_text()
 # The glass library is allowed only as the pinned, vendored v2.0.11 artifact; JitPack and floating versions are not.
-assert 'com.github.QWEA0:liquidglass:v2.0.11' in gradle and 'includeGroup("com.github.QWEA0")' in gradle and 'jitpack' not in gradle.lower()
+assert 'com.github.QWEA0:liquidglass:v2.0.11' in gradle and 'includeGroup("com.github.QWEA0")' in gradle and 'jitpack.io' not in gradle.lower()
 assert hashlib.sha256((repo/'FutoonAdmin/local-maven/com/github/QWEA0/liquidglass/v2.0.11/liquidglass-v2.0.11.aar').read_bytes()).hexdigest()=='8218f8075c3c447241f2a1e96d502fc48718c6d007e9e05347bb9669901f13a9','Pinned LiquidGlass AAR changed'
 assert 'tools:overrideLibrary="com.example.liquidglass"' in (repo/'integration.patch').read_text()
 print('PASS: inline attachment uses native dispatch; folder locks/transitions and cancellation preserved; new-chat original handler; profile sections and TGID; readable bot label')

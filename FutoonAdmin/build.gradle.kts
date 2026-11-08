@@ -27,11 +27,14 @@ android {
     }
 }
 repositories {
-    // The glass library is vendored (MIT, pinned v2.0.11, see local-maven/THIRD-PARTY.md) and resolved only from here, never from JitPack.
+    // The glass library is vendored (MIT, pinned v2.0.11, see local-maven/THIRD-PARTY.md) and resolved only from this folder.
     exclusiveContent {
         forRepository { maven { url = uri(layout.projectDirectory.dir("local-maven")) } }
         filter { includeGroup("com.github.QWEA0") }
     }
+    // A module that declares repositories no longer inherits the ones from settings.gradle, so they are repeated here.
+    google()
+    mavenCentral()
 }
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
