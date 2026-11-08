@@ -13025,7 +13025,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
          if (!shouldDrawBackground) {
              return;
          }
-@@ -4777,7 +4812,58 @@ public class ChatActivityEnterView extends FrameLayout implements
+@@ -4777,7 +4812,62 @@ public class ChatActivityEnterView extends FrameLayout implements
      }
  
      private ActionBarMenuSubItem actionScheduleButton;
@@ -13068,6 +13068,7 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
 +            final long targetDialog = dialog_id;
 +            final long targetTopic = parentFragment.getTopicId();
 +            final long owner = UserConfig.getInstance(currentAccount).getClientUserId();
++            final Runnable openReplies = () -> {
 +            boolean shown = org.telegram.ui.FutoonQuickReplies.show(parentFragment, currentAccount, text -> {
 +                if (dialog_id != targetDialog || parentFragment == null || parentFragment.getTopicId() != targetTopic || editingMessageObject != null || getWindowToken() == null || UserConfig.getInstance(currentAccount).getClientUserId() != owner || messageEditText == null) return;
 +                if (!insertFutoonDraft(text, targetDialog, targetTopic)) {
@@ -13075,6 +13076,9 @@ index a8f9973061553dce80d45a1c16984e7ff8145312..2080bb27a0ac2519818632d5de5eca5c
 +                }
 +            }, () -> onTelegramSendLongClick(view));
 +            if (!shown) android.widget.Toast.makeText(getContext(), "一键回复暂时无法打开，请稍后重试", android.widget.Toast.LENGTH_SHORT).show();
++            };
++            // With text in the input (for example a generated draft) the long press offers sending it to several groups.
++            org.telegram.ui.FutoonBroadcast.chooseAction(parentFragment, currentAccount, getFieldText(), openReplies, () -> onTelegramSendLongClick(view));
 +            return true;
 +        }
 +        return onTelegramSendLongClick(view);
@@ -22175,3 +22179,173 @@ index ec503d9..226b591 100644
      }
 
      public static StaticLayout makeStaticLayout(CharSequence text_, TextPaint paint, int width, float lineSpacingMult, float lineSpacingAdd, boolean dontIncludePad) {
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/FutoonBroadcast.java b/TMessagesProj/src/main/java/org/telegram/ui/FutoonBroadcast.java
+new file mode 100644
+--- /dev/null
++++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonBroadcast.java
+@@ -0,0 +1,165 @@
++package org.telegram.ui;
++
++import android.os.Bundle;
++import android.widget.Toast;
++import java.util.ArrayList;
++import java.util.HashSet;
++import org.telegram.messenger.AndroidUtilities;
++import org.telegram.messenger.ChatObject;
++import org.telegram.messenger.MessageObject;
++import org.telegram.messenger.MessagesController;
++import org.telegram.messenger.MessagesStorage;
++import org.telegram.messenger.NotificationCenter;
++import org.telegram.messenger.SendMessagesHelper;
++import org.telegram.messenger.UserConfig;
++import org.telegram.tgnet.TLRPC;
++import org.telegram.ui.ActionBar.AlertDialog;
++
++/**
++ * Sends one text to several groups from the signed-in account. The targets are picked explicitly in Telegram's own chooser,
++ * listed again in a confirmation, then sent one at a time with a fixed gap. The first send error stops the rest and nothing is retried.
++ */
++public final class FutoonBroadcast implements DialogsActivity.DialogsActivityDelegate, NotificationCenter.NotificationCenterDelegate {
++    public static final int MAX_TARGETS = 20;
++    public static final long GAP_MS = 5000;
++    private static FutoonBroadcast running;
++    private final ChatActivity parent;
++    private final int account;
++    private final long owner;
++    private final String text;
++    private final ArrayList<MessagesStorage.TopicKey> queue = new ArrayList<>();
++    private final ArrayList<String> titles = new ArrayList<>();
++    private int submitted;
++    private int total;
++    private boolean failed;
++    private boolean finished;
++    private String reason = "";
++    private Runnable pendingStep;
++
++    private FutoonBroadcast(ChatActivity parent, int account, String text) {
++        this.parent = parent;
++        this.account = account;
++        this.owner = UserConfig.getInstance(account).getClientUserId();
++        this.text = text;
++    }
++
++    /** Long press on send: with text in the input, offer the group broadcast next to the quick replies and Telegram's own send options. */
++    public static void chooseAction(ChatActivity parent, int account, CharSequence field, Runnable quickReplies, Runnable originalOptions) {
++        final String text = field == null ? "" : field.toString().trim();
++        if (text.isEmpty() || parent == null || parent.getParentActivity() == null) { quickReplies.run(); return; }
++        AlertDialog dialog = new AlertDialog.Builder(parent.getParentActivity()).setTitle("发送选项")
++            .setItems(new CharSequence[]{"群发这段文字到多个群…", "快速回复", "原发送选项（静音／定时）"}, (d, which) -> {
++                if (which == 0) pick(parent, account, text);
++                else if (which == 1) quickReplies.run();
++                else originalOptions.run();
++            }).create();
++        parent.showDialog(dialog);
++    }
++
++    private static void pick(ChatActivity parent, int account, String text) {
++        if (text.length() > 4096) { Toast.makeText(parent.getParentActivity(), "文字超过 4096 字，无法群发", Toast.LENGTH_LONG).show(); return; }
++        if (running != null && !running.finished) { Toast.makeText(parent.getParentActivity(), "上一次群发还在进行，请等它结束", Toast.LENGTH_LONG).show(); return; }
++        Bundle args = new Bundle();
++        args.putBoolean("onlySelect", true);
++        args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
++        args.putBoolean("canSelectTopics", true);
++        DialogsActivity picker = new DialogsActivity(args);
++        picker.setDelegate(new FutoonBroadcast(parent, account, text));
++        parent.presentFragment(picker);
++    }
++
++    @Override
++    public boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment) {
++        if (UserConfig.getInstance(account).getClientUserId() != owner || fragment.getParentActivity() == null) return false;
++        final ArrayList<MessagesStorage.TopicKey> targets = new ArrayList<>();
++        final ArrayList<String> names = new ArrayList<>();
++        final HashSet<String> seen = new HashSet<>();
++        int skipped = 0;
++        for (MessagesStorage.TopicKey key : dids) {
++            TLRPC.Chat chat = key.dialogId < 0 ? MessagesController.getInstance(account).getChat(-key.dialogId) : null;
++            if (chat == null || ChatObject.isChannelAndNotMegaGroup(chat) || !ChatObject.canSendPlain(chat)) { skipped++; continue; }
++            if (!seen.add(key.dialogId + ":" + key.topicId)) continue;
++            targets.add(key);
++            names.add(chat.title + (key.topicId != 0 ? "（话题）" : ""));
++        }
++        if (targets.isEmpty()) { Toast.makeText(fragment.getParentActivity(), "没有可群发的群：私聊、频道和没有发言权限的群已排除", Toast.LENGTH_LONG).show(); return false; }
++        if (targets.size() > MAX_TARGETS) { Toast.makeText(fragment.getParentActivity(), "一次最多群发 " + MAX_TARGETS + " 个群，现在选了 " + targets.size() + " 个", Toast.LENGTH_LONG).show(); return false; }
++        StringBuilder body = new StringBuilder();
++        body.append("内容：\n").append(text.length() > 300 ? text.substring(0, 300) + "…" : text).append("\n\n群组：");
++        for (int i = 0; i < names.size(); i++) body.append("\n").append(i + 1).append(". ").append(names.get(i));
++        if (skipped > 0) body.append("\n\n已排除 ").append(skipped).append(" 个私聊／频道／无发言权限的聊天");
++        body.append("\n\n每 ").append(GAP_MS / 1000).append(" 秒发一个，约 ").append((targets.size() - 1) * GAP_MS / 1000).append(" 秒发完。遇到任何发送失败会立即停止，不会自动重试。");
++        final int count = targets.size();
++        fragment.showDialog(new AlertDialog.Builder(fragment.getParentActivity()).setTitle("确认群发到 " + count + " 个群？").setMessage(body.toString())
++            .setNegativeButton("取消", null)
++            .setPositiveButton("确认群发", (d, w) -> {
++                if (running != null && !running.finished) return;
++                queue.addAll(targets); titles.addAll(names); total = count;
++                fragment.finishFragment();
++                begin();
++            }).create());
++        return true;
++    }
++
++    private void begin() {
++        running = this;
++        NotificationCenter.getInstance(account).addObserver(this, NotificationCenter.messageSendError);
++        step();
++    }
++
++    private void step() {
++        pendingStep = null;
++        if (finished) return;
++        if (UserConfig.getInstance(account).getClientUserId() != owner) { failed = true; reason = "账号已变化"; }
++        if (failed) { finish(); return; }
++        if (queue.isEmpty()) {
++            // Leave a moment after the last submit so a late send error can still be seen before reporting success.
++            if (settling) { finish(); return; }
++            settling = true;
++            pendingStep = this::step;
++            AndroidUtilities.runOnUIThread(pendingStep, 3000);
++            return;
++        }
++        MessagesStorage.TopicKey key = queue.remove(0);
++        if (!send(key)) { failed = true; reason = "无法发送到「" + titles.get(submitted) + "」"; finish(); return; }
++        submitted++;
++        pendingStep = this::step;
++        AndroidUtilities.runOnUIThread(pendingStep, queue.isEmpty() ? 0 : GAP_MS);
++    }
++
++    private boolean settling;
++
++    private boolean send(MessagesStorage.TopicKey key) {
++        MessageObject replyTop = null;
++        if (key.topicId != 0) {
++            TLRPC.TL_forumTopic topic = MessagesController.getInstance(account).getTopicsController().findTopic(-key.dialogId, key.topicId);
++            if (topic == null || topic.topicStartMessage == null) return false;
++            replyTop = new MessageObject(account, topic.topicStartMessage, false, false);
++        }
++        SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(text, key.dialogId, replyTop, replyTop, null, true, null, null, null, true, 0, 0, null, false);
++        SendMessagesHelper.getInstance(account).sendMessage(params);
++        return true;
++    }
++
++    @Override
++    public void didReceivedNotification(int id, int accountNum, Object... args) {
++        if (id == NotificationCenter.messageSendError && accountNum == account && !finished && !failed) {
++            failed = true;
++            reason = "Telegram 报告发送失败（可能是限流或没有权限）";
++            if (pendingStep != null) { AndroidUtilities.cancelRunOnUIThread(pendingStep); pendingStep = null; }
++            finish();
++        }
++    }
++
++    private void finish() {
++        if (finished) return;
++        finished = true;
++        if (pendingStep != null) { AndroidUtilities.cancelRunOnUIThread(pendingStep); pendingStep = null; }
++        NotificationCenter.getInstance(account).removeObserver(this, NotificationCenter.messageSendError);
++        final int remaining = queue.size();
++        final String summary = failed
++            ? "群发已停止：已提交 " + submitted + " 个，未发送 " + remaining + " 个。原因：" + reason + "。不会自动重试。"
++            : "群发完成：已向 " + submitted + " 个群提交发送。";
++        try { Toast.makeText(parent.getParentActivity() != null ? parent.getParentActivity() : org.telegram.messenger.ApplicationLoader.applicationContext, summary, Toast.LENGTH_LONG).show(); } catch (Exception ignored) {}
++    }
++}
