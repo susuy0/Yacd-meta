@@ -22378,7 +22378,7 @@ diff --git a/TMessagesProj_App/src/main/AndroidManifest.xml b/TMessagesProj_App/
  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
      xmlns:tools="http://schemas.android.com/tools"
      android:installLocation="auto">
-+    <uses-sdk tools:overrideLibrary="com.example.liquidglass" />
++    <uses-sdk tools:overrideLibrary="com.example.liquidglass,com.futoonpay.admin" />
  
      <application android:name="org.telegram.messenger.ApplicationLoaderImpl" tools:replace="name">
          <service
