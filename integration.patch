@@ -21915,7 +21915,7 @@ index 7d4f1ab10371a33d29979f1dee3520da048ef3a2..8cd1f7f62d557367443661337c02efb5
  include ':TMessagesProj'
  include ':TMessagesProj_App'
  include ':TMessagesProj_AppHuawei'
-@@ -9,6 +10,12 @@ project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')
+@@ -9,6 +10,11 @@ project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')
  
  dependencyResolutionManagement {
      repositories {
