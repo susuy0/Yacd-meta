@@ -134,7 +134,7 @@ class NativeUiRegressionTest {
         }
         compose.onNodeWithText("请选择").performClick()
         compose.onNodeWithText("微信 V3").performClick()
-        compose.onNodeWithContentDescription("选择 微信 V3").performClick()
+        compose.onNodeWithText("选择 微信 V3").performClick()
         compose.onNodeWithText("已选择：wx_v3").assertIsDisplayed()
     }
     @Test fun manageUsesOriginalNativeCardsAndRoutesWithinThePanel() {
