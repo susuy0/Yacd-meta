@@ -10978,7 +10978,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..1e6372fff8b63772a86a424c335ff6ed
          drawMonoforumAvatar = false;
          drawCommunityAvatar = false;
 -        avatarImage.setRoundRadius(dp(26));
-+        avatarImage.setRoundRadius(dp(24));
++        avatarImage.setRoundRadius(dp(15));
          for (int i = 0; i < thumbImage.length; ++i) {
              thumbImage[i] = new ImageReceiver(this);
              thumbImage[i].ignoreNotifications = true;
@@ -11201,7 +11201,7 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..1e6372fff8b63772a86a424c335ff6ed
              drawMonoforumAvatar = false;
              drawCommunityAvatar = false;
 -            avatarImage.setRoundRadius(dp(26));
-+            avatarImage.setRoundRadius(dp(24));
++            avatarImage.setRoundRadius(dp(15));
              drawUnmute = false;
          } else {
              int oldUnreadCount = unreadCount;
@@ -11303,7 +11303,8 @@ index 7e8eadb33792aeaa7b752b08496479e02ea7d865..85215c108cd346ca30a6cfd7ca0e1920
 @@ -144,7 +144,7 @@ public class GroupCreateUserCell extends FrameLayout {
  
          avatarImageView = new BackupImageView(context);
-         avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
+-        avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
++        avatarImageView.setRoundRadius(AndroidUtilities.dp(14));
 -        addView(avatarImageView, LayoutHelper.createFrame(46, 46, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : (13 + padding), 6, LocaleController.isRTL ? (13 + padding) : 0, 0));
 +        addView(avatarImageView, LayoutHelper.createFrame(48, 48, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : (16 + padding), 12, LocaleController.isRTL ? (16 + padding) : 0, 0));
  
@@ -11387,7 +11388,7 @@ index 6f3f6a52236478f06a90f6840174f75c2f0c0cab..d1c954370d76e835fa6072fa308e4e87
          };
 -        avatarImageView.setRoundRadius(AndroidUtilities.dp(23));
 -        addView(avatarImageView, LayoutHelper.createFrame(46, 46, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 7 + avatarPadding, 8, LocaleController.isRTL ? 7 + avatarPadding : 0, 0));
-+        avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
++        avatarImageView.setRoundRadius(AndroidUtilities.dp(14));
 +        addView(avatarImageView, LayoutHelper.createFrame(48, 48, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 16 + avatarPadding, 12, LocaleController.isRTL ? 16 + avatarPadding : 0, 0));
  
          nameTextView = new SimpleTextView(context);
@@ -11473,7 +11474,7 @@ index af32ccff6e5d5c1cfd259120b5210537df8dda1c..c279f1fdc3d5e467cdd47c5e96435565
  
          avatarImage = new ImageReceiver(this);
 -        avatarImage.setRoundRadius(dp(23));
-+        avatarImage.setRoundRadius(dp(24));
++        avatarImage.setRoundRadius(dp(14));
          avatarDrawable = new AvatarDrawable();
  
          checkBox = new CheckBox2(context, 21, resourcesProvider);
@@ -12089,7 +12090,8 @@ index 943b6b1937a216923a83e27e35756fd4c5718807..e0983f4e6c5feb4cc506b5b803c38fb9
 @@ -180,7 +180,7 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
              }
          };
-         avatarImageView.setRoundRadius(dp(24));
+-        avatarImageView.setRoundRadius(dp(24));
++        avatarImageView.setRoundRadius(dp(14));
 -        addView(avatarImageView, LayoutHelper.createFrame(46, 46, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 7 + padding, 6, LocaleController.isRTL ? 7 + padding : 0, 0));
 +        addView(avatarImageView, LayoutHelper.createFrame(48, 48, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 16 + padding, 12, LocaleController.isRTL ? 16 + padding : 0, 0));
          setClipChildren(false);
@@ -12156,7 +12158,8 @@ index 943b6b1937a216923a83e27e35756fd4c5718807..e0983f4e6c5feb4cc506b5b803c38fb9
          if (checkBox != null) {
              layoutParams = (FrameLayout.LayoutParams) checkBox.getLayoutParams();
 @@ -485,7 +485,7 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
-         avatarImageView.setRoundRadius(dp(22));
+-        avatarImageView.setRoundRadius(dp(22));
++        avatarImageView.setRoundRadius(dp(13));
          avatarImageView.setLayoutParams(LayoutHelper.createFrame(44, 44, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 8 + padding, 6, LocaleController.isRTL ? 8 + padding : 0, 0));
          if (checkBox != null) {
 -            checkBox.setLayoutParams(LayoutHelper.createFrame(24, 24, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 37 + padding, 32, LocaleController.isRTL ? 37 + padding : 0, 0));
@@ -14143,7 +14146,7 @@ index 1238632a08d6ebcf76987ad098449209589010e6..94aee4eaf16f08455a1ab03edc248915
          }
          avatarImageView.setContentDescription(getString(R.string.AccDescrProfilePicture));
 -        avatarImageView.setRoundRadius(dp(21));
-+        avatarImageView.setRoundRadius(dp(18));
++        avatarImageView.setRoundRadius(dp(11));
          addView(avatarImageView);
          if (avatarClickable) {
              final TLRPC.Chat chat = parentFragment != null ? parentFragment.getCurrentChat() : null;
@@ -14223,7 +14226,7 @@ index 1238632a08d6ebcf76987ad098449209589010e6..94aee4eaf16f08455a1ab03edc248915
          if (avatarImageView != null) {
              avatarImageView.setForUserOrChat(chat, avatarDrawable);
 -            avatarImageView.setRoundRadius(ChatObject.isForum(chat) ? dp(ChatObject.hasStories(chat) ? 11 : 16) : dp(21));
-+            avatarImageView.setRoundRadius(dp(18));
++            avatarImageView.setRoundRadius(dp(11));
          }
      }
  

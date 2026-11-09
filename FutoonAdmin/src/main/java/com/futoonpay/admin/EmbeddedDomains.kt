@@ -94,6 +94,7 @@ import com.futoonpay.admin.ui.theme.GreenDark
 import com.futoonpay.admin.ui.theme.Ink
 import com.futoonpay.admin.ui.theme.Line
 import com.futoonpay.admin.ui.theme.Muted
+import com.futoonpay.admin.ui.theme.Success
 import com.futoonpay.admin.ui.theme.Warning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -289,7 +290,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
 @Composable
 private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAction: (PendingDomainAction) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val color = when (row.status) { 1 -> GreenDark; 2 -> Danger; else -> Warning }
+    val color = when (row.status) { 1 -> Success; 2 -> Danger; else -> Warning }
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onReview), colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

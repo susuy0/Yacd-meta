@@ -22,8 +22,11 @@ import org.robolectric.annotation.GraphicsMode
 class ChatAppearanceTest {
     private val context get()=androidx.test.core.app.ApplicationProvider.getApplicationContext<Application>()
     @Test fun lightAndDarkMessageTextRemainReadableOnBothBubbleColors() {
-        for(dark in listOf(false,true)) for(bg in listOf(ChatLook.incoming(dark),ChatLook.outgoing(dark)))
-            assertTrue("text contrast $dark",ColorUtils.calculateContrast(ChatLook.text(dark),bg)>=4.5)
+        for(dark in listOf(false,true)){
+            assertTrue("incoming text $dark",ColorUtils.calculateContrast(ChatLook.text(dark),ChatLook.incoming(dark))>=4.5)
+            for(key in listOf("key_chat_messageTextOut","key_chat_outTimeText","key_chat_outReplyMessageText","key_chat_messageLinkOut","key_chat_outReplyLine"))
+                assertTrue("$key $dark",ColorUtils.calculateContrast(ChatLook.color(key,dark)!!,ChatLook.outgoing(dark))>=4.5)
+        }
     }
     @Test fun headersAndSearchRemainReadableInBothModes() {
         for(dark in listOf(false,true)) for(bg in listOf(ChatLook.surface(dark),ChatLook.field(dark))) {
@@ -33,9 +36,10 @@ class ChatAppearanceTest {
     }
     @Test fun selectedAndReplyTextStaysReadableOnItsActualTint() {
         for(dark in listOf(false,true)) assertTrue(ColorUtils.calculateContrast(ChatLook.selectedText(dark),ChatLook.selected(dark))>=4.5)
-        for(dark in listOf(false,true)) for(bg in listOf(ChatLook.incoming(dark),ChatLook.outgoing(dark)))
-            for(key in listOf("key_chat_inReplyNameText","key_chat_outReplyNameText","key_chat_inReplyMediaMessageText","key_chat_outReplyMediaMessageText"))
-                assertTrue(key,ColorUtils.calculateContrast(ChatLook.color(key,dark)!!,bg)>=4.5)
+        for(dark in listOf(false,true)){
+            for(key in listOf("key_chat_inReplyNameText","key_chat_inReplyMediaMessageText"))assertTrue(key,ColorUtils.calculateContrast(ChatLook.color(key,dark)!!,ChatLook.incoming(dark))>=4.5)
+            for(key in listOf("key_chat_outReplyNameText","key_chat_outReplyMediaMessageText"))assertTrue(key,ColorUtils.calculateContrast(ChatLook.color(key,dark)!!,ChatLook.outgoing(dark))>=4.5)
+        }
     }
     @Test fun semanticErrorAndFinancialStatusColorsAreNeverReplacedByAppearance() {
         for(key in listOf("key_text_RedRegular","key_dialogTextRed","key_text_RedBold","key_chat_mediaTimeText","key_statisticChartLine_orange"))
@@ -91,7 +95,7 @@ class ChatAppearanceTest {
         bar.measure(View.MeasureSpec.makeMeasureSpec(320,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(48,View.MeasureSpec.EXACTLY));bar.layout(0,0,320,48)
         val nodes=buttons(bar);assertEquals(3,nodes.size);nodes.forEach{assertTrue(it.width>=40);assertTrue(it.height>=48);assertEquals(12,it.paddingLeft);assertEquals(12,it.paddingRight);assertTrue(it.width>=it.paint.measureText(it.text.toString())+24)}
         nodes[2].performClick();assertEquals(listOf(2),calls);assertEquals(2,bar.selectedFilter());assertTrue(nodes[2].isSelected);assertFalse(nodes[0].isSelected)
-        bar.setDark(true);nodes.forEach{assertEquals(12,it.paddingLeft);assertEquals(12,it.paddingRight)};assertEquals(2,bar.selectedFilter());assertEquals(listOf(2),calls);assertEquals(ChatLook.accent(true),nodes[2].currentTextColor)
+        bar.setDark(true);nodes.forEach{assertEquals(12,it.paddingLeft);assertEquals(12,it.paddingRight)};assertEquals(2,bar.selectedFilter());assertEquals(listOf(2),calls);assertEquals(ChatLook.onAccent(true),nodes[2].currentTextColor)
         bar.select(0);assertEquals(listOf(2),calls)
     }
     @Test fun narrowWideAndRtlAppearanceGeometryRendersWithoutClipping() {

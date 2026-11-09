@@ -126,6 +126,7 @@ import com.futoonpay.admin.ui.theme.GreenDark
 import com.futoonpay.admin.ui.theme.Ink
 import com.futoonpay.admin.ui.theme.Line
 import com.futoonpay.admin.ui.theme.Muted
+import com.futoonpay.admin.ui.theme.Success
 import com.futoonpay.admin.ui.theme.Warning
 import java.util.Locale
 import kotlinx.coroutines.delay
@@ -229,7 +230,7 @@ private fun ChannelQuickCard(channelId: String, info: ChannelQuick?, message: St
                 if (info.detail.isNotBlank()) DataRow("订单数", info.detail)
             }
         }
-        message?.let { Text(it, color = if (it.startsWith("已提交")) GreenDark else Warning, fontSize = 13.sp) }
+        message?.let { Text(it, color = if (it.startsWith("已提交")) Success else Warning, fontSize = 13.sp) }
         ChatOutlinedButton(onClick = onPause, enabled = info?.loading != true, modifier = Modifier.fillMaxWidth()) { Text("暂停该通道…", color = Danger) }
     }
 }
@@ -360,7 +361,7 @@ private fun ChannelHealthDialog(
                                     if (stat?.source == ChannelRateSource.OFFICIAL) "近5分钟 · 全通道统计" else "近5分钟 · 当前页样本",
                                     color = Muted, fontSize = 12.sp,
                                 )
-                                Text(rate?.let(::formatRate) ?: "暂无样本", color = GreenDark, fontSize = 32.sp, fontWeight = FontWeight.SemiBold)
+                                Text(rate?.let(::formatRate) ?: "暂无样本", color = Ink, fontSize = 32.sp, fontWeight = FontWeight.SemiBold)
                                 Text(stat?.note ?: "官网暂未返回该通道数据", color = Muted, fontSize = 12.sp)
                                 Spacer(Modifier.height(13.dp))
                                 Text(if (stat?.countsOfficial == true) "全通道订单数量" else "以下数量为当前页近5分钟样本", color = Muted, fontSize = 12.sp)
@@ -554,7 +555,7 @@ private fun notifyLabel(detail: OrderDetail) = when {
 private fun TimelineStep(title: String, subtitle: String, complete: Boolean, modifier: Modifier, failed: Boolean = false) {
     Card(modifier, colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(10.dp)) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(if (failed) Danger else if (complete) GreenDark else Line))
+            Box(Modifier.size(8.dp).clip(CircleShape).background(if (failed) Danger else if (complete) Success else Line))
             Spacer(Modifier.height(8.dp))
             Text(title, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
             Text(subtitle, color = Muted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -761,7 +762,7 @@ private fun SettlementCard(item: SettlementSummary, modernBackend: Boolean, onDe
             Column(Modifier.weight(.9f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(item.displayAmount(), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.End)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (item.fullSettlement) StatusPill("满结", GreenDark)
+                    if (item.fullSettlement) StatusPill("满结", Success)
                     StatusPill(item.displayStatus(), settlementStatusColor(item.status))
                 }
             }
@@ -976,7 +977,7 @@ private fun MerchantCard(
             }
             Column(Modifier.weight(.9f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(displayOrderAmount(merchant.balances["CNY"] ?: merchant.balance, "CNY"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.End)
-                StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
+                StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) Success else Danger)
             }
             Box {
                 IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "商户操作", tint = Muted, modifier = Modifier.size(20.dp)) }
@@ -1011,7 +1012,7 @@ private fun MerchantMetrics(state: AppUiState) {
     val frozen = state.merchants.sumOf { currencyValue(it.frozenBalance) }
     val flow = state.merchants.sumOf { state.merchantFlows[it.uid]?.total ?: 0.0 }
     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        CompactMetric("本页 CNY 余额", money(balance), Modifier.weight(1f), GreenDark)
+        CompactMetric("本页 CNY 余额", money(balance), Modifier.weight(1f), Ink)
         CompactMetric("冻结资金", money(frozen), Modifier.weight(1f), if (frozen > 0) Danger else Ink)
         CompactMetric("7日流水", if (state.merchantFlowLoading && state.merchantFlows.isEmpty()) "统计中…" else money(flow), Modifier.weight(1f), GreenDark)
     }
@@ -1086,9 +1087,9 @@ internal fun MerchantDetailDialog(
                 item { PayCard {
                     DataRow("商户", "${merchant.username} · UID ${merchant.uid}"); DataRow("用户组", merchant.groupName)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) GreenDark else Danger)
-                        StatusPill(merchantPaymentStatusLabel(merchant.paymentStatus), if (merchant.paymentEnabled) GreenDark else Danger)
-                        StatusPill(if (merchant.settlementEnabled) "结算正常" else "结算关闭", if (merchant.settlementEnabled) GreenDark else Danger)
+                        StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) Success else Danger)
+                        StatusPill(merchantPaymentStatusLabel(merchant.paymentStatus), if (merchant.paymentEnabled) Success else Danger)
+                        StatusPill(if (merchant.settlementEnabled) "结算正常" else "结算关闭", if (merchant.settlementEnabled) Success else Danger)
                     }
                 } }
                 item { SectionLabel("资金摘要（币种分开）") }
@@ -1204,7 +1205,7 @@ internal fun MerchantActionDialog(
                     supportingText = { Text("大于 0，最多两位小数；方向由所选操作决定") }, colors = com.futoonpay.admin.ui.ChatFieldColors())
                     parsedAmount?.let {
                         Text("本次${if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.ADD) "增加" else "扣除"} ${operation!!.sign}¥${it.setScale(2).toPlainString()}",
-                            color = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.ADD) GreenDark else Danger,
+                            color = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.ADD) Success else Danger,
                             fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -1397,9 +1398,9 @@ private fun EmptyState(text: String) {
 }
 
 @Composable
-private fun orderStatusColor(status: Int) = when (status) { 1 -> GreenDark; 2, 3 -> Danger; else -> Warning }
+private fun orderStatusColor(status: Int) = when (status) { 1 -> Success; 2, 3 -> Danger; else -> Warning }
 @Composable
-private fun settlementStatusColor(status: Int) = when (status) { 1 -> GreenDark; 3 -> Danger; else -> Warning }
+private fun settlementStatusColor(status: Int) = when (status) { 1 -> Success; 3 -> Danger; else -> Warning }
 private fun maskAccount(value: String) = if (value.length <= 12) value else value.take(5) + "••••" + value.takeLast(5)
 private fun currencyValue(value: String): Double = value.replace(",", "").replace(Regex("[^0-9.-]"), "").toDoubleOrNull() ?: 0.0
 private fun money(value: Double): String = "¥" + String.format(Locale.US, "%.2f", value)
@@ -1410,6 +1411,6 @@ private fun rateColor(value: Double?): Color = when {
     value == null -> Muted
     value < 70.0 -> Danger
     value < 90.0 -> Warning
-    else -> GreenDark
+    else -> Success
 }
 private fun String.normalizedId(): String = Regex("\\d+").find(this)?.value?.toLongOrNull()?.toString().orEmpty()

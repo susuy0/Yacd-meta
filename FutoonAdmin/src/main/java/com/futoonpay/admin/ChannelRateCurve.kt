@@ -57,7 +57,7 @@ private fun rateText(rate: Double?) = rate?.let { String.format(java.util.Locale
 /** The success-rate curve of one channel: left = the longest window (24 hours), right = the newest (5 minutes). It is the rate per window, not a minute-by-minute history. */
 @Composable internal fun ChannelRateCurve(points: List<CurvePoint>, modifier: Modifier = Modifier) {
     val geometry = curveGeometry(points)
-    val ok = GreenDark; val warn = Warning; val bad = Danger; val grid = Line; val muted = Muted
+    val ok = Success; val warn = Warning; val bad = Danger; val grid = Line; val muted = Muted
     fun color(rate: Double?): Color = when (rateColorLevel(rate)) { 3 -> ok; 2 -> warn; 1 -> bad; else -> muted }
     val summary = points.joinToString("，") { "${it.label} ${rateText(it.rate)}" }
     Column(modifier.fillMaxWidth().semantics { contentDescription = "成功率曲线：$summary" }) {

@@ -43,7 +43,7 @@ public final class ChatAttachmentGrid extends ScrollView {
     public int columns(){return tiles.columns;}
     /** Glyph colours sampled from the reference attach sheet. */
     public static int tint(String glyph,boolean dark){
-        switch(glyph){case "gallery":return 0xff1d7cf5;case "file":return 0xff0a95e8;case "poll":return 0xfff9b233;case "todo":return 0xffe5073a;case "audio":return dark?0xfff7f8fa:0xff333333;case "camera":return dark?0xfff7f8fa:0xff333333;case "location":return 0xff10c88b;case "contact":return dark?0xffa8b0b4:0xff5a5a5e;case "money":return 0xff1bc995;default:return dark?0xffa8b0b4:0xff6b6b6e;}
+        switch(glyph){case "money":return 0xfff59e0b;default:return dark?0xffe5e7eb:0xff374151;}
     }
     private final class Tiles extends ViewGroup {
         int columns=1,rowHeight;

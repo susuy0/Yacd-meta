@@ -9,23 +9,48 @@ import androidx.annotation.Nullable;
 public final class ChatLook {
     private ChatLook() {}
     public static final int ROW_HEIGHT = 76, NAV_HEIGHT = 56, BUBBLE_RADIUS = 12, INPUT_RADIUS = 18;
-    public static int surface(boolean dark) { return dark ? 0xff12181c : 0xffffffff; }
-    public static int background(boolean dark) { return dark ? 0xff0a1014 : 0xfff4f4f4; }
-    public static int field(boolean dark) { return dark ? 0xff20272b : 0xfff4f4f4; }
-    public static int wallpaper(boolean dark) { return dark ? 0xff0a1014 : 0xfff7f5ef; }
-    public static int text(boolean dark) { return dark ? 0xfff7f8fa : 0xff0a0a0a; }
-    public static int secondary(boolean dark) { return dark ? 0xff8d9599 : 0xff767779; }
-    public static int accent(boolean dark) { return dark ? 0xff21c063 : 0xff1dab61; }
-    public static int accentText(boolean dark) { return dark ? 0xff21c063 : 0xff1b8755; }
-    public static int selectedText(boolean dark) { return dark ? 0xffd9fdd3 : 0xff15603e; }
-    public static int outgoing(boolean dark) { return dark ? 0xff144d37 : 0xffd8fcd8; }
-    public static int incoming(boolean dark) { return dark ? 0xff20272b : 0xffffffff; }
-    public static int selected(boolean dark) { return dark ? 0xff103529 : 0xffd8fcd8; }
-    /** Bottom tab bar fill and its top hairline, sampled from the iOS reference (#F8F8F8 / #D6D6D6). */
-    public static int tabBar(boolean dark) { return dark ? 0xff12181c : 0xfff8f8f8; }
-    public static int tabBorder(boolean dark) { return dark ? 0xff20272b : 0xffd6d6d6; }
+    // Graphite + amber. Graphite carries identity and primary actions, amber marks "needs your hand",
+    // and green/red are reserved for completed / failed so state never depends on brand colour.
+    public static int surface(boolean dark) { return dark ? 0xff14171c : 0xffffffff; }
+    public static int background(boolean dark) { return dark ? 0xff0c0e12 : 0xfff3f4f6; }
+    public static int field(boolean dark) { return dark ? 0xff1f232a : 0xffeef0f3; }
+    /** Flat canvas: no wallpaper art behind messages. */
+    public static int wallpaper(boolean dark) { return dark ? 0xff0c0e12 : 0xfff3f4f6; }
+    public static int text(boolean dark) { return dark ? 0xfff3f4f6 : 0xff111827; }
+    public static int secondary(boolean dark) { return dark ? 0xff9ca3af : 0xff6b7280; }
+    public static int accent(boolean dark) { return dark ? 0xfff3f4f6 : 0xff111827; }
+    /** Ink drawn on top of {@link #accent}. */
+    public static int onAccent(boolean dark) { return dark ? 0xff111827 : 0xffffffff; }
+    /** Links and text buttons: amber, dark enough to read on the surface. */
+    public static int accentText(boolean dark) { return dark ? 0xfffbbf24 : 0xffb45309; }
+    /** Unread counters and other "needs attention" fills. */
+    public static int badge(boolean dark) { return 0xfff59e0b; }
+    public static int onBadge(boolean dark) { return 0xff111827; }
+    public static int success(boolean dark) { return dark ? 0xff4ade80 : 0xff15803d; }
+    public static int selectedText(boolean dark) { return text(dark); }
+    public static int outgoing(boolean dark) { return dark ? 0xff2d3440 : 0xff111827; }
+    /** Secondary fills drawn inside an outgoing bubble (file icon discs, seek tracks). */
+    public static int outgoingRaised(boolean dark) { return dark ? 0xff424b5a : 0xff374151; }
+    public static int onOutgoing(boolean dark) { return onAccent(dark); }
+    public static int onOutgoingSecondary(boolean dark) { return 0xffb6bdc9; }
+    /** Links, reply bars and read marks inside an outgoing bubble. */
+    public static int outgoingAccent(boolean dark) { return 0xfffbbf24; }
+    public static int incoming(boolean dark) { return dark ? 0xff1f232a : 0xffffffff; }
+    public static int incomingEdge(boolean dark) { return dark ? 0xff2b3038 : 0xffe1e4e8; }
+    public static int selected(boolean dark) { return dark ? 0xff232831 : 0xffe5e7eb; }
+    public static int tabBar(boolean dark) { return dark ? 0xff14171c : 0xffffffff; }
+    public static int tabBorder(boolean dark) { return dark ? 0xff2b3038 : 0xffe5e7eb; }
     public static Integer color(String key, boolean dark) {
         switch (key) {
+            case "key_chat_messageTextOut": case "key_chat_outFileNameText": case "key_chat_outAudioTitleText": case "key_chat_outContactNameText": case "key_chat_outReplyNameText": case "key_chat_outReplyMediaMessageText": return onOutgoing(dark);
+            case "key_chat_outTimeText": case "key_chat_outFileInfoText": case "key_chat_outFileInfoSelectedText": case "key_chat_outContactPhoneText": case "key_chat_outContactPhoneSelectedText": case "key_chat_outAudioPerformerText": case "key_chat_outAudioDurationText": case "key_chat_outForwardedNameText": case "key_chat_outReplyMessageText": case "key_chat_outAudioPerformerSelectedText": case "key_chat_outAudioDurationSelectedText": case "key_chat_outSentCheck": case "key_chat_outSentCheckSelected": return onOutgoingSecondary(dark);
+            case "key_chat_outSentCheckRead": case "key_chat_outSentCheckReadSelected": case "key_chat_outReplyLine": case "key_chat_outPreviewLine": case "key_chat_outFileProgress": case "key_chat_outFileProgressSelected": case "key_chat_outAudioProgress": case "key_chat_outAudioSelectedProgress": case "key_chat_outAudioSeekbarFill": case "key_chat_outPreviewInstantText": case "key_chat_messageLinkOut": return outgoingAccent(dark);
+            case "key_chat_outFileBackground": case "key_chat_outAudioSeekbar": return outgoingRaised(dark);
+            case "key_chat_messageLinkIn": return accentText(dark);
+            case "key_chats_unreadCounter": return badge(dark);
+            case "key_chats_unreadCounterText": return onBadge(dark);
+            case "key_chats_sentReadCheck": return accentText(dark);
+            case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return text(dark);
             case "key_checkboxSquareUnchecked": case "key_radioBackground": return secondary(dark);
             case "key_chat_emojiPanelBackground": case "key_player_background": return surface(dark);
             case "key_chat_emojiSearchBackground": case "key_chat_emojiPanelShadowLine": case "key_player_progressBackground": return field(dark);
@@ -34,46 +59,45 @@ public final class ChatLook {
             case "key_chat_emojiPanelIconSelected": case "key_chat_emojiPanelStickerPackSelectorLine": case "key_chat_emojiPanelNewTrending": case "key_player_progress": case "key_player_buttonActive": case "key_checkboxSquareBackground": case "key_radioBackgroundChecked": case "key_windowBackgroundWhiteInputFieldActivated": return accent(dark);
             case "key_chat_emojiPanelStickerPackSelector": case "key_player_actionBarSelector": return selected(dark);
             case "key_chat_emojiPanelStickerSetNameHighlight": return accentText(dark);
-            case "key_checkboxSquareCheck": return 0xffffffff;
+            case "key_checkboxSquareCheck": return onAccent(dark);
             case "key_graySection": return surface(dark);
             case "key_graySectionText": return secondary(dark);
             case "key_actionBarActionModeDefault": case "key_actionBarActionModeDefaultTop": case "key_dialogTopBackground": return surface(dark);
-            case "key_dialogBackgroundGray": case "key_dialogSearchBackground": case "key_chat_botKeyboardButtonBackground": case "key_chat_inFileBackground": case "key_sharedMedia_linkPlaceholder": case "key_sharedMedia_photoPlaceholder": case "key_chat_inAudioSeekbar": case "key_chat_outAudioSeekbar": case "key_dialogLineProgressBackground": case "key_dialog_inlineProgressBackground": return field(dark);
-            case "key_chat_outFileBackground": return outgoing(dark);
+            case "key_dialogBackgroundGray": case "key_dialogSearchBackground": case "key_chat_botKeyboardButtonBackground": case "key_chat_inFileBackground": case "key_sharedMedia_linkPlaceholder": case "key_sharedMedia_photoPlaceholder": case "key_chat_inAudioSeekbar": case "key_dialogLineProgressBackground": case "key_dialog_inlineProgressBackground": return field(dark);
             case "key_dialogButtonSelector": case "key_actionBarActionModeDefaultSelector": case "key_profile_tabSelector": case "key_chat_botKeyboardButtonBackgroundPressed": case "key_chat_inFileBackgroundSelected": case "key_chat_outFileBackgroundSelected": case "key_dialogLinkSelection": return selected(dark);
             case "key_actionBarActionModeDefaultIcon": case "key_dialogSearchText": case "key_chat_botKeyboardButtonText": case "key_sharedMedia_linkPlaceholderText": return text(dark);
-            case "key_dialogTextGray": case "key_dialogTextGray2": case "key_dialogTextGray3": case "key_dialogTextGray4": case "key_dialogTextHint": case "key_dialogIcon": case "key_dialogSearchHint": case "key_dialogSearchIcon": case "key_dialogEmptyText": case "key_windowBackgroundWhiteValueText": case "key_profile_tabText": case "key_chat_inAudioPerformerSelectedText": case "key_chat_outAudioPerformerSelectedText": case "key_chat_inAudioDurationSelectedText": case "key_chat_outAudioDurationSelectedText": return secondary(dark);
-            case "key_dialogTextLink": case "key_profile_tabSelectedText": case "key_chat_inPreviewInstantText": case "key_chat_outPreviewInstantText": return accentText(dark);
-            case "key_dialogInputFieldActivated": case "key_dialogCheckboxSquareBackground": case "key_dialogRoundCheckBox": case "key_dialogRadioBackgroundChecked": case "key_dialogLineProgress": case "key_dialog_inlineProgress": case "key_profile_tabSelectedLine": case "key_chat_inFileProgress": case "key_chat_outFileProgress": case "key_chat_inFileProgressSelected": case "key_chat_outFileProgressSelected": case "key_chat_inAudioProgress": case "key_chat_outAudioProgress": case "key_chat_inAudioSelectedProgress": case "key_chat_outAudioSelectedProgress": case "key_chat_inAudioSeekbarFill": case "key_chat_outAudioSeekbarFill": case "key_chat_inPreviewLine": case "key_chat_outPreviewLine": case "key_sharedMedia_startStopLoadIcon": case "key_switchTrackBlueChecked": case "key_switchTrackBlueThumbChecked": return accent(dark);
-            case "key_dialogCheckboxSquareCheck": case "key_dialogRoundCheckBoxCheck": return 0xffffffff;
+            case "key_dialogTextGray": case "key_dialogTextGray2": case "key_dialogTextGray3": case "key_dialogTextGray4": case "key_dialogTextHint": case "key_dialogIcon": case "key_dialogSearchHint": case "key_dialogSearchIcon": case "key_dialogEmptyText": case "key_windowBackgroundWhiteValueText": case "key_profile_tabText": case "key_chat_inAudioPerformerSelectedText": case "key_chat_inAudioDurationSelectedText": return secondary(dark);
+            case "key_dialogTextLink": case "key_profile_tabSelectedText": case "key_chat_inPreviewInstantText": return accentText(dark);
+            case "key_dialogInputFieldActivated": case "key_dialogCheckboxSquareBackground": case "key_dialogRoundCheckBox": case "key_dialogRadioBackgroundChecked": case "key_dialogLineProgress": case "key_dialog_inlineProgress": case "key_profile_tabSelectedLine": case "key_chat_inFileProgress": case "key_chat_inFileProgressSelected": case "key_chat_inAudioProgress": case "key_chat_inAudioSelectedProgress": case "key_chat_inAudioSeekbarFill": case "key_chat_inPreviewLine": case "key_sharedMedia_startStopLoadIcon": case "key_switchTrackBlueChecked": case "key_switchTrackBlueThumbChecked": return accent(dark);
+            case "key_dialogCheckboxSquareCheck": case "key_dialogRoundCheckBoxCheck": return onAccent(dark);
             case "key_chat_wallpaper": return wallpaper(dark);
             case "key_chat_wallpaper_gradient_to1": case "key_chat_wallpaper_gradient_to2": case "key_chat_wallpaper_gradient_to3":
             case "key_chat_outBubbleGradient1": case "key_chat_outBubbleGradient2": case "key_chat_outBubbleGradient3": case "key_chat_outBubbleGradientAnimated": return 0;
             case "key_chat_outBubble": case "key_chat_outBubbleShadow": return outgoing(dark);
-            case "key_chat_inBubble": case "key_chat_inBubbleShadow": return incoming(dark);
-            case "key_chat_outBubbleSelected": return dark ? 0xff126b59 : 0xffc0e9b7;
-            case "key_chat_inBubbleSelected": return dark ? 0xff344650 : 0xffe4e8e8;
+            case "key_chat_inBubbleShadow": return incomingEdge(dark);
+            case "key_chat_inBubble": return incoming(dark);
+            case "key_chat_outBubbleSelected": return dark ? 0xff3a4252 : 0xff1f2937;
+            case "key_chat_inBubbleSelected": return dark ? 0xff2a3039 : 0xffe5e7eb;
             case "key_windowBackgroundWhite": case "key_actionBarDefault": case "key_actionBarDefaultArchived":
             case "key_actionBarDefaultSubmenuBackground": case "key_dialogBackground":
             case "key_chat_messagePanelBackground": case "key_chat_topPanelBackground": case "key_avatar_backgroundActionBarBlue": return surface(dark);
             case "key_windowBackgroundGray": case "key_windowBackgroundGrayShadow": return background(dark);
-            case "key_chat_messagePanelText": case "key_chat_messageTextIn": case "key_chat_messageTextOut":
+            case "key_chat_messagePanelText": case "key_chat_messageTextIn": 
             case "key_actionBarDefaultTitle": case "key_actionBarDefaultIcon": case "key_actionBarDefaultSearch":
             case "key_actionBarDefaultSubmenuItem": case "key_actionBarDefaultSubmenuItemIcon": case "key_dialogTextBlack":
             case "key_windowBackgroundWhiteBlackText": case "key_chats_name": case "key_chats_nameMessage": case "key_profile_title": return text(dark);
-            case "key_chat_inTimeText": case "key_chat_outTimeText": case "key_chat_messagePanelHint": case "key_chat_messagePanelIcons":
+            case "key_chat_inTimeText": case "key_chat_messagePanelHint": case "key_chat_messagePanelIcons":
             case "key_actionBarDefaultSubtitle": case "key_actionBarDefaultSearchPlaceholder": case "key_chats_date":
             case "key_chats_message": case "key_chats_message_threeLines": case "key_windowBackgroundWhiteGrayText":
             case "key_windowBackgroundWhiteGrayText2": case "key_windowBackgroundWhiteGrayText3": case "key_windowBackgroundWhiteGrayText4":
             case "key_glass_defaultIcon": case "key_profile_status": case "key_avatar_subtitleInProfileBlue": case "key_windowBackgroundWhiteGrayIcon": return secondary(dark);
-            case "key_chat_inFileNameText": case "key_chat_outFileNameText":
-            case "key_chat_inAudioTitleText": case "key_chat_outAudioTitleText":
-            case "key_chat_inContactNameText": case "key_chat_outContactNameText": return text(dark);
-            case "key_chat_inFileInfoText": case "key_chat_outFileInfoText": case "key_chat_inFileInfoSelectedText": case "key_chat_outFileInfoSelectedText":
-            case "key_chat_inContactPhoneText": case "key_chat_outContactPhoneText": case "key_chat_inContactPhoneSelectedText": case "key_chat_outContactPhoneSelectedText":
-            case "key_chat_inAudioPerformerText": case "key_chat_outAudioPerformerText": case "key_chat_inAudioDurationText": case "key_chat_outAudioDurationText": return secondary(dark);
-            case "key_chat_inForwardedNameText": case "key_chat_outForwardedNameText": return secondary(dark);
-            case "key_actionBarTabActiveText": case "key_actionBarTabLine": case "key_telegram_color": return accentText(dark);
+            case "key_chat_inFileNameText": 
+            case "key_chat_inAudioTitleText": 
+            case "key_chat_inContactNameText": return text(dark);
+            case "key_chat_inFileInfoText": case "key_chat_inFileInfoSelectedText": 
+            case "key_chat_inContactPhoneText": case "key_chat_inContactPhoneSelectedText": 
+            case "key_chat_inAudioPerformerText": case "key_chat_inAudioDurationText": return secondary(dark);
+            case "key_chat_inForwardedNameText": return secondary(dark);
             case "key_actionBarTabUnactiveText": return secondary(dark);
             case "key_actionBarTabSelector": return selected(dark);
             case "key_glass_tabUnselected": return secondary(dark);
@@ -81,35 +105,33 @@ public final class ChatLook {
             case "key_glass_tabSelected": return text(dark);
             case "key_dialogButton": return accentText(dark);
             case "key_chat_messagePanelSend": return accent(dark);
-            case "key_chats_unreadCounter": case "key_featuredStickers_addButton":
+            case "key_featuredStickers_addButton":
             case "key_switch2TrackChecked": case "key_switchTrackChecked": case "key_checkbox": case "key_chats_actionBackground": case "key_profile_actionBackground": case "key_profile_verifiedBackground":
             case "key_telegram_color_dialogsLogo":
-            case "key_chat_outReplyLine": case "key_chat_inReplyLine": return accent(dark);
-            case "key_chat_outReplyNameText": case "key_chat_inReplyNameText": return selectedText(dark);
+            case "key_chat_inReplyLine": return accent(dark);
+            case "key_chat_inReplyNameText": return selectedText(dark);
             case "key_chat_topPanelTitle": return accentText(dark);
             case "key_chat_topPanelLine": return accent(dark);
             case "key_chat_topPanelMessage": case "key_chat_topPanelClose": return secondary(dark);
-            case "key_chats_unreadCounterText": case "key_featuredStickers_buttonText": case "key_chat_messagePanelVoicePressed":
-            case "key_checkboxCheck": case "key_chats_actionIcon": case "key_profile_actionIcon": case "key_profile_verifiedCheck": return 0xffffffff;
-            case "key_chat_outSentCheck": case "key_chat_outSentCheckSelected": return secondary(dark);
-            case "key_chat_outSentCheckRead": case "key_chat_outSentCheckReadSelected": return 0xff53bdeb;
-            case "key_chat_inReplyMessageText": case "key_chat_outReplyMessageText": return secondary(dark);
-            case "key_chat_inReplyMediaMessageText": case "key_chat_outReplyMediaMessageText": return selectedText(dark);
+            case "key_featuredStickers_buttonText": case "key_chat_messagePanelVoicePressed":
+            case "key_checkboxCheck": case "key_chats_actionIcon": case "key_profile_actionIcon": case "key_profile_verifiedCheck": return onAccent(dark);
+            case "key_chat_inReplyMessageText": return secondary(dark);
+            case "key_chat_inReplyMediaMessageText": return selectedText(dark);
             case "key_dialogInputField": case "key_chat_messagePanelVoiceBackground": return field(dark);
             case "key_divider": case "key_actionBarDefaultSubmenuSeparator": return dark ? 0xff20272b : 0xffe4e4e4;
             case "key_listSelector": case "key_actionBarDefaultSelector": return dark ? 0x1fe9edef : 0x12111b21;
-            case "key_chat_selectedBackground": return dark ? 0x664a8f7c : 0x5580d8a0;
-            // Chat-list accents: WhatsApp uses green for unread time/typing/draft, gray for media labels, blue only for read ticks.
+            case "key_chat_selectedBackground": return dark ? 0x44f59e0b : 0x33f59e0b;
+            // Chat-list accents: amber for drafts/typing, gray for media labels and ticks.
             case "key_telegram_color_text": case "key_chats_actionMessage": case "key_chats_draft": return accentText(dark);
             case "key_chats_attachMessage": case "key_chats_sentCheck": case "key_chats_sentClock": case "key_chats_pinnedIcon": case "key_chats_muteIcon": return secondary(dark);
-            case "key_chats_sentReadCheck": return 0xff53bdeb;
             case "key_chats_verifiedBackground": return accent(dark);
-            case "key_chats_verifiedCheck": return 0xffffffff;
-            case "key_chat_serviceBackground": return dark ? 0xff182229 : 0xffffffff;
+            case "key_chats_verifiedCheck": return onAccent(dark);
+            case "key_chat_serviceBackground": return dark ? 0xff1f232a : 0xffffffff;
             case "key_chat_serviceText": case "key_chat_serviceLink": case "key_chat_serviceIcon": return text(dark);
         }
         // Preserve destructive/payment/status colors and special media overlays.
-        if (key.startsWith("key_windowBackgroundWhiteBlue") || key.startsWith("key_windowBackgroundWhiteGreen") || key.startsWith("key_chat_inSiteName") || key.startsWith("key_chat_outSiteName") || key.startsWith("key_dialogTextBlue")) return accentText(dark);
+        if (key.startsWith("key_windowBackgroundWhiteGreen")) return success(dark);
+        if (key.startsWith("key_windowBackgroundWhiteBlue") || key.startsWith("key_chat_inSiteName") || key.startsWith("key_chat_outSiteName") || key.startsWith("key_dialogTextBlue")) return accentText(dark);
         return null;
     }
     /** Text bubble body and its top-corner tail share the exact outline used by hit highlights. */
@@ -125,36 +147,15 @@ public final class ChatLook {
         if(!joinedBottom){float tail=radius*.65f;if(outgoing){path.moveTo(body.right-radius,body.bottom);path.lineTo(body.right+tail,body.bottom);path.quadTo(body.right,body.bottom-tail*.4f,body.right,body.bottom-radius);path.close();}else{path.moveTo(body.left+radius,body.bottom);path.lineTo(body.left-tail,body.bottom);path.quadTo(body.left,body.bottom-tail*.4f,body.left,body.bottom-radius);path.close();}}
     }
     public static Drawable icon(String glyph, int color, float density) { return new Glyph(glyph, color, density); }
-    public static Drawable wallpaperDrawable(boolean dark, float density) { return new Paper(dark, density); }
-    private static Bitmap doodleBitmap;
-    private static int doodleDensity;
-    public static synchronized Drawable wallpaperDrawable(android.content.res.Resources resources, boolean dark) {
-        int density=resources.getDisplayMetrics().densityDpi;
-        if(doodleBitmap==null || doodleDensity!=density) {
-            doodleBitmap=BitmapFactory.decodeResource(resources, com.futoonpay.admin.R.drawable.futoon_chat_doodle);
-            doodleDensity=density;
-        }
-        return doodleBitmap == null ? wallpaperDrawable(dark, resources.getDisplayMetrics().density) : new DoodlePaper(doodleBitmap, dark);
-    }
-    private static final class DoodlePaper extends Drawable {
-        private final boolean dark; private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG); private int alpha=255;
-        DoodlePaper(Bitmap bitmap, boolean dark) {
-            this.dark=dark; ink.setShader(new BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT));
-            // The reference PNG is an opaque grayscale mask, not an RGBA image.
-            // Map its luminance to coverage; SRC_IN alone would tint the whole rectangle.
-            int tint=dark?0x1affffff:0xffe9e4d9;
-            float coverage=Color.alpha(tint)/255f;
-            ink.setColorFilter(new ColorMatrixColorFilter(new ColorMatrix(new float[]{
-                0,0,0,0,Color.red(tint), 0,0,0,0,Color.green(tint), 0,0,0,0,Color.blue(tint),
-                .2126f*coverage,.7152f*coverage,.0722f*coverage,0,0
-            })));
-        }
-        @Override public void draw(@NonNull Canvas canvas) {
-            if(alpha==0)return; Rect bounds=getBounds(); int save=alpha<255?canvas.saveLayerAlpha(new RectF(bounds),alpha):canvas.save();
-            canvas.clipRect(bounds); canvas.drawColor(wallpaper(dark)); ink.setAlpha(255); canvas.drawRect(bounds,ink); canvas.restoreToCount(save);
-        }
+    /** Flat canvas: the chat background is a single token colour, never artwork. */
+    public static Drawable wallpaperDrawable(boolean dark, float density) { return new FlatPaper(dark); }
+    public static Drawable wallpaperDrawable(android.content.res.Resources resources, boolean dark) { return new FlatPaper(dark); }
+    private static final class FlatPaper extends Drawable {
+        private final boolean dark; private int alpha=255;
+        FlatPaper(boolean dark){this.dark=dark;}
+        @Override public void draw(@NonNull Canvas c){if(alpha==0)return;Paint p=new Paint();p.setColor(wallpaper(dark));p.setAlpha(alpha);c.drawRect(getBounds(),p);}
         @Override public void setAlpha(int value){alpha=value;invalidateSelf();}
-        @Override public void setColorFilter(@Nullable ColorFilter filter){ink.setColorFilter(filter);invalidateSelf();}
+        @Override public void setColorFilter(@Nullable ColorFilter filter){}
         @Override public int getOpacity(){return alpha==255?PixelFormat.OPAQUE:PixelFormat.TRANSLUCENT;}
     }
 
@@ -229,12 +230,5 @@ public final class ChatLook {
         }
         @Override public int getIntrinsicWidth(){return size;} @Override public int getIntrinsicHeight(){return size;}
         @Override public void setAlpha(int value){alpha=value;invalidateSelf();} @Override public void setColorFilter(@Nullable ColorFilter filter){p.setColorFilter(filter);invalidateSelf();} @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
-    }
-    private static final class Paper extends Drawable {
-        private final boolean dark;private final float density;private final Paint p=new Paint(3);private int alpha=255;
-        Paper(boolean dark,float density){this.dark=dark;this.density=density;}
-        @Override public void draw(@NonNull Canvas c){Rect b=getBounds();if(alpha==0)return;int save=alpha<255?c.saveLayerAlpha(new RectF(b),alpha):c.save();c.clipRect(b);c.drawColor(wallpaper(dark));p.setColor(dark?0x123d5866:0x126f8171);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(.75f,density*.65f));p.setAlpha(18);
-            float cell=112*density;for(float y=b.top;y<b.bottom+cell;y+=cell)for(float x=b.left;x<b.right+cell;x+=cell){float shift=(((int)((y-b.top)/cell)&1)==0?0:cell/2);float cx=x+shift+24*density,cy=y+28*density,r=8*density;c.drawRoundRect(cx-r,cy-r,cx+r,cy+r,r/3,r/3,p);c.drawCircle(cx+44*density,cy+33*density,r,p);c.drawLine(cx+18*density,cy+65*density,cx+28*density,cy+55*density,p);c.drawLine(cx+23*density,cy+54*density,cx+23*density,cy+66*density,p);}c.restoreToCount(save);}
-        @Override public void setAlpha(int value){alpha=value;invalidateSelf();}@Override public void setColorFilter(@Nullable ColorFilter f){p.setColorFilter(f);invalidateSelf();}@Override public int getOpacity(){return alpha==255?PixelFormat.OPAQUE:PixelFormat.TRANSLUCENT;}
     }
 }

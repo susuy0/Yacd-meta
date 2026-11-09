@@ -118,10 +118,10 @@ internal fun ChatFilterTabs(options: List<Pair<String, String>>, selected: Strin
         items(options, key = { it.first }) { (value, label) ->
             val active = selected == value
             Box(Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp, max = 240.dp).testTag("chat-filter-$value").selectable(active, enabled = enabled, role = Role.Tab, onClick = { onSelect(value) }), contentAlignment = Alignment.Center) {
-                    Text(label, color = if (active) GreenDark else Muted, fontSize = 14.sp, lineHeight = 20.sp,
+                    Text(label, color = if (active) Ink else Muted, fontSize = 14.sp, lineHeight = 20.sp,
                         fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp))
-                    if (active) Box(Modifier.align(Alignment.BottomCenter).width(32.dp).height(2.dp).background(GreenDark))
+                    if (active) Box(Modifier.align(Alignment.BottomCenter).width(32.dp).height(2.dp).background(Green))
             }
         }
     }
@@ -142,11 +142,11 @@ internal fun ChatNavigationBar(items: List<ChatNavItem>, selected: String?, onSe
                     .selectable(active, role = Role.Tab, onClick = { onSelect(item.id) }), contentAlignment = Alignment.Center) {
                     Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
                     Box(Modifier.widthIn(max = 64.dp).fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
-                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(22.dp), tint = if (active) GreenDark else Muted)
+                        Icon(if (active) item.selectedIcon else item.icon, null, Modifier.size(22.dp), tint = if (active) Ink else Muted)
                     }
-                    Text(item.title, color = if (active) GreenDark else Muted, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(item.title, color = if (active) Ink else Muted, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    if (active) Box(Modifier.align(Alignment.BottomCenter).width(24.dp).height(2.dp).background(GreenDark))
+                    if (active) Box(Modifier.align(Alignment.BottomCenter).width(24.dp).height(2.dp).background(Green))
                 }
             }
         }

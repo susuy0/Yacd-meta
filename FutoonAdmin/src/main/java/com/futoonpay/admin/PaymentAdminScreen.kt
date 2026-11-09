@@ -138,6 +138,7 @@ import com.futoonpay.admin.ui.theme.GreenDark
 import com.futoonpay.admin.ui.theme.Ink
 import com.futoonpay.admin.ui.theme.Line
 import com.futoonpay.admin.ui.theme.Muted
+import com.futoonpay.admin.ui.theme.Success
 import com.futoonpay.admin.ui.theme.Warning
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -845,7 +846,7 @@ private fun PaymentChannelCard(
 ) {
     val displayedStatus = paymentChannelDisplayedStatus(item, activeTab)
     val statusColor = when (displayedStatus) {
-        PaymentChannelStatus.ENABLED -> GreenDark
+        PaymentChannelStatus.ENABLED -> Success
         PaymentChannelStatus.DISABLED -> Danger
         PaymentChannelStatus.UNKNOWN -> Warning
     }
@@ -900,7 +901,7 @@ private fun PaymentChannelDetailScreen(
     val navigation = com.futoonpay.admin.LocalPanelNavigation.current
     var pending by remember { mutableStateOf<NativeAction?>(null) }
     val statusColor = when (channel.status) {
-        PaymentChannelStatus.ENABLED -> GreenDark
+        PaymentChannelStatus.ENABLED -> Success
         PaymentChannelStatus.DISABLED -> Danger
         PaymentChannelStatus.UNKNOWN -> Warning
     }
@@ -1048,7 +1049,7 @@ private fun PaymentTestDialog(
                 OutlinedTextField(amount, { amount = it }, label = { Text("测试金额") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 }
                 result?.let { item {
-                    Text(it.message, color = if (it.success) GreenDark else Danger, fontSize = 12.sp)
+                    Text(it.message, color = if (it.success) Success else Danger, fontSize = 12.sp)
                     if (it.tradeNo.isNotBlank()) androidx.compose.foundation.text.selection.SelectionContainer { Text("订单号 ${it.tradeNo}", fontSize = 12.sp) }
                     if (it.success && qr != null) androidx.compose.foundation.Image(qr.asImageBitmap(), "支付二维码", Modifier.fillMaxWidth().height(220.dp))
                     if (it.success && canOpen) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp),
@@ -1174,7 +1175,7 @@ private fun RollGroupCard(item: RollGroupItem, activeTab: RollGroupTab, onAction
         RollGroupTab.ALL -> item.status
     }
     val statusColor = when (displayedStatus) {
-        RollGroupStatus.ENABLED -> GreenDark
+        RollGroupStatus.ENABLED -> Success
         RollGroupStatus.DISABLED -> Danger
         RollGroupStatus.UNKNOWN -> Warning
     }
@@ -1286,7 +1287,7 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
             com.futoonpay.admin.ui.LedgerRecord {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(item.name.ifBlank { "通道 #${item.id}" } + " #${item.id}", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    PayBadge(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else GreenDark)
+                    PayBadge(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else Success)
                 }
                 val shown = monitorRateDisplay(metrics)
                 Text(shown.text, color = if (shown.verified) monitorRateColor(metrics.rate) else Muted, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
@@ -1332,7 +1333,7 @@ private fun MonitorMetricCard(label: String, value: String, color: Color) {
 @Composable
 private fun ChannelMonitorCard(item: ChannelMonitorItem, onAction: (NativeAction) -> Unit) {
     val healthColor = when (item.health) {
-        MonitorHealth.HEALTHY -> GreenDark
+        MonitorHealth.HEALTHY -> Success
         MonitorHealth.ABNORMAL -> Danger
         MonitorHealth.UNKNOWN -> Warning
         MonitorHealth.DISABLED -> Muted
@@ -1461,7 +1462,7 @@ private fun formatMonitorRate(rate: Double): String = if (rate % 1.0 == 0.0) "${
 @Composable
 private fun monitorRateColor(rate: Double?): Color = when {
     rate == null -> Muted
-    rate >= 90 -> GreenDark
+    rate >= 90 -> Success
     rate >= 70 -> Warning
     else -> Danger
 }

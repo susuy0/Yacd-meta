@@ -15,15 +15,15 @@ import org.json.JSONObject
 data class FutoonPalette(
     val dark: Boolean = false,
     val surface: Color = Color(0xFFFFFFFF),
-    val background: Color = Color(0xFFF4F7F9),
-    val text: Color = Color(0xFF182A35),
-    val secondaryText: Color = Color(0xFF647687),
-    val accent: Color = Color(0xFF087F69),
-    val accentText: Color = Color(0xFF08745F),
+    val background: Color = Color(0xFFF3F4F6),
+    val text: Color = Color(0xFF111827),
+    val secondaryText: Color = Color(0xFF6B7280),
+    val accent: Color = Color(0xFF111827),
+    val accentText: Color = Color(0xFFB45309),
     val buttonText: Color = Color.White,
-    val divider: Color = Color(0xFFE5EBEF),
-    val error: Color = Color(0xFFCF3434),
-    val success: Color = Color(0xFF26844B),
+    val divider: Color = Color(0xFFE5E7EB),
+    val error: Color = Color(0xFFDC2626),
+    val success: Color = Color(0xFF15803D),
     val fontScale: Float = 1f,
 ) {
     companion object {
@@ -48,7 +48,9 @@ val Muted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 val Danger: Color @Composable get() = MaterialTheme.colorScheme.error
 // State has a semantic color and a text label; it never relies on color alone.
 val Warning: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFFEBC57C) else Color(0xFF94600B)
-val HeaderSurface: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFF14252E) else Color(0xFF20343E)
+val HeaderSurface: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFF1A1F27) else Color(0xFF111827)
+/** Completed / healthy state. Never the brand colour, so green always means done. */
+val Success: Color @Composable get() = LocalFutoonPalette.current.success
 val HeaderInk: Color @Composable get() = Color(0xFFF6F9FB)
 val GreenTint: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
 val SelectedInk: Color @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer

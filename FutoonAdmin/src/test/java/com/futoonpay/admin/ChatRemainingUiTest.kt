@@ -65,15 +65,11 @@ class ChatRemainingUiTest {
         assertTrue(cell.performLongClick());cell.performClick();assertEquals(1,holds);assertEquals(0,clicks)
     }
     @Test fun cancellingAnUnchosenAttachmentMenuDoesNotInvokeAnyCallback(){var calls=0;val g=grid(304){calls++};g.visibility=View.GONE;assertEquals(0,calls)}
-    @Test fun referenceWallpaperRendersBothModesAndHonorsBoundsAndTransparency(){
+    @Test fun wallpaperIsAFlatTokenColourInBothModesAndHonorsBoundsAndTransparency(){
         for(dark in listOf(false,true)){
-            val d=ChatLook.wallpaperDrawable(base.resources,dark);val bitmap=Bitmap.createBitmap(390,844,Bitmap.Config.ARGB_8888);d.setBounds(8,8,382,836);d.draw(Canvas(bitmap));assertEquals(0,bitmap.getPixel(0,0));assertTrue(Color.alpha(bitmap.getPixel(100,100))>0)
-            val background=ChatLook.wallpaper(dark)
+            val d=ChatLook.wallpaperDrawable(base.resources,dark);val bitmap=Bitmap.createBitmap(390,844,Bitmap.Config.ARGB_8888);d.setBounds(8,8,382,836);d.draw(Canvas(bitmap));assertEquals(0,bitmap.getPixel(0,0))
             val sampled=(8..381 step 3).flatMap{x->(8..835 step 7).map{y->bitmap.getPixel(x,y)}}.toSet()
-            assertTrue("Mask must leave blank background regions",background in sampled)
-            assertTrue("Doodles must remain visible, not a solid tint",sampled.size>2)
-            assertTrue("Reference ink must remain subtle",sampled.all{pixel-> kotlin.math.abs(Color.red(pixel)-Color.red(background))<=26 && kotlin.math.abs(Color.blue(pixel)-Color.blue(background))<=26})
-            java.io.File("build/ui-screenshots/wallpaper-native-${if(dark)"dark"else"light"}.png").apply{parentFile?.mkdirs()}.outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+            assertEquals("Chat canvas must be one flat colour, no artwork",setOf(ChatLook.wallpaper(dark)),sampled)
             bitmap.eraseColor(Color.TRANSPARENT);d.alpha=0;d.draw(Canvas(bitmap));assertEquals(0,bitmap.getPixel(100,100));bitmap.recycle()
         }
     }

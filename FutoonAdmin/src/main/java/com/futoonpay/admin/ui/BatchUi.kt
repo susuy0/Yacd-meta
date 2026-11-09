@@ -115,7 +115,7 @@ internal fun BatchDialog(progress: BatchProgress?, onConfirm: () -> Unit, onClos
                 LazyColumn(Modifier.heightIn(max = 380.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { items(progress.results, key = { it.command.id }) { outcome ->
                     Column {
                         Text(outcome.command.label, fontSize = 13.sp)
-                        Text("${outcome.status.label} · ${outcome.message}", color = if (outcome.status == BatchOutcomeStatus.SUCCESS) GreenDark else Warning, fontSize = 12.sp)
+                        Text("${outcome.status.label} · ${outcome.message}", color = if (outcome.status == BatchOutcomeStatus.SUCCESS) Success else Warning, fontSize = 12.sp)
                         if (outcome.newKey.isNotBlank()) KeyResult(outcome.command.id, outcome.newKey)
                         HorizontalDivider(Modifier.padding(top = 8.dp), color = Line)
                     }

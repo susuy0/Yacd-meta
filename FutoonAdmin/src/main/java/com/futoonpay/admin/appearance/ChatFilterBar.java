@@ -28,7 +28,7 @@ public final class ChatFilterBar extends HorizontalScrollView {
         }select(Math.max(0,Math.min(selectedIndex,Math.max(0,labels.length-1))));
     }
     private int dp(float x){return Math.round(x*getResources().getDisplayMetrics().density);}
-    public void select(int value){selected=value;for(int i=0;i<row.getChildCount();i++){TextView b=(TextView)row.getChildAt(i);boolean active=i==value;b.setSelected(active);b.setTextColor(active?ChatLook.accent(dark):ChatLook.secondary(dark));GradientDrawable bg=new GradientDrawable();bg.setColor(active?ChatLook.selected(dark):ChatLook.field(dark));bg.setCornerRadius(dp(24));int inset=Math.max(0,(b.getLayoutParams().height-dp(34))/2);b.setBackground(new InsetDrawable(bg,0,inset,0,inset));b.setPadding(dp(12),0,dp(12),0);}}
+    public void select(int value){selected=value;for(int i=0;i<row.getChildCount();i++){TextView b=(TextView)row.getChildAt(i);boolean active=i==value;b.setSelected(active);b.setTextColor(active?ChatLook.onAccent(dark):ChatLook.secondary(dark));GradientDrawable bg=new GradientDrawable();bg.setColor(active?ChatLook.accent(dark):ChatLook.field(dark));bg.setCornerRadius(dp(24));int inset=Math.max(0,(b.getLayoutParams().height-dp(34))/2);b.setBackground(new InsetDrawable(bg,0,inset,0,inset));b.setPadding(dp(12),0,dp(12),0);}}
     public void setDark(boolean value){dark=value;select(selected);}
     public int selectedFilter(){return selected;}
 }

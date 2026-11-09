@@ -204,7 +204,7 @@ internal class MerchantOpeningViewModel(
             } else if (state.stage == OpeningStage.RESULT) {
                 val result = state.result
                 item { PayCard {
-                    Text("🏡 开户成功", style = MaterialTheme.typography.titleMedium, color = GreenDark)
+                    Text("🏡 开户成功", style = MaterialTheme.typography.titleMedium, color = Success)
                     DataRow("商户 ID", result?.uid.orEmpty())
                     DataRow("结算周期", model.cycle())
                     Text(if (state.draftInserted) "文案已填入输入框，请校对后手动发送。" else "开户已完成，后续操作不会再次提交开户。", color = Muted, fontSize = 12.sp)
