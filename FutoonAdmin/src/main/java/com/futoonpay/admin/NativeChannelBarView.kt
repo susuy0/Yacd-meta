@@ -135,7 +135,10 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val foldSelect = state.merchant != null && !linked && (state.scope?.dialog ?: 0) < 0
         val showChannels = (linked || !merchantRow || (state.scope?.dialog ?: 0) < 0) && !foldSelect
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
-        val channelHeight = if (!showChannels) 0 else if (!linked || compact) 48 else if (large) (48 * scale).toInt() + 47 else 75
+        // Merchant + linked channel used to stack two tall rows. The channel row collapses to its single-line form when the screen can hold it.
+        val stackedCompact = state.merchant != null && linked && !large && resources.configuration.screenWidthDp >= 360
+        val compactChannel = compact || stackedCompact
+        val channelHeight = if (!showChannels) 0 else if (!linked || compactChannel) 48 else if (large) (48 * scale).toInt() + 47 else 75
         val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() else 48
         val height = when {
             state.loginRequired -> 49
@@ -169,7 +172,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             row.addView(text("×", 24f, palette.secondaryText.toArgb()).apply { gravity = Gravity.CENTER; contentDescription = "隐藏此话题的通道入口，可在 Futoonpay 设置恢复"; setOnClickListener { model.hide() }; isFocusable = true }, LayoutParams(dp(48),-1))
             addView(row, LayoutParams(-1,dp(48))); return
         }
-        if (compact) {
+        if (compactChannel) {
             val row=LinearLayout(context).apply{orientation=HORIZONTAL;background=capsule();setPadding(dp(12),0,dp(12),0)}
             row.addView(text("${current.name}${if(current.id.isBlank()) "" else " #${current.id}"}",12f).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.MIDDLE;contentDescription="当前通道 ${current.name}，ID ${current.id}，点击切换";setOnClickListener{open("select")};isFocusable=true},LayoutParams(0,dp(48),1f))
             row.addView(button("通道订单",.9f){open("orders")}.apply{isEnabled=!state.invalid})

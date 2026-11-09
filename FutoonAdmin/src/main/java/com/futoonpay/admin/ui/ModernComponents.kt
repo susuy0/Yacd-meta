@@ -40,7 +40,7 @@ internal val LocalPayPanelChrome = staticCompositionLocalOf<PayPanelChrome?> { n
 
 @Composable
 internal fun PayCard(modifier: Modifier = Modifier, compact: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), color = CardColor) {
+    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = CardColor, border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
         Column(Modifier.padding(horizontal = if (compact) 12.dp else 16.dp, vertical = if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 10.dp), content = content)
     }
 }
