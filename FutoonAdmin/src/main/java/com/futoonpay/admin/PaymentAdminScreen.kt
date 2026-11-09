@@ -715,7 +715,7 @@ internal fun PaymentAdminRoot(viewModel: PaymentAdminViewModel, onBack: () -> Un
         topBar = {
             PayTopBar(state.spec.title, onBack,
                 actions = {
-                    if (state.spec.supportsAdd) IconButton(onClick = viewModel::openAdd, enabled = !state.loading) { Icon(Icons.Default.Add, "新增") }
+                    // One create entry only: the bottom button. The refresh slot keeps one width for spinner and icon.
                     if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
                     else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
                 },
@@ -948,6 +948,18 @@ private fun PaymentChannelDetailScreen(
                 }
             }
             item {
+                Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = onOrders, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("通道订单") }
+                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = onTest, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("创建测试订单") }
+                }
+                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp),
+                    onClick = onRelatedType,
+                    enabled = !detail?.paymentTypeId.isNullOrBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("同支付方式通道") }
+            }
+            item {
                 Card(colors = CardDefaults.cardColors(containerColor = CardColor), border = CardDefaults.outlinedCardBorder(), shape = RoundedCornerShape(12.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         Text("支付插件", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -965,18 +977,6 @@ private fun PaymentChannelDetailScreen(
                         }
                     }
                 }
-            }
-            item {
-                Text("业务关联", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = onTest, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("测试支付") }
-                    com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = onOrders, enabled = channel.id.isNotBlank(), modifier = Modifier.weight(1f)) { Text("通道订单") }
-                }
-                com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp),
-                    onClick = onRelatedType,
-                    enabled = !detail?.paymentTypeId.isNullOrBlank(),
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("同支付方式通道") }
             }
             if (channel.actions.isNotEmpty()) item {
                 Text("通道管理", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -1277,7 +1277,7 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
         item { PayPills(MonitorWindow.entries.map { it.name to it.label }, window.name) { window = MonitorWindow.valueOf(it) } }
         item { OutlinedTextField(query, onQueryChange, placeholder = { Text("搜索通道 ID") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
             trailingIcon = { IconButton(onClick = { onLoad(1, query) }) { Icon(Icons.Default.Search, "搜索通道") } } , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
-        item { Text("近${window.label} · ${channels.size} 个通道", color = Muted, fontSize = 12.sp) }
+        item { Text(if (state.loading && channels.isEmpty()) "近${window.label} · 正在查询…" else "近${window.label} · ${channels.size} 个通道", color = Muted, fontSize = 12.sp) }
         item { MultiSelectBar(selection, channels.map { it.id }, paymentBatchOptions(state.spec.id, channels.filter { it.id in selection.selected }.map { PaymentBatchRow(it.id, "${it.name} #${it.id}", it.actions) }), state.loading, onBatch) }
         itemsIndexed(channels, key = { index, it -> "${it.id}:$index" }) { _, item ->
             val metrics = item.metrics(window)
@@ -1287,15 +1287,16 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
                     Text(item.name.ifBlank { "通道 #${item.id}" } + " #${item.id}", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     PayBadge(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else GreenDark)
                 }
-                Text(metrics.rate?.let(::formatMonitorRate) ?: if (metrics.total == 0) "暂无样本" else "暂无统计", color = GreenDark, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                Text("成功率 · 近${window.label}", color = Muted, fontSize = 12.sp)
+                val shown = monitorRateDisplay(metrics)
+                Text(shown.text, color = if (shown.verified) monitorRateColor(metrics.rate) else Muted, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                Text("成功率 · 近${window.label}" + shown.note, color = Muted, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("成功 ${metrics.successful ?: "—"}", color = Muted, fontSize = 12.sp)
                     Text("总订单 ${metrics.total ?: "—"}", color = Muted, fontSize = 12.sp)
                     Text("处理中 ${metrics.processing ?: "—"}", color = Muted, fontSize = 12.sp)
                 }
                 HorizontalDivider(color = Line)
-                Text("最近检测：${item.result.ifBlank { "未检测" }}${item.lastChecked.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()}", color = Muted, fontSize = 12.sp)
+                Text("最近检测：${item.result.ifBlank { "尚未检测" }}${item.lastChecked.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()}", color = Muted, fontSize = 12.sp)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(item.actions.distinctBy { it.label to it.endpoint }) { action -> com.futoonpay.admin.ui.ChatTextButton(onClick = { onAction(action) }) { Text(action.label, color = if (action.destructive) Danger else GreenDark, fontSize = 12.sp) } }
                     item { com.futoonpay.admin.ui.ChatTextButton(onClick = { onAction(NativeAction("通道详情", "futoon://channel-detail?id=${item.id}")) }) { Text("通道详情", fontSize = 12.sp) } }
@@ -1442,6 +1443,18 @@ private fun SortDirectionButton(ascending: Boolean, onClick: () -> Unit) {
     }
 }
 
+/** How one monitor window is shown: a percentage is coloured only when the sample behind it is known; otherwise it is neutral and says why. */
+internal data class MonitorRateDisplay(val text: String, val note: String, val verified: Boolean)
+internal fun monitorRateDisplay(metrics: MonitorWindowMetrics): MonitorRateDisplay {
+    val rate = metrics.rate
+    val total = metrics.total
+    return when {
+        total == 0 -> MonitorRateDisplay("暂无样本", " · 该窗口没有订单", false)
+        rate == null -> MonitorRateDisplay("暂无统计", " · 后台未返回成功率", false)
+        total == null -> MonitorRateDisplay(formatMonitorRate(rate), " · 订单数未提供，无法核对", false)
+        else -> MonitorRateDisplay(formatMonitorRate(rate), " · ${metrics.successful ?: "—"}/$total 单", true)
+    }
+}
 private fun formatMonitorRate(rate: Double): String = if (rate % 1.0 == 0.0) "${rate.toInt()}%" else "%.1f%%".format(rate)
 
 @Composable

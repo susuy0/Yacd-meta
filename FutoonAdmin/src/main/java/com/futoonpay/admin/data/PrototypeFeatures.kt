@@ -41,6 +41,9 @@ fun SettlementSummary.displayAmount(): String = displayOrderAmount(amount, curre
 fun SettlementSummary.displayFee(): String = fee.ifBlank { "—" }
 fun SettlementSummary.actualCurrency(): String = if (payType in setOf("4", "5", "6")) "USDT" else currency
 fun SettlementSummary.displayActualAmount(): String = displayOrderAmount(actualAmount, actualCurrency())
+/** Only a completed settlement has actually arrived; every other state shows an expectation or a voided record, never "实际到账". */
+fun SettlementSummary.actualAmountLabel(): String = when (status) { 1 -> "实际到账"; 6 -> "作废前折算金额"; else -> "预计到账" }
+fun SettlementSummary.actualAmountText(): String = displayActualAmount().let { if (status == 6 && it != "—") "$it · 已作废，不代表已到账" else it }
 fun SettlementSummary.displayStatus(): String = when {
     status == 3 && dispatchState == "held" -> "待审核"
     status == 3 && dispatchState == "unknown" -> "待核对"

@@ -238,7 +238,13 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                                     val chrome = PayPanelChrome(navigator.canPop, actions = {
                                         IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                                         IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
-                                    }, context = { if (route.kind == "evidence") PanelContextStrip(chat, workflowState, keyboard || compact) })
+                                    }, context = {
+                                        if (route.kind == "evidence") PanelContextStrip(chat, workflowState, keyboard || compact)
+                                        else {
+                                            val current = workflowState.merchant?.let { runCatching { JSONObject(it) }.getOrNull() }
+                                            panelScopeLabel(route, current?.optString("uid").orEmpty(), current?.optString("username").orEmpty())?.let { scope -> PanelScopeStrip(scope, keyboard || compact) { id -> when (route.kind) { "orders" -> navigation.orders(merchantId = id); "settlements" -> navigation.settlements(id); else -> navigation.domains(id) } } }
+                                        }
+                                    })
                                     CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
                                 }
                             }
@@ -433,6 +439,13 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
             if (paths.isEmpty() || caption.length > 1024) Text(if (paths.isEmpty()) "先选择至少一张图片" else "凭证说明超过 1024 字，请缩短后再发送", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 6.dp))
             com.futoonpay.admin.ui.ChatButton(enabled = paths.isNotEmpty() && caption.length <= 1024, onClick = { bridge.sendEvidence(order.toString(), caption) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("选择收件人并预览") }
         }
+    }
+}
+
+@Composable private fun PanelScopeStrip(scope: PanelScopeLabel, compact: Boolean, onSwitch: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().background(GreenTint).padding(start = 12.dp, end = 4.dp, top = if (compact) 0.dp else 2.dp, bottom = if (compact) 0.dp else 2.dp).testTag("panel-scope"), verticalAlignment = Alignment.CenterVertically) {
+        Text(scope.text, Modifier.weight(1f), color = Ink, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        if (scope.switchLabel != null && scope.switchMerchantId != null) com.futoonpay.admin.ui.ChatTextButton(onClick = { onSwitch(scope.switchMerchantId) }) { Text(scope.switchLabel, color = GreenDark, fontSize = 12.sp) }
     }
 }
 

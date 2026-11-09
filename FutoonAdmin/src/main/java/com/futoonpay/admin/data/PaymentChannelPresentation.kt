@@ -101,7 +101,7 @@ fun NativeTable.toPaymentChannelItems(): List<PaymentChannelItem> = rows.mapInde
         plugin = value("支付插件", "插件", "plugin"),
         rate = value("预付扣点", "扣点", "费率", "rate"),
         paymentRange = value("支付范围", "支付限额", "金额范围", "范围"),
-        statusText = statusText,
+        statusText = readableChannelStatus(statusText),
         status = paymentChannelStatus(statusText),
         fields = fields,
         actions = rowActions.getOrNull(rowIndex).orEmpty(),
@@ -190,5 +190,17 @@ private fun paymentChannelStatus(value: String): PaymentChannelStatus {
         normalized == "0" || listOf("关闭", "停用", "禁用", "未启用", "disabled", "inactive").any(normalized::contains) -> PaymentChannelStatus.DISABLED
         normalized == "1" || listOf("正常", "开启", "启用", "运行", "enabled", "active").any(normalized::contains) -> PaymentChannelStatus.ENABLED
         else -> PaymentChannelStatus.UNKNOWN
+    }
+}
+
+/** Machine status codes from the backend shown in operator words; anything unknown keeps its text, only without underscores. */
+internal fun readableChannelStatus(raw: String): String {
+    val key = raw.trim().lowercase()
+    return when (key) {
+        "incident_quarantined" -> "事故隔离中"
+        "quarantined" -> "已隔离"
+        "paused" -> "已暂停"
+        "maintenance" -> "维护中"
+        else -> if (key.isNotEmpty() && key.all { it.isLetterOrDigit() && it.code < 128 || it == '_' } && '_' in key) key.replace('_', ' ') else raw
     }
 }

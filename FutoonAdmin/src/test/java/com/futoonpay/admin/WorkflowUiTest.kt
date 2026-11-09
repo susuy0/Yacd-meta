@@ -109,9 +109,9 @@ class WorkflowUiTest {
         root(RecognizedQuery("系统订单号 S1000001", "AUTO"))
         compose.onNodeWithTag("recognition-list").performScrollToNode(hasContentDescription("全选识别结果"))
         compose.onNodeWithContentDescription("全选识别结果").assertIsOn().performClick().assertIsOff()
-        compose.onNodeWithText("查询所选").assertIsNotEnabled()
+        compose.onNodeWithText("查询所选", substring = true).assertIsNotEnabled()
         compose.onNodeWithContentDescription("全选识别结果").performClick().assertIsOn()
-        compose.onNodeWithText("查询所选").assertIsEnabled()
+        compose.onNodeWithText("查询所选", substring = true).assertIsEnabled()
         assertFalse(bridge.calls.any { it.first == "orders.search" })
     }
     @Test fun merchantTabHasBothCurrentConversationAndOriginalFullList() {
@@ -128,14 +128,13 @@ class WorkflowUiTest {
     }
     @Test fun recognizedOrderOpensReceiptSelectionWithEditableInfoAndManualPreview() {
         root(RecognizedQuery("系统订单号 S1000001", "AUTO", source = MessageSource(-100, 12627, 19)))
-        compose.waitUntil(5000) { compose.onAllNodesWithText("查询所选").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("查询所选").assertIsDisplayed().performClick()
+        compose.waitUntil(5000) { compose.onAllNodesWithText("查询所选", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("查询所选", substring = true).assertIsDisplayed().performClick()
         compose.waitUntil(5000) { bridge.calls.any { it.first == "orders.search" } }
         compose.waitUntil(5000) { compose.onAllNodesWithText("停止未执行项").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("recognition-list").performScrollToNode(hasText("查看订单与选择付款凭证 ›"))
         compose.onNodeWithText("查看订单与选择付款凭证 ›").performClick()
         compose.waitUntil(5000) { compose.onAllNodesWithText("订单详情").fetchSemanticsNodes().isNotEmpty() }
-        compose.onAllNodes(hasScrollAction()).onLast().performScrollToNode(hasText("选择付款凭证"))
         compose.onNodeWithText("选择付款凭证").performClick()
         compose.onNodeWithText("从聊天选图").assertIsDisplayed()
         compose.onNodeWithText("相册 / 文件").assertIsDisplayed()
@@ -164,6 +163,6 @@ class WorkflowUiTest {
         val actions = CurrentMerchantActions(AppViewModel(TestEnvironment(), loadOnStart = false))
         compose.setContent { FutoonTheme { PanelOverlayHost { Box(Modifier.width(390.dp).height(350.dp)) { RecognitionScreen(vm, actions, ChatScope(), navigator, bridge) } } } }
         compose.onNodeWithText("提取编号").assertIsDisplayed()
-        compose.onNodeWithText("查询所选").assertIsDisplayed()
+        compose.onNodeWithText("查询所选", substring = true).assertIsDisplayed()
     }
 }

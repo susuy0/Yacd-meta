@@ -184,7 +184,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         // Identity is a readable label, not a 27dp click target. Full name is repeated in the switch sheet.
         info.addView(text(current.name, 14f).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; contentDescription = "当前通道 ${current.name}，ID ${current.id}" }, LayoutParams(0,-1,1f))
         info.addView(text(if(current.id.isBlank()) "" else " #${current.id} ", 11f, palette.secondaryText.toArgb()), LayoutParams(-2,-1))
-        info.addView(text(if(state.invalid) "需重新选择" else state.source, 11f, if(state.source == "已记住") palette.secondaryText.toArgb() else palette.accentText.toArgb()).apply {
+        info.addView(text(if(state.invalid) "需重新选择" else channelSourceLabel(state.source), 11f, if(state.source == "已记住") palette.secondaryText.toArgb() else palette.accentText.toArgb()).apply {
             setPadding(dp(4),0,dp(4),0)
             background=GradientDrawable().apply { cornerRadius=dp(8).toFloat(); setStroke(dp(1), if(state.source == "已记住") palette.divider.toArgb() else palette.accentText.toArgb()) }
         }, LayoutParams(-2,dp(20)))

@@ -40,6 +40,8 @@ internal fun OfficialSettlementDetails(
         }
         reason?.let { detail ->
             ReasonSections(detail.sections.filter { it.first in setOf("当前状态", "结算审核", "原因", "处理方式") })
+            // Evidence (chain, full address, history) comes before the approve buttons so the decision sits next to what it is based on.
+            ReasonSections(detail.sections.filterNot { it.first in setOf("当前状态", "结算审核", "原因", "处理方式") })
             detail.reviews.forEach { review ->
                 HorizontalDivider()
                 Text("${review.title} · ${review.state}", fontWeight = FontWeight.Medium)
@@ -53,7 +55,6 @@ internal fun OfficialSettlementDetails(
                     onReview("通过${review.title}", "approve_settlement_review", detail.reviewFields(review), true)
                 }) { Text("通过${review.title}") }
             }
-            ReasonSections(detail.sections.filterNot { it.first in setOf("当前状态", "结算审核", "原因", "处理方式") })
             if (detail.canRecheck) ChatOutlinedButton(onClick = {
                 onReview("重新核验（不批准）", "approve_settlement_review", detail.recheckFields(), true)
             }) { Text("重新核验（不批准）") }

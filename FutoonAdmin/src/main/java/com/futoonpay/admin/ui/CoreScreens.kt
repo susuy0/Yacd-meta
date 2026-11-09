@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -165,11 +166,11 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
         }
         item {
             AppliedChips(state.orderSearch.activeChips(),
-                { viewModel.loadOrders(1, state.orderSearch.withoutChip(it)) },
-                { viewModel.loadOrders(1, OrderSearchFilters(status = state.orderSearch.status)) })
+                { chip -> val next = state.orderSearch.withoutChip(chip); if (next.activeChips().isEmpty()) quick = ""; viewModel.loadOrders(1, next) },
+                { quick = ""; filters = OrderSearchFilters(status = state.orderSearch.status); viewModel.loadOrders(1, OrderSearchFilters(status = state.orderSearch.status)) })
         }
         item { FinanceListToolbar(selection, state.orders.map { it.tradeNo }, com.futoonpay.admin.data.orderBatchOptions(state.orders.filter { it.tradeNo in selection.selected }),
-            state.refreshing || state.ordersLoading, "共 ${state.orderTotal} 笔", "本页统计", { pageMetrics = true }, viewModel::offerBatch) }
+            state.refreshing || state.ordersLoading, if (state.ordersLoading && state.orders.isEmpty()) "正在查询…" else "共 ${state.orderTotal} 笔", "本页统计", { pageMetrics = true }, viewModel::offerBatch) }
         state.orderChannelStatsMessage?.let { item { Text(it, color = Warning, fontSize = 12.sp) } }
         item { ListFeedback(state.ordersLoading && state.orders.isEmpty(), state.ordersError, !state.ordersLoading && state.orders.isEmpty(), { viewModel.loadOrders(state.orderPage) }) }
         itemsIndexed(state.orders, key = { index, item -> "${item.tradeNo}:$index" }) { _, order ->
@@ -257,6 +258,7 @@ private fun CurrentOrderMetrics(orders: List<OrderSummary>, page: Int) {
             Column(Modifier.weight(1f)) { Text("成功率", color = Muted, fontSize = 12.sp); Text(rate?.let(::formatRate) ?: "—", fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
             Column(Modifier.weight(1.6f), horizontalAlignment = Alignment.End) { Text("订单金额", color = Muted, fontSize = 12.sp); Text(amounts.entries.joinToString("\n") { (currency, amount) -> displayOrderAmount(amount.toPlainString(), currency) }.ifBlank { "—" }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
         }
+        Text("只统计当前页已加载的 ${orders.size} 条订单；不含其他页，也不受订单列表上方的通道成功率提示影响。金额按订单金额汇总，不含实际支付、商户分成和退款。", color = Muted, fontSize = 11.sp)
     } }
 }
 
@@ -522,17 +524,14 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
                         } }
                         item { DetailBlock("时间 · 通知", listOf("创建时间" to detail.createdAt, "支付时间" to detail.completedAt, "回调通知" to notifyLabel(detail))) }
                         item { DetailBlock("请求信息", listOf("商品信息" to detail.name, "支付账号" to detail.buyer, "网站域名" to detail.domain, "请求 IP" to detail.ip, "附加参数" to detail.parameter)) }
-                        item { com.futoonpay.admin.ui.ChatOutlinedButton(onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.fillMaxWidth()) { Text("选择付款凭证") } }
                         item { com.futoonpay.admin.OrderWorkflowTools(detail) }
                         item { Text("其他操作", color = Muted, fontSize = 12.sp) }
-                        items(actions.filterNot { it.action == "notify" || it.action == "refund" }) { action ->
+                        items(actions) { action ->
                             com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(action.label) }
                         }
                     }
-                    if (detail.status == 1 || detail.status == 2 || detail.status == 3) Row(
-                        Modifier.fillMaxWidth().background(CardColor).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        actions.firstOrNull { it.action == "notify" }?.let { action -> com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("重新通知") } }
-                        actions.firstOrNull { it.action == "refund" }?.let { action -> com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onAction(action) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("退款") } }
+                    Row(Modifier.fillMaxWidth().background(CardColor).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { navigation.evidence(summary ?: detail.toSummary()) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("选择付款凭证") }
                     }
                 }
             }
@@ -712,10 +711,10 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
                 }
             }
             item { DetailBlock("结算信息", if (viewModel.modernBackend) listOf(
-                "商户" to "${row.username} · UID ${row.merchantId}", "实际到账" to row.displayActualAmount(),
+                "商户" to "${row.username} · UID ${row.merchantId}", row.actualAmountLabel() to row.actualAmountText(),
                 "结算方式" to row.displayPayType(), "结算链" to row.displayChain(),
                 "自动结算" to if (row.automatic) "是" else "否", "满额结算" to if (row.fullSettlement) "是" else "否",
-            ) else listOf("状态" to row.displayStatus(), "商户" to "${row.username} · UID ${row.merchantId}", "结算金额" to row.displayAmount(), "实际到账" to row.displayActualAmount(), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.displayChain(), "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
+            ) else listOf("状态" to row.displayStatus(), "商户" to "${row.username} · UID ${row.merchantId}", "结算金额" to row.displayAmount(), row.actualAmountLabel() to row.actualAmountText(), "USDT" to row.usdtAmount, "汇率" to row.usdtRate, "结算链" to row.displayChain(), "转账状态" to listOf(row.transferStatus, row.transferDate).filter(String::isNotBlank).joinToString(" · "), "转账结果" to row.transferResult, "调度状态" to row.dispatchState, "确认" to listOf(row.confirmationAttempts.takeIf(String::isNotBlank)?.let { "第 $it 次" }.orEmpty(), row.confirmationResult).filter(String::isNotBlank).joinToString(" · "))) }
             item { DetailBlock("收款资料", buildList {
                 if (row.fee.isNotBlank()) add("手续费" to "${row.displayFee()} ${row.currency}")
                 if (!viewModel.modernBackend) add("结算方式" to row.displayPayType())
@@ -1338,7 +1337,20 @@ private fun SearchField(value: String, placeholder: String, onValueChange: (Stri
 
 @Composable
 private fun StatusFilters(items: List<Pair<Int, String>>, selected: Int, onSelect: (Int) -> Unit) {
-    PayTabs(items.map { it.first.toString() to it.second }, selected.toString()) { onSelect(it.toInt()) }
+    var menu by remember { mutableStateOf(false) }
+    Column {
+        // The tab strip scrolls sideways and can hide the selected state; this row always names it and lists every status.
+        Box {
+            Row(Modifier.fillMaxWidth().clickable { menu = true }.padding(horizontal = 16.dp, vertical = 8.dp).testTag("status-filter"), verticalAlignment = Alignment.CenterVertically) {
+                Text("状态：${items.firstOrNull { it.first == selected }?.second ?: "全部"}", Modifier.weight(1f), color = GreenDark, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text("全部状态 ▾", color = Muted, fontSize = 12.sp)
+            }
+            DropdownMenu(menu, { menu = false }) {
+                items.forEach { (value, label) -> DropdownMenuItem(text = { Text(label, color = if (value == selected) GreenDark else Ink) }, onClick = { menu = false; onSelect(value) }) }
+            }
+        }
+        PayTabs(items.map { it.first.toString() to it.second }, selected.toString()) { onSelect(it.toInt()) }
+    }
 }
 
 @Composable

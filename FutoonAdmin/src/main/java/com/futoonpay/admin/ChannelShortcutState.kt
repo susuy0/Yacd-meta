@@ -215,3 +215,6 @@ internal class ChannelShortcutModel(context: Context, val bridge: NativePanelBri
         }
     }
 }
+
+/** What the source pill on the channel strip says; the stored value stays "已记住" so saved data and logic are unchanged. */
+internal fun channelSourceLabel(source: String): String = if (source == "已记住") "已关联本群" else source

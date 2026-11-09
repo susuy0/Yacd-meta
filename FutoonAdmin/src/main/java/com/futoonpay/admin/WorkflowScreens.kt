@@ -127,13 +127,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                     DataRow("冻结余额", merchant.frozenBalance)
                     DataRow("用户组", merchant.groupName)
                     DataRow("账号 / 支付 / 结算", "${merchantAccountStatusLabel(merchant.status)} / ${merchantPaymentStatusLabel(merchant.paymentStatus)} / ${if (merchant.settlementEnabled) "开启" else "关闭"}")
-                    listOf(
-                        if (actions.model.modernBackend) listOf("余额管理" to "balance") else listOf("增加 CNY 余额" to "add", "扣除 CNY 余额" to "reduce"),
-                        listOf((if (merchant.status == 1) "封禁账号" else "解封账号") to "toggleAccount", (if (merchant.paymentEnabled) "关闭支付" else "开启支付") to "togglePay"),
-                        listOf((if (merchant.settlementEnabled) "关闭结算" else "开启结算") to "toggleSettle", "修改用户组" to "group"),
-                    ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        com.futoonpay.admin.ui.ChatTextButton(onClick = { actions.model.offerBatch(merchantKeyRequest(listOf(merchant))) }) { Text("重置密钥") }
                         com.futoonpay.admin.ui.ChatTextButton(onClick = { actions.showDetail(merchant) }) { Text("详情与流水曲线") }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -145,6 +139,16 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                         com.futoonpay.admin.ui.ChatTextButton(onClick = { merchantReply = true }) { Text("生成商户回复") }
                         com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "flow", merchantId = merchant.uid)) }) { Text("资金流水") }
                         com.futoonpay.admin.ui.ChatTextButton(onClick = { navigator.push(PanelRoute("merchant_records", module = "stats", merchantId = merchant.uid)) }) { Text("商户统计") }
+                    }
+                    HorizontalDivider()
+                    Text("高影响操作 · 会修改账号、余额或密钥，提交前会再确认", color = Danger, fontSize = 12.sp)
+                    listOf(
+                        if (actions.model.modernBackend) listOf("余额管理" to "balance") else listOf("增加 CNY 余额" to "add", "扣除 CNY 余额" to "reduce"),
+                        listOf((if (merchant.status == 1) "封禁账号" else "解封账号") to "toggleAccount", (if (merchant.paymentEnabled) "关闭支付" else "开启支付") to "togglePay"),
+                        listOf((if (merchant.settlementEnabled) "关闭结算" else "开启结算") to "toggleSettle", "修改用户组" to "group"),
+                    ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        com.futoonpay.admin.ui.ChatTextButton(onClick = { actions.model.offerBatch(merchantKeyRequest(listOf(merchant))) }) { Text("重置密钥") }
                     }
                 }
             }
@@ -188,7 +192,15 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
             }
         }
         if (page != "recognize") ChatTextButton(onClick = { page = "recognize" }) { Text("返回识别") }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("recognition-list"), contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val staleCandidates = state.candidates.isNotEmpty() && state.extractedText != null && state.text != state.extractedText
+        // Items above the candidate list: merchant card, steps, text field, OCR row, kind picker, plus the optional error and mask warning.
+        val resultsIndex = 5 + (if (state.error != null) 1 else 0) + (if (Regex("[＊*…●•]{2,}").containsMatchIn(state.text)) 1 else 0)
+        val finished = state.candidates.any { it.phase in listOf("ok", "failed") } && !state.running
+        LaunchedEffect(page, state.candidates.isNotEmpty(), state.extractedText, finished) {
+            if (page == "recognize" && state.candidates.isNotEmpty() && !staleCandidates) runCatching { listState.animateScrollToItem(resultsIndex) }
+        }
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("recognition-list"), state = listState, contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             state.error?.let { item { Text(it, color = Danger, fontSize = 12.sp) } }
             if (page == "recognize") {
                 item { CurrentMerchantCard(workflows, actions, chat, navigator, compact = true) }
@@ -219,6 +231,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                 if (Regex("[＊*…●•]{2,}").containsMatchIn(state.text)) item { Text("发现遮挡编号，请补全；不会用编号片段匹配订单。", color = Warning, fontSize = 12.sp) }
                 if (state.candidates.isNotEmpty()) {
                     item {
+                        if (staleCandidates) Text("原文已修改，下面是上一次提取的编号。请点「提取编号」重新提取后再查询。", color = Warning, fontSize = 12.sp, modifier = Modifier.testTag("stale-candidates"))
                         val completed = state.candidates.count { it.phase in listOf("ok", "failed") }
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text("已处理 $completed / ${state.candidates.size} · 已选 ${state.candidates.count { it.selected }}", Modifier.weight(1f), color = Muted, fontSize = 12.sp)
@@ -277,7 +290,7 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
         if (page == "recognize") Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !state.running && !state.extracting && state.text.isNotBlank(), onClick = { workflows.extract() }, modifier = Modifier.weight(1f)) { Text(if (state.extracting) "提取中…" else "提取编号") }
             if (state.running) com.futoonpay.admin.ui.ChatButton(onClick = workflows::stopQueries, modifier = Modifier.weight(1f)) { Text("停止未执行项") }
-            else com.futoonpay.admin.ui.ChatButton(enabled = !state.extracting && state.candidates.any { it.selected }, onClick = { workflows.runQueries() }, modifier = Modifier.weight(1f)) { Text("查询所选") }
+            else com.futoonpay.admin.ui.ChatButton(enabled = !state.extracting && !staleCandidates && state.candidates.any { it.selected }, onClick = { workflows.runQueries() }, modifier = Modifier.weight(1f)) { Text(state.candidates.count { it.selected }.let { if (it > 0) "查询所选（$it）" else "查询所选" }) }
         }
     }
     summary?.let { text -> EditableWorkflowText("异常订单汇总", text, { summary = null }, bridge::copy) }

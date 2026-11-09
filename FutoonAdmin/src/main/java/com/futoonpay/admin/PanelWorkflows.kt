@@ -33,6 +33,8 @@ internal data class WorkflowState(
     val notice: String? = null,
     val merchant: String? = null, val merchantCandidates: List<String> = emptyList(), val merchantLoading: Boolean = false, val merchantError: String? = null,
     val manualMerchant: Boolean = false, val merchantSource: String = "",
+    /** The text the current candidates were extracted from; a different text means the candidates are stale. */
+    val extractedText: String? = null,
 )
 
 /** Native port of v0.5's candidate, batch, history, draft and contextLookup workflows.
@@ -120,7 +122,7 @@ internal class PanelWorkflows(private val bridge: NativePanelBridge) : ViewModel
             val rows = JSONArray(call("recognize", JSONObject().put("text", input))).objects()
             if (generation != queryGeneration) return@launch
             val candidates = rows.map { QueryCandidate(it.optString("value"), if (kind == "AUTO") it.optString("kind", "AUTO") else kind, source = pointers[it.optString("kind", "AUTO") + ":" + it.optString("value")] ?: source) }.distinctBy { it.kind + ":" + it.value }
-            mutable.update { it.copy(candidates = candidates, extracting = false, error = if (candidates.isEmpty()) "没有提取到完整编号，请校对文字或手动输入" else null) }
+            mutable.update { it.copy(candidates = candidates, extractedText = input, extracting = false, error = if (candidates.isEmpty()) "没有提取到完整编号，请校对文字或手动输入" else null) }
         } catch (e: Throwable) { if (generation == queryGeneration) { mutable.update { it.copy(extracting = false) }; failure(e) } }
     }
     fun requestOcr() = viewModelScope.launch { runCatching { call("ocr.gallery") }.onFailure(::failure) }

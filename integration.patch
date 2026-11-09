@@ -12438,7 +12438,7 @@ index 9dec6be..b3a8e1b 100644
          onBottomItemsVisibilityChanged();
          ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
          Timer.finish(t);
-+        if (currentEncryptedChat == null && chatMode == MODE_DEFAULT && !isInPreviewMode()) {
++        if (currentEncryptedChat == null && chatMode == MODE_DEFAULT && !isInPreviewMode() && dialog_id != org.telegram.messenger.UserConfig.getInstance(currentAccount).getClientUserId()) {
 +            futoonPanel = new FutoonPanel(this, contentView, currentAccount, chatActivityEnterView);
 +            bindFutoonContext();
 +        }
@@ -16860,7 +16860,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb06339d504d4a
 --- /dev/null
 +++ b/TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java
-@@ -0,0 +1,443 @@
+@@ -0,0 +1,460 @@
 +package org.telegram.ui;
 +
 +import android.app.Activity;
@@ -17026,6 +17026,7 @@ index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb0633
 +    private String exportText="";
 +    private int pickerGeneration;
 +    private boolean fullscreen,expanded,destroyed,paused,keyboard,ballPositioned,choosing;
++    private int barPixels;
 +    private int lastBottomInset=-1,generation;
 +    private float downX,downY,startX,startY;
 +    private boolean dragged;
@@ -17052,19 +17053,22 @@ index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb0633
 +        ball.setOnClickListener(v->open(""));
 +        ball.setOnTouchListener((v,e)->{
 +            if(e.getActionMasked()==MotionEvent.ACTION_DOWN){ball.animate().cancel();downX=e.getRawX();downY=e.getRawY();startX=ball.getX();startY=ball.getY();dragged=false;return true;}
-+            if(e.getActionMasked()==MotionEvent.ACTION_MOVE){float dx=e.getRawX()-downX,dy=e.getRawY()-downY;if(Math.hypot(dx,dy)>dp(6))dragged=true;if(dragged){root.requestDisallowInterceptTouchEvent(true);ball.setX(Math.max(dp(4),Math.min(root.getWidth()-ball.getWidth()-dp(4),startX+dx)));ball.setY(Math.max(dp(56),Math.min(root.getHeight()-ball.getHeight()-dp(80),startY+dy)));}return true;}
++            if(e.getActionMasked()==MotionEvent.ACTION_MOVE){float dx=e.getRawX()-downX,dy=e.getRawY()-downY;if(Math.hypot(dx,dy)>dp(6))dragged=true;if(dragged){root.requestDisallowInterceptTouchEvent(true);ball.setX(Math.max(dp(4),Math.min(root.getWidth()-ball.getWidth()-dp(4),startX+dx)));ball.setY(Math.max(dp(56),Math.min(root.getHeight()-ball.getHeight()-dp(80)-barPixels,startY+dy)));}return true;}
 +            if(e.getActionMasked()==MotionEvent.ACTION_UP){root.requestDisallowInterceptTouchEvent(false);if(!dragged)ball.performClick();else snapBall();return true;}
 +            if(e.getActionMasked()==MotionEvent.ACTION_CANCEL){root.requestDisallowInterceptTouchEvent(false);if(dragged)snapBall();return true;}return true;
 +        });
 +        root.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
-+            int height=b-t;keyboard=root.getRootView().getHeight()-height>dp(180);
++            int height=b-t;keyboard=root.getRootView().getHeight()-height>dp(180)||imeOverlap()>0;
 +            if(!ballPositioned&&r-l>0&&height>0){SharedPreferences prefs=preferences();ball.setX(prefs.getBoolean("right",true)?Math.max(dp(4),r-l-ball.getLayoutParams().width-dp(8)):dp(8));ball.setY(Math.max(dp(56),Math.min(height-ball.getLayoutParams().height-dp(80),height*prefs.getFloat("y",.45f))));ballPositioned=true;}
-+            if(expanded)resize();if(ball.getY()>height-dp(130))ball.setY(Math.max(dp(56),height-dp(130)));
++            if(expanded)resize();int ballFloor=dp(130)+barPixels+root.getPaddingBottom();if(ball.getY()>height-ballFloor)ball.setY(Math.max(dp(56),height-ballFloor));
 +        });
++        root.getViewTreeObserver().addOnGlobalLayoutListener(this::syncKeyboard);
++        root.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus,newFocus)->{root.postDelayed(this::syncKeyboard,200);root.postDelayed(this::syncKeyboard,600);});
++        root.setOnApplyWindowInsetsListener((v,insets)->{root.post(this::syncKeyboard);return v.onApplyWindowInsets(insets);});
 +        NotificationCenter nc=NotificationCenter.getInstance(account);nc.addObserver(this,NotificationCenter.fileLoaded);nc.addObserver(this,NotificationCenter.fileLoadFailed);nc.addObserver(this,NotificationCenter.updateInterfaces);
 +        applyOptions();
 +        channelBar = new NativeChannelBarView(c, createBridge(), new ChannelSheetHost() {
-+            public void heightChanged(int pixels) { composer.setFutoonChannelBarHeight(pixels); }
++            public void heightChanged(int pixels) { barPixels=pixels; composer.setFutoonChannelBarHeight(pixels); }
 +            public void closeSheet() { if (channelSheet != null) channelSheet.dismiss(); }
 +            public void showSheet(ChannelSheetView view, String kind) {
 +                if (!valid() || paused || host.getParentActivity() == null || channelSheet != null) { view.forceClose(); channelBar.sheetDismissed(); return; }
@@ -17191,7 +17195,20 @@ index 0000000000000000000000000000000000000000..026c6a232801226b985a2c04c8cb0633
 +        open("");panel.recognizeMessageBatch(text.toString(),pointers.toString());
 +    }
 +    public void collapse(){savePanelState();if(panel!=null){AndroidUtilities.hideKeyboard(panel);panel.onHidden();panel.setVisibility(View.GONE);}expanded=false;scrim.setVisibility(View.GONE);ball.setVisibility(View.VISIBLE);if(!options().getPanel().getRemember())releasePanel();}
-+    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=root.getHeight();FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(240),fullscreen,keyboard,options().getPanel().getHeight());int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
++    private void resize(){if(panel==null)return;panel.setWindowState(fullscreen,keyboard);int available=Math.max(0,root.getHeight()-root.getPaddingBottom());FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)panel.getLayoutParams();int h=FutoonPanelLayout.sheetHeight(available,dp(8),dp(240),fullscreen,keyboard,options().getPanel().getHeight());int width=root.getWidth()>dp(720)?dp(680):FrameLayout.LayoutParams.MATCH_PARENT;if(p.height!=h||p.width!=width){p.height=h;p.width=width;panel.setLayoutParams(p);}}
++    private int imeOverlap(){
++        int[] location=new int[2];root.getLocationOnScreen(location);int rootBottom=location[1]+root.getHeight();
++        int decor=root.getRootView().getHeight();int keyboardTop=decor;
++        if(android.os.Build.VERSION.SDK_INT>=30){android.view.WindowInsets insets=root.getRootWindowInsets();if(insets!=null){int ime=insets.getInsets(android.view.WindowInsets.Type.ime()).bottom;if(ime>0)keyboardTop=decor-ime;}}
++        if(keyboardTop==decor){android.graphics.Rect visible=new android.graphics.Rect();root.getWindowVisibleDisplayFrame(visible);if(decor-visible.bottom>dp(180))keyboardTop=visible.bottom;}
++        return Math.max(0,rootBottom-keyboardTop);
++    }
++    /** The system keyboard is its own window; lift the sheet above it so keys are never hidden behind the panel. */
++    private void syncKeyboard(){
++        if(destroyed)return;int overlap=imeOverlap();boolean now=overlap>0;
++        if(root.getPaddingBottom()!=overlap){root.setPadding(0,0,0,overlap);}
++        if(keyboard!=now||(expanded&&panel!=null)){keyboard=now;if(expanded)resize();}
++    }
 +    public boolean back(boolean invoked){if(!expanded)return false;if(invoked){if(keyboard)AndroidUtilities.hideKeyboard(panel);else if(panel==null||!panel.handleBack())collapse();}return true;}
 +    public void resume(){hintFailures=0;hintRetryAfter=0;paused=false;if(channelBar!=null){host.bindFutoonContext();channelBar.onShown();}applyOptions();if(expanded&&panel!=null)panel.onShown();scheduleOrderHints();}
 +    public void pause(){paused=true;clearOrderHints();if(channelBar!=null)channelBar.onHidden();savePanelState();if(panel!=null)panel.onHidden();}
@@ -19806,6 +19823,17 @@ index 693df7877dde165920833faafae227cf60679d29..0eda1633c251e92ab7ac98d2ef0589b6
          return WindowInsetsCompat.CONSUMED;
      }
  
+@@ -1135,6 +1168,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+ 
+     @Override
+     public boolean onBackPressed(boolean invoked) {
++        if (searchItem != null && searchItem.isSearchFieldVisible2()) {
++            if (invoked) searchItem.toggleSearch(false);
++            return false;
++        }
+         if (actionBar.isSearchFieldVisible()) {
+             if (invoked) actionBar.closeSearchField();
+             return false;
 @@ -1154,6 +1187,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          private final TextView valueView;
          private final boolean mini;

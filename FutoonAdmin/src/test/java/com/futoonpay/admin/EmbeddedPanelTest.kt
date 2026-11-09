@@ -166,7 +166,7 @@ class EmbeddedPanelTest {
         } } } }
         compose.onNodeWithText("请选择").performClick()
         compose.onNodeWithText("插件 1").performClick()
-        compose.onNodeWithText("选择 插件 1").assertIsDisplayed()
+        compose.onNodeWithContentDescription("选择 插件 1").assertIsDisplayed()
     }
     @Test fun fullOrderSearchKeepsApplyActionVisibleInShortPanel() {
         val model = AppViewModel(TestEnvironment(), loadOnStart = false)

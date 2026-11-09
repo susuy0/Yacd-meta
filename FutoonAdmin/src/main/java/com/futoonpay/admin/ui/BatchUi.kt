@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -78,14 +80,13 @@ internal fun MultiSelectBar(selection: RecordSelection, visibleIds: List<String>
 
 @Composable
 internal fun SelectableRecord(selection: RecordSelection?, id: String, label: String, content: @Composable () -> Unit) {
-    Column {
-        if (selection?.active == true) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(id in selection.selected, { selection.toggle(id) }, enabled = id.isNotBlank())
-            Text("选择 $label", fontSize = 12.sp, color = GreenDark)
-        }
-        Box {
-            Box(if (selection?.active == true) Modifier.clearAndSetSemantics {} else Modifier) { content() }
-            if (selection?.active == true) Box(Modifier.matchParentSize().clickable(enabled = id.isNotBlank()) { selection.toggle(id) })
+    // The checkbox sits on the card itself; the record already shows its own number, so there is no second row repeating it.
+    Box {
+        Box(if (selection?.active == true) Modifier.clearAndSetSemantics {} else Modifier) { content() }
+        if (selection?.active == true) {
+            Box(Modifier.matchParentSize().clickable(enabled = id.isNotBlank()) { selection.toggle(id) })
+            Checkbox(id in selection.selected, { selection.toggle(id) }, enabled = id.isNotBlank(),
+                modifier = Modifier.align(Alignment.TopEnd).semantics { contentDescription = "选择 $label" })
         }
     }
 }

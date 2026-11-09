@@ -147,7 +147,7 @@ class ChannelSheetView internal constructor(context: Context, internal val model
         finally { if(currentCoroutineContext().isActive)loading=false }
     }
     Column(Modifier.fillMaxSize()) {
-        Text(if((state.scope?.dialog?:0)<0) "关联到当前群，所有话题共用，可勾选多个通道。" else "关联到当前会话，可勾选多个通道。",Modifier.padding(16.dp),color=Muted,fontSize=13.sp)
+        Text((if((state.scope?.dialog?:0)<0) "「保存关联」会关联到当前群，所有话题共用，可勾选多个通道。" else "「保存关联」会关联到当前会话，可勾选多个通道。")+"「仅本次使用」只用于这一次，不保存。",Modifier.padding(16.dp),color=Muted,fontSize=13.sp)
         OutlinedTextField(query,{query=it},placeholder={Text("搜索通道名称或 ID")},singleLine=true,modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
         LazyColumn(Modifier.weight(1f),contentPadding=PaddingValues(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
             if(loading)item{CircularProgressIndicator()}
@@ -169,10 +169,11 @@ class ChannelSheetView internal constructor(context: Context, internal val model
                 val row=choices.firstOrNull{it.id in selected}
                 if(row!=null){model.select(ChannelLink(row.id,row.name),false);view.dismissAfterSave()}
             },modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("仅本次使用")}
-            com.futoonpay.admin.ui.ChatButton(enabled=allowed,onClick={try{
+            val changed=selected!=original.map{it.id}.toSet()
+            com.futoonpay.admin.ui.ChatButton(enabled=allowed&&changed,onClick={try{
                 val saved=selected.mapNotNull{id->choices.firstOrNull{it.id==id}?.let{ChannelLink(it.id,it.name)}?:original.firstOrNull{it.id==id}}
                 model.associate(saved);view.dismissAfterSave()
-            }catch(e:Exception){failure=e.message?:"保存关联失败"}},modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text("保存关联（${selected.size}）")}
+            }catch(e:Exception){failure=e.message?:"保存关联失败"}},modifier=Modifier.weight(1f).heightIn(min=48.dp)){Text(when{!changed->"已是当前关联";selected.isEmpty()->"解除全部关联";else->"保存关联（${selected.size}）"})}
         }
     }
 }

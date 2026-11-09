@@ -205,8 +205,11 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             PayTopBar("域名审核", onBack,
                 actions = {
                     IconButton(onClick = { showAdd = true }) { Icon(Icons.Default.Add, "添加域名") }
-                    if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
-                    else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
+                    // Same 48dp slot for the spinner and the refresh icon, so the add button does not move while loading.
+                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        if (state.loading) CircularProgressIndicator(Modifier.size(19.dp), strokeWidth = 2.dp)
+                        else IconButton(onClick = { viewModel.load() }) { Icon(Icons.Default.Refresh, "刷新") }
+                    }
                 },
             )
         },
@@ -230,7 +233,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             item {
                 PayTabs(listOf("-1" to "全部", "0" to "待审核", "1" to "已通过", "2" to "已拒绝"), state.status.toString()) { viewModel.load(1, keyword, merchantId, it.toInt()) }
             }
-            item { Text("${state.total} 条域名记录", fontWeight = FontWeight.SemiBold) }
+            item { Text(if (state.loading && state.rows.isEmpty()) "正在查询…" else "${state.total} 条域名记录", fontWeight = FontWeight.SemiBold) }
             itemsIndexed(state.rows, key = { index, it -> "${it.id}:$index" }) { _, row -> DomainAuditCard(row, { selectedDomain = row; reviewError = null }) { pending = it } }
             item { ListFeedback(state.loading && state.rows.isEmpty(), state.loadError, !state.loading && state.rows.isEmpty(), { viewModel.load() }) }
             item {
@@ -254,7 +257,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             PayCard {
                 DataRow("域名", row.domain); DataRow("商户 UID", row.merchantId)
                 DataRow("当前状态", domainAuditStatusLabel(row.status)); DataRow("提交时间", row.createdAt)
-                if (row.auditedAt.isNotBlank()) DataRow("审核时间", row.auditedAt)
+                if (row.status == 0) DataRow("审核时间", "待审核") else if (row.auditedAt.isNotBlank()) DataRow("审核时间", row.auditedAt)
                 if (row.projectName.isNotBlank()) DataRow("所属项目", row.projectName)
             }
             OutlinedTextField(remark, { remark = it }, label = { Text("审核备注 / 拒绝理由") }, minLines = 3, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
@@ -271,7 +274,7 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
         val label = when { action.delete -> "删除域名"; action.status == 1 -> "通过审核"; else -> "拒绝域名" }
         AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null }, title = { Text(label) },
-            text = { Text("${action.row.domain}\n商户 ${action.row.merchantId}\n该操作会立即更新后台审核状态。") },
+            text = { Text("${action.row.domain}\n商户 ${action.row.merchantId}\n${domainActionImpact(action.row.status, action.status, action.delete)}") },
             confirmButton = {
                 com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = {
                     if (action.delete) viewModel.delete(action.row.id) else viewModel.setStatus(action.row.id, action.status ?: 0, "") {}
@@ -302,7 +305,7 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, "域名操作") }
                     DropdownMenu(expanded, { expanded = false }) {
                         if (row.status != 1) DropdownMenuItem(text = { Text("通过") }, onClick = { expanded = false; onAction(PendingDomainAction(row, status = 1)) })
-                        if (row.status != 2) DropdownMenuItem(text = { Text("拒绝") }, onClick = { expanded = false; onAction(PendingDomainAction(row, status = 2)) })
+                        if (row.status != 2) DropdownMenuItem(text = { Text(if (row.status == 1) "撤销授权（改为拒绝）" else "拒绝") }, onClick = { expanded = false; onAction(PendingDomainAction(row, status = 2)) })
                         DropdownMenuItem(
                             text = { Text("删除", color = Danger) },
                             leadingIcon = { Icon(Icons.Default.DeleteOutline, null, tint = Danger) },
@@ -313,7 +316,7 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
             }
             HorizontalDivider(color = Line)
             Text("添加时间 ${row.createdAt.ifBlank { "—" }}", color = Muted, fontSize = 12.sp)
-            if (row.auditedAt.isNotBlank()) Text("审核时间 ${row.auditedAt}", color = Muted, fontSize = 12.sp)
+            if (row.status != 0 && row.auditedAt.isNotBlank()) Text("审核时间 ${row.auditedAt}", color = Muted, fontSize = 12.sp)
         }
     }
 }
@@ -322,16 +325,42 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
 private fun AddDomainDialog(onDismiss: () -> Unit, fixedMerchantId: String = "", onConfirm: (String, String) -> Unit) {
     var merchantId by rememberSaveable { mutableStateOf(fixedMerchantId) }
     var domain by rememberSaveable { mutableStateOf("") }
+    val parsed = remember(domain) { parseAuthorizedDomain(domain) }
     AlertDialog(shape = RoundedCornerShape(20.dp),
         onDismissRequest = onDismiss,
         title = { Text("添加授权支付域名") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(merchantId, { merchantId = it }, label = { Text("商户 ID") }, singleLine = true, readOnly = fixedMerchantId.isNotBlank() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-                OutlinedTextField(domain, { domain = it }, label = { Text("域名") }, supportingText = { Text("支持通配符 *") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
+                OutlinedTextField(domain, { domain = it }, label = { Text("域名") }, isError = domain.isNotBlank() && parsed.domain == null,
+                    supportingText = { Text(when { domain.isBlank() -> "例：pay.example.com 仅此域名；*.example.com 所有子域名"; parsed.domain == null -> parsed.problem.orEmpty(); else -> "将授权 ${parsed.domain} · ${parsed.scope} · 商户 ${merchantId.ifBlank { "未填" }}" }) }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
             }
         },
-        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onConfirm(merchantId.trim(), domain.trim()) }, enabled = merchantId.isNotBlank() && domain.isNotBlank()) { Text("确认添加") } },
+        confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { parsed.domain?.let { onConfirm(merchantId.trim(), it) } }, enabled = merchantId.isNotBlank() && parsed.domain != null) { Text("确认添加") } },
         dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = onDismiss) { Text("取消") } },
     )
+}
+
+
+/** A domain typed into the authorisation form, normalised: lower case, scheme and path removed, and only plain host names or a leading "*." wildcard accepted. */
+internal data class AuthorizedDomainInput(val domain: String?, val scope: String = "", val problem: String? = null)
+internal fun parseAuthorizedDomain(input: String): AuthorizedDomainInput {
+    var text = input.trim().lowercase()
+    if (text.isEmpty()) return AuthorizedDomainInput(null, problem = "请输入域名")
+    text = text.removePrefix("https://").removePrefix("http://").trimEnd('/')
+    if (text.contains('/') || text.contains('?') || text.contains('#') || text.contains(':')) return AuthorizedDomainInput(null, problem = "只填域名，不带路径、端口或参数")
+    val wildcard = text.startsWith("*.")
+    val host = if (wildcard) text.removePrefix("*.") else text
+    val label = Regex("[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?")
+    val labels = host.split('.')
+    if (labels.size < 2 || labels.any { !label.matches(it) }) return AuthorizedDomainInput(null, problem = "域名格式不对，例：pay.example.com 或 *.example.com")
+    return AuthorizedDomainInput(text, if (wildcard) "匹配 $host 的所有子域名" else "仅此域名")
+}
+
+internal fun domainActionImpact(currentStatus: Int, targetStatus: Int?, delete: Boolean): String = when {
+    delete -> "删除后这条记录不可恢复，该域名的授权同时失效。"
+    targetStatus == 1 -> "通过后该域名可用于此商户的支付请求。"
+    targetStatus == 2 && currentStatus == 1 -> "该域名目前已授权；改为拒绝后授权立即失效，商户用它发起的支付请求会被拒绝。"
+    targetStatus == 2 -> "拒绝后该域名不会被授权。"
+    else -> "该操作会立即更新后台审核状态。"
 }
