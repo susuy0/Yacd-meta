@@ -16,6 +16,7 @@ import com.futoonpay.admin.ui.ListFeedback
 import com.futoonpay.admin.ui.SectionLabel
 import com.futoonpay.admin.ui.DataRow
 import com.futoonpay.admin.data.MonitorWindow
+import com.futoonpay.admin.data.MonitorWindowMetrics
 import com.futoonpay.admin.data.NativeField
 import com.futoonpay.admin.data.NativeOption
 import com.futoonpay.admin.data.metrics

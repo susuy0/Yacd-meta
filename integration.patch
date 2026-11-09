@@ -15406,7 +15406,7 @@ index 0c5dc3f..dcc142f 100644
              }
          };
          fragmentSearchField.setPadding(dp(4), dp(4), dp(4), dp(4));
-+        if (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE) fragmentSearchField.showFutoonNote("zh".equals(LocaleController.getInstance().getCurrentLocale().getLanguage()) ? "有新消息时，这些聊天会自动取消归档。" : "These chats are unarchived when new messages are received.", getThemedColor(Theme.key_windowBackgroundWhite));
++        if (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE) fragmentSearchField.showFutoonNote("zh".equals(LocaleController.getInstance().getCurrentLocale().getLanguage()) ? "未静音的聊天收到新消息时会自动取消归档；已静音的聊天会保留在这里。" : "Unmuted chats are unarchived when new messages arrive; muted chats stay here.", getThemedColor(Theme.key_windowBackgroundWhite));
 +        if (hasChatQuickFilters()) updateFolderBar();
          fragmentSearchField.setPivotX(0);
          fragmentSearchField.setPivotY(0);
@@ -15582,11 +15582,11 @@ index 0c5dc3f..dcc142f 100644
 +    private void updateFolderBar() {
 +        if (fragmentSearchField == null || !hasChatQuickFilters()) return;
 +        final ArrayList<MessagesController.DialogFilter> folders = getMessagesController().getDialogFilters();
-+        if (folders.size() < 2) { fragmentSearchField.setChatFilters(new String[]{"全部聊天", "文件夹"}, 0, value -> { if (value == 1) presentFragment(new FiltersSetupActivity()); }); return; }
++        if (folders.size() < 2) { fragmentSearchField.setChatFilters(new String[]{org.telegram.messenger.LocaleController.getString(org.telegram.messenger.R.string.FilterAllChats), "文件夹"}, 0, value -> { if (value == 1) presentFragment(new FiltersSetupActivity()); }); return; }
 +        final String[] labels = new String[folders.size() + 1];
 +        int selected = 0;
 +        for (int i = 0; i < folders.size(); i++) {
-+            labels[i] = folders.get(i).isDefault() ? "全部聊天" : folders.get(i).name;
++            labels[i] = folders.get(i).isDefault() ? org.telegram.messenger.LocaleController.getString(org.telegram.messenger.R.string.FilterAllChats) : folders.get(i).name;
 +            if (filterTabsView != null && !folders.get(i).isDefault() && filterTabsView.getCurrentTabId() == folders.get(i).id) selected = i;
 +        }
 +        labels[folders.size()] = "管理";
@@ -19687,7 +19687,7 @@ index 693df7877dde165920833faafae227cf60679d29..0eda1633c251e92ab7ac98d2ef0589b6
          actionBarBackground.invalidate();
          listView.invalidate();
      }
-@@ -580,50 +610,32 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
+@@ -580,50 +610,35 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
          updateActionBarVisible(false, true);
      }
      private void updateActionBarVisible(boolean force, boolean animated) {
@@ -19732,6 +19732,8 @@ index 693df7877dde165920833faafae227cf60679d29..0eda1633c251e92ab7ac98d2ef0589b6
 +        if (actionBarVisibleAnimator != null) { actionBarVisibleAnimator.cancel(); actionBarVisibleAnimator = null; }
 +        actionBar.getTitlesContainer().setAlpha(actionBarVisible ? 1f : 0f);
 +        actionBarBackground.setAlpha(actionBarVisible ? 1f : 0f);
++        // The big "搜索设置" box is the entry while the title is on screen; the toolbar magnifier only appears once it scrolled away.
++        if (searchItem != null) searchItem.setVisibility(actionBarVisible ? View.VISIBLE : View.INVISIBLE);
      }
  
      private ArrayList<Integer> accountNumbers = new ArrayList<>();
@@ -19742,6 +19744,7 @@ index 693df7877dde165920833faafae227cf60679d29..0eda1633c251e92ab7ac98d2ef0589b6
          if (searchItem.isSearchFieldVisible2()) {
              items.add(UItem.asSpace(ActionBar.getCurrentActionBarHeight()));
              search.fillItems(items);
++            if (items.size() <= 1 && query != null && query.trim().length() > 0) items.add(UItem.asShadow("未找到相关设置，请换个关键词"));
              return;
          }
  

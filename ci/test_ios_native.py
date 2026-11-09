@@ -9,11 +9,11 @@ while depth:
 method=settings[a:end]
 program='''
 public class IosNativeHeaderTest {
- static class View {float alpha=1,y;int bottom=80; void setAlpha(float f){alpha=f;} float getY(){return y;} int getBottom(){return bottom;} }
+ static class View {static final int VISIBLE=0,INVISIBLE=4;float alpha=1,y;int bottom=80; void setAlpha(float f){alpha=f;} float getY(){return y;} int getBottom(){return bottom;} }
  static class RecyclerView {static class ViewHolder {View itemView=new View();}}
  static class ListView {RecyclerView.ViewHolder first;int children; RecyclerView.ViewHolder findViewHolderForAdapterPosition(int p){return first;}int getChildCount(){return children;}}
  static class Bar extends View {View titles=new View();View getTitlesContainer(){return titles;}}
- static class Search {boolean showing;boolean isSearchFieldVisible2(){return showing;}}
+ static class Search {boolean showing;int visibility=View.VISIBLE;boolean isSearchFieldVisible2(){return showing;}void setVisibility(int v){visibility=v;}}
  static class Animator {void cancel(){}}
  Bar actionBar=new Bar();ListView listView=new ListView();Search searchItem=new Search();View actionBarBackground=new View();boolean actionBarVisible;Animator actionBarVisibleAnimator;
  int dp(int v){return v;}
@@ -21,8 +21,8 @@ public class IosNativeHeaderTest {
  static void check(boolean b,String why){if(!b)throw new AssertionError(why);}
  public static void main(String[] args){IosNativeHeaderTest t=new IosNativeHeaderTest();
  t.updateActionBarVisible(false,false);check(!t.actionBarVisible,"Initial empty layout must not duplicate large title");
- t.listView.first=new RecyclerView.ViewHolder();t.listView.children=1;t.listView.first.itemView.y=100;t.updateActionBarVisible(false,false);check(!t.actionBarVisible&&t.actionBar.titles.alpha==0,"Visible large title must own the title");
- t.listView.first.itemView.y=20;t.updateActionBarVisible(false,false);check(t.actionBarVisible&&t.actionBar.titles.alpha==1,"Scrolled title must become a compact header");
+ t.listView.first=new RecyclerView.ViewHolder();t.listView.children=1;t.listView.first.itemView.y=100;t.updateActionBarVisible(false,false);check(!t.actionBarVisible&&t.actionBar.titles.alpha==0,"Visible large title must own the title");check(t.searchItem.visibility==View.INVISIBLE,"Only one search entry while the large search box is on screen");
+ t.listView.first.itemView.y=20;t.updateActionBarVisible(false,false);check(t.actionBarVisible&&t.actionBar.titles.alpha==1,"Scrolled title must become a compact header");check(t.searchItem.visibility==View.VISIBLE,"Toolbar magnifier returns once the large search box scrolled away");
  t.listView.first.itemView.y=100;t.searchItem.showing=true;t.updateActionBarVisible(false,false);check(t.actionBarVisible,"Search must have its compact bar");
  t.searchItem.showing=false;t.listView.first=null;t.updateActionBarVisible(false,false);check(t.actionBarVisible,"Recycled large header must not remove the scrolled title");
  t.actionBar=null;t.updateActionBarVisible(false,false);t.actionBar=new Bar();t.actionBar.titles=null;t.updateActionBarVisible(false,false);t.actionBar.titles=new View();t.listView=null;t.updateActionBarVisible(false,false);
