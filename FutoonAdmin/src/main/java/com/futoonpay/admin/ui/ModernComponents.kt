@@ -118,10 +118,14 @@ internal fun ChatFilterTabs(options: List<Pair<String, String>>, selected: Strin
         items(options, key = { it.first }) { (value, label) ->
             val active = selected == value
             Box(Modifier.heightIn(min = 48.dp).widthIn(min = 48.dp, max = 240.dp).testTag("chat-filter-$value").selectable(active, enabled = enabled, role = Role.Tab, onClick = { onSelect(value) }), contentAlignment = Alignment.Center) {
-                    Text(label, color = if (active) Ink else Muted, fontSize = 14.sp, lineHeight = 20.sp,
-                        fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp))
-                    if (active) Box(Modifier.align(Alignment.BottomCenter).width(32.dp).height(2.dp).background(Green))
+                    // Segmented chip: graphite when selected, quiet field otherwise. The 48dp box keeps the touch target.
+                    Surface(color = if (active) Green else FieldColor, shape = RoundedCornerShape(10.dp), modifier = Modifier.heightIn(min = 36.dp)) {
+                        Box(Modifier.heightIn(min = 36.dp), contentAlignment = Alignment.Center) {
+                            Text(label, color = if (active) ButtonText else Muted, fontSize = 14.sp, lineHeight = 20.sp,
+                                fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                        }
+                    }
             }
         }
     }
@@ -175,6 +179,7 @@ internal fun PayTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Co
         }
         }
         chrome?.context?.invoke()
+        HorizontalDivider(color = Line, thickness = .5.dp)
     }
 }
 

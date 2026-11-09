@@ -48,10 +48,10 @@ val Muted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 val Danger: Color @Composable get() = MaterialTheme.colorScheme.error
 // State has a semantic color and a text label; it never relies on color alone.
 val Warning: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFFEBC57C) else Color(0xFF94600B)
-val HeaderSurface: Color @Composable get() = if (LocalFutoonPalette.current.dark) Color(0xFF1A1F27) else Color(0xFF111827)
+val HeaderSurface: Color @Composable get() = LocalFutoonPalette.current.surface
 /** Completed / healthy state. Never the brand colour, so green always means done. */
 val Success: Color @Composable get() = LocalFutoonPalette.current.success
-val HeaderInk: Color @Composable get() = Color(0xFFF6F9FB)
+val HeaderInk: Color @Composable get() = LocalFutoonPalette.current.text
 val GreenTint: Color @Composable get() = MaterialTheme.colorScheme.primaryContainer
 val SelectedInk: Color @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
 val CardColor: Color @Composable get() = MaterialTheme.colorScheme.surface

@@ -64,9 +64,9 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
     }
     /** Soft accent-tinted pill: reads as a control without the hard white boxes. The view stays 48dp tall for touch; only the drawn pill is smaller. */
     private fun pill(verticalInset: Int): android.graphics.drawable.Drawable {
-        val tint = GradientDrawable().apply { setColor((palette.accentText.toArgb() and 0x00FFFFFF) or 0x1F000000); cornerRadius = dp(18).toFloat() }
-        val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(18).toFloat() }
-        val ripple = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.accentText.toArgb() and 0x00FFFFFF) or 0x33000000), null, mask)
+        val tint = GradientDrawable().apply { setColor((palette.secondaryText.toArgb() and 0x00FFFFFF) or 0x14000000); cornerRadius = dp(10).toFloat(); setStroke(dp(1), palette.divider.toArgb()) }
+        val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(10).toFloat() }
+        val ripple = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.text.toArgb() and 0x00FFFFFF) or 0x22000000), null, mask)
         return android.graphics.drawable.InsetDrawable(android.graphics.drawable.LayerDrawable(arrayOf(tint, ripple)), 0, verticalInset, 0, verticalInset)
     }
     /**
@@ -76,15 +76,15 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
     @Suppress("UNUSED_PARAMETER")
     private fun capsule(verticalInset: Int = 6, horizontalInset: Int = 8): android.graphics.drawable.Drawable = android.graphics.drawable.ColorDrawable(0)
     /** Plain accent text action inside a capsule; the ripple is a 36dp pill inside the 48dp touch target. */
-    private fun capsuleAction(label: String, kind: String) = text(label, 13f, palette.accentText.toArgb()).apply {
+    private fun capsuleAction(label: String, kind: String) = text(label, 13f, palette.text.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; minWidth = dp(48); setPadding(dp(8), 0, dp(8), 0)
         contentDescription = "$label，按钮"; typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
-        val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(18).toFloat() }
-        background = android.graphics.drawable.InsetDrawable(android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.accentText.toArgb() and 0x00FFFFFF) or 0x33000000), null, mask), 0, dp(6), 0, dp(6))
+        val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(10).toFloat() }
+        background = android.graphics.drawable.InsetDrawable(android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.text.toArgb() and 0x00FFFFFF) or 0x22000000), null, mask), 0, dp(6), 0, dp(6))
         setOnClickListener { open(kind) }
         layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT)
     }
-    private fun button(label: String, weight: Float, action: () -> Unit) = text(label, 13f, palette.accentText.toArgb()).apply {
+    private fun button(label: String, weight: Float, action: () -> Unit) = text(label, 13f, palette.text.toArgb()).apply {
         gravity = Gravity.CENTER; isFocusable = true; isClickable = true; contentDescription = label.replace('\n', ' ') + "，按钮"
         typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
         background = pill(dp(6))
@@ -186,7 +186,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         info.addView(text(if(current.id.isBlank()) "" else " #${current.id} ", 11f, palette.secondaryText.toArgb()), LayoutParams(-2,-1))
         info.addView(text(if(state.invalid) "需重新选择" else channelSourceLabel(state.source), 11f, if(state.source == "已记住") palette.secondaryText.toArgb() else palette.accentText.toArgb()).apply {
             setPadding(dp(4),0,dp(4),0)
-            background=GradientDrawable().apply { cornerRadius=dp(8).toFloat(); setStroke(dp(1), if(state.source == "已记住") palette.divider.toArgb() else palette.accentText.toArgb()) }
+            background=GradientDrawable().apply { cornerRadius=dp(6).toFloat(); setStroke(dp(1), if(state.source == "已记住") palette.divider.toArgb() else palette.accentText.toArgb()) }
         }, LayoutParams(-2,dp(20)))
         left.addView(info, LayoutParams(-1,dp(if (large) 47 else 27)))
         val buttons = LinearLayout(context).apply { orientation = HORIZONTAL; setPadding(dp(6),0,dp(4),0) }

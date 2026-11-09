@@ -31,7 +31,7 @@ public final class ChatLook {
     public static int outgoing(boolean dark) { return dark ? 0xff2d3440 : 0xff111827; }
     /** Secondary fills drawn inside an outgoing bubble (file icon discs, seek tracks). */
     public static int outgoingRaised(boolean dark) { return dark ? 0xff424b5a : 0xff374151; }
-    public static int onOutgoing(boolean dark) { return onAccent(dark); }
+    public static int onOutgoing(boolean dark) { return 0xffffffff; }
     public static int onOutgoingSecondary(boolean dark) { return 0xffb6bdc9; }
     /** Links, reply bars and read marks inside an outgoing bubble. */
     public static int outgoingAccent(boolean dark) { return 0xfffbbf24; }
