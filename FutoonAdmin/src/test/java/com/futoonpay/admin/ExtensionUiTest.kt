@@ -80,6 +80,16 @@ class ExtensionUiTest {
         assertEquals("补单案例", rule.button); assertEquals(0L, rule.topic)
         screenshot("39-group-automation-disabled-rule")
     }
+    @OptIn(androidx.compose.ui.test.ExperimentalTestApi::class)
+    @Test fun templateEditorInsertsAtTheCursorAndPreviewsWithSampleData() {
+        root("businessReplies"); compose.onNodeWithText("新增业务回复模板").performClick()
+        compose.onNode(hasSetTextAction() and hasText("模板正文")).performTextReplacement("订单 ，请核实")
+        compose.onNode(hasSetTextAction() and hasText("模板正文")).performTextInputSelection(androidx.compose.ui.text.TextRange(3))
+        compose.onNodeWithContentDescription("插入变量 系统订单号").performScrollTo().performClick()
+        compose.onNodeWithTag("template-preview").assertTextEquals("订单 P2611100093417，请核实")
+        compose.onNode(hasSetTextAction() and hasText("订单 {系统订单号}，请核实")).assertExists()
+        screenshot("39-template-editor-preview")
+    }
     @Test fun unknownTemplateVariableIsRejectedAndItsDraftRemainsEditable() {
         root("businessReplies"); compose.onNodeWithText("新增业务回复模板").performClick()
         compose.onNode(hasSetTextAction() and hasText("模板名称")).performTextReplacement("我的模板")

@@ -18,6 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.futoonpay.admin.ui.*
@@ -154,18 +158,37 @@ import java.util.UUID
     PaySheet("确认删除", close) { Column(Modifier.padding(16.dp)) { Text("删除「$title」？保存设置后生效。"); Row { com.futoonpay.admin.ui.ChatTextButton(onClick = close) { Text("取消") }; com.futoonpay.admin.ui.ChatTextButton(onClick = confirm) { Text("删除", color = Danger) } } } }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable private fun BusinessTemplateEditor(initial: BusinessReplyTemplate, close: () -> Unit, save: (BusinessReplyTemplate) -> Unit) {
     var title by rememberSaveable(initial.id) { mutableStateOf(initial.title) }
-    var body by rememberSaveable(initial.id) { mutableStateOf(initial.body) }
+    var field by rememberSaveable(initial.id, stateSaver = androidx.compose.ui.text.input.TextFieldValue.Saver) { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(initial.body)) }
+    val body = field.text
     var error by remember { mutableStateOf<String?>(null) }
     var discard by remember { mutableStateOf(false) }
     fun back() { if (title != initial.title || body != initial.body) discard = true else close() }
+    // A tapped variable goes where the cursor is (or replaces the selection), not at the end of the text.
+    fun insert(variable: String) {
+        val token = "{$variable}"; val start = field.selection.min; val end = field.selection.max
+        field = androidx.compose.ui.text.input.TextFieldValue(body.replaceRange(start, end, token), androidx.compose.ui.text.TextRange(start + token.length))
+    }
+    val usedWithoutSample = remember(body) { Regex("\\{([^{}\\n]+)\\}").findAll(body).map { it.groupValues[1] }.filter { it !in businessReplySamples }.distinct().toList() }
     PaySheet("业务回复模板", ::back) { Column(Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(title, { title = it }, label = { Text("模板名称") }, modifier = Modifier.fillMaxWidth(), singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        OutlinedTextField(body, { body = it }, label = { Text("模板正文") }, minLines = 6, supportingText = { Text("${body.length} / 4096") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
-        Text("插入变量", fontWeight = FontWeight.Medium)
-        businessReplyVariables.chunked(3).forEach { row -> Row { row.forEach { variable -> com.futoonpay.admin.ui.ChatTextButton(onClick = { body += "{$variable}" }) { Text(variable, fontSize = 12.sp) } } } }
-        Text("变量在生成草稿时替换；缺失信息显示为“未提供”。", color = Muted, fontSize = 12.sp)
+        OutlinedTextField(field, { field = it }, label = { Text("模板正文") }, minLines = 6, supportingText = { Text("${body.length} / 4096") }, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
+        Text("插入变量", color = Muted, fontSize = 12.sp)
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            businessReplyVariables.forEach { variable ->
+                androidx.compose.material3.Surface(shape = RoundedCornerShape(10.dp), color = CardColor, border = androidx.compose.foundation.BorderStroke(1.dp, Line),
+                    modifier = Modifier.heightIn(min = 40.dp).clickable(role = androidx.compose.ui.semantics.Role.Button) { insert(variable) }.semantics { contentDescription = "插入变量 $variable" }) {
+                    Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), contentAlignment = Alignment.Center) { Text("{$variable}", fontSize = 13.sp) }
+                }
+            }
+        }
+        Text("预览（示例数据）", color = Muted, fontSize = 12.sp)
+        androidx.compose.material3.Surface(shape = RoundedCornerShape(12.dp), color = Green) {
+            Text(renderBusinessReply(body, businessReplySamples).ifBlank { "正文为空" }, color = ButtonText, fontSize = 14.sp, modifier = Modifier.padding(12.dp).testTag("template-preview"))
+        }
+        Text(if (usedWithoutSample.isEmpty()) "变量在生成草稿时替换；缺失信息显示为“未提供”。" else "{${usedWithoutSample.first()}} 不是已知变量，保存时会被拒绝。", color = if (usedWithoutSample.isEmpty()) Muted else Danger, fontSize = 12.sp)
         error?.let { Text(it, color = Danger) }
         Row { com.futoonpay.admin.ui.ChatTextButton(onClick = ::back) { Text("取消") }; com.futoonpay.admin.ui.ChatButton(onClick = { try { val next = initial.copy(title = title.trim(), body = body); validateBusinessTemplate(next); save(next) } catch (e: Exception) { error = e.message } }) { Text("确定") } }
     } }

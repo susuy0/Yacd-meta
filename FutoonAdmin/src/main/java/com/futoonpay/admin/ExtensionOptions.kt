@@ -87,6 +87,12 @@ data class ExtensionOptions(val panel: PanelOptions = PanelOptions(), val appear
 }
 
 val businessReplyVariables = listOf("系统订单号", "商户订单号", "上游订单号", "商户ID", "金额", "币种", "订单状态", "创建时间", "完成时间", "支付方式", "通道ID", "商户名称", "TelegramID", "会话名称")
+/** Illustrative values for the template editor's live preview; the real values come from the order, merchant and chat when a draft is made. */
+val businessReplySamples: Map<String, String> = mapOf(
+    "系统订单号" to "P2611100093417", "商户订单号" to "XH20261110-55871", "上游订单号" to "4200002026111014360001", "商户ID" to "10482",
+    "金额" to "2,480.00", "币种" to "CNY", "订单状态" to "已支付", "创建时间" to "2026-11-10 14:19:08", "完成时间" to "2026-11-10 14:19:40",
+    "支付方式" to "微信扫码", "通道ID" to "1042", "商户名称" to "星河电商", "TelegramID" to "5824870757", "会话名称" to "星河电商 对接群",
+)
 val defaultBusinessTemplates = listOf(
     BusinessReplyTemplate("order-status", "订单查询结果", "订单查询结果\n系统订单号：{系统订单号}\n商户订单号：{商户订单号}\n金额：{金额} {币种}\n当前状态：{订单状态}"),
     BusinessReplyTemplate("payment-proof", "索要付款凭证", "请提供订单 {系统订单号}（{金额} {币种}）的完整付款凭证，以便进一步核实。"),
