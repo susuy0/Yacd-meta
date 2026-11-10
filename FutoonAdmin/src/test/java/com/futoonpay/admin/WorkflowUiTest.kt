@@ -127,7 +127,7 @@ class WorkflowUiTest {
         compose.onNodeWithText("当前会话").assertIsDisplayed().performClick()
         compose.onNodeWithText("当前会话商户").assertExists()
         compose.onNodeWithText("全部商户").assertIsDisplayed().performClick()
-        compose.waitUntil(5000) { compose.onAllNodesWithText("UID 1011", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5000) { compose.onAllNodesWithText("PID 1011", substring = true).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("完整搜索").assertExists()
         compose.onNodeWithText("多选").assertExists()
         screenshot("24-full-original-merchants-tab")

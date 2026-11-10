@@ -40,6 +40,10 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
@@ -978,11 +982,10 @@ private fun MerchantCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(merchant.username.ifBlank { "商户 ${merchant.uid}" }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp)
-                Text("UID ${merchant.uid}", color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
+                Text("PID ${merchant.uid}", color = Muted, fontSize = 12.sp, lineHeight = 18.sp)
             }
             Column(Modifier.weight(.9f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text(displayOrderAmount(merchant.balances["CNY"] ?: merchant.balance, "CNY"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.End)
-                StatusPill(merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) Success else Danger)
             }
             Box {
                 IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.MoreVert, "商户操作", tint = Muted, modifier = Modifier.size(20.dp)) }
@@ -1001,6 +1004,11 @@ private fun MerchantCard(
                     DropdownMenuItem(text = { Text("域名") }, onClick = { expanded = false; navigation.domains(merchantId = merchant.uid) })
                 }
             }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            StatusPill("账户" + merchantAccountStatusLabel(merchant.status), if (merchant.status == 1) Success else Danger)
+            StatusPill(merchantPaymentStatusLabel(merchant.paymentStatus), if (merchant.paymentEnabled) Success else if (merchant.paymentStatus == 2) Warning else Danger)
+            StatusPill(if (merchant.settlementEnabled) "结算正常" else "结算关闭", if (merchant.settlementEnabled) Success else Danger)
         }
         merchant.balances.filterKeys { it != "CNY" }.forEach { (currency, amount) ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1405,10 +1413,12 @@ private fun LabelValue(label: String, value: String) {
 
 @Composable
 private fun StatusPill(text: String, color: Color) {
-    Text(
-        text, color = color, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium,
-        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = .10f)).padding(horizontal = 8.dp, vertical = 4.dp),
-    )
+    // Status is always text plus an icon, never colour alone: tick = done/healthy, clock = waiting, warning = failed or refunded.
+    val icon = when (color) { Success -> Icons.Default.Check; Danger -> Icons.Default.Warning; Warning -> Icons.Default.Schedule; else -> Icons.Default.Remove }
+    Row(Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = .10f)).padding(horizontal = 7.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Icon(icon, null, Modifier.size(12.dp), tint = color)
+        Text(text, color = color, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium)
+    }
 }
 
 @Composable

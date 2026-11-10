@@ -254,7 +254,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                         AuthStage.AUTHENTICATED -> {
                             val route = navigator.current
                             holder.SaveableStateProvider(route.id) {
-                                BoxWithConstraints(Modifier.fillMaxSize()) {
+                                Box(Modifier.fillMaxSize()) {
                                     // Fullscreen/collapse and the scope bar live in the panel header above the tabs now; pages only draw their own content.
                                     val chrome = PayPanelChrome(navigator.canPop, actions = {}, context = {})
                                     CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
