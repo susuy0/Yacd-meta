@@ -11212,7 +11212,8 @@ index 0fae7fdda99102496683e4c1cf866df7cf156a93..1e6372fff8b63772a86a424c335ff6ed
 -            } else if (chat != null && chat.forum && currentDialogFolderId == 0 && !useFromUserAsAvatar || !isSavedDialog && user != null && user.self && MessagesController.getInstance(currentAccount).savedViewAsChats) {
 -                avatarRadius = dp(16);
              } else {
-                 avatarRadius = dp(28);
+-                avatarRadius = dp(28);
++                avatarRadius = dp(15);
              }
 @@ -3819,6 +3860,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
              return;
