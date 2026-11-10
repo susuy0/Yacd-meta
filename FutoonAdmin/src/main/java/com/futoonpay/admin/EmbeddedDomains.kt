@@ -236,7 +236,18 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
             }
             item { Text(if (state.loading && state.rows.isEmpty()) "正在查询…" else "${state.total} 条域名记录", fontWeight = FontWeight.SemiBold) }
             itemsIndexed(state.rows, key = { index, it -> "${it.id}:$index" }) { _, row -> DomainAuditCard(row, { selectedDomain = row; reviewError = null }) { pending = it } }
-            item { ListFeedback(state.loading && state.rows.isEmpty(), state.loadError, !state.loading && state.rows.isEmpty(), { viewModel.load() }) }
+            item { ListFeedback(state.loading && state.rows.isEmpty(), state.loadError, false, { viewModel.load() }) }
+            if (!state.loading && state.loadError == null && state.rows.isEmpty()) item {
+                // A keyword or status filter that matches nothing is a different story from a merchant that simply has no domain yet.
+                val filtered = state.keyword.isNotBlank() || state.status != -1
+                PayCard {
+                    Column(Modifier.fillMaxWidth().padding(vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(if (filtered) "没有找到符合条件的域名" else if (state.merchantId.isNotBlank()) "商户 ${state.merchantId} 还没有授权域名" else "还没有授权域名", fontWeight = FontWeight.SemiBold)
+                        Text(if (filtered) "调整筛选条件后再试" else "没有授权域名时，商户只能用接口下单，不能拉起收银台。", color = Muted, fontSize = 13.sp)
+                        if (!filtered) com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { showAdd = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text("新增域名") }
+                    }
+                }
+            }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = { viewModel.load(state.page - 1, keyword, merchantId, state.status) }, enabled = state.page > 1) {
@@ -271,7 +282,10 @@ internal fun DomainAuditRoot(viewModel: DomainAuditViewModel, onBack: () -> Unit
         }
     } }
     if (showAdd) AddDomainDialog({ showAdd = false }, if(viewModel.lockMerchant)state.merchantId else "") { uid, domain -> viewModel.add(uid, domain); showAdd = false }
-    pending?.let { action ->
+    pending?.takeIf { it.status == 2 && it.row.status == 1 && !it.delete }?.let { action ->
+        RevokeDomainSheet(action.row, state.writing, { pending = null }) { reason -> viewModel.setStatus(action.row.id, 2, reason) {}; pending = null }
+    }
+    pending?.takeIf { !(it.status == 2 && it.row.status == 1 && !it.delete) }?.let { action ->
         val label = when { action.delete -> "删除域名"; action.status == 1 -> "通过审核"; else -> "拒绝域名" }
         AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null }, title = { Text(label) },
@@ -298,10 +312,7 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
                     Text(row.domain, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text("商户 ${row.merchantId} · ID ${row.id}", color = Muted, fontSize = 12.sp)
                 }
-                Text(
-                    domainAuditStatusLabel(row.status), color = color, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = .1f)).padding(horizontal = 8.dp, vertical = 4.dp),
-                )
+                com.futoonpay.admin.ui.StatusPill(domainAuditStatusLabel(row.status), color)
                 Box {
                     IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, "域名操作") }
                     DropdownMenu(expanded, { expanded = false }) {
@@ -318,6 +329,27 @@ private fun DomainAuditCard(row: DomainAuditSummary, onReview: () -> Unit, onAct
             HorizontalDivider(color = Line)
             Text("添加时间 ${row.createdAt.ifBlank { "—" }}", color = Muted, fontSize = 12.sp)
             if (row.status != 0 && row.auditedAt.isNotBlank()) Text("审核时间 ${row.auditedAt}", color = Muted, fontSize = 12.sp)
+        }
+    }
+}
+
+/** 撤销授权: an approved domain goes back to rejected. Says what stops working and keeps the reason the merchant will see. */
+@Composable
+private fun RevokeDomainSheet(row: DomainAuditSummary, busy: Boolean, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    val reasons = listOf("商户申请停用", "备案变更", "被举报", "其他")
+    var reason by rememberSaveable(row.id) { mutableStateOf(reasons.first()) }
+    var other by rememberSaveable(row.id) { mutableStateOf("") }
+    val remark = if (reason == "其他") other.trim() else reason
+    PaySheet("撤销授权", onDismiss) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text(row.domain, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            Text("撤销就是把状态由「已通过」改为「已拒绝」。域名记录会保留，可以重新提交审核。", color = Muted, fontSize = 13.sp)
+            com.futoonpay.admin.ui.PayPills(reasons.map { it to it }, reason) { reason = it }
+            if (reason == "其他") OutlinedTextField(other, { other = it }, label = { Text("拒绝原因（商户会看到）") }, minLines = 2, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), colors = com.futoonpay.admin.ui.ChatFieldColors())
+            com.futoonpay.admin.ui.ImpactBlock(domainActionImpact(1, 2, false))
+            com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(10.dp), onClick = { onConfirm(remark) }, enabled = !busy && remark.isNotBlank(),
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Danger), border = androidx.compose.foundation.BorderStroke(1.dp, Danger), modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if (busy) "提交中…" else "确认改为拒绝", fontWeight = FontWeight.SemiBold) }
+            com.futoonpay.admin.ui.ChatTextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("取消") }
         }
     }
 }

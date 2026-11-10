@@ -1412,7 +1412,7 @@ private fun LabelValue(label: String, value: String) {
 }
 
 @Composable
-private fun StatusPill(text: String, color: Color) {
+internal fun StatusPill(text: String, color: Color) {
     // Status is always text plus an icon, never colour alone: tick = done/healthy, clock = waiting, warning = failed or refunded.
     val icon = when (color) { Success -> Icons.Default.Check; Danger -> Icons.Default.Warning; Warning -> Icons.Default.Schedule; else -> Icons.Default.Remove }
     Row(Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = .10f)).padding(horizontal = 7.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {

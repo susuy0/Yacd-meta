@@ -806,7 +806,10 @@ private fun PaymentDocumentScreen(state: PaymentAdminState, modifier: Modifier, 
         AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null },
             title = { Text("确认${action.label}") },
-            text = { Text(com.futoonpay.admin.data.nativeActionTarget(document, action) + configurationActionAssociations(state, action) + "\n该操作会立即更新后台状态。") },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(com.futoonpay.admin.data.nativeActionTarget(document, action) + configurationActionAssociations(state, action))
+                com.futoonpay.admin.ui.ImpactBlock("该操作会立即更新后台状态。")
+            } },
             confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { viewModel.execute(action); pending = null }) { Text("确认${action.label}") } },
             dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { pending = null }) { Text("取消") } },
         )
@@ -877,7 +880,7 @@ private fun PaymentChannelCard(
                     Text(value, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
-            PayBadge(if (activeTab == PaymentChannelTab.ALL && item.statusText.isNotBlank()) item.statusText else displayedStatus.label, statusColor)
+            com.futoonpay.admin.ui.StatusPill(if (activeTab == PaymentChannelTab.ALL && item.statusText.isNotBlank()) item.statusText else displayedStatus.label, statusColor)
         }
     }
 }
@@ -1001,11 +1004,21 @@ private fun PaymentChannelDetailScreen(
         }
     }
     pending?.let { action ->
+        // Stopping or deleting a channel asks for its name, like the order page does; the button stays asleep until it matches.
+        val target = channel.name.trim()
+        var typed by remember(action) { mutableStateOf("") }
+        val matched = target.isBlank() || com.futoonpay.admin.ui.typedState(typed, target) == com.futoonpay.admin.ui.TypedState.MATCHED
+        val cooldown = com.futoonpay.admin.ui.rememberCooldown(matched && target.isNotBlank(), 3)
         AlertDialog(shape = RoundedCornerShape(20.dp),
             onDismissRequest = { pending = null },
             title = { Text("确认${action.label}") },
-            text = { Text("该操作会立即更新通道状态，并可能影响正在处理的支付。") },
-            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onAction(action); pending = null }) { Text("确认") } },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                com.futoonpay.admin.ui.ImpactBlock("该操作会立即更新通道状态，并可能影响正在处理的支付。")
+                if (target.isNotBlank()) com.futoonpay.admin.ui.TypedConfirmField("输入通道名「$target」确认", target, typed, { typed = it })
+            } },
+            confirmButton = { com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), enabled = matched && (target.isBlank() || cooldown == 0), onClick = { onAction(action); pending = null }) {
+                Text(com.futoonpay.admin.ui.confirmLabel("确认", "提交中…", false, cooldown, matched && target.isNotBlank()))
+            } },
             dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { pending = null }) { Text("取消") } },
         )
     }
@@ -1287,7 +1300,7 @@ internal fun ChannelMonitorScreen(state: PaymentAdminState, modifier: Modifier, 
             com.futoonpay.admin.ui.LedgerRecord {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(item.name.ifBlank { "通道 #${item.id}" } + " #${item.id}", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    PayBadge(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else Success)
+                    com.futoonpay.admin.ui.StatusPill(item.enabledLabel(), if (item.enabledLabel() == "停用") Muted else Success)
                 }
                 val shown = monitorRateDisplay(metrics)
                 Text(shown.text, color = if (shown.verified) monitorRateColor(metrics.rate) else Muted, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
