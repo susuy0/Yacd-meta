@@ -22585,3 +22585,57 @@ index ac2f0cb..3c9de7b 100644
  
              try {
                  Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
+diff --git a/TMessagesProj/src/main/java/org/telegram/ui/Components/AvatarDrawable.java b/TMessagesProj/src/main/java/org/telegram/ui/Components/AvatarDrawable.java
+index 99f8557..2680806 100644
+--- a/TMessagesProj/src/main/java/org/telegram/ui/Components/AvatarDrawable.java
++++ b/TMessagesProj/src/main/java/org/telegram/ui/Components/AvatarDrawable.java
+@@ -45,6 +45,7 @@ import java.util.ArrayList;
+ public class AvatarDrawable extends Drawable {
+ 
+     private TextPaint namePaint;
++    private boolean futoonTint;
+     private boolean hasGradient;
+     private boolean hasAdvancedGradient;
+     private int color, color2;
+@@ -416,6 +417,7 @@ public class AvatarDrawable extends Drawable {
+ 
+     public void setInfo(long id, String firstName, String lastName, String custom, Integer customColor, MessagesController.PeerColor profileColor, boolean advancedGradient) {
+         invalidateTextLayout = true;
++        futoonTint = false;
+         if (advancedGradient) {
+             hasGradient = false;
+             hasAdvancedGradient = true;
+@@ -442,8 +444,10 @@ public class AvatarDrawable extends Drawable {
+                 int[] gradient = advancedGradients[getColorIndex(id)];
+                 this.advancedGradient.setColors(gradient[0], gradient[1], gradient[2], gradient[3]);
+             } else {
+-                color = getThemedColor(Theme.keys_avatar_background[getColorIndex(id)]);
+-                color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(id)]);
++                // Quiet flat tints, one of five per chat, with dark letters (see ChatAvatarRule).
++                color = com.futoonpay.admin.appearance.ChatAvatarRule.tint(id, org.telegram.ui.FutoonChatAppearance.dark());
++                color2 = color;
++                futoonTint = true;
+             }
+         }
+         needApplyColorAccent = id == 5; // Tinting manually set blue color
+@@ -508,6 +512,11 @@ public class AvatarDrawable extends Drawable {
+ 
+     public static void getAvatarSymbols(String firstName, String lastName, String custom, StringBuilder result) {
+         result.setLength(0);
++        if (custom == null && (lastName == null || lastName.length() == 0) && firstName != null && firstName.trim().length() > 0) {
++            // Groups and merchants: two Han characters without the 对接群/结算群 suffix, a channel code, or # for tickets.
++            result.append(com.futoonpay.admin.appearance.ChatAvatarRule.label(firstName));
++            return;
++        }
+         if (custom != null) {
+             result.append(custom);
+         } else {
+@@ -563,7 +572,7 @@ public class AvatarDrawable extends Drawable {
+             return;
+         }
+         int size = bounds.width();
+-        namePaint.setColor(ColorUtils.setAlphaComponent(getThemedColor(Theme.key_avatar_text), alpha));
++        namePaint.setColor(ColorUtils.setAlphaComponent(futoonTint ? com.futoonpay.admin.appearance.ChatLook.text(org.telegram.ui.FutoonChatAppearance.dark()) : getThemedColor(Theme.key_avatar_text), alpha));
+         Paint backgroundPaint = Theme.avatar_backgroundPaint;
+         if (hasAdvancedGradient && advancedGradient != null) {
+             advancedGradient.setBounds(bounds.left, bounds.top, bounds.left + size, bounds.top + size);
