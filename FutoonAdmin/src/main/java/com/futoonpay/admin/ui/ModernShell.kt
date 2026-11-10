@@ -36,7 +36,7 @@ import com.futoonpay.admin.ui.theme.*
 
 @Composable
 internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
-    onLogin: (String, String, String) -> Unit, onCaptcha: () -> Unit) {
+    onLogin: (String, String, String) -> Unit, onCaptcha: () -> Unit, onCancel: () -> Unit = {}, onSkip: (() -> Unit)? = null) {
     val saved = remember(state.adminUrl) { BackendAddress.fromUrl(state.adminUrl) }
     var origin by rememberSaveable { mutableStateOf(saved.origin) }
     var path by rememberSaveable { mutableStateOf(saved.path) }
@@ -46,28 +46,43 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
     var visible by remember { mutableStateOf(false) }
     var captcha by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var editAddress by rememberSaveable { mutableStateOf(false) }
+    // "换一个账号" clears the remembered name and drops the expired framing.
+    var otherAccount by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.adminUrl) { if (state.adminUrl.isNotBlank()) { origin = saved.origin; path = saved.path } }
     LaunchedEffect(state.loginLoading, state.message) { if (!state.loginLoading && state.message != null) { password = ""; captcha = ""; visible = false } }
     val address = runCatching { composeBackendAddress(origin, path) }.getOrNull()
     val connected = state.endpointReady && address == state.adminUrl
     val busy = state.loginLoading || state.captchaLoading
+    val expired = state.message?.contains("过期") == true && !otherAccount
+    val failed = !expired && (error ?: state.message) != null
+    LaunchedEffect(expired, state.accountName) { if (expired && username.isBlank() && state.accountName.isNotBlank() && state.accountName != "管理员") username = state.accountName }
     Column(Modifier.fillMaxSize().background(Mist).imePadding()) {
     LazyColumn(Modifier.weight(1f).fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(44.dp).background(Green, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                    Text("F", color = ButtonText, fontWeight = FontWeight.Bold, fontSize = 25.sp)
-                }
-                Column { Text("FUTOON PAY", fontWeight = FontWeight.Bold, fontSize = 18.sp); Text("管理端", color = Muted, fontSize = 12.sp) }
+            Spacer(Modifier.height(24.dp))
+            if (expired) Row(Modifier.background(FieldColor, RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Default.Schedule, null, Modifier.size(14.dp), tint = Muted); Text("登录已过期", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            } else Box(Modifier.size(36.dp).background(FieldColor, RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+                Text("富", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-            Spacer(Modifier.height(16.dp))
-            Text("登录后台", fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(14.dp))
+            Text(if (expired) "需要重新登录" else "登录富通后台", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("先填写官网地址和后台路径，再输入账号密码", color = Muted, fontSize = 13.sp)
+            Text(if (expired) "后台登录已失效，已自动退出。重新登录后回到刚才的面板，保留的任务和筛选条件还在，已提交的操作不会自动重放。"
+                else "面板里的订单、商户和结算数据来自富通后台。聊天不受影响，登录后才能查数据。", color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
         }
-        item {
+        if (expired && state.accountName.isNotBlank() && state.accountName != "管理员") item {
+            PayCard { DataRow("账号", state.accountName) }
+        }
+        // The backend address is set once and rarely changes, so a connected backend shows as one quiet line.
+        if (connected && !editAddress) item {
+            Row(Modifier.fillMaxWidth().clickable { editAddress = true }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("后台地址 ${origin.removePrefix("https://")}$path", Modifier.weight(1f), color = Muted, fontSize = 12.sp, maxLines = 1)
+                com.futoonpay.admin.ui.ChatTextButton(onClick = { editAddress = true }) { Text("修改", fontSize = 12.sp) }
+            }
+        } else item {
             PayCard {
                 LoginField("官网域名或基础地址", origin, { origin = it; error = null }, "https://pay.example.com", KeyboardType.Uri)
                 Text("包含 https://，不带路径", color = Muted, fontSize = 12.sp)
@@ -76,41 +91,52 @@ internal fun ModernLogin(state: AppUiState, onConnect: (String) -> Unit,
                 if (!connected) com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = {
                     runCatching { composeBackendAddress(origin, path) }.onSuccess(onConnect).onFailure { error = it.message }
                 }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp)) { Text(if (busy) "正在连接…" else "连接后台") }
+                else com.futoonpay.admin.ui.ChatTextButton(onClick = { editAddress = false }) { Text("完成") }
             }
         }
         item {
-            PayCard {
-                LoginField("账号", username, { username = it }, "管理员账号", KeyboardType.Text, connected)
-                Text("密码", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                OutlinedTextField(password, { password = it }, singleLine = true, enabled = connected,
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
-                    visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    trailingIcon = { IconButton(onClick = { visible = !visible }) { Icon(if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, "显示或隐藏密码") } } , colors = com.futoonpay.admin.ui.ChatFieldColors())
-                if (connected) {
-                    Text("验证码", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedTextField(captcha, { captcha = it.take(8) }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp) , colors = com.futoonpay.admin.ui.ChatFieldColors())
-                        val image = remember(state.captcha) { state.captcha?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }
-                        Box(Modifier.width(112.dp).height(52.dp).background(Mist, RoundedCornerShape(10.dp)).clickable(onClick = onCaptcha), contentAlignment = Alignment.Center) {
-                            if (state.captchaLoading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                            else if (image != null) Image(image, "点击刷新验证码", Modifier.fillMaxSize())
-                            else Text("刷新验证码", color = Muted, fontSize = 12.sp)
-                        }
+            LoginField("账号", username, { username = it }, "工号或邮箱", KeyboardType.Text, connected && !state.loginLoading)
+            Spacer(Modifier.height(8.dp))
+            Text("密码", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+            OutlinedTextField(password, { password = it }, singleLine = true, enabled = connected && !state.loginLoading, isError = failed,
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), placeholder = { Text("密码", fontSize = 13.sp) },
+                visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = { IconButton(onClick = { visible = !visible }) { Icon(if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, "显示或隐藏密码") } }, colors = com.futoonpay.admin.ui.ChatFieldColors())
+            (error ?: state.message)?.takeIf { !expired }?.let { Text(it, color = Danger, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp)) }
+            if (connected) {
+                Spacer(Modifier.height(8.dp))
+                Text("验证码", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(captcha, { captcha = it.take(8) }, singleLine = true, enabled = !state.loginLoading, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp), colors = com.futoonpay.admin.ui.ChatFieldColors())
+                    val image = remember(state.captcha) { state.captcha?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }
+                    Box(Modifier.width(112.dp).height(52.dp).background(FieldColor, RoundedCornerShape(10.dp)).clickable(onClick = onCaptcha), contentAlignment = Alignment.Center) {
+                        if (state.captchaLoading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        else if (image != null) Image(image, "点击刷新验证码", Modifier.fillMaxSize())
+                        else Text("刷新验证码", color = Muted, fontSize = 12.sp)
                     }
                 }
             }
         }
-        (error ?: state.message)?.let { item { Text(it, color = Danger, fontSize = 13.sp) } }
-    }
-        Column(Modifier.fillMaxWidth().background(CardColor).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { onLogin(username, password, captcha) },
-                enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                if (state.loginLoading) CircularProgressIndicator(Modifier.size(20.dp), color = ButtonText, strokeWidth = 2.dp) else Text("登录", fontWeight = FontWeight.SemiBold)
+        item {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (state.loginLoading) {
+                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(10.dp), onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)); Text("正在登录…", fontWeight = FontWeight.SemiBold)
+                    }
+                    com.futoonpay.admin.ui.ChatTextButton(onClick = onCancel) { Text("取消") }
+                } else {
+                    com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(10.dp), onClick = { onLogin(username, password, captcha) },
+                        enabled = connected && !busy && username.isNotBlank() && password.isNotBlank() && captcha.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if (expired || failed) "重新登录" else "登录", fontWeight = FontWeight.SemiBold) }
+                    if (expired) com.futoonpay.admin.ui.ChatTextButton(onClick = { otherAccount = true; username = ""; password = "" }) { Text("换一个账号") }
+                    else if (failed) Text("忘记密码，请联系主管重置", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(vertical = 12.dp))
+                    if (onSkip != null) com.futoonpay.admin.ui.ChatTextButton(onClick = onSkip) { Text("先不登录，只聊天") }
+                }
             }
-            Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 12.sp)
         }
+        item { Text("版本 ${BuildConfig.VERSION_NAME} · ${"com.futoonpay.vinechat.beta"}", color = Muted, fontSize = 12.sp, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
+    }
     }
 }
 

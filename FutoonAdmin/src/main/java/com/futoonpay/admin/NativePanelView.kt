@@ -249,7 +249,7 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                         AuthStage.CHECKING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                         AuthStage.LOGIN -> Column(Modifier.fillMaxSize()) {
                             if (state.message?.contains("过期") == true) Text("任务已保留，登录后回到原页面；已提交的操作不会自动重放。", color = Muted, fontSize = 13.sp, modifier = Modifier.padding(12.dp))
-                            Box(Modifier.weight(1f)) { ModernLogin(state, auth::connectBackend, auth::login, auth::refreshCaptcha) }
+                            Box(Modifier.weight(1f)) { ModernLogin(state, auth::connectBackend, auth::login, auth::refreshCaptcha, auth::cancelLogin, bridge::collapse) }
                         }
                         AuthStage.AUTHENTICATED -> {
                             val route = navigator.current

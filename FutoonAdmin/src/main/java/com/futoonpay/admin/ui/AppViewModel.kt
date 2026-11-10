@@ -21,6 +21,7 @@ import com.futoonpay.admin.data.OrderSearchFilters
 import com.futoonpay.admin.data.SessionExpiredException
 import com.futoonpay.admin.data.SettlementSearchFilters
 import com.futoonpay.admin.data.SettlementSummary
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -304,7 +305,11 @@ class AppViewModel(
             .onFailure { error -> _state.update { it.copy(captchaLoading = false, message = error.userMessage()) } }
     }
 
-    fun login(username: String, password: String, captcha: String) = viewModelScope.launch {
+    private var loginJob: Job? = null
+    /** Gives up waiting for the login request; a login that still completes on the server is simply found by the next session check. */
+    fun cancelLogin() { loginJob?.cancel(); loginJob = null; _state.update { it.copy(loginLoading = false) } }
+    fun login(username: String, password: String, captcha: String): Job = viewModelScope.launch {
+        loginJob = coroutineContext[Job]
         if (username.isBlank() || password.isBlank() || captcha.isBlank()) {
             _state.update { it.copy(message = "请填写用户名、密码和验证码") }
             return@launch

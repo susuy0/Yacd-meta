@@ -56,6 +56,45 @@ class NativeUiRegressionTest {
         compose.onNodeWithText("登录").assertIsNotEnabled()
         screenshot("01-login")
     }
+    private fun connected(vararg changes: (AppUiState) -> AppUiState): AppUiState = changes.fold(AppUiState(authStage = AuthStage.LOGIN, adminUrl = com.futoonpay.admin.data.composeBackendAddress("https://pay.example.com", "/admin"), endpointReady = true)) { acc, f -> f(acc) }
+    @Test fun loginOffersToSkipAndShowsTheDesignCopy() {
+        var skipped = 0
+        screen { ModernLogin(AppUiState(authStage = AuthStage.LOGIN), {}, { _, _, _ -> }, {}, {}, { skipped++ }) }
+        compose.onNodeWithText("登录富通后台").assertIsDisplayed()
+        compose.onNodeWithText("面板里的订单、商户和结算数据来自富通后台。聊天不受影响，登录后才能查数据。").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("先不登录，只聊天"))
+        compose.onNodeWithText("先不登录，只聊天").performClick()
+        org.junit.Assert.assertEquals(1, skipped)
+    }
+    @Test fun loggingInShowsAProgressButtonAndACancelThatWorks() {
+        var cancelled = 0
+        screen { ModernLogin(connected({ it.copy(loginLoading = true) }), {}, { _, _, _ -> }, {}, { cancelled++ }) }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("取消"))
+        compose.onNodeWithText("正在登录…").assertIsNotEnabled()
+        compose.onNodeWithText("取消").performClick()
+        org.junit.Assert.assertEquals(1, cancelled)
+        screenshot("01-login-busy")
+    }
+    @Test fun aFailedLoginKeepsTheBackendMessageUnderThePasswordAndAllowsRetry() {
+        screen { ModernLogin(connected({ it.copy(message = "账号或密码不对，还可以再试 4 次。") }), {}, { _, _, _ -> }, {}) }
+        compose.onNodeWithText("账号或密码不对，还可以再试 4 次。").assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("忘记密码，请联系主管重置"))
+        compose.onNodeWithText("重新登录").assertExists()
+        compose.onNodeWithText("忘记密码，请联系主管重置").assertIsDisplayed()
+        compose.onNodeWithText("官网域名或基础地址").assertDoesNotExist()
+        screenshot("01-login-failed")
+    }
+    @Test fun anExpiredSessionNamesTheAccountAndOffersAnotherAccount() {
+        screen { ModernLogin(connected({ it.copy(message = "登录已过期，请重新登录", accountName = "linxia") }), {}, { _, _, _ -> }, {}) }
+        compose.onNodeWithText("登录已过期").assertIsDisplayed()
+        compose.onNodeWithText("需要重新登录").assertIsDisplayed()
+        compose.onAllNodesWithText("linxia")[0].assertExists()
+        screenshot("01-login-expired")
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("换一个账号"))
+        compose.onNodeWithText("换一个账号").performClick()
+        compose.onNodeWithText("登录富通后台").assertIsDisplayed()
+        compose.onNodeWithText("需要重新登录").assertDoesNotExist()
+    }
     @Test fun orderSummaryAndChannelRateAreVisibleAndRateOpens() {
         val state = AppUiState(orders = orders, orderTotal = 1284, orderChannelStats = mapOf("12" to stat))
         val vm = model()
