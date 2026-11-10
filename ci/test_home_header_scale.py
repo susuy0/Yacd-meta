@@ -4,12 +4,13 @@ from pathlib import Path
 import subprocess,sys,tempfile
 s=(Path(sys.argv[1])/'TMessagesProj/src/main/java/org/telegram/ui/DialogsActivity.java').read_text()
 start=s.index('private int getChatSearchHeight()');end=s.index('\n',start)
-method=s[start:end].replace('com.futoonpay.admin.appearance.ChatInboxHeader','Header').replace('folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE','false')
+hstart=s.index('private int futoonHomeHeight()');hend=s.index('\n',hstart)
+method=(s[hstart:hend]+'\n '+s[start:end]).replace('com.futoonpay.admin.appearance.ChatInboxHeader','Header').replace('folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE','false')
 code='''public class HeaderScaleTest {
  static class Configuration {float fontScale;Configuration(float f){fontScale=f;}}
  static class Resources {Configuration c;Resources(float f){c=new Configuration(f);}Configuration getConfiguration(){return c;}}
- static class Context {Resources r;Context(float f){r=new Resources(f);}Resources getResources(){return r;}}
- static class Header {static int homeHeight(float f){return Math.round(160*f);}}
+ static class Context {Resources r;Context(float f){r=new Resources(f);}Resources getResources(){return r;}Object attentionBand(){return null;}}
+ static class Header {static int homeHeight(float f,Object band){return Math.round(160*f);}}
  static final int SEARCH_FIELD_HEIGHT=48;
  Context activity=new Context(2),fragmentSearchField=new Context(1);boolean home=true;
  Context getContext(){return activity;}boolean hasChatQuickFilters(){return home;}

@@ -189,6 +189,16 @@ class FutoonRepository(
         } }.awaitAll().filterNotNull()
     }
 
+    /** Backlog totals for the inbox "待我处理" band; a count that cannot be read stays null instead of showing 0. */
+    suspend fun attentionCounts(): Pair<Int?, Int?> = coroutineScope {
+        suspend fun count(endpoint: String, referer: String, fields: Map<String, String>): Int? = runCatching {
+            api.page(endpoint, referer, 1, 1, fields).optInt("total", -1).takeIf { it >= 0 }
+        }.getOrNull()
+        val settlements = async { count("ajax_settle.php?act=settleList", "slist.php", SettlementSearchFilters(status = 0).toRequest()) }
+        val domains = async { count("ajax_user.php?act=domainList", "domain.php", mapOf("dstatus" to "0")) }
+        settlements.await() to domains.await()
+    }
+
     suspend fun dashboard(forceRefresh: Boolean = false): DashboardStats = coroutineScope {
         val todayDate = LocalDate.now().toString()
         suspend fun count(endpoint: String, referer: String, fields: Map<String, String>): Int? = runCatching {

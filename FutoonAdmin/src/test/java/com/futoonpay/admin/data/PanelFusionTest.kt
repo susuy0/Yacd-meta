@@ -17,6 +17,17 @@ class PanelFusionTest {
         assertEquals("18",fields["uid"]);assertEquals("1",fields["dstatus"]);assertEquals("30",fields["offset"])
         assertEquals("SYS10001",out.getJSONArray("rows").getJSONObject(0).getString("trade_no"))
     }
+    @Test fun attentionCountsReadOnlyPendingTotalsAndKeepUnreadableOnesNull() {
+        val seen=mutableListOf<String>()
+        val engine=PanelBusinessEngine(fixtureClient({r->
+            val b=r.body as FormBody;val f=(0 until b.size).associate {b.name(it) to b.value(it)}
+            seen+=r.url.queryParameter("act").orEmpty()+":"+(f["dstatus"]?:f["status"].orEmpty())
+            if(r.url.queryParameter("act")=="settleList") 200 to """{"total":4,"rows":[]}""" else 500 to "down"
+        }))
+        val out=engine.execute("attention.counts",JSONObject())
+        assertEquals(4,out.getInt("settlements"));assertTrue(out.isNull("domains"))
+        assertTrue(seen.any{it=="settleList:0"});assertTrue(seen.any{it=="domainList:0"});assertEquals(2,seen.size)
+    }
     @Test fun recentOrderVerifiesTheRequestedColumnAndRejectsAmbiguousResults() {
         var merchantTrade = "SYSTEM1"
         val calls = mutableListOf<String>()

@@ -26,7 +26,7 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient,
     private val actions=linkedMapOf<String,ActionState>()
     private val paymentModules=setOf("channels","payment_types","rolls","proxies","channel_monitor","weixin_apps")
     private val catalogueModules=setOf("funds","merchant_stats","risk","blacklist","inactive","payment_plugins","user_groups","group_purchase","announcements","payment_settings","site_settings","login_logs","account_settings")
-    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","merchant.balance.info","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run")
+    fun supports(op: String)=op in setOf("orders.list","order.detail","order.action","orders.metrics","module.read","module.editor","module.plugins","module.accountFields","module.form","module.inspect","module.action","form.save","merchant.profile","merchant.status","merchant.group","merchant.balance","merchant.balance.info","settlements.list","settlement.status","settlement.info","domains.list","domain.action","blacklist.add","blacklist.remove","channel.test","channel.stats","batch.notify","batch.options","batch.run","attention.counts")
     /** Verify a chat candidate with the same authenticated transport as the order list. */
     @Throws(Exception::class)
     fun findRecentOrder(value: String, columns: List<String>): JSONObject? = runBlocking {
@@ -56,6 +56,10 @@ class PanelBusinessEngine internal constructor(private val api: FutoonApiClient,
                 currentOrders=rows.rows
                 val metrics=orderPageMetrics(rows.rows)
                 JSONObject().put("metrics",JSONObject().put("count",metrics.count).put("successful",metrics.successful).put("rate",metrics.rate).put("amounts",JSONObject(metrics.amounts.mapValues {it.value.toPlainString()}))).put("rows",JSONArray(rows.rows.map(::orderJson))).put("total",rows.total).put("pageSize",30)
+            }
+            "attention.counts" -> {
+                val (settlements,domains)=repository.attentionCounts()
+                JSONObject().put("settlements",settlements ?: JSONObject.NULL).put("domains",domains ?: JSONObject.NULL)
             }
             "orders.metrics" -> {
                 val rows=repository.orders(page(p),orderFilters(p)).rows

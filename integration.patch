@@ -15224,7 +15224,7 @@ index 0c5dc3f..dcc142f 100644
      public static final int SEARCH_FIELD_HEIGHT = 48;
 +    private int chatQuickFilter;
 +    private boolean hasChatQuickFilters() { return initialDialogsType == DIALOGS_TYPE_DEFAULT && !onlySelect && folderId == 0 && communityId == 0; }
-+    private int getChatSearchHeight() { return hasChatQuickFilters() ? com.futoonpay.admin.appearance.ChatInboxHeader.homeHeight(fragmentSearchField != null ? fragmentSearchField.getResources().getConfiguration().fontScale : getContext() == null ? 1f : getContext().getResources().getConfiguration().fontScale) : (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE ? 56 : SEARCH_FIELD_HEIGHT); }
++    private int getChatSearchHeight() { return hasChatQuickFilters() ? futoonHomeHeight() : (folderId != 0 && org.telegram.messenger.BuildVars.FUTOON_LITE ? 56 : SEARCH_FIELD_HEIGHT); }
 
      private static final int ANIMATOR_ID_SEARCH_VISIBLE = 1;
      private static final int ANIMATOR_ID_DONE_BUTTON_VISIBLE = 2;
@@ -15578,10 +15578,67 @@ index 0c5dc3f..dcc142f 100644
          }
      }
 
-@@ -6847,6 +6934,30 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -6847,6 +6934,88 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
      }
 
++    private int futoonSettlements = -1, futoonDomains = -1, futoonShownHeight = -1;
++    private boolean futoonBackendSeen, futoonAttentionLoading;
++    private long futoonAttentionAt;
++    private int futoonHomeHeight() { return com.futoonpay.admin.appearance.ChatInboxHeader.homeHeight(fragmentSearchField != null ? fragmentSearchField.getResources().getConfiguration().fontScale : getContext() == null ? 1f : getContext().getResources().getConfiguration().fontScale, fragmentSearchField != null ? fragmentSearchField.attentionBand() : null); }
++    private void futoonReloadDialogRows() {
++        if (viewPages != null) for (ViewPage page : viewPages) if (page != null && page.dialogsAdapter != null) {
++            page.dialogsAdapter.notifyDataSetChanged();
++            page.layoutManager.scrollToPositionWithOffset(0, 0);
++        }
++    }
++    /** "待我处理" band under the search field: backlog totals from the backend plus @mentions counted locally; hidden until there is something real to show. */
++    private void updateAttentionBand(boolean fetch) {
++        if (fragmentSearchField == null || !hasChatQuickFilters()) return;
++        int mentions = 0;
++        final ArrayList<TLRPC.Dialog> all = getMessagesController().getDialogs(0);
++        if (all != null) for (TLRPC.Dialog dialog : all) if (!(dialog instanceof TLRPC.TL_dialogFolder)) mentions += Math.max(0, dialog.unread_mentions_count);
++        final com.futoonpay.admin.appearance.ChatAttentionBand band = fragmentSearchField.ensureAttention(FutoonChatAppearance.dark());
++        band.setDark(FutoonChatAppearance.dark());
++        final ArrayList<com.futoonpay.admin.appearance.ChatAttentionBand.Item> items = new ArrayList<>();
++        if (futoonBackendSeen) {
++            items.add(new com.futoonpay.admin.appearance.ChatAttentionBand.Item("settlement", "待审结算", futoonSettlements, "等待审核"));
++            items.add(new com.futoonpay.admin.appearance.ChatAttentionBand.Item("domain", "待审域名", futoonDomains, "等待审核"));
++        }
++        items.add(new com.futoonpay.admin.appearance.ChatAttentionBand.Item("mention", "@我的", mentions, chatQuickFilter == 3 ? "已筛选，再点取消" : "未读提醒"));
++        band.setItems(items);
++        band.setOnCard(key -> {
++            if ("mention".equals(key)) { chatQuickFilter = chatQuickFilter == 3 ? 0 : 3; futoonReloadDialogRows(); updateAttentionBand(false); }
++            else if (getParentActivity() != null) android.widget.Toast.makeText(getParentActivity(), "打开商户会话的面板，在「结算」或「管理」页签处理", android.widget.Toast.LENGTH_SHORT).show();
++        });
++        final boolean show = futoonBackendSeen || mentions > 0;
++        band.setVisibility(show ? View.VISIBLE : View.GONE);
++        final int height = futoonHomeHeight();
++        if (height != futoonShownHeight) { futoonShownHeight = height; fragmentSearchField.requestLayout(); if (fragmentView != null) fragmentView.requestLayout(); }
++        if (fetch && !futoonAttentionLoading && getUserConfig().isClientActivated() && System.currentTimeMillis() - futoonAttentionAt > 30000) {
++            final org.telegram.messenger.futoon.FutoonStore store = new org.telegram.messenger.futoon.FutoonStore(currentAccount);
++            if (store.address().isEmpty()) return;
++            futoonAttentionLoading = true;
++            futoonAttentionAt = System.currentTimeMillis();
++            org.telegram.messenger.Utilities.globalQueue.postRunnable(() -> {
++                int settlements = -1, domains = -1;
++                boolean ok = false;
++                try {
++                    org.json.JSONObject result = org.telegram.messenger.futoon.FutoonNativeBridge.create(currentAccount, store).call("attention.counts", new org.json.JSONObject());
++                    settlements = result.isNull("settlements") ? -1 : result.optInt("settlements", -1);
++                    domains = result.isNull("domains") ? -1 : result.optInt("domains", -1);
++                    ok = settlements >= 0 || domains >= 0;
++                } catch (Throwable ignore) {}
++                final int s = settlements, d = domains; final boolean seen = ok;
++                AndroidUtilities.runOnUIThread(() -> {
++                    futoonAttentionLoading = false;
++                    if (seen) { futoonBackendSeen = true; futoonSettlements = s; futoonDomains = d; }
++                    updateAttentionBand(false);
++                });
++            });
++        }
++    }
++
 +    /** The folder switcher in the home header: one button per chat folder plus manage, switching in place instead of a popup. */
 +    private void updateFolderBar() {
 +        if (fragmentSearchField == null || !hasChatQuickFilters()) return;
@@ -15607,6 +15664,7 @@ index 0c5dc3f..dcc142f 100644
 +
      private void updateFilterTabs(boolean force, boolean animated) {
 +        updateFolderBar();
++        updateAttentionBand(true);
          if (filterTabsView == null || inPreviewMode || searchIsShowed || (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment())) {
              return;
 @@ -6857,7 +6958,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
@@ -15819,7 +15877,7 @@ index 0c5dc3f..dcc142f 100644
          } catch (Exception ignore) {
          }
      }
-@@ -10993,7 +11141,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
+@@ -10993,7 +11141,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
          }
          MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
          if (dialogsType == DIALOGS_TYPE_DEFAULT) {
@@ -15834,6 +15892,7 @@ index 0c5dc3f..dcc142f 100644
 +                    TLRPC.Chat chat = messagesController.getChat(-dialog.id);
 +                    if (chat != null && (!ChatObject.isChannel(chat) || chat.megagroup)) filtered.add(dialog);
 +                }
++                if (chatQuickFilter == 3 && dialog.unread_mentions_count > 0) filtered.add(dialog);
 +            }
 +            return filtered;
          } else if (dialogsType == DIALOGS_TYPE_WIDGET || dialogsType == DIALOGS_TYPE_IMPORT_HISTORY) {
