@@ -95,6 +95,18 @@ class NativeUiRegressionTest {
         compose.onNodeWithText("登录富通后台").assertIsDisplayed()
         compose.onNodeWithText("需要重新登录").assertDoesNotExist()
     }
+    @Test fun manualSupplementConfirmationShowsTheOrderTableAndTheImpactBeforeAnythingIsSent() {
+        val detail = org.json.JSONObject("""{"trade_no":"S2610081430158812","uid":"41882","money":"500.00","status":0,"channel":"12"}""").toOrderDetail()
+        val vm = model()
+        screen { OrdersScreen(AppUiState(orderDetailTradeNo = detail.tradeNo, orderDetail = detail), vm, quickActions = true) }
+        compose.onNodeWithText("手动补单").performClick()
+        compose.onNodeWithText("影响范围").assertIsDisplayed()
+        compose.onNodeWithText("确认补单").assertIsEnabled()
+        compose.onAllNodesWithText("S2610081430158812", substring = true)[0].assertExists()
+        screenshot("02-supplement-confirm")
+        compose.onNodeWithText("取消").performClick()
+        compose.onNodeWithText("影响范围").assertDoesNotExist()
+    }
     @Test fun orderSummaryAndChannelRateAreVisibleAndRateOpens() {
         val state = AppUiState(orders = orders, orderTotal = 1284, orderChannelStats = mapOf("12" to stat))
         val vm = model()

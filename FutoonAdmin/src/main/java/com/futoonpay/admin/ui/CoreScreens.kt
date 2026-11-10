@@ -643,8 +643,12 @@ private fun OrderActionDialog(
     var remark by rememberSaveable { mutableStateOf("") }
     PaySheet(pending.label, onDismiss) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(pending.warning, color = Muted)
-                Text("订单 ${pending.order.tradeNo}", fontSize = 12.sp, color = Muted)
+                // Same shape as the design's 确认补单: the order in a small table, then what will happen to it.
+                PayCard {
+                    DataRow("订单", pending.order.tradeNo); DataRow("金额", displayOrderAmount(pending.order.amount, pending.order.currency))
+                    DataRow("当前状态", orderStatusLabel(pending.order.status)); DataRow("商户", pending.order.merchantName.ifBlank { "商户 ${pending.order.merchantId}" })
+                }
+                ImpactBlock(pending.warning)
                 if (pending.amountRequired) OutlinedTextField(
                     value = amount, onValueChange = { amount = it }, label = { Text("退款金额") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, colors = com.futoonpay.admin.ui.ChatFieldColors())
@@ -658,7 +662,7 @@ private fun OrderActionDialog(
                     com.futoonpay.admin.ui.ChatOutlinedButton(shape = RoundedCornerShape(8.dp), onClick = onDismiss, enabled = !loading, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("取消") }
                     com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, paymentPassword, remark) },
                         enabled = !loading && (!pending.amountRequired || validRefundAmount(amount, pending.order.amount)) && (!pending.passwordRequired || paymentPassword.isNotBlank()),
-                        modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对订单" else if (error != null) "重试" else "确认") }
+                        modifier = Modifier.weight(2f).heightIn(min = 48.dp)) { Text(if (loading) "提交中…" else if (uncertain) "刷新并核对订单" else if (error != null) "重试" else if (pending.action == "fillorder") "确认补单" else "确认") }
                 }
             }
     }
@@ -838,7 +842,13 @@ private fun SettlementActionDialog(
     }
     PaySheet(pending.label, onDismiss) {
         LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 460.dp), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item { Text("结算 #${pending.item.id} · ${pending.item.displayAmount()}", color = Muted) }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("结算 #${pending.item.id} · ${pending.item.username.ifBlank { "商户 ${pending.item.merchantId}" }}", color = Muted, fontSize = 12.sp)
+                    Text(pending.item.displayAmount(), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    if (pending.item.account.isNotBlank()) Text("收款账户 ${pending.item.account.takeLast(4).let { "尾号 $it" }}", color = Muted, fontSize = 12.sp)
+                }
+            }
             error?.let { item { Text(it, color = Danger, fontSize = 12.sp) } }
             if (pending.resultInput || pending.resultPreset.isNotBlank()) item {
                 OutlinedTextField(result, { result = it }, label = { Text(if (pending.reviewFields.isNotEmpty()) "核实依据（最多 500 字）" else "处理结果") }, minLines = 3, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors())
@@ -856,7 +866,7 @@ private fun SettlementActionDialog(
                 item { OutlinedTextField(name, { name = it }, label = { Text("收款人姓名") }, singleLine = true, modifier = Modifier.fillMaxWidth() , colors = com.futoonpay.admin.ui.ChatFieldColors()) }
             }
             if (!pending.resultInput && !pending.accountInput && pending.resultPreset.isBlank()) item {
-                Text(when {
+                ImpactBlock(when {
                     pending.status in setOf(1, 6) -> settlementStatusConfirmation(pending.status!!)
                     pending.action == "approve_full_settlement" -> "审核通过后，本笔进入付款队列；付款资格、余额和防重复检查仍会执行。请核实原因和结算信息。"
                     else -> "该操作会更新结算记录，请确认链上或通道实际结果。"
