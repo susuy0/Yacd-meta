@@ -157,6 +157,23 @@ internal fun ChatNavigationBar(items: List<ChatNavItem>, selected: String?, onSe
     }
 }
 
+/** Panel tabs as a segmented control under the scope bar: graphite when selected, quiet field behind. Keeps the chat-nav test tags and tab semantics of the old bottom bar. */
+@Composable
+internal fun PanelTabs(items: List<ChatNavItem>, selected: String?, onSelect: (String) -> Unit) {
+    val scale = LocalDensity.current.fontScale.coerceIn(1f, 1.5f)
+    Column(Modifier.fillMaxWidth().background(HeaderSurface)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).background(FieldColor, RoundedCornerShape(12.dp)).padding(2.dp).selectableGroup()) {
+            items.forEach { item ->
+                val active = selected == item.id
+                Box(Modifier.weight(1f).heightIn(min = (44 * scale).dp).testTag("chat-nav-${item.id}").background(if (active) Green else Color.Transparent, RoundedCornerShape(10.dp))
+                    .selectable(active, role = Role.Tab, onClick = { onSelect(item.id) }), contentAlignment = Alignment.Center) {
+                    Text(item.title, color = if (active) ButtonText else Muted, fontSize = 14.sp, fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(horizontal = 4.dp))
+                }
+            }
+        }
+    }
+}
+
 @Composable internal fun ChatFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = CardColor, unfocusedContainerColor = CardColor,
     disabledContainerColor = FieldColor, focusedBorderColor = Green,
@@ -169,6 +186,12 @@ internal fun ChatNavigationBar(items: List<ChatNavItem>, selected: String?, onSe
 internal fun PayTopBar(title: String, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
     val chrome = LocalPayPanelChrome.current
     val visibleBack = onBack.takeIf { chrome == null || chrome.showBack }
+    // Inside the panel a top-level page has no title bar of its own: the panel header and the tabs above already say where you are.
+    // Only the page's own actions (search, add, settings) remain, in a row that takes no height when there are none.
+    if (chrome != null && !chrome.showBack) {
+        Row(Modifier.fillMaxWidth().background(HeaderSurface).padding(end = 4.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) { actions() }
+        return
+    }
     Column(Modifier.fillMaxWidth().background(HeaderSurface)) {
         CompositionLocalProvider(LocalContentColor provides HeaderInk) {
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = if (visibleBack == null) 16.dp else 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {

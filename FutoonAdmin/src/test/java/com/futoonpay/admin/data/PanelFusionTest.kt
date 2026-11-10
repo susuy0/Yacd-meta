@@ -18,7 +18,7 @@ class PanelFusionTest {
         assertEquals("SYS10001",out.getJSONArray("rows").getJSONObject(0).getString("trade_no"))
     }
     @Test fun attentionCountsReadOnlyPendingTotalsAndKeepUnreadableOnesNull() {
-        val seen=mutableListOf<String>()
+        val seen=java.util.concurrent.CopyOnWriteArrayList<String>()
         val engine=PanelBusinessEngine(fixtureClient({r->
             val b=r.body as FormBody;val f=(0 until b.size).associate {b.name(it) to b.value(it)}
             seen+=r.url.queryParameter("act").orEmpty()+":"+(f["dstatus"]?:f["status"].orEmpty())

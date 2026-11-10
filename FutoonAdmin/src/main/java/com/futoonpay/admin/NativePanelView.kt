@@ -223,6 +223,27 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                     IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
                     IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
                 }
+                if (state.authStage == AuthStage.AUTHENTICATED) {
+                    val route = navigator.current
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(HeaderSurface).padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("面板", Modifier.weight(1f), color = HeaderInk, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                        IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗", tint = HeaderInk) }
+                        IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗", tint = HeaderInk) }
+                    }
+                    if (route.kind == "evidence") PanelContextStrip(chat, workflowState, keyboard)
+                    else {
+                        val current = workflowState.merchant?.let { runCatching { JSONObject(it) }.getOrNull() }
+                        panelScopeLabel(route, current?.optString("uid").orEmpty(), current?.optString("username").orEmpty())?.let { scope -> PanelScopeStrip(scope, keyboard) { id -> when (route.kind) { "orders" -> navigation.orders(merchantId = id); "settlements" -> navigation.settlements(id); else -> navigation.domains(id) } } }
+                    }
+                    val tabs = listOf(
+                        ChatNavItem("recognition", "识别", Icons.Outlined.DocumentScanner, Icons.Default.DocumentScanner),
+                        ChatNavItem("orders", "订单", Icons.Outlined.ReceiptLong, Icons.Default.ReceiptLong),
+                        ChatNavItem("merchants", "商户", Icons.Outlined.Storefront, Icons.Default.Storefront),
+                        ChatNavItem("settlements", "结算", Icons.Outlined.AccountBalanceWallet, Icons.Default.AccountBalanceWallet),
+                        ChatNavItem("more", "管理", Icons.Outlined.GridView, Icons.Default.GridView))
+                    PanelTabs(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)
+                    HorizontalDivider(color = Line, thickness = .5.dp)
+                }
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     when (state.authStage) {
                         AuthStage.CHECKING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -234,31 +255,13 @@ class NativePanelView @JvmOverloads constructor(context: Context, private val br
                             val route = navigator.current
                             holder.SaveableStateProvider(route.id) {
                                 BoxWithConstraints(Modifier.fillMaxSize()) {
-                                    val compact = maxHeight < 410.dp
-                                    val chrome = PayPanelChrome(navigator.canPop, actions = {
-                                        IconButton(onClick = onFullscreen, modifier = Modifier.size(48.dp)) { Icon(if (fullscreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullscreen) "退出全屏" else "全屏悬浮窗") }
-                                        IconButton(onClick = bridge::collapse, modifier = Modifier.size(48.dp)) { Icon(Icons.Default.ExpandMore, "收起悬浮窗") }
-                                    }, context = {
-                                        if (route.kind == "evidence") PanelContextStrip(chat, workflowState, keyboard || compact)
-                                        else {
-                                            val current = workflowState.merchant?.let { runCatching { JSONObject(it) }.getOrNull() }
-                                            panelScopeLabel(route, current?.optString("uid").orEmpty(), current?.optString("username").orEmpty())?.let { scope -> PanelScopeStrip(scope, keyboard || compact) { id -> when (route.kind) { "orders" -> navigation.orders(merchantId = id); "settlements" -> navigation.settlements(id); else -> navigation.domains(id) } } }
-                                        }
-                                    })
+                                    // Fullscreen/collapse and the scope bar live in the panel header above the tabs now; pages only draw their own content.
+                                    val chrome = PayPanelChrome(navigator.canPop, actions = {}, context = {})
                                     CompositionLocalProvider(LocalPayPanelChrome provides chrome) { EmbeddedRoute(route, environment, auth, navigator, bridge, chat, evidenceRevision, snackbar, models, workflows, merchantActions, memory) }
                                 }
                             }
                         }
                     }
-                }
-                if (state.authStage == AuthStage.AUTHENTICATED) {
-                    val tabs = listOf(
-                        ChatNavItem("recognition", "识别", Icons.Outlined.DocumentScanner, Icons.Default.DocumentScanner),
-                        ChatNavItem("orders", "订单", Icons.Outlined.ReceiptLong, Icons.Default.ReceiptLong),
-                        ChatNavItem("merchants", "商户", Icons.Outlined.Storefront, Icons.Default.Storefront),
-                        ChatNavItem("settlements", "结算", Icons.Outlined.AccountBalanceWallet, Icons.Default.AccountBalanceWallet),
-                        ChatNavItem("more", "管理", Icons.Outlined.GridView, Icons.Default.GridView))
-                    ChatNavigationBar(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)
                 }
             }
             if (state.authStage == AuthStage.AUTHENTICATED) CurrentMerchantDialogs(merchantActions, workflows, chat)

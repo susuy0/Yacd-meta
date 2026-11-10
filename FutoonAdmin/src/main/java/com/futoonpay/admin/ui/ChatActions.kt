@@ -35,5 +35,8 @@ internal fun ChatTextButton(onClick:()->Unit, modifier:Modifier=Modifier, enable
     elevation:ButtonElevation?=null, border:BorderStroke?=null,
     contentPadding:PaddingValues=PaddingValues(horizontal=16.dp,vertical=8.dp), interactionSource:MutableInteractionSource?=null,
     content:@Composable RowScope.()->Unit) {
-    TextButton(onClick=onClick,modifier=modifier.heightIn(min=48.dp),enabled=enabled,shape=shape,colors=colors,elevation=elevation,border=border,contentPadding=contentPadding,interactionSource=interactionSource,content=content)
+    TextButton(onClick=onClick,modifier=modifier.heightIn(min=48.dp),enabled=enabled,shape=shape,colors=colors,elevation=elevation,border=border,contentPadding=contentPadding,interactionSource=interactionSource,content={
+        val row=this
+        androidx.compose.material3.ProvideTextStyle(androidx.compose.material3.LocalTextStyle.current.copy(textDecoration=androidx.compose.ui.text.style.TextDecoration.Underline)){ row.content() }
+    })
 }

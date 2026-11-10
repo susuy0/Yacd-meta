@@ -146,9 +146,9 @@ internal class CurrentMerchantActions(val model: AppViewModel) {
                         if (actions.model.modernBackend) listOf("余额管理" to "balance") else listOf("增加 CNY 余额" to "add", "扣除 CNY 余额" to "reduce"),
                         listOf((if (merchant.status == 1) "封禁账号" else "解封账号") to "toggleAccount", (if (merchant.paymentEnabled) "关闭支付" else "开启支付") to "togglePay"),
                         listOf((if (merchant.settlementEnabled) "关闭结算" else "开启结算") to "toggleSettle", "修改用户组" to "group"),
-                    ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
+                    ).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { (label, action) -> val risky = action in setOf("balance", "add", "reduce") || (action == "toggleAccount" && merchant.status == 1); com.futoonpay.admin.ui.ChatOutlinedButton(enabled = !original.refreshing, modifier = Modifier.weight(1f), colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = if (risky) Danger else GreenDark), border = androidx.compose.foundation.BorderStroke(1.dp, if (risky) Danger else Line), onClick = { actions.choose(MerchantAction(label, action, merchant)) }) { Text(label, fontSize = 12.sp) } } } }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        com.futoonpay.admin.ui.ChatTextButton(onClick = { actions.model.offerBatch(merchantKeyRequest(listOf(merchant))) }) { Text("重置密钥") }
+                        com.futoonpay.admin.ui.ChatTextButton(colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = Danger), onClick = { actions.model.offerBatch(merchantKeyRequest(listOf(merchant))) }) { Text("重置密钥") }
                     }
                 }
             }

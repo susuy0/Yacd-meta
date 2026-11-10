@@ -41,7 +41,8 @@ data class FutoonPalette(
 val LocalFutoonPalette = staticCompositionLocalOf { FutoonPalette() }
 val Ink: Color @Composable get() = MaterialTheme.colorScheme.onSurface
 val Green: Color @Composable get() = MaterialTheme.colorScheme.primary
-val GreenDark: Color @Composable get() = LocalFutoonPalette.current.accentText
+/** Links and text actions: graphite with an underline, never amber (amber is reserved for "needs your hand"). Name kept for the many call sites. */
+val GreenDark: Color @Composable get() = LocalFutoonPalette.current.text
 val Mist: Color @Composable get() = MaterialTheme.colorScheme.background
 val Line: Color @Composable get() = MaterialTheme.colorScheme.outlineVariant
 val Muted: Color @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant

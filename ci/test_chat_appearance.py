@@ -27,7 +27,7 @@ print(f'PASS: {len(mapped)} native theme keys, cached palette, native filters, c
 
 components=(repo/'FutoonAdmin/src/main/java/com/futoonpay/admin/ui/ModernComponents.kt').read_text()
 panel=(repo/'FutoonAdmin/src/main/java/com/futoonpay/admin/NativePanelView.kt').read_text()
-assert 'ChatNavigationBar(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)' in panel
+assert 'PanelTabs(tabs.sortedBy { options.panel.tabOrder.indexOf(it.id) }, navigator.tab, navigator::select)' in panel
 assert 'Role.Tab' in components and 'selectableGroup()' in components
 assert 'MainTab.entries.find { it.name == id }?.let(onSelect)' in components
 assert re.search(r'ChatFilterTabs\(options,\s*selected,\s*(?:onSelect\s*=\s*)?onSelect\)', components), 'Shared filter wrapper must pass the original selection callback'
