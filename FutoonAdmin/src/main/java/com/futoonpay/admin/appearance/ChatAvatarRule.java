@@ -47,7 +47,11 @@ public final class ChatAvatarRule {
         return (dark ? DARK : LIGHT)[index];
     }
 
-    private static boolean isHan(int cp) { return Character.UnicodeScript.of(cp) == Character.UnicodeScript.HAN; }
+    /** Han ranges by hand: Character.UnicodeScript needs API 24 and the app still supports 23. */
+    private static boolean isHan(int cp) {
+        return (cp >= 0x4E00 && cp <= 0x9FFF) || (cp >= 0x3400 && cp <= 0x4DBF) || (cp >= 0xF900 && cp <= 0xFAFF)
+            || (cp >= 0x20000 && cp <= 0x2FA1F) || (cp >= 0x2E80 && cp <= 0x2FDF) || cp == 0x3007;
+    }
 
     private static String stripEmoji(String s) {
         StringBuilder out = new StringBuilder();
