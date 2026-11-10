@@ -2,9 +2,13 @@ package com.futoonpay.admin.data
 
 import org.json.JSONObject
 
+/** Below this percentage the bar shows the rate in red with the word 偏低. */
+internal const val LOW_RATE = 80.0
 internal class ChannelUnavailableException(message: String) : java.io.IOException(message)
 internal data class ChannelSnapshot(val window: MonitorWindow, val rate: Double?, val total: Int?, val successful: Int?, val processing: Int?, val updated: Long = System.currentTimeMillis()) {
     val empty get() = total == 0
+    /** Success rates under this value are called out as 偏低 in the conversation bar. */
+    val low get() = rate != null && rate < LOW_RATE
     val rateText get() = if (empty) "暂无订单" else rate?.let { String.format(java.util.Locale.ROOT, "%.1f%%", it) } ?: "暂未提供"
 }
 /** All six time windows of one monitor row, longest first, so a chart can read them left to right as "older to newer". */

@@ -33,17 +33,32 @@ class ConversationBarUiTest {
     @Test fun merchantActionsHaveFullTouchTargetsOnNarrowAndRegularScreens(){
         for(width in listOf(320,390)){
             val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state());render(view,width,76)
-            for(label in listOf("订单","结算","域名")){
+            for(label in listOf("订单","面板")){
                 val node=texts(view).single{it.text.toString()==label};assertTrue(node.isEnabled);assertTrue(node.width>=48);assertTrue(node.height>=48);assertTrue(node.paint.measureText(label)<=node.width)
             }
             assertTrue(texts(view).any{it.contentDescription.toString().contains("商户ID 2806")&&it.isClickable&&it.height>=48});assertFalse(texts(view).any{it.text.toString()=="选择支付通道"})
+            assertEquals("one 48dp row, nothing stacked",49,view.height.let{(0 until view.childCount).sumOf{i->view.getChildAt(i).height}})
             screenshot(view,"merchant-bar-$width",width,76);view.close()
         }
     }
-    @Test fun merchantAndMultipleChannelsRemainSeparateAndAllActionsStayVisible(){
-        val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state(-100).copy(channels=listOf(ChannelLink("12","支付宝"),ChannelLink("13","微信"))));render(view,390,151)
-        val labels=texts(view).map{it.text.toString()};for(label in listOf("订单","结算","域名","通道订单","编辑通道"))assertTrue(label,labels.contains(label))
-        assertTrue(labels.any{it.contains("全部关联通道（2）")});screenshot(view,"merchant-multi-channel-bar",390,151);view.close()
+    @Test fun merchantAndMultipleChannelsShareOneRowAndTheMenuKeepsEveryOtherAction(){
+        val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state(-100).copy(channels=listOf(ChannelLink("12","支付宝"),ChannelLink("13","微信")),link=null));render(view,390,49)
+        val nodes=texts(view);assertTrue(nodes.any{it.text.toString()=="订单"});assertTrue(nodes.any{it.text.toString()=="面板"})
+        assertTrue(nodes.any{it.text.toString().contains("共 2 个通道")});assertEquals(49,(0 until view.childCount).sumOf{view.getChildAt(it).height})
+        nodes.single{it.contentDescription=="更多，按钮"}.performClick()
+        val menu=texts(view.moreMenu!!).map{it.text.toString()};for(label in listOf("切换支付通道","结算","域名"))assertTrue(label,menu.contains(label))
+        screenshot(view,"merchant-multi-channel-bar",390,49);view.close()
+    }
+    @Test fun linkedChannelShowsRateWithLowFlagAndKeepsItWhenTheLineIsTight(){
+        for(width in listOf(320,360,390)){
+            val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state().copy(link=ChannelLink("1042","代收-A2"),snapshot=ChannelSnapshot(MonitorWindow.FIVE_MINUTES,71.4,50,36,7),channels=listOf(ChannelLink("1042","代收-A2"))));render(view,width,49)
+            val label=texts(view).single{it.contentDescription.toString().startsWith("当前商户")};assertTrue(label.text.toString().contains("71.4%"));assertTrue(label.text.toString().contains("偏低"));assertTrue(label.height>=48)
+            if(width==320)assertFalse("PID goes before the rate",label.text.toString().contains("PID 2806")&&!label.text.toString().contains("代收"))
+            val menu=run{texts(view).single{it.contentDescription=="更多，按钮"}.performClick();texts(view.moreMenu!!).map{it.text.toString()}};for(l in listOf("切换支付通道","结算","域名","通道订单","编辑通道"))assertTrue(l,menu.contains(l))
+            screenshot(view,"merchant-bar-low-$width",width,49);view.close()
+        }
+        val ok=NativeChannelBarView(context,FixtureBridge(),host());ok.render(state().copy(link=ChannelLink("1042","代收-A2"),snapshot=ChannelSnapshot(MonitorWindow.FIVE_MINUTES,97.2,50,49,1),channels=listOf(ChannelLink("1042","代收-A2"))));render(ok,390,49)
+        assertFalse(texts(ok).single{it.contentDescription.toString().startsWith("当前商户")}.text.toString().contains("偏低"));ok.close()
     }
     @Test fun aMerchantTopicWithNoAssociationsStillOffersGroupChannelManagement(){
         val view=NativeChannelBarView(context,FixtureBridge(),host());view.render(state(-100));render(view,320,124)
@@ -60,8 +75,9 @@ class ConversationBarUiTest {
             texts(view).single{it.contentDescription.toString().startsWith("当前商户")}.performClick()
             assertTrue(opened.isEmpty());assertEquals(1,calls.size)
             val target=calls.single().second;assertEquals("merchant-more",target.getString("kind"));assertEquals("2806",target.getString("id"));assertEquals(5824870757L,target.getLong("dialog"));assertEquals(0L,target.getLong("topic"))
-            val expected=linkedMapOf("订单" to "merchant-orders","结算" to "merchant-settlements","域名" to "merchant-domains")
-            for((label,kind)in expected){texts(view).single{it.text.toString()==label}.performClick();assertEquals(kind,opened.last());view.sheetDismissed()}
+            texts(view).single{it.text.toString()=="订单"}.performClick();assertEquals("merchant-orders",opened.last());view.sheetDismissed()
+            texts(view).single{it.text.toString()=="面板"}.performClick();assertEquals(2,calls.size);assertEquals("merchant-more",calls.last().second.getString("kind"))
+            for((label,kind)in linkedMapOf("结算" to "merchant-settlements","域名" to "merchant-domains")){texts(view).single{it.contentDescription=="更多，按钮"}.performClick();texts(view.moreMenu!!).single{it.text.toString()==label}.performClick();assertEquals(kind,opened.last());view.sheetDismissed()}
             assertEquals(3,opened.distinct().size)
         }finally{view.close();org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()}
     }

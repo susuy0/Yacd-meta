@@ -171,7 +171,7 @@ internal fun OrdersScreen(state: AppUiState, viewModel: AppViewModel, searchSign
                 { quick = ""; filters = OrderSearchFilters(status = state.orderSearch.status); viewModel.loadOrders(1, OrderSearchFilters(status = state.orderSearch.status)) })
         }
         item { FinanceListToolbar(selection, state.orders.map { it.tradeNo }, com.futoonpay.admin.data.orderBatchOptions(state.orders.filter { it.tradeNo in selection.selected }),
-            state.refreshing || state.ordersLoading, if (state.ordersLoading && state.orders.isEmpty()) "正在查询…" else "共 ${state.orderTotal} 笔", "本页统计", { pageMetrics = true }, viewModel::offerBatch) }
+            state.refreshing || state.ordersLoading, if (state.ordersLoading && state.orders.isEmpty()) "正在查询…" else if (state.ordersError != null && state.orders.isEmpty()) "—" else "共 ${state.orderTotal} 笔", "本页统计", { pageMetrics = true }, viewModel::offerBatch) }
         state.orderChannelStatsMessage?.let { item { Text(it, color = Warning, fontSize = 12.sp) } }
         item { ListFeedback(state.ordersLoading && state.orders.isEmpty(), state.ordersError, !state.ordersLoading && state.orders.isEmpty(), { viewModel.loadOrders(state.orderPage) }) }
         itemsIndexed(state.orders, key = { index, item -> "${item.tradeNo}:$index" }) { _, order ->
@@ -469,17 +469,22 @@ private fun OrderDetailDialog(tradeNo: String, detail: OrderDetail?, loading: Bo
     var confirmPause by remember { mutableStateOf(false) }
     var pausing by remember { mutableStateOf(false) }
     var pauseMessage by remember(detail?.tradeNo) { mutableStateOf<String?>(null) }
+    var pauseTyped by remember(detail?.channelId) { mutableStateOf("") }
+    val pauseName = channelQuick?.name.orEmpty().ifBlank { "通道 #${detail?.channelId.orEmpty()}" }
+    val pauseMatched = com.futoonpay.admin.ui.typedState(pauseTyped, pauseName) == com.futoonpay.admin.ui.TypedState.MATCHED
+    val pauseCooldown = com.futoonpay.admin.ui.rememberCooldown(pauseMatched, 3)
     if (confirmPause && detail != null && detail.channelId.isNotBlank()) com.futoonpay.admin.PanelAlertDialog(shape = RoundedCornerShape(8.dp),
         onDismissRequest = { if (!pausing) confirmPause = false }, title = { Text("暂停通道 #${detail.channelId}？") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("将向后台提交停用「${channelQuick?.name.orEmpty().ifBlank { "通道 #${detail.channelId}" }}」。停用后商户可能无法再通过它收款。")
+            com.futoonpay.admin.ui.ImpactBlock("将向后台提交停用「$pauseName」。停用后商户可能无法再通过它收款。")
+            com.futoonpay.admin.ui.TypedConfirmField("输入通道名「$pauseName」确认", pauseName, pauseTyped, { pauseTyped = it }, !pausing)
             channelQuick?.takeIf { !it.loading && it.error == null }?.let { Text("近 5 分钟成功率 ${it.rateText}（${it.detail}），请确认确实异常。", color = Muted, fontSize = 13.sp) }
             Text("可在「管理 → 支付通道」重新启用。", color = Muted, fontSize = 13.sp)
         } },
-        confirmButton = { com.futoonpay.admin.ui.ChatTextButton(enabled = !pausing, onClick = {
+        confirmButton = { com.futoonpay.admin.ui.ChatTextButton(enabled = !pausing && pauseMatched && pauseCooldown == 0, onClick = {
             pausing = true
             onPauseChannel(detail.channelId) { result -> pausing = false; confirmPause = false; pauseMessage = (if (result.success) "已提交停用：" else "未能停用：") + result.message }
-        }) { Text(if (pausing) "正在提交…" else "确认暂停", color = Danger) } },
+        }) { Text(com.futoonpay.admin.ui.confirmLabel("确认暂停", "正在暂停…", pausing, pauseCooldown, pauseMatched), color = Danger) } },
         dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = { confirmPause = false }, enabled = !pausing) { Text("取消") } })
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -682,7 +687,7 @@ internal fun SettlementsScreen(state: AppUiState, viewModel: AppViewModel, searc
         }
         item { ListFeedback(state.settlementsLoading && state.settlements.isEmpty(), state.settlementsError, !state.settlementsLoading && state.settlements.isEmpty(), { viewModel.loadSettlements(state.settlementPage) }) }
         item { FinanceListToolbar(selection, state.settlements.map { it.id }, state.settlements.filter { it.id in selection.selected }.let { picked -> com.futoonpay.admin.data.settlementBatchOptions(picked, viewModel.modernBackend) + listOfNotNull(com.futoonpay.admin.data.settlementReviewBatchOption(picked, viewModel.modernBackend)) },
-            state.refreshing || state.settlementsLoading, "共 ${state.settlementTotal} 笔", onRequest = viewModel::offerBatch) }
+            state.refreshing || state.settlementsLoading, if (state.settlementsLoading && state.settlements.isEmpty()) "正在查询…" else if (state.settlementsError != null && state.settlements.isEmpty()) "—" else "共 ${state.settlementTotal} 笔", onRequest = viewModel::offerBatch) }
         items(state.settlements, key = { it.id }) { row -> SelectableRecord(selection, row.id, "结算 #${row.id}") { SettlementCard(row, viewModel.modernBackend, { detail = row }) { pending = it } } }
         item { PaginationBar(state.settlementPage, state.settlementTotal, state.settlements.size) { viewModel.loadSettlements(it) } }
     }
@@ -893,7 +898,7 @@ internal fun MerchantsScreen(state: AppUiState, viewModel: AppViewModel, searchS
         }
         item { ListFeedback(state.merchantsLoading && state.merchants.isEmpty(), state.merchantsError, !state.merchantsLoading && state.merchants.isEmpty(), { viewModel.loadMerchants(state.merchantPage) }) }
         item { FinanceListToolbar(selection, state.merchants.map { it.uid }, com.futoonpay.admin.data.merchantBatchOptions(state.merchants.filter { it.uid in selection.selected }),
-            state.refreshing || state.merchantsLoading, "${state.merchantTotal} 个商户", "本页概览", { pageMetrics = true }, viewModel::offerBatch) }
+            state.refreshing || state.merchantsLoading, if (state.merchantsLoading && state.merchants.isEmpty()) "正在查询…" else if (state.merchantsError != null && state.merchants.isEmpty()) "—" else "${state.merchantTotal} 个商户", "本页概览", { pageMetrics = true }, viewModel::offerBatch) }
         state.merchantFlowError?.let { error -> item { Text(error, color = Danger, fontSize = 12.sp) } }
         itemsIndexed(state.merchants, key = { index, it -> "${it.uid}:$index" }) { _, merchant ->
             SelectableRecord(selection, merchant.uid, "商户 ${merchant.uid}") {
@@ -1191,6 +1196,13 @@ internal fun MerchantActionDialog(
     val operation = com.futoonpay.admin.data.MerchantBalanceOperation.fromAction(pending.action)
     val isBalance = operation != null
     val parsedAmount = com.futoonpay.admin.data.merchantBalanceAmount(amount)
+    val m = pending.merchant
+    var typed by rememberSaveable(m.uid, pending.action) { mutableStateOf("") }
+    val typedRequired = com.futoonpay.admin.ui.requiresTypedPid(pending.action, m.status == 1, m.paymentStatus == 1, m.settlementEnabled)
+    val typedMatched = !typedRequired || com.futoonpay.admin.ui.typedState(typed, m.uid) == com.futoonpay.admin.ui.TypedState.MATCHED
+    // Banning is the one action that also waits a few seconds after the text matches.
+    val cooldown = com.futoonpay.admin.ui.rememberCooldown(typedRequired && typedMatched, if (pending.action == "toggleAccount" && m.status == 1) 3 else 0)
+    val ready = typedMatched && (!typedRequired || cooldown == 0)
     com.futoonpay.admin.PanelAlertDialog(shape = RoundedCornerShape(8.dp),
         onDismissRequest = { if (!busy) onDismiss() }, title = { Text(pending.label) },
         text = {
@@ -1213,18 +1225,25 @@ internal fun MerchantActionDialog(
                     OutlinedTextField(gid, { gid = it }, label = { Text("用户组 GID") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
                     OutlinedTextField(endTime, { endTime = it }, label = { Text("到期时间（可留空）") }, singleLine = true , colors = com.futoonpay.admin.ui.ChatFieldColors())
                 }
-                if (!isBalance && pending.action != "group") Text("此操作会立即改变商户业务权限。")
+                if (!isBalance) com.futoonpay.admin.ui.ImpactBlock(com.futoonpay.admin.ui.merchantImpact(pending.action, m.username.ifBlank { "商户 ${m.uid}" }, m.balance))
+                if (typedRequired) com.futoonpay.admin.ui.TypedConfirmField("输入 PID「${m.uid}」确认", m.uid, typed, { typed = it }, !busy)
                 error?.let { Text(it, color = Danger) }
             }
         },
         confirmButton = {
-            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null),
-                colors = ButtonDefaults.buttonColors(containerColor = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT) Danger else Green)) {
-                Text(if (busy) "提交中…" else if (uncertain) "重新读取商户" else when (operation) {
+            com.futoonpay.admin.ui.ChatButton(shape = RoundedCornerShape(8.dp), onClick = { if (uncertain) onVerify() else onConfirm(amount, gid, endTime) }, enabled = !busy && (!isBalance || parsedAmount != null) && (uncertain || ready),
+                colors = ButtonDefaults.buttonColors(containerColor = if (operation == com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT || (pending.action == "toggleAccount" && m.status == 1)) Danger else Green)) {
+                Text(if (uncertain) "重新读取商户" else com.futoonpay.admin.ui.confirmLabel(when (operation) {
                     com.futoonpay.admin.data.MerchantBalanceOperation.ADD -> "确认增加"
                     com.futoonpay.admin.data.MerchantBalanceOperation.DEDUCT -> "确认扣除"
-                    else -> "确认"
-                })
+                    else -> when (pending.action) {
+                        "toggleAccount" -> if (m.status == 1) "确认封禁" else "确认解封"
+                        "togglePay" -> if (m.paymentStatus == 1) "确认关闭" else if (m.paymentStatus == 2) "确认通过" else "确认开启"
+                        "toggleSettle" -> if (m.settlementEnabled) "确认关闭" else "确认开启"
+                        "group" -> "确认调整"
+                        else -> "确认"
+                    }
+                }, "提交中…", busy, cooldown, typedRequired && typedMatched))
             }
         },
         dismissButton = { com.futoonpay.admin.ui.ChatTextButton(onClick = onDismiss, enabled = !busy) { Text("取消") } },

@@ -91,7 +91,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         setOnClickListener { action() }
         layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply { setMargins(dp(2), 0, dp(2), 0) }
     }
-    private fun addMerchantRow(state: ChannelShortcutState, height: Int, large: Boolean, foldSelect: Boolean = false) {
+    private fun addMerchantRow(state: ChannelShortcutState, height: Int, large: Boolean) {
         val merchant = state.merchant
         if (merchant == null) {
             val label = when { state.merchantLoading -> "正在识别商户 · TG ${state.telegramId}"; state.merchantCandidates.isNotEmpty() -> "选择商户（${state.merchantCandidates.size}） · TG ${state.telegramId}"; else -> "${state.merchantError ?: "识别商户"} · 重试" }
@@ -99,29 +99,69 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             return
         }
         val name = merchant.username.ifBlank { "当前商户" }
-        val row = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = capsule(); setPadding(dp(14), 0, dp(14), 0) }
-        row.addView(IdentityLabel(context, name, "ID ${merchant.uid} · TG ${state.telegramId}", palette.secondaryText.toArgb()).apply {
-            textSize = 13f * palette.fontScale; setTextColor(palette.text.toArgb()); gravity = Gravity.CENTER_VERTICAL
-            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES; isFocusable = true; isClickable = true
-            contentDescription = "当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}，点击查看详情"
-            setOnClickListener { open("merchant-more") }
-        }, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
-        listOf("订单" to "merchant-orders", "结算" to "merchant-settlements", "域名" to "merchant-domains").forEach { (label, kind) -> row.addView(capsuleAction(label, kind)) }
-        if (foldSelect) {
-            row.addView(capsuleAction("通道 ▾", "select").apply {
-                contentDescription = "选择支付通道，按钮；长按隐藏此话题的通道入口"
-                setPadding(dp(12), 0, dp(12), 0); background = pill(dp(6))
-                (layoutParams as LayoutParams).leftMargin = dp(4)
-                setOnLongClickListener { model.hide(); true }
-            })
-            // Separate file: the channel store's own prefs file triggers a full strip reload on every write.
-            val prefs = context.applicationContext.getSharedPreferences("futoon_channel_hints", Context.MODE_PRIVATE)
-            if (!prefs.getBoolean("hideHintShown", false)) {
-                prefs.edit().putBoolean("hideHintShown", true).apply()
-                post { Toast.makeText(context, "长按「通道」可隐藏此入口，可在 Futoonpay 设置里恢复", Toast.LENGTH_LONG).show() }
-            }
+        val linked = state.targets.isNotEmpty()
+        val snap = state.snapshot
+        val offline = state.error != null && snap != null
+        // One 48dp row: identity and rate on the left (rate is never the part that gets cut), the two daily actions and a menu on the right.
+        val token: String? = when {
+            state.link == null -> if (linked) "共 ${state.channels.size} 个通道" else null
+            state.invalid -> "需重新选择"
+            state.loading -> "更新中…"
+            state.error != null -> if (snap != null) "${snap.rateText}，${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(snap.updated))} 的数据" else "获取失败"
+            else -> snap?.rateText
         }
+        val low = state.link != null && state.error == null && !state.loading && !state.invalid && snap?.low == true
+        val failed = state.link != null && state.error != null && snap == null
+        val row = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; background = capsule(); setPadding(dp(14), 0, dp(6), 0) }
+        val label = BarLabel(context, name, token, low, failed || state.invalid, state.link?.name.orEmpty(), merchant.uid, palette.text.toArgb(), palette.secondaryText.toArgb(), palette.error.toArgb()).apply {
+            textSize = 13f * palette.fontScale; gravity = Gravity.CENTER_VERTICAL
+            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES; isFocusable = true; isClickable = true
+            contentDescription = "当前商户 ${merchant.username}，商户ID ${merchant.uid}，Telegram ID ${state.telegramId}${if (token != null) "，成功率 $token${if (low) "，偏低" else ""}" else ""}，点击查看详情"
+            setOnClickListener { open(if (linked && !state.invalid && state.link != null) "stats" else "merchant-more") }
+        }
+        row.addView(label, LayoutParams(0, LayoutParams.MATCH_PARENT, 1f))
+        val groupWithoutChannel = !linked && (state.scope?.dialog ?: 0) < 0
+        if (groupWithoutChannel) row.addView(capsuleAction("选择支付通道", "select").apply {
+            contentDescription = "选择支付通道，按钮"; setTextColor(palette.accentText.toArgb()); setOnLongClickListener { model.hide(); true }
+        })
+        row.addView(capsuleAction("订单", "merchant-orders"))
+        if (!groupWithoutChannel) row.addView(capsuleAction("面板", "merchant-more"))
+        val usable = linked && !state.invalid
+        val items = buildList {
+            if (!groupWithoutChannel) add((if (linked) "切换支付通道" else "选择支付通道") to { open("select") })
+            add("结算" to { open("merchant-settlements") }); add("域名" to { open("merchant-domains") })
+            if (usable) { add("通道订单" to { open("orders") }); add("编辑通道" to { open("edit") }) }
+            if (!linked) add("隐藏通道入口" to { model.hide() })
+        }
+        row.addView(TextView(context).apply {
+            text = "···"; textSize = 18f; setTextColor(palette.secondaryText.toArgb()); gravity = Gravity.CENTER; isFocusable = true; isClickable = true
+            minWidth = dp(48); contentDescription = "更多，按钮"; typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
+            val mask = GradientDrawable().apply { setColor(android.graphics.Color.BLACK); cornerRadius = dp(10).toFloat() }
+            background = android.graphics.drawable.InsetDrawable(android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf((palette.text.toArgb() and 0x00FFFFFF) or 0x22000000), null, mask), 0, dp(6), 0, dp(6))
+            setOnClickListener { showMore(this, items) }
+            layoutParams = LayoutParams(dp(48), LayoutParams.MATCH_PARENT)
+        })
         addView(row, LayoutParams(-1, dp(height)))
+    }
+    internal var moreMenu: View? = null
+    private var morePopup: PopupWindow? = null
+    /** The overflow menu: a small bordered sheet above the "···" button, one 48dp row per item. Built even when detached so layout tests can drive it. */
+    private fun showMore(anchor: View, items: List<Pair<String, () -> Unit>>) {
+        morePopup?.dismiss()
+        val width = dp(176)
+        val box = LinearLayout(context).apply {
+            orientation = VERTICAL; setPadding(0, dp(4), 0, dp(4))
+            background = GradientDrawable().apply { setColor(palette.surface.toArgb()); cornerRadius = dp(12).toFloat(); setStroke(dp(1), palette.divider.toArgb()) }
+        }
+        val popup = PopupWindow(box, width, LayoutParams.WRAP_CONTENT, true).apply { elevation = dp(8).toFloat(); isOutsideTouchable = true }
+        items.forEach { (label, action) ->
+            box.addView(text(label, 14f).apply {
+                setPadding(dp(16), 0, dp(16), 0); isFocusable = true; isClickable = true; contentDescription = "$label，按钮"
+                setOnClickListener { popup.dismiss(); action() }
+            }, LayoutParams(-1, dp(48)))
+        }
+        moreMenu = box; morePopup = popup
+        if (anchor.isAttachedToWindow) popup.showAsDropDown(anchor, anchor.width - width, -(anchor.height + dp(8 + 48 * items.size)))
     }
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) { super.onConfigurationChanged(newConfig); if (!closed) render(model.state.value) }
     internal fun render(state: ChannelShortcutState) {
@@ -132,12 +172,11 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
         val linked = state.targets.isNotEmpty()
         val merchantRow = state.telegramId.isNotBlank()
         // With a known merchant and no linked channel, "choose channel" folds into the merchant capsule instead of a second row.
-        val foldSelect = state.merchant != null && !linked && (state.scope?.dialog ?: 0) < 0
-        val showChannels = (linked || !merchantRow || (state.scope?.dialog ?: 0) < 0) && !foldSelect
+        // With a known merchant everything lives in one row (see addMerchantRow); the separate channel row only remains for chats without a merchant.
+        val showChannels = state.merchant == null && (linked || !merchantRow || (state.scope?.dialog ?: 0) < 0)
         val compact = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE && resources.configuration.screenWidthDp >= 560
         // Merchant + linked channel used to stack two tall rows. The channel row collapses to its single-line form when the screen can hold it.
-        val stackedCompact = state.merchant != null && linked && !large && resources.configuration.screenWidthDp >= 360
-        val compactChannel = compact || stackedCompact
+        val compactChannel = compact
         val channelHeight = if (!showChannels) 0 else if (!linked || compactChannel) 48 else if (large) (48 * scale).toInt() + 47 else 75
         val merchantHeight = if (!merchantRow) 0 else if (state.merchant == null) (if (state.merchantError != null && !state.merchantLoading) 36 else 48) else if (large) (48 * scale).toInt() else 48
         val height = when {
@@ -162,7 +201,7 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
             addView(login, LayoutParams(-1, dp(48)))
             return
         }
-        if (merchantRow) addMerchantRow(state, merchantHeight, large, foldSelect)
+        if (merchantRow) addMerchantRow(state, merchantHeight, large)
         if (!showChannels) return
         val current = state.link ?: ChannelLink("", "全部关联通道（${state.channels.size}）")
         if (!linked) {
@@ -207,21 +246,30 @@ class NativeChannelBarView(context: Context, bridge: NativePanelBridge, private 
     }
 }
 
-/** Two lines in one label: bold merchant name and a quiet "ID · TG" line. Each line is ellipsized on its own, so a long name never pushes the ID out of sight. */
-private class IdentityLabel(context: Context, private val name: String, private val sub: String, private val subColor: Int) : TextView(context) {
-    private fun compose(first: CharSequence, second: CharSequence) = android.text.SpannableStringBuilder().apply {
-        append(first); setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, length, 0)
-        val start = length; append("\n").append(second)
-        setSpan(android.text.style.ForegroundColorSpan(subColor), start, length, 0)
-        setSpan(android.text.style.RelativeSizeSpan(.8f), start, length, 0)
+/**
+ * One line: merchant name, success rate (red with 偏低 when low), then channel and PID in the quiet colour. When it does not fit,
+ * PID goes first, then the channel, then the name is shortened; the rate is always kept.
+ */
+private class BarLabel(context: Context, private val name: String, private val rate: String?, private val low: Boolean, private val rateIsProblem: Boolean,
+    private val channel: String, private val pid: String, private val ink: Int, private val quiet: Int, private val danger: Int) : TextView(context) {
+    private fun compose(shownName: CharSequence, withChannel: Boolean, withPid: Boolean) = android.text.SpannableStringBuilder().apply {
+        fun part(value: CharSequence, color: Int, bold: Boolean) { if (value.isEmpty()) return; val from = length; append(value); setSpan(android.text.style.ForegroundColorSpan(color), from, length, 0); if (bold) setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), from, length, 0) }
+        part(shownName, ink, true)
+        if (rate != null) { append("  "); part(rate + if (low) " 偏低" else "", if (low || rateIsProblem) danger else ink, true) }
+        if (withChannel && channel.isNotBlank()) { append("  "); part(channel, quiet, false) }
+        if (withPid) { append("  "); part("PID $pid", quiet, false) }
     }
-    init { text = compose(name, sub); maxLines = 2 }
+    init { maxLines = 1; isSingleLine = true; text = compose(name, true, true) }
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
         super.onSizeChanged(w, h, ow, oh)
         val room = (w - compoundPaddingLeft - compoundPaddingRight).toFloat()
         if (room <= 0f) return
-        val bold = android.text.TextPaint(paint).apply { typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD) }
-        val small = android.text.TextPaint(paint).apply { textSize *= .8f }
-        text = compose(android.text.TextUtils.ellipsize(name, bold, room, android.text.TextUtils.TruncateAt.END), android.text.TextUtils.ellipsize(sub, small, room, android.text.TextUtils.TruncateAt.END))
+        fun fits(c: CharSequence) = android.text.Layout.getDesiredWidth(c, paint) <= room
+        val pick = listOf(true to true, true to false, false to false).map { (ch, pi) -> compose(name, ch, pi) }.firstOrNull { fits(it) }
+        text = pick ?: run {
+            val bold = android.text.TextPaint(paint).apply { typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD) }
+            val rateWidth = android.text.Layout.getDesiredWidth(compose("", false, false), bold)
+            compose(android.text.TextUtils.ellipsize(name, bold, (room - rateWidth).coerceAtLeast(room / 3f), android.text.TextUtils.TruncateAt.END), false, false)
+        }
     }
 }
