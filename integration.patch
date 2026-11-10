@@ -22547,3 +22547,41 @@ new file mode 100644
 +        try { showPanel(context, parent.getParentActivity() != null ? parent : null); } catch (Exception ignored) {}
 +    }
 +}
+diff --git a/TMessagesProj/src/main/java/org/telegram/messenger/NotificationsController.java b/TMessagesProj/src/main/java/org/telegram/messenger/NotificationsController.java
+index ac2f0cb..3c9de7b 100644
+--- a/TMessagesProj/src/main/java/org/telegram/messenger/NotificationsController.java
++++ b/TMessagesProj/src/main/java/org/telegram/messenger/NotificationsController.java
+@@ -4647,7 +4647,7 @@ public class NotificationsController extends BaseController implements Notificat
+                     .setGroupSummary(true)
+                     .setShowWhen(true)
+                     .setWhen(((long) lastMessageObject.messageOwner.date) * 1000)
+-                    .setColor(0xff11acfa);
++                    .setColor(0xff111827);
+ 
+             long[] vibrationPattern = null;
+             Uri sound = null;
+@@ -5645,7 +5645,7 @@ public class NotificationsController extends BaseController implements Notificat
+                     .setContentText(text.toString())
+                     .setAutoCancel(true)
+                     .setNumber(dialogKey.story ? storyPushMessages.size() : messageObjects.size())
+-                    .setColor(0xff11acfa)
++                    .setColor(0xff111827)
+                     .setGroupSummary(false)
+                     .setWhen(date)
+                     .setShowWhen(true)
+@@ -5654,6 +5654,15 @@ public class NotificationsController extends BaseController implements Notificat
+                     .extend(wearableExtender)
+                     .setSortKey(String.valueOf(Long.MAX_VALUE - date))
+                     .setCategory(NotificationCompat.CATEGORY_MESSAGE);
++            if (com.futoonpay.admin.appearance.ChatNotificationPrivacy.enabled()) {
++                // Lock screen copy: amounts hidden and order numbers shortened; the unlocked shade keeps the full text.
++                builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setPublicVersion(new NotificationCompat.Builder(ApplicationLoader.applicationContext)
++                        .setContentTitle(name)
++                        .setSmallIcon(R.drawable.notification)
++                        .setColor(0xff111827)
++                        .setContentText(com.futoonpay.admin.appearance.ChatNotificationPrivacy.redact(text.toString()))
++                        .build());
++            }
+ 
+             try {
+                 Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
