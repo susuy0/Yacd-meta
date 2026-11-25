@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/DrKLO/Telegram.git",
+  "ref_checked": "refs/heads/master",
+  "revision": "21f7d109da6ab3506c9e9577f98c6a38771ab335",
+  "version": "13.2.2",
+  "version_code": 7303,
+  "checked_on": "2026-11-25",
+  "legacy_overlay_revision": "6a50b786ae3b6c8a1b27f0936ace9847bfa6d270",
+  "legacy_patch_sha256": "632298f8e17b12794e8800e131d6581bc03a6edd4e2a43dc221955d7ece6bde9",
+  "native_policy": "Build from pinned upstream source and gitlinks. Do not reuse libraries from an older APK.",
+  "host_compile_submodules": {
+    "TMessagesProj/lib/jlatexmath": "919e50b2f6f64b04b712cdb13d558ff9ecf9c8ed",
+    "TMessagesProj_Modules/media": "09b6c97c0d691c50cd4541e1573995d4066d6f5c"
+  }
+}

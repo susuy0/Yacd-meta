@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "validated_on": "2026-11-25",
+  "timezone": "Asia/Kuala_Lumpur",
+  "delivery_stage": "source-migration-and-host-compilation",
+  "upstream": {
+    "repository": "https://github.com/DrKLO/Telegram.git",
+    "revision": "21f7d109da6ab3506c9e9577f98c6a38771ab335",
+    "version": "13.2.2",
+    "version_code": 7303,
+    "input_lock": "UPSTREAM.lock.json"
+  },
+  "environment": {
+    "os": "macOS arm64",
+    "gradle_executable": "/opt/homebrew/bin/gradle",
+    "gradle_version_executed": "8.14.5",
+    "gradle_jvm": "Homebrew OpenJDK 21.0.12",
+    "standalone_fixture_jvm": "Temurin 21.0.13",
+    "wrapper_version_pinned": "8.13",
+    "android_sdk": "/Users/apple/Library/Android/sdk",
+    "compile_sdk": 36,
+    "build_tools": "36.0.0",
+    "agp": "8.13.2",
+    "kotlin": "2.1.0"
+  },
+  "commands": {
+    "business_lint_host_fixtures_and_scope": "ANDROID_HOME=/Users/apple/Library/Android/sdk python3 Tools/futoon/check.py tests --gradle /opt/homebrew/bin/gradle",
+    "host_java": "ANDROID_HOME=/Users/apple/Library/Android/sdk /opt/homebrew/bin/gradle :TMessagesProj:compileDebugJavaWithJavac -PfutoonJavaChecks=true --no-daemon --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' --console=plain",
+    "scope_standalone": "python3 Tools/futoon/test_panel_scope.py",
+    "tracked_diff_check": "git diff --ignore-submodules=all --check"
+  },
+  "results": {
+    "host_java": {"status": "passed", "tasks": 148, "executed": 4, "up_to_date": 144, "duration_seconds": 74},
+    "business_unit_tests": {"status": "passed", "suites": 57, "tests": 384, "failures": 0, "errors": 0, "skipped": 0},
+    "host_jvm_tests": {"status": "passed", "suites": 2, "tests": 8, "failures": 0, "errors": 0, "skipped": 0, "contract_fixture_checks": 270, "bridge_snapshot_tests": 4},
+    "scope_fixture": {"status": "passed", "assertions": 34, "extracted_production_methods": 5, "includes_production_dispatch": true},
+    "lint": {"status": "passed", "errors": 0, "warnings": 42, "hints": 3},
+    "groovy_build_script_syntax": {"status": "passed", "scripts": 4},
+    "tracked_diff_check": "passed",
+    "legacy_working_tree": "unchanged-and-clean",
+    "initialized_upstream_submodules": "clean"
+  },
+  "reports": {
+    "business_xml": "Tools/FutoonTests/build/FutoonAdmin/test-results/testDebugUnitTest/",
+    "business_html": "Tools/FutoonTests/build/FutoonAdmin/reports/tests/testDebugUnitTest/index.html",
+    "lint_html": "Tools/FutoonTests/build/FutoonAdmin/reports/lint-results-debug.html",
+    "host_jvm_xml": "Tools/FutoonTests/HostCompatibility/build/test-results/test/",
+    "host_jvm_html": "Tools/FutoonTests/HostCompatibility/build/reports/tests/test/index.html"
+  },
+  "checked_source_sha256": {
+    "TMessagesProj/src/main/java/org/telegram/ui/FutoonPanel.java": "fbc77ba1c764d2dd7df6b6947f422325c913e211fdf3fde00ba533ed7df46142",
+    "TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonApi.java": "e50c3f076a4ee036cf6f73d35c5b34c2fb3cfbed69e86712c586fdb99a75f547",
+    "TMessagesProj/src/main/java/org/telegram/messenger/futoon/FutoonNativeBridge.java": "ed69461fdbc01cd33d535e1a93e06a62af5e5b428017525e2fae9dc20f0ed5bd",
+    "FutoonAdmin/src/main/java/com/futoonpay/admin/ChannelShortcutState.kt": "ec4f477af2de327cf40279fc44b1100ec419c25b1730b2ccf2a9a04f4600d260",
+    "FutoonAdmin/src/main/java/com/futoonpay/admin/data/AdminRequestPolicy.kt": "7fa04ae0f26fc4a8bd77cd6710dab899d8bfa51669974bd6aa594bf87f2c9dff"
+  },
+  "limitations": {
+    "native_checkout_complete": false,
+    "native_build_executed": false,
+    "apk_generated": false,
+    "device_installation_or_login_tested": false,
+    "live_business_backend_tested": false,
+    "telegram_message_delivery_tested": false,
+    "firebase_push_tested": false,
+    "other_upstream_distribution_channels_tested": false,
+    "fixture_scope": "JVM, Robolectric and extracted-method checks; bridge tests use deterministic UserConfig/store boundaries, not the Android keystore or a live Telegram account.",
+    "disk_note": "Approximately 2.7 GiB remained. The final cached host build ran the direct Gradle command because the helper reserves 3 GiB; a complete native/APK build should reserve at least 30 GiB."
+  }
+}

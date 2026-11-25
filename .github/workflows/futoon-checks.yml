@@ -1,0 +1,40 @@
+name: Futoon source checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  business-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: python3 Tools/futoon/check.py tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: futoon-check-reports
+          path: |
+            Tools/FutoonTests/build/FutoonAdmin/reports/
+            Tools/FutoonTests/HostCompatibility/build/reports/
+  host-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: git submodule update --init --depth 1 TMessagesProj/lib/jlatexmath TMessagesProj_Modules/media
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: python3 Tools/futoon/check.py host

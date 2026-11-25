@@ -1,0 +1,282 @@
+// This template is compiled as ScopeCheck.java by test_panel_scope.py.
+// All tested methods are injected from production, not reproduced in this fixture.
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
+import org.json.*;
+
+public class ScopeCheck {
+    static class View { static final int GONE = 8, VISIBLE = 0; }
+    static class NativePanelView {
+        boolean closed, hidden;
+        String options = "";
+        void setOptions(String value) { options = value; }
+        void close() { closed = true; }
+        void onHidden() { hidden = true; }
+        void setVisibility(int value) { }
+        void onShown() { }
+    }
+    static class Root { void removeView(Object view) { } }
+    static class ChannelBar { void reloadSettings() { } }
+    static class LaunchActivity {
+        int sent;
+        void shareFutoonEvidence(int account, ArrayList<String> paths, String caption, String order) { sent++; }
+    }
+    static class Host {
+        final LaunchActivity launch = new LaunchActivity();
+        Object getParentActivity() { return launch; }
+    }
+    static class AndroidUtilities {
+        static final ArrayList<Runnable> queue = new ArrayList<>();
+        static void runOnUIThread(Runnable task) { queue.add(task); }
+        static void flush() {
+            ArrayList<Runnable> pending = new ArrayList<>(queue);
+            queue.clear();
+            for (Runnable task : pending) task.run();
+        }
+    }
+    static class FutoonApi {
+        static class SessionExpired extends IOException { }
+        final String backend;
+        final FutoonStore.Session persistence;
+        int refreshes;
+        String cookies;
+        FutoonApi(String address, FutoonStore.Session session) {
+            backend = address; persistence = session;
+            session.owner.clientCreations++;
+            refreshSession();
+            Runnable hook = session.owner.store.afterClientConstruction;
+            session.owner.store.afterClientConstruction = null;
+            if (hook != null) hook.run();
+        }
+        void refreshSession() { refreshes++; cookies = persistence.owner.store.cookies; }
+        static class Order {
+            final JSONObject data;
+            Order(JSONObject value) { data = value; }
+            String id() { return data.optString("trade_no"); }
+        }
+    }
+    static class FutoonNativeBridge {
+        static String create(int account, FutoonStore store, String address) { return address; }
+    }
+    static class FutoonBusinessApi {
+        final FutoonApi api;
+        final String backend;
+        final Set<String> tickets = new HashSet<>();
+        FutoonBusinessApi(FutoonApi client, String address) {
+            api = client; backend = address; client.persistence.owner.engineCreations++;
+        }
+        JSONObject call(String operation, JSONObject params) throws IOException {
+            if (!backend.equals(api.persistence.owner.store.address())) throw new IOException("Stale engine scope");
+            api.persistence.owner.businessCalls++;
+            JSONObject result = new JSONObject().put("backend", backend);
+            if (operation.equals("module.editor") || operation.equals("batch.options")) {
+                String ticket = operation + ":" + UUID.randomUUID();
+                tickets.add(ticket); result.put("ticket", ticket);
+            } else if (operation.equals("form.save") || operation.equals("batch.run")) {
+                if (!tickets.contains(params.getString("ticket"))) throw new IOException("Unknown form or batch ticket");
+                result.put("saved", true);
+            }
+            return result;
+        }
+    }
+    static class FutoonStore {
+        final ScopeCheck owner;
+        String current = "https://backend-a.example/admin/";
+        String cookies = "PHPSESSID=captcha";
+        Runnable afterClientConstruction;
+        FutoonStore(ScopeCheck value) { owner = value; }
+        static class Session {
+            final ScopeCheck owner;
+            final String backend;
+            Session(ScopeCheck value, String address) { owner = value; backend = address; }
+        }
+        Session session(String address) { return new Session(owner, address); }
+        static Draft draft;
+        String address() { return current; }
+        static Draft draft(int account) { return draft; }
+        static void clearDraft(int account) { draft = null; }
+        static void setDraft(int account, String address, FutoonApi.Order order, String caption, long source) {
+            draft = new Draft(address, order);
+            draft.sourceDialog = source;
+        }
+        static class Draft {
+            final String address;
+            final FutoonApi.Order order;
+            long sourceMessage, sourceTopic, sourceDialog;
+            Draft(String backend, FutoonApi.Order selected) { address = backend; order = selected; }
+        }
+    }
+
+    String backendAddress = "https://backend-a.example/admin/", activeOrder = "", initialText = "old", exportText = "old";
+    int generation = 3, pickerGeneration = 3, exportGeneration = 3, account;
+    long sourceMessage = 12, dialogId = 8, topicId = 9;
+    final ArrayList<File> photos = new ArrayList<>();
+    final Map<String, Object> downloading = new HashMap<>();
+    NativePanelView panel = new NativePanelView();
+    final Root root = new Root();
+    final ChannelBar channelBar = new ChannelBar();
+    final Host host = new Host();
+    final FutoonStore store = new FutoonStore(this);
+    FutoonApi api;
+    FutoonBusinessApi business;
+    int clientCreations, engineCreations, businessCalls;
+    final CountDownLatch dispatchCaptured = new CountDownLatch(1);
+    boolean expanded = true, paused, alive = true, choosing = true;
+    int saved, synced, collapsed;
+    String savedBackend, lastToast;
+    boolean valid() { return alive; }
+    void savePanelState() { saved++; savedBackend = backendAddress; }
+    void ensurePanel() { if (panel == null) panel = new NativePanelView(); }
+    void resize() { }
+    void syncDraft() { synced++; }
+    void collapse() { collapsed++; }
+    void toast(String text) { lastToast = text; }
+    String dispatchBusiness(String operation, JSONObject params) throws Exception {
+        // Model nativeCall's already-captured scope, then run its real production dispatch.
+        final String backend = store.address();
+        final int requestGeneration = generation;
+        dispatchCaptured.countDown();
+        // __PRODUCTION_DISPATCH__
+    }
+
+    // __PRODUCTION_METHODS__
+
+    static int assertions;
+    static void check(boolean condition, String message) {
+        assertions++;
+        if (!condition) throw new AssertionError(message);
+    }
+    static FutoonApi.Order order(String id) { return new FutoonApi.Order(new JSONObject().put("trade_no", id)); }
+
+    public static void main(String[] args) throws Exception {
+        ScopeCheck fixture = new ScopeCheck();
+        fixture.activeOrder = "SAME";
+        fixture.photos.add(new File("old-proof"));
+        fixture.downloading.put("old", new Object());
+        FutoonStore.setDraft(0, fixture.backendAddress, order("SAME"), "", 8);
+        NativePanelView old = fixture.panel;
+        fixture.changeBackendScope("https://backend-b.example/admin/", true);
+        fixture.store.current = "https://backend-b.example/admin/";
+        check(fixture.generation == 4, "Backend change must invalidate asynchronous results");
+        check(fixture.photos.isEmpty() && fixture.downloading.isEmpty(), "Old evidence or downloads survived");
+        check(fixture.activeOrder.isEmpty(), "Old order survived backend change");
+        check(fixture.pickerGeneration == -1 && fixture.exportGeneration == -1, "Pending selectors survived");
+        check(fixture.choosing, "An outstanding picker must retain its reservation until its result arrives");
+        check(FutoonStore.draft == null, "Old backend global draft survived");
+        check(fixture.savedBackend.equals("https://backend-a.example/admin/"), "Navigation saved under new backend");
+        check(old.hidden && !old.closed, "Old environment disposed inside its own configure stack");
+        AndroidUtilities.flush();
+        check(old.closed && old.options.contains("false") && fixture.panel != old, "Old live panel memory retained");
+        fixture.prepareEvidence("{\"trade_no\":\"SAME\"}", "new");
+        check(fixture.photos.isEmpty(), "Same order number reused another backend's evidence");
+        check(FutoonStore.draft.address.equals(fixture.backendAddress), "New draft has wrong backend");
+
+        File proof = File.createTempFile("futoon-scope-proof-", ".jpg");
+        proof.deleteOnExit();
+        fixture.photos.add(proof);
+        String active = fixture.activeOrder;
+        int previousSync = fixture.synced;
+        for (String malformed : new String[]{"{}", "not-json"}) {
+            fixture.sendEvidence(malformed, "bad");
+            check(fixture.host.launch.sent == 0 && fixture.collapsed == 0, "Invalid order reached send preview");
+            check(fixture.synced == previousSync && fixture.activeOrder.equals(active), "Invalid order mutated draft");
+        }
+        fixture.sendEvidence("{\"trade_no\":\"SAME\"}", "valid control");
+        check(fixture.host.launch.sent == 1 && fixture.collapsed == 1, "Valid control did not reach the preview fixture");
+        fixture.alive = false;
+        try {
+            fixture.prepareEvidence("{\"trade_no\":\"OTHER\"}", "");
+            throw new AssertionError("Inactive account accepted evidence");
+        } catch (IOException expected) { }
+        check(fixture.activeOrder.equals(active), "Inactive account changed draft");
+
+        ScopeCheck external = new ScopeCheck();
+        FutoonStore.setDraft(0, "https://backend-b.example/admin/", order("B"), "", 8);
+        external.store.current = "https://backend-b.example/admin/";
+        external.changeBackendScope(external.store.address(), false);
+        check(FutoonStore.draft != null && FutoonStore.draft.address.equals(external.store.current), "Another panel's new draft was cleared");
+        external.photos.add(new File("current-proof"));
+        int unchangedGeneration = external.generation;
+        external.changeBackendScope(external.store.current, false);
+        check(external.generation == unchangedGeneration && external.photos.size() == 1, "Unchanged endpoint discarded evidence");
+        external.store.current = "https://backend-c.example/admin/";
+        try {
+            external.prepareEvidence("{\"trade_no\":\"OTHER\"}", "");
+            throw new AssertionError("Externally changed backend accepted stale evidence");
+        } catch (IOException expected) { }
+        check(external.photos.size() == 1, "Stale request mutated evidence before failing");
+
+        ScopeCheck queued = new ScopeCheck();
+        AtomicReference<Throwable> rejected = new AtomicReference<>();
+        Thread stale = new Thread(() -> {
+            try { queued.dispatchBusiness("order.action", new JSONObject().put("trade_no", "SAME")); }
+            catch (Throwable error) { rejected.set(error); }
+        }, "futoon-stale-backend-request");
+        synchronized (queued) {
+            stale.start();
+            check(queued.dispatchCaptured.await(5, TimeUnit.SECONDS), "Request did not capture backend A");
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (stale.getState() != Thread.State.BLOCKED && System.nanoTime() < deadline) Thread.yield();
+            check(stale.getState() == Thread.State.BLOCKED, "A request did not wait for the dispatch monitor");
+            queued.changeBackendScope("https://backend-b.example/admin/", false);
+            queued.store.current = "https://backend-b.example/admin/";
+        }
+        stale.join(5000);
+        check(!stale.isAlive(), "Stale dispatch did not finish");
+        check(rejected.get() instanceof IOException, "Queued A request was not rejected after switching to B");
+        check(queued.clientCreations == 0 && queued.engineCreations == 0 && queued.businessCalls == 0,
+                "Stale request reached B client construction or dispatch");
+        JSONObject control = new JSONObject(queued.dispatchBusiness("order.action", new JSONObject()));
+        check(control.getString("backend").equals(queued.backendAddress) && queued.businessCalls == 1,
+                "Current B scope did not reach its own business client");
+
+        ScopeCheck tickets = new ScopeCheck();
+        JSONObject editor = new JSONObject(tickets.dispatchBusiness("module.editor", new JSONObject()));
+        FutoonBusinessApi originalEngine = tickets.business;
+        FutoonApi originalApi = tickets.api;
+        int refreshed = originalApi.refreshes;
+        tickets.store.cookies = "admin_token=new-shared-login";
+        JSONObject saved = new JSONObject(tickets.dispatchBusiness("form.save", new JSONObject().put("ticket", editor.getString("ticket"))));
+        check(saved.getBoolean("saved") && tickets.business == originalEngine && tickets.api == originalApi,
+                "Form save lost the preceding editor's engine or ticket");
+        check(tickets.clientCreations == 1 && tickets.engineCreations == 1,
+                "Same-backend dispatch reconstructed the API or business engine");
+        check(originalApi.refreshes == refreshed + 1 && originalApi.cookies.equals(tickets.store.cookies),
+                "Same-backend dispatch failed to refresh shared cookies");
+        JSONObject options = new JSONObject(tickets.dispatchBusiness("batch.options", new JSONObject()));
+        JSONObject batch = new JSONObject(tickets.dispatchBusiness("batch.run", new JSONObject().put("ticket", options.getString("ticket"))));
+        check(batch.getBoolean("saved") && tickets.business == originalEngine,
+                "Batch run lost the preceding options ticket");
+
+        tickets.changeBackendScope("https://backend-b.example/admin/", false);
+        tickets.store.current = tickets.backendAddress;
+        check(tickets.api == null && tickets.business == null, "Backend switch retained the old API or engine");
+        try {
+            tickets.dispatchBusiness("form.save", new JSONObject().put("ticket", editor.getString("ticket")));
+            throw new AssertionError("Backend B accepted backend A's form ticket");
+        } catch (IOException expected) { }
+        check(tickets.business != originalEngine && tickets.api != originalApi
+                && tickets.business.backend.equals(tickets.backendAddress), "Backend switch failed to replace engine scope");
+
+        ScopeCheck reset = new ScopeCheck();
+        JSONObject oldForm = new JSONObject(reset.dispatchBusiness("module.editor", new JSONObject()));
+        FutoonApi captchaApi = reset.api;
+        reset.business = null; // Successful login/logout invalidates tickets, not captcha/session API state.
+        try {
+            reset.dispatchBusiness("form.save", new JSONObject().put("ticket", oldForm.getString("ticket")));
+            throw new AssertionError("New login retained the previous login's form ticket");
+        } catch (IOException expected) { }
+        check(reset.api == captchaApi && reset.clientCreations == 1 && reset.engineCreations == 2,
+                "Engine invalidation also replaced the captcha/session API");
+
+        ScopeCheck constructing = new ScopeCheck();
+        constructing.store.afterClientConstruction = () -> constructing.store.current = "https://backend-b.example/admin/";
+        constructing.ensureClient();
+        check(constructing.api.backend.equals(constructing.backendAddress)
+                && constructing.business.backend.equals(constructing.backendAddress),
+                "Concurrent external backend change redirected client or engine construction");
+        System.out.println("PASS: " + assertions + " panel scope assertions (extracted production methods)");
+    }
+}
